@@ -16,15 +16,46 @@ Before you begin, make sure you have:
 
 ## Install from npm
 
-```bash
-npm install -g @cdot65/prisma-airs-cli
-```
+=== "npm (recommended)"
+
+    ```bash
+    npm install -g @cdot65/prisma-airs-cli
+    ```
+
+=== "pnpm"
+
+    ```bash
+    pnpm add -g @cdot65/prisma-airs-cli
+    ```
+
+    !!! warning "pnpm global bin PATH"
+        pnpm's global bin directory is often not in your `PATH` by default. If `airs` is not found after install, run:
+        ```bash
+        pnpm setup
+        ```
+        Then restart your terminal. This adds pnpm's global bin to your shell profile.
 
 Verify the installation:
 
 ```bash
-airs --version
-airs --help
+$ airs --version
+1.0.1
+
+$ airs --help
+Usage: airs [options] [command]
+
+CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red
+teaming, model security scanning, profile audits
+
+Options:
+  -V, --version   output the version number
+  -h, --help      display help for command
+
+Commands:
+  runtime         Runtime prompt scanning against AIRS profiles
+  redteam         AI Red Team scan operations
+  model-security  AI Model Security operations — groups, rules, scans
+  help [command]  display help for command
 ```
 
 !!! tip "Try without installing"
@@ -142,24 +173,33 @@ cp .env.example .env
 
 Requires **pnpm >= 8** (`corepack enable` to install).
 
-=== "Development"
+### Running from source
 
-    Run directly via `tsx` — no build step needed:
+=== "Development (tsx, no build)"
 
     ```bash
     pnpm run dev runtime topics generate
     ```
 
-=== "Production"
-
-    Compile TypeScript, then run the output:
+=== "Production (compiled)"
 
     ```bash
     pnpm run build
     node dist/cli/index.js runtime topics generate
     ```
 
-Verify everything works:
+### Register the `airs` command locally
+
+To make the `airs` command available in your terminal from a source checkout:
+
+```bash
+pnpm run build
+pnpm link --global
+```
+
+Then `airs --version`, `airs runtime scan`, etc. work anywhere. Changes require re-running `pnpm run build` to take effect.
+
+### Verify setup
 
 ```bash
 pnpm test          # All tests (no AIRS creds needed)

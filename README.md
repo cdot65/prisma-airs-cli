@@ -22,9 +22,10 @@
 
 ```bash
 npm install -g @cdot65/prisma-airs-cli
+airs --version
 ```
 
-Requires **Node.js >= 20**. Also available as a [Docker image](https://github.com/cdot65/prisma-airs-cli/pkgs/container/prisma-airs-cli).
+Requires **Node.js >= 20**. Also available via `pnpm add -g`, `npx`, or as a [Docker image](https://github.com/cdot65/prisma-airs-cli/pkgs/container/prisma-airs-cli). See the [installation guide](https://cdot65.github.io/prisma-airs-cli/getting-started/installation/) for details.
 
 ## Quick Start
 
