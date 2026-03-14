@@ -23,6 +23,10 @@ pnpm test -- -t "pattern"  # Tests matching name pattern
 pnpm test:coverage         # Coverage (excludes src/cli/**, src/index.ts, **/types.ts)
 pnpm test:e2e              # E2E tests (requires real creds, opt-in)
 
+# Docker
+pnpm run docker:build      # Build local image
+pnpm run docker:run        # Run (mounts ~/.prisma-airs)
+
 # Lint & Format
 pnpm run lint              # Biome check
 pnpm run lint:fix          # Biome check --write
@@ -36,6 +40,14 @@ pnpm tsc --noEmit
 ## Tech Stack
 
 TypeScript ESM, Node 20+, pnpm. LangChain.js w/ structured output (Zod). `@cdot65/prisma-airs-sdk` for AIRS scan+management APIs. Commander.js CLI, Inquirer prompts, Chalk rendering. Vitest+MSW tests. Biome lint/format.
+
+## Code Style (Biome)
+
+Single quotes, semicolons, 2-space indent, 100-char line width. Imports auto-organized.
+
+## Coverage Thresholds
+
+Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `src/cli/**`, `src/index.ts`, `**/types.ts`.
 
 ## Directory Structure
 
