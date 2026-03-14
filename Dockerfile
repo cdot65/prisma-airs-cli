@@ -12,6 +12,7 @@ COPY src/ src/
 RUN pnpm run build
 
 FROM node:20-alpine
+LABEL org.opencontainers.image.source=https://github.com/cdot65/prisma-airs-cli
 
 RUN corepack enable && corepack prepare pnpm@10.6.5 --activate
 
