@@ -1,5 +1,19 @@
 # Release Notes
 
+## v1.0.5
+
+### New
+
+- **`airs model-security install`** — one-command setup of the `model-security-client` Python package from AIRS private PyPI
+    - Auto-detects `uv` (uses `uv init` + `uv add`) or falls back to `python3 -m venv` + `pip install`
+    - `--extras` for source type selection: `all`, `aws`, `gcp`, `azure`, `artifactory`, `gitlab`
+    - `--dir` to specify project directory
+    - `--dry-run` to preview commands
+
+### Fixed
+
+- CLI help menus now display subcommands in alphabetical order across all command groups
+
 ## v1.0.0
 
 First release of Prisma AIRS CLI (renamed from `daystrom`). See [MIGRATION.md](https://github.com/cdot65/prisma-airs-cli/blob/main/MIGRATION.md) for upgrade steps.
@@ -37,10 +51,11 @@ airs redteam targets ...     # Target CRUD
 airs redteam prompt-sets ... # Prompt set CRUD
 airs redteam prompts ...     # Individual prompt CRUD
 airs redteam properties ...  # Property management
-airs model-security groups   # Security group CRUD
-airs model-security rules    # Rule browsing
-airs model-security scans    # Scan operations
-airs model-security labels   # Label management
+airs model-security groups    # Security group CRUD
+airs model-security install   # Install model-security-client Python package
+airs model-security labels    # Label management
+airs model-security rules     # Rule browsing
+airs model-security scans     # Scan operations
 ```
 
 ### Breaking Changes (from daystrom)

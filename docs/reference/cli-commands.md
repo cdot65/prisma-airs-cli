@@ -657,13 +657,14 @@ Usage: airs model-security [options] [command]
 AI Model Security operations — groups, rules, scans
 
 Commands:
-  groups          Manage security groups
-  rules           Browse security rules
-  rule-instances  Manage rule instances in groups
-  scans           Model security scan operations
-  labels          Manage scan labels
-  pypi-auth       Get PyPI authentication URL for Google Artifact Registry
-  help [command]  display help for command
+  groups             Manage security groups
+  install [options]  Install the model-security-client Python package from AIRS PyPI
+  labels             Manage scan labels
+  pypi-auth          Get PyPI authentication URL for Google Artifact Registry
+  rule-instances     Manage rule instances in groups
+  rules              Browse security rules
+  scans              Model security scan operations
+  help [command]     display help for command
 ```
 
 ### model-security groups
@@ -712,6 +713,39 @@ airs model-security groups delete <uuid>
   "description": "Scans local model files",
   "rule_configurations": {}
 }
+```
+
+### model-security install
+
+Install the `model-security-client` Python package from AIRS private PyPI. Authenticates via your management credentials, fetches a time-limited PyPI URL, and runs the install end-to-end.
+
+- If `uv` is found: creates a project with `uv init` and installs via `uv add`
+- If `uv` is not found: creates a venv with `python3 -m venv` and installs via `pip`
+
+```bash
+airs model-security install [options]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--extras <type>` | Source type extras: `all`, `aws`, `gcp`, `azure`, `artifactory`, `gitlab` (default: `all`) |
+| `--dir <path>` | Directory to create the project in (default: `model-security`) |
+| `--dry-run` | Print the commands without executing |
+
+#### Examples
+
+```bash
+# Install with all extras (auto-detects uv or pip)
+airs model-security install
+
+# Install with AWS support only
+airs model-security install --extras aws
+
+# Preview commands without executing
+airs model-security install --dry-run
+
+# Install into a custom directory
+airs model-security install --dir my-scanner
 ```
 
 ### model-security rules
@@ -852,7 +886,8 @@ airs model-security labels values <key> [--limit <n>]
 
 ### model-security pypi-auth
 
-Get PyPI authentication URL for Google Artifact Registry.
+Get PyPI authentication URL for Google Artifact Registry. For a fully automated install, use [`model-security install`](#model-security-install) instead.
 
 ```bash
 airs model-security pypi-auth
+```
