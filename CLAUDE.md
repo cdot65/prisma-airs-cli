@@ -205,7 +205,8 @@ tests/
 ### Model Security (`src/airs/modelsecurity.ts`)
 - `SdkModelSecurityService` wraps `ModelSecurityClient` for security groups, rules, scans, labels, PyPI auth
 - snake_case (SDK) → camelCase normalization via `normalizeGroup()`, `normalizeRule()`, etc.
-- CLI: `airs model-security {groups,rules,rule-instances,scans,labels,pypi-auth}`
+- CLI: `airs model-security {groups,install,labels,pypi-auth,rule-instances,rules,scans}`
+- `install` auto-detects uv (uses `uv init` + `uv add`) or falls back to `python3 -m venv` + `pip install`
 - Groups: CRUD per source type (LOCAL, S3, GCS, AZURE, HUGGING_FACE)
 - Rule instances: state = BLOCKING | ALLOWING | DISABLED
 - Scans: create/list/get with evaluations, violations, files sub-queries

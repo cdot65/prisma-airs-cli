@@ -10,8 +10,9 @@ The `airs model-security` command group provides access to Model Security operat
 - **Rules** — browse available security rules (read-only, managed by AIRS)
 - **Rule Instances** — configure rule enforcement within groups (BLOCKING, ALLOWING, DISABLED)
 - **Scans** — create, list, and inspect model security scans with evaluations, violations, and file results
+- **Install** — one-command setup of the `model-security-client` Python package (auto-detects uv/pip, creates venv)
 - **Labels** — organize scans with key-value labels
-- **PyPI Auth** — get authentication for Google Artifact Registry
+- **PyPI Auth** — get raw authentication URL for Google Artifact Registry
 
 ## Concepts
 
@@ -34,6 +35,16 @@ When a group is created, AIRS automatically provisions rule instances for all co
 | `DISABLED` | Rule is skipped entirely |
 
 ## Workflow
+
+### 0. Install the Python SDK
+
+```bash
+# Auto-detects uv or pip, creates a project/venv, installs the package
+airs model-security install
+
+# Or install with only AWS extras
+airs model-security install --extras aws
+```
 
 ### 1. List available groups
 

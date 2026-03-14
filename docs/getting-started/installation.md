@@ -39,7 +39,7 @@ Verify the installation:
 
 ```bash
 $ airs --version
-1.0.2
+1.0.5
 
 $ airs --help
 Usage: airs [options] [command]

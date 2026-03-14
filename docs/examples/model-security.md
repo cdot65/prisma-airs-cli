@@ -446,9 +446,26 @@ airs model-security labels delete <scanUuid> --keys env,team
 
 ---
 
+## Install Model Security Client
+
+Install the `model-security-client` Python package with a single command. Authenticates via your management credentials and handles project/venv setup automatically.
+
+```bash
+# Install with all extras — auto-detects uv or falls back to python3 venv + pip
+airs model-security install
+
+# Install with only GCP extras into a custom directory
+airs model-security install --extras gcp --dir my-scanner
+
+# Preview what would run without executing
+airs model-security install --dry-run
+```
+
+If `uv` is on PATH, the command runs `uv init` + `uv add`. Otherwise, it creates a `python3 -m venv` and uses `pip install`.
+
 ## PyPI Authentication
 
-Get authentication URL for Google Artifact Registry (used for model scanning tools).
+Get the raw authentication URL for Google Artifact Registry. For a fully automated setup, use `airs model-security install` instead.
 
 ```bash
 airs model-security pypi-auth

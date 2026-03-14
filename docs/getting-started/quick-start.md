@@ -74,6 +74,9 @@ airs redteam categories
 Manage ML model supply chain security — scan model artifacts for threats.
 
 ```bash
+# Install the model-security-client Python package
+airs model-security install
+
 # List security groups
 airs model-security groups list
 
