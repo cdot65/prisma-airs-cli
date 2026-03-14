@@ -125,7 +125,7 @@ airs redteam scan \
 ```
 
 !!! tip "Finding prompt set UUIDs"
-    Use `airs redteam prompt-sets list` to find UUIDs. Prompt sets created by `airs generate --create-prompt-set` emit the UUID in the `promptset:created` event.
+    Use `airs redteam prompt-sets list` to find UUIDs. Prompt sets created by `airs runtime topics generate --create-prompt-set` emit the UUID in the `promptset:created` event.
 
 ---
 
@@ -282,4 +282,4 @@ airs redteam abort <jobId>
 !!! info "When to use each type"
     - **STATIC** for initial security assessment — covers prompt injection, jailbreak, CBRN, and 20+ categories
     - **DYNAMIC** for sophisticated multi-turn attacks that adapt to the target's responses
-    - **CUSTOM** for targeted validation — use prompts from `airs generate --create-prompt-set` or hand-crafted prompt sets
+    - **CUSTOM** for targeted validation — use prompts from `airs runtime topics generate --create-prompt-set` or hand-crafted prompt sets

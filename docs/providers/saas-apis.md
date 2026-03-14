@@ -34,13 +34,13 @@ Direct connection to the Anthropic API via `@langchain/anthropic`.
 
 ```bash
 # Uses defaults from .env / config
-pnpm run generate
+airs runtime topics generate
 
 # Explicit provider flag
-pnpm run generate -- --provider claude-api
+airs runtime topics generate --provider claude-api
 
 # Override model
-pnpm run generate -- --provider claude-api --model claude-sonnet-4-20250514
+airs runtime topics generate --provider claude-api --model claude-sonnet-4-20250514
 ```
 
 !!! tip "Getting an API key"
@@ -79,13 +79,13 @@ Direct connection to the Google AI Studio API via `@langchain/google-genai`.
 
 ```bash
 # Uses defaults from .env / config
-pnpm run generate
+airs runtime topics generate
 
 # Explicit provider flag
-pnpm run generate -- --provider gemini-api
+airs runtime topics generate --provider gemini-api
 
 # Override model
-pnpm run generate -- --provider gemini-api --model gemini-2.5-pro
+airs runtime topics generate --provider gemini-api --model gemini-2.5-pro
 ```
 
 !!! tip "Getting an API key"

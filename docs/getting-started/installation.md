@@ -30,7 +30,7 @@ airs --help
 !!! tip "Try without installing"
     Run once without a global install:
     ```bash
-    npx @cdot65/prisma-airs-cli generate
+    npx @cdot65/prisma-airs-cli runtime topics generate
     ```
 
 ## Set Up Credentials
@@ -98,7 +98,7 @@ Then run the CLI:
 ```bash
 docker run --rm --env-file .env \
   -v ~/.prisma-airs:/root/.prisma-airs \
-  ghcr.io/cdot65/prisma-airs-cli generate \
+  ghcr.io/cdot65/prisma-airs-cli runtime topics generate \
   --profile my-security-profile \
   --topic "Block phishing attempts" \
   --intent block
@@ -111,7 +111,7 @@ The `-v` mount persists run state and learnings between containers.
     ```bash
     alias airs='docker run --rm --env-file .env -v ~/.prisma-airs:/root/.prisma-airs ghcr.io/cdot65/prisma-airs-cli'
     ```
-    Then use `airs generate`, `airs list`, etc.
+    Then use `airs runtime topics generate`, `airs runtime topics runs`, etc.
 
 ---
 
@@ -147,7 +147,7 @@ Requires **pnpm >= 8** (`corepack enable` to install).
     Run directly via `tsx` — no build step needed:
 
     ```bash
-    pnpm run generate
+    pnpm run dev runtime topics generate
     ```
 
 === "Production"
@@ -156,7 +156,7 @@ Requires **pnpm >= 8** (`corepack enable` to install).
 
     ```bash
     pnpm run build
-    node dist/cli/index.js generate
+    node dist/cli/index.js runtime topics generate
     ```
 
 Verify everything works:

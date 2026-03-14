@@ -40,11 +40,11 @@ airs runtime bulk-scan --profile "my-profile" --input prompts.csv --output resul
 airs runtime topics generate
 
 # Red team scanning
-airs redteam scan --target "my-target" --type STATIC
+airs redteam scan --target <uuid> --name "Full Scan" --type STATIC
 airs redteam report <job-id>
 
 # Model security
-airs model-security scans create --group <group-id>
+airs model-security scans create --config scan-config.json
 ```
 
 ## Commands

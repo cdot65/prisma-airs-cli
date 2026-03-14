@@ -50,4 +50,4 @@ airs model-security labels   # Label management
 - Data directory: `~/.daystrom/` → `~/.prisma-airs/`
 - Guardrail commands moved under `airs runtime topics`
 - Audit command moved under `airs runtime profiles audit`
-- Top-level aliases (`airs generate`, `airs resume`, `airs report`, `airs list`, `airs audit`) remain as deprecated backward-compat shims
+- Deprecated top-level aliases removed — use `airs runtime topics` and `airs runtime profiles` subcommands

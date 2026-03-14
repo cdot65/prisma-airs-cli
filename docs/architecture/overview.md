@@ -51,7 +51,7 @@ graph LR
 
 ## Guardrail Generation Data Flow
 
-The guardrail generation loop (`airs generate`) is the most complex flow:
+The guardrail generation loop (`airs runtime topics generate`) is the most complex flow:
 
 ```mermaid
 graph TD

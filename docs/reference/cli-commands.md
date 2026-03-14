@@ -4,11 +4,49 @@ Binary: `airs` (or `pnpm run dev` during development).
 
 Three top-level command groups: `runtime`, `redteam`, `model-security`.
 
+```
+$ airs --help
+Usage: airs [options] [command]
+
+CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red
+teaming, model security scanning, profile audits
+
+Options:
+  -V, --version   output the version number
+  -h, --help      display help for command
+
+Commands:
+  runtime         Runtime prompt scanning against AIRS profiles
+  redteam         AI Red Team scan operations
+  model-security  AI Model Security operations — groups, rules, scans
+  help [command]  display help for command
+```
+
 ---
 
 ## runtime
 
 Runtime prompt scanning, AIRS configuration management, guardrail generation, and profile audits.
+
+```
+$ airs runtime --help
+Usage: airs runtime [options] [command]
+
+Runtime prompt scanning against AIRS profiles
+
+Commands:
+  scan [options] <prompt>            Scan a single prompt against an AIRS security profile
+  bulk-scan [options]                Scan multiple prompts via the async AIRS API
+  resume-poll [options] <stateFile>  Resume polling for a previously submitted bulk scan
+  profiles                           Manage AIRS security profiles
+  topics                             Manage AIRS custom topics and guardrail generation
+  api-keys                           Manage AIRS API keys
+  customer-apps                      Manage AIRS customer apps
+  deployment-profiles                List AIRS deployment profiles
+  dlp-profiles                       List AIRS DLP profiles
+  scan-logs                          Query AIRS scan logs
+  help [command]                     display help for command
+```
 
 ### runtime scan
 
@@ -75,7 +113,7 @@ airs runtime scan --profile my-profile --response "Here are the steps..." "How d
 Scan multiple prompts via the async AIRS API. Writes results to CSV.
 
 ```bash
-airs runtime bulk-scan --profile <name> --input <file> [--output <file>]
+airs runtime bulk-scan --profile <name> --input <file> [--output <file>] [--session-id <id>]
 ```
 
 #### Options
@@ -83,8 +121,9 @@ airs runtime bulk-scan --profile <name> --input <file> [--output <file>]
 | Flag | Required | Description |
 |------|:--------:|-------------|
 | `--profile <name>` | Yes | Security profile name |
-| `--input <file>` | Yes | Text file with one prompt per line |
+| `--input <file>` | Yes | `.csv` (extracts prompt column) or `.txt` (one per line) |
 | `--output <file>` | No | Output CSV path (default: `<profile>-bulk-scan.csv`) |
+| `--session-id <id>` | No | Session ID for grouping scans in AIRS dashboard |
 
 #### Examples
 
@@ -143,7 +182,7 @@ airs runtime profiles audit <profileName> [options]
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | — |
+| `list` | `--limit <n>` (default 100), `--offset <n>` (default 0) |
 | `create` | `--config <path>` (required) |
 | `update <profileId>` | `--config <path>` (required) |
 | `delete <profileId>` | `--force`, `--updated-by <email>` |
@@ -185,7 +224,7 @@ airs runtime topics runs
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | — |
+| `list` | `--limit <n>` (default 100), `--offset <n>` (default 0) |
 | `create` | `--config <path>` (required) |
 | `update <topicId>` | `--config <path>` (required) |
 | `delete <topicId>` | `--force`, `--updated-by <email>` |
@@ -204,12 +243,15 @@ Start a new guardrail generation run.
 | `--max-iterations <n>` | `20` | Maximum refinement iterations |
 | `--target-coverage <n>` | `90` | Coverage percentage to stop at |
 | `--max-regressions <n>` | `3` | Stop after N consecutive coverage regressions (0 = disable) |
+| `--plateau-window <n>` | `0` | Iterations to check for plateau (0 = disable) |
+| `--plateau-band <pct>` | `0.05` | Max coverage variance for plateau detection |
 | `--accumulate-tests` | off | Carry forward test prompts across iterations |
 | `--max-accumulated-tests <n>` | unlimited | Cap on accumulated test count |
 | `--no-memory` | memory on | Disable cross-run learning |
 | `--debug-scans` | off | Dump raw AIRS scan responses to JSONL for debugging |
 | `--create-prompt-set` | off | Create custom prompt set in AI Red Team from test cases |
 | `--prompt-set-name <name>` | auto | Override auto-generated prompt set name |
+| `--save-tests <path>` | — | Save best iteration test cases to CSV |
 
 !!! tip "Skip all prompts"
     When both `--topic` and `--profile` are provided, interactive mode is skipped entirely.
@@ -241,7 +283,7 @@ Pick up a paused or failed run from where it left off.
 
 | Flag | Default | What it does |
 |------|---------|-------------|
-| `--max-iterations <n>` | `20` | Additional iterations from current position |
+| `--max-iterations <n>` | `10` | Additional iterations from current position |
 | `--debug-scans` | off | Dump raw AIRS scan responses to JSONL for debugging |
 | `--create-prompt-set` | off | Create custom prompt set in AI Red Team from test cases |
 | `--prompt-set-name <name>` | auto | Override auto-generated prompt set name |
@@ -288,10 +330,10 @@ airs runtime api-keys delete <apiKeyName> --updated-by <email>
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | — |
+| `list` | `--limit <n>` (default 100) |
 | `create` | `--config <path>` (required) |
-| `regenerate <apiKeyId>` | `--interval <n>` (required), `--unit <unit>` (required, e.g. `days`, `months`) |
-| `delete <apiKeyName>` | `--updated-by <email>` (required) |
+| `regenerate <apiKeyId>` | `--interval <n>`, `--unit <unit>` (e.g. `hours`, `days`, `months`), `--updated-by <email>` |
+| `delete <apiKeyName>` | `--updated-by <email>` |
 
 ### runtime customer-apps
 
@@ -306,10 +348,10 @@ airs runtime customer-apps delete <appName> --updated-by <email>
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | — |
+| `list` | `--limit <n>` (default 100) |
 | `get <appName>` | — |
 | `update <appId>` | `--config <path>` (required) |
-| `delete <appName>` | `--updated-by <email>` (required) |
+| `delete <appName>` | `--updated-by <email>` |
 
 ### runtime deployment-profiles
 
@@ -346,23 +388,29 @@ airs runtime scan-logs query --interval <n> --unit <unit> [options]
 
 ---
 
-## Deprecated Top-Level Aliases
-
-The following top-level commands still work but print a deprecation warning. Use the `runtime` subcommand paths instead:
-
-| Deprecated | New path |
-|-----------|----------|
-| `airs generate` | `airs runtime topics generate` |
-| `airs resume` | `airs runtime topics resume` |
-| `airs report` | `airs runtime topics report` |
-| `airs list` | `airs runtime topics runs` |
-| `airs audit` | `airs runtime profiles audit` |
-
----
-
 ## redteam
 
 AI Red Team scan operations. All subcommands share the `redteam` prefix.
+
+```
+$ airs redteam --help
+Usage: airs redteam [options] [command]
+
+AI Red Team scan operations
+
+Commands:
+  scan [options]            Execute a red team scan against a target
+  status <jobId>            Check scan status
+  report [options] <jobId>  View scan report
+  list [options]            List recent scans
+  targets                   Manage red team targets
+  categories                List available attack categories
+  prompt-sets               Manage custom prompt sets
+  prompts                   Manage prompts within prompt sets
+  properties                Manage custom attack properties
+  abort <jobId>             Abort a running scan
+  help [command]            display help for command
+```
 
 ### redteam scan
 
@@ -601,6 +649,22 @@ airs redteam abort <jobId>
 ## model-security
 
 AI Model Security operations — manage security groups, browse rules, and configure rule instances.
+
+```
+$ airs model-security --help
+Usage: airs model-security [options] [command]
+
+AI Model Security operations — groups, rules, scans
+
+Commands:
+  groups          Manage security groups
+  rules           Browse security rules
+  rule-instances  Manage rule instances in groups
+  scans           Model security scan operations
+  labels          Manage scan labels
+  pypi-auth       Get PyPI authentication URL for Google Artifact Registry
+  help [command]  display help for command
+```
 
 ### model-security groups
 

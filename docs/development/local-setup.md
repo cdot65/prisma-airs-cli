@@ -41,7 +41,6 @@ Edit `.env` with your credentials:
 | Command | What it does |
 |---------|-------------|
 | `pnpm run dev` | Run CLI via tsx (any subcommand) |
-| `pnpm run generate` | Interactive guardrail generation |
 | `pnpm run build` | Compile TypeScript to `dist/` |
 | `pnpm test` | Run all tests |
 | `pnpm run test:watch` | Watch mode |

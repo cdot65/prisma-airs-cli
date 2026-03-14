@@ -13,12 +13,12 @@ All output shown below is from a real run against Prisma AIRS.
 
 ## Step 1: Generate a Guardrail + Prompt Set
 
-Use `airs generate` with `--create-prompt-set` to build a topic guardrail **and** automatically export the best iteration's test cases as a custom prompt set in AI Red Team.
+Use `airs runtime topics generate` with `--create-prompt-set` to build a topic guardrail **and** automatically export the best iteration's test cases as a custom prompt set in AI Red Team.
 
 Use `--prompt-set-name` to give the prompt set a recognizable name.
 
 ```bash
-airs generate \
+airs runtime topics generate \
   --profile "Custom Topics Test" \
   --topic "Pokémon discussions" \
   --intent block \
@@ -257,7 +257,7 @@ If the ASR is too high (meaning the target is vulnerable), you can:
 1. **Add guardrails** — deploy the topic guardrail to the target's security profile
 2. **Re-scan** — run the same prompt set again to validate the guardrail is effective
 3. **Re-run generation** with more iterations or a higher coverage target
-4. **Resume a previous run** with `airs resume <runId>` to continue refining
+4. **Resume a previous run** with `airs runtime topics resume <runId>` to continue refining
 5. **Abort a running scan** if needed: `airs redteam abort <jobId>`
 
 ## Complete Script
@@ -274,7 +274,7 @@ TARGET_UUID="89e2374c-7bac-4c5c-a291-9392ae919e14"
 PROMPT_SET_NAME="pokemon-guardrail-tests"
 
 # 1. Generate guardrail + export prompt set
-airs generate \
+airs runtime topics generate \
   --profile "$PROFILE" \
   --topic "$TOPIC" \
   --intent block \
