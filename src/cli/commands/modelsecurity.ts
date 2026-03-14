@@ -1,3 +1,4 @@
+import { execFileSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import chalk from 'chalk';
 import type { Command } from 'commander';
@@ -22,6 +23,30 @@ import {
   renderViolationDetail,
   renderViolationList,
 } from '../renderer/index.js';
+
+const VALID_EXTRAS = ['all', 'aws', 'gcp', 'azure', 'artifactory', 'gitlab'] as const;
+
+/** Check if a binary is available on PATH. */
+function hasBin(bin: string): boolean {
+  try {
+    execFileSync(bin, ['--version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Run a command with inherited stdio, rejecting on non-zero exit. */
+function run(bin: string, args: string[], label: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(bin, args, { stdio: 'inherit' });
+    child.on('error', (err) => reject(new Error(`Failed to start ${bin}: ${err.message}`)));
+    child.on('close', (code) => {
+      if (code !== 0) reject(new Error(`${label} failed with exit code ${code}`));
+      else resolve();
+    });
+  });
+}
 
 /** Create an SdkModelSecurityService from config. */
 async function createService() {
@@ -145,6 +170,92 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         await service.deleteGroup(uuid);
         console.log(`  Group ${uuid} deleted.\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // model-security install — install model-security-client Python package
+  // -----------------------------------------------------------------------
+  ms.command('install')
+    .description('Install the model-security-client Python package from AIRS PyPI')
+    .option(
+      '--extras <type>',
+      'Source type extras to install (all, aws, gcp, azure, artifactory, gitlab)',
+      'all',
+    )
+    .option('--dir <path>', 'Directory to create the project in', 'model-security')
+    .option('--dry-run', 'Print the commands without executing')
+    .action(async (opts) => {
+      try {
+        renderModelSecurityHeader();
+
+        // Validate extras
+        const extras = opts.extras as string;
+        if (!VALID_EXTRAS.includes(extras as (typeof VALID_EXTRAS)[number])) {
+          renderError(`Invalid extras "${extras}". Valid: ${VALID_EXTRAS.join(', ')}`);
+          process.exit(1);
+        }
+
+        const dir = opts.dir as string;
+        const useUv = hasBin('uv');
+
+        if (!useUv && !hasBin('python3')) {
+          renderError('Neither uv nor python3 found on PATH. Install one first.');
+          process.exit(1);
+        }
+
+        // Fetch PyPI auth URL
+        const service = await createService();
+        const auth = await service.getPyPIAuth();
+        const pkg = `model-security-client[${extras}]`;
+
+        // Build step sequence
+        type Step = { label: string; bin: string; args: string[] };
+        const steps: Step[] = useUv
+          ? [
+              { label: 'uv init', bin: 'uv', args: ['init', dir] },
+              {
+                label: 'uv add',
+                bin: 'uv',
+                args: ['add', '--project', dir, pkg, '--index', auth.url],
+              },
+            ]
+          : [
+              { label: 'create venv', bin: 'python3', args: ['-m', 'venv', `${dir}/.venv`] },
+              {
+                label: 'pip install',
+                bin: `${dir}/.venv/bin/pip`,
+                args: ['install', pkg, '--extra-index-url', auth.url],
+              },
+            ];
+
+        if (opts.dryRun) {
+          console.log(chalk.bold('\n  Commands that would be executed:\n'));
+          for (const step of steps) {
+            const cmdStr = [step.bin, ...step.args]
+              .map((a) => (a.includes('[') || a.includes(' ') ? `"${a}"` : a))
+              .join(' ');
+            console.log(`    ${chalk.dim('$')} ${cmdStr}`);
+          }
+          console.log();
+          return;
+        }
+
+        for (const step of steps) {
+          console.log(chalk.dim(`\n  → ${step.label}\n`));
+          await run(step.bin, step.args, step.label);
+        }
+
+        console.log(chalk.green('\n  model-security-client installed successfully.\n'));
+
+        if (useUv) {
+          console.log(chalk.dim(`  Activate:  cd ${dir}\n`));
+        } else {
+          console.log(chalk.dim(`  Activate:  source ${dir}/.venv/bin/activate\n`));
+        }
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
