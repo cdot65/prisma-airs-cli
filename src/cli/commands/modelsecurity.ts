@@ -5,6 +5,7 @@ import type { Command } from 'commander';
 import { SdkModelSecurityService } from '../../airs/modelsecurity.js';
 import { loadConfig } from '../../config/loader.js';
 import {
+  type OutputFormat,
   renderError,
   renderEvaluationDetail,
   renderEvaluationList,
@@ -79,9 +80,11 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--sort-dir <dir>', 'Sort direction (asc, desc)')
     .option('--enabled-rules <uuids>', 'Filter by enabled rule UUIDs (comma-separated)')
     .option('--limit <n>', 'Max results', '20')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const result = await service.listGroups({
           sourceTypes: opts.sourceTypes
@@ -95,7 +98,7 @@ export function registerModelSecurityCommand(program: Command): void {
             : undefined,
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderGroupList(result.groups);
+        renderGroupList(result.groups, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -448,16 +451,18 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--source-type <type>', 'Filter by source type')
     .option('--search <query>', 'Search by name or UUID')
     .option('--limit <n>', 'Max results', '20')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const result = await service.listRules({
           sourceType: opts.sourceType,
           searchQuery: opts.search,
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderRuleList(result.rules);
+        renderRuleList(result.rules, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -492,9 +497,11 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--scan-origin <origin>', 'Filter by scan origin')
     .option('--search <query>', 'Search scans')
     .option('--limit <n>', 'Max results', '20')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const result = await service.listScans({
           evalOutcome: opts.evalOutcome,
@@ -503,7 +510,7 @@ export function registerModelSecurityCommand(program: Command): void {
           search: opts.search,
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderMsScanList(result.scans);
+        renderMsScanList(result.scans, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

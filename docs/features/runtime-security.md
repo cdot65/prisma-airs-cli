@@ -153,6 +153,28 @@ prompt,action,category,triggered,scan_id,report_id
 
 ---
 
+## Structured Output
+
+All list commands support `--output <format>` for machine-readable output:
+
+```bash
+# Table with box-drawing characters
+airs runtime profiles list --output table
+
+# CSV (pipe to file or other tools)
+airs runtime api-keys list --output csv
+
+# JSON (pretty-printed)
+airs runtime topics list --output json
+
+# YAML
+airs runtime scan-logs query --interval 24 --unit hours --output yaml
+```
+
+Supported formats: `pretty` (default), `table`, `csv`, `json`, `yaml`.
+
+---
+
 ## Configuration Management
 
 Prisma AIRS CLI exposes full CRUD over AIRS runtime configuration resources via `airs runtime` subcommand groups. All config management commands require Management API credentials (`PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`).

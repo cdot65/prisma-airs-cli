@@ -1,5 +1,13 @@
 # Release Notes
 
+## v1.0.6
+
+### New
+
+- **`--output` flag on all list commands** — unified structured output across all 3 command groups
+    - Formats: `pretty` (default), `table`, `csv`, `json`, `yaml`
+    - Supported on: `runtime profiles list`, `runtime topics list`, `runtime api-keys list`, `runtime customer-apps list`, `runtime deployment-profiles list`, `runtime dlp-profiles list`, `runtime scan-logs query`, `redteam list`, `redteam targets list`, `redteam prompt-sets list`, `redteam properties list`, `model-security groups list`, `model-security rules list`, `model-security scans list`
+
 ## v1.0.5
 
 ### New

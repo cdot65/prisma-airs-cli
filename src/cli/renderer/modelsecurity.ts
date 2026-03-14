@@ -8,6 +8,7 @@ import type {
   ModelSecurityScan,
   ModelSecurityViolation,
 } from '../../airs/types.js';
+import { formatOutput, type OutputFormat } from './common.js';
 
 /** Render the model security banner. */
 export function renderModelSecurityHeader(): void {
@@ -16,9 +17,33 @@ export function renderModelSecurityHeader(): void {
 }
 
 /** Render security group list. */
-export function renderGroupList(groups: ModelSecurityGroup[]): void {
+export function renderGroupList(
+  groups: ModelSecurityGroup[],
+  format: OutputFormat = 'pretty',
+): void {
   if (groups.length === 0) {
     console.log(chalk.dim('  No security groups found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = groups.map((g) => ({
+      id: g.uuid,
+      name: g.name,
+      state: g.state,
+      sourceType: g.sourceType,
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'state', label: 'State' },
+          { key: 'sourceType', label: 'Source Type' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Security Groups:\n'));
@@ -45,9 +70,32 @@ export function renderGroupDetail(group: ModelSecurityGroup): void {
 }
 
 /** Render security rule list. */
-export function renderRuleList(rules: ModelSecurityRule[]): void {
+export function renderRuleList(rules: ModelSecurityRule[], format: OutputFormat = 'pretty'): void {
   if (rules.length === 0) {
     console.log(chalk.dim('  No security rules found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = rules.map((r) => ({
+      id: r.uuid,
+      name: r.name,
+      type: r.ruleType,
+      defaultState: r.defaultState,
+      sources: r.compatibleSources.join(', '),
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'type', label: 'Type' },
+          { key: 'defaultState', label: 'Default State' },
+          { key: 'sources', label: 'Sources' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Security Rules:\n'));
@@ -145,9 +193,39 @@ export function renderRuleInstanceDetail(instance: ModelSecurityRuleInstance): v
 // ---------------------------------------------------------------------------
 
 /** Render a list of model security scans. */
-export function renderMsScanList(scans: ModelSecurityScan[]): void {
+export function renderMsScanList(
+  scans: ModelSecurityScan[],
+  format: OutputFormat = 'pretty',
+): void {
   if (scans.length === 0) {
     console.log(chalk.dim('  No scans found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = scans.map((s) => ({
+      id: s.uuid,
+      outcome: s.evalOutcome,
+      origin: s.scanOrigin,
+      modelUri: s.modelUri ?? '',
+      createdAt: s.createdAt,
+      passed: s.evalSummary?.rulesPassed ?? '',
+      failed: s.evalSummary?.rulesFailed ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'outcome', label: 'Outcome' },
+          { key: 'origin', label: 'Origin' },
+          { key: 'modelUri', label: 'Model URI' },
+          { key: 'passed', label: 'Passed' },
+          { key: 'failed', label: 'Failed' },
+          { key: 'createdAt', label: 'Created' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Model Security Scans:\n'));

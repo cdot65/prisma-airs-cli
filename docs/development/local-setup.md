@@ -43,7 +43,7 @@ To make the `airs` binary available globally from your source checkout:
 ```bash
 pnpm run build
 pnpm link --global
-airs --version   # 1.0.5
+airs --version   # 1.0.6
 ```
 
 After making code changes, re-run `pnpm run build` for the linked `airs` command to reflect them. `pnpm run dev` doesn't require a build step.

@@ -4,6 +4,8 @@ Binary: `airs` (or `pnpm run dev` during development).
 
 Three top-level command groups: `runtime`, `redteam`, `model-security`.
 
+All list commands support `--output <format>` for structured output: `pretty` (default), `table`, `csv`, `json`, `yaml`.
+
 ```
 $ airs --help
 Usage: airs [options] [command]
@@ -182,7 +184,7 @@ airs runtime profiles audit <profileName> [options]
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--limit <n>` (default 100), `--offset <n>` (default 0) |
+| `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
 | `create` | `--config <path>` (required) |
 | `update <profileId>` | `--config <path>` (required) |
 | `delete <profileId>` | `--force`, `--updated-by <email>` |
@@ -224,7 +226,7 @@ airs runtime topics runs
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--limit <n>` (default 100), `--offset <n>` (default 0) |
+| `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
 | `create` | `--config <path>` (required) |
 | `update <topicId>` | `--config <path>` (required) |
 | `delete <topicId>` | `--force`, `--updated-by <email>` |
@@ -330,7 +332,7 @@ airs runtime api-keys delete <apiKeyName> --updated-by <email>
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--limit <n>` (default 100) |
+| `list` | `--limit <n>` (default 100), `--output <format>` |
 | `create` | `--config <path>` (required) |
 | `regenerate <apiKeyId>` | `--interval <n>`, `--unit <unit>` (e.g. `hours`, `days`, `months`), `--updated-by <email>` |
 | `delete <apiKeyName>` | `--updated-by <email>` |
@@ -348,7 +350,7 @@ airs runtime customer-apps delete <appName> --updated-by <email>
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--limit <n>` (default 100) |
+| `list` | `--limit <n>` (default 100), `--output <format>` |
 | `get <appName>` | — |
 | `update <appId>` | `--config <path>` (required) |
 | `delete <appName>` | `--updated-by <email>` |
@@ -364,7 +366,7 @@ airs runtime deployment-profiles list --unactivated
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--unactivated` |
+| `list` | `--unactivated`, `--output <format>` |
 
 ### runtime dlp-profiles
 
@@ -372,7 +374,12 @@ DLP profile listing (read-only).
 
 ```bash
 airs runtime dlp-profiles list
+airs runtime dlp-profiles list --output json
 ```
+
+| Subcommand | Flags |
+|------------|-------|
+| `list` | `--output <format>` |
 
 ### runtime scan-logs
 
@@ -384,7 +391,7 @@ airs runtime scan-logs query --interval <n> --unit <unit> [options]
 
 | Subcommand | Flags |
 |------------|-------|
-| `query` | `--interval <n>` (required), `--unit <unit>` (required, e.g. `hours`), `--filter <filter>` (all, benign, threat; default: all), `--page <n>` (default: 1), `--page-size <n>` (default: 50) |
+| `query` | `--interval <n>` (required), `--unit <unit>` (required, e.g. `hours`), `--filter <filter>` (all, benign, threat; default: all), `--page <n>` (default: 1), `--page-size <n>` (default: 50), `--output <format>` |
 
 ---
 
@@ -469,6 +476,7 @@ airs redteam list [options]
 | `--type <type>` | all | Filter: STATIC, DYNAMIC, CUSTOM |
 | `--target <uuid>` | all | Filter by target UUID |
 | `--limit <n>` | `10` | Max results |
+| `--output <format>` | `pretty` | Output format: pretty, table, csv, json, yaml |
 
 #### Example Output — `redteam list`
 
@@ -520,7 +528,7 @@ airs redteam targets update-profile <uuid> --config p.json
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | — |
+| `list` | `--output <format>` |
 | `get <uuid>` | — |
 | `create` | `--config <path>` (required), `--validate` |
 | `update <uuid>` | `--config <path>` (required), `--validate` |
@@ -559,7 +567,7 @@ airs redteam prompt-sets upload <uuid> prompts.csv     # Upload CSV
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | — |
+| `list` | `--output <format>` |
 | `get <uuid>` | — |
 | `create` | `--name` (required), `--description` |
 | `update <uuid>` | `--name`, `--description` |
@@ -681,7 +689,7 @@ airs model-security groups delete <uuid>
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--source-types <types>`, `--search <query>`, `--sort-field <field>`, `--sort-dir <dir>`, `--enabled-rules <uuids>`, `--limit <n>` (default 20) |
+| `list` | `--source-types <types>`, `--search <query>`, `--sort-field <field>`, `--sort-dir <dir>`, `--enabled-rules <uuids>`, `--limit <n>` (default 20), `--output <format>` |
 | `get <uuid>` | — |
 | `create` | `--config <path>` (required) |
 | `update <uuid>` | `--name <name>`, `--description <desc>` |
@@ -759,7 +767,7 @@ airs model-security rules get <uuid>
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--source-type <type>`, `--search <query>`, `--limit <n>` (default 20) |
+| `list` | `--source-type <type>`, `--search <query>`, `--limit <n>` (default 20), `--output <format>` |
 | `get <uuid>` | — |
 
 #### Example Output — `rules list`
@@ -840,7 +848,7 @@ airs model-security scans files <scanUuid> [--type <type>] [--result <result>] [
 
 | Subcommand | Flags |
 |------------|-------|
-| `list` | `--eval-outcome <outcome>`, `--source-type <type>`, `--scan-origin <origin>`, `--search <query>`, `--limit <n>` (default 20) |
+| `list` | `--eval-outcome <outcome>`, `--source-type <type>`, `--scan-origin <origin>`, `--search <query>`, `--limit <n>` (default 20), `--output <format>` |
 | `get <uuid>` | — |
 | `create` | `--config <path>` (required) |
 | `evaluations <scanUuid>` | `--limit <n>` (default 20) |

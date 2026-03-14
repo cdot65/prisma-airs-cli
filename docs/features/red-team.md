@@ -154,6 +154,10 @@ airs redteam list --status COMPLETED --type CUSTOM
 
 # Filter by target
 airs redteam list --target <uuid> --limit 20
+
+# Structured output (table, csv, json, yaml)
+airs redteam list --output json
+airs redteam targets list --output csv
 ```
 
 ### 7. Abort a running scan

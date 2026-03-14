@@ -50,6 +50,9 @@ airs model-security install --extras aws
 
 ```bash
 airs model-security groups list
+
+# Structured output (table, csv, json, yaml)
+airs model-security groups list --output table
 ```
 
 ### 2. Browse security rules

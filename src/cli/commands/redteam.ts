@@ -4,6 +4,8 @@ import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
 import { loadConfig } from '../../config/loader.js';
 import {
+  OUTPUT_FORMATS,
+  type OutputFormat,
   renderAttackList,
   renderCategories,
   renderCustomAttackList,
@@ -97,9 +99,11 @@ export function registerRedteamCommand(program: Command): void {
     .option('--type <type>', 'Filter by job type (STATIC, DYNAMIC, CUSTOM)')
     .option('--target <uuid>', 'Filter by target UUID')
     .option('--limit <n>', 'Max results', '10')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
         const scans = await service.listScans({
           status: opts.status,
@@ -107,7 +111,7 @@ export function registerRedteamCommand(program: Command): void {
           targetId: opts.target,
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderScanList(scans);
+        renderScanList(scans, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -122,12 +126,14 @@ export function registerRedteamCommand(program: Command): void {
   promptSets
     .command('list')
     .description('List custom prompt sets')
-    .action(async () => {
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const sets = await service.listPromptSets();
-        renderPromptSetList(sets);
+        renderPromptSetList(sets, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -339,12 +345,14 @@ export function registerRedteamCommand(program: Command): void {
   properties
     .command('list')
     .description('List property names')
-    .action(async () => {
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const names = await service.getPropertyNames();
-        renderPropertyNames(names);
+        renderPropertyNames(names, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -525,12 +533,14 @@ export function registerRedteamCommand(program: Command): void {
   targets
     .command('list')
     .description('List configured red team targets')
-    .action(async () => {
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
         const list = await service.listTargets();
-        renderTargetList(list);
+        renderTargetList(list, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
