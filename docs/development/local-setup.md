@@ -36,11 +36,23 @@ Edit `.env` with your credentials:
 !!! note "Tests run without credentials"
     Unit and integration tests use MSW mocks — you only need real credentials for E2E tests and actual AIRS operations.
 
+## Register `airs` command
+
+To make the `airs` binary available globally from your source checkout:
+
+```bash
+pnpm run build
+pnpm link --global
+airs --version   # 1.0.1
+```
+
+After making code changes, re-run `pnpm run build` for the linked `airs` command to reflect them. `pnpm run dev` doesn't require a build step.
+
 ## Development Commands
 
 | Command | What it does |
 |---------|-------------|
-| `pnpm run dev` | Run CLI via tsx (any subcommand) |
+| `pnpm run dev` | Run CLI via tsx — no build needed (e.g. `pnpm run dev runtime scan ...`) |
 | `pnpm run build` | Compile TypeScript to `dist/` |
 | `pnpm test` | Run all tests |
 | `pnpm run test:watch` | Watch mode |
