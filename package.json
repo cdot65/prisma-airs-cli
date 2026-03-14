@@ -1,0 +1,67 @@
+{
+  "name": "@cdot65/prisma-airs-cli",
+  "packageManager": "pnpm@10.6.5",
+  "version": "1.0.0",
+  "description": "CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "airs": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "pnpm run build",
+    "dev": "tsx src/cli/index.ts",
+    "generate": "tsx src/cli/index.ts generate",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "docker:build": "docker build -t prisma-airs-cli:local .",
+    "docker:build:amd64": "docker buildx build --platform linux/amd64 --load -t prisma-airs-cli:local-amd64 .",
+    "docker:build:arm64": "docker buildx build --platform linux/arm64 --load -t prisma-airs-cli:local-arm64 .",
+    "docker:run": "docker run --rm -v ~/.prisma-airs:/root/.prisma-airs prisma-airs-cli:local",
+    "docker:push:arm64": "./scripts/docker-push-arm64.sh"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdot65/prisma-airs-cli.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/vertex-sdk": "^0.14.4",
+    "@cdot65/prisma-airs-sdk": "^0.6.3",
+    "@inquirer/prompts": "^8.3.0",
+    "@langchain/anthropic": "^1.3.21",
+    "@langchain/aws": "^1.3.0",
+    "@langchain/core": "^1.1.29",
+    "@langchain/google-genai": "^2.1.22",
+    "@langchain/google-vertexai": "^2.1.22",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "dotenv": "^17.3.1",
+    "nanoid": "^5.0.0",
+    "p-limit": "^6.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "msw": "^2.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

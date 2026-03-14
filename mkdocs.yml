@@ -1,0 +1,112 @@
+site_name: Prisma AIRS CLI
+site_url: https://cdot65.github.io/prisma-airs-cli/
+site_description: CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits
+repo_name: cdot65/prisma-airs-cli
+repo_url: https://github.com/cdot65/prisma-airs-cli
+
+theme:
+  name: material
+  logo: images/logo.svg
+  favicon: images/favicon.ico
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - css/custom.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.mark
+  - pymdownx.critic
+  - pymdownx.keys
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Configuration: getting-started/configuration.md
+      - Quick Start: getting-started/quick-start.md
+  - Capabilities:
+      - Runtime Security: features/runtime-security.md
+      - Guardrail Generation: features/guardrail-generation.md
+      - AI Red Teaming: features/red-team.md
+      - Model Security: features/model-security.md
+      - Profile Audits: features/profile-audits.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Core Loop: architecture/core-loop.md
+      - Memory System: features/memory-system.md
+      - Design Decisions: architecture/design-decisions.md
+  - LLM Providers:
+      - Overview: providers/overview.md
+      - SaaS APIs: providers/saas-apis.md
+      - Vertex AI: providers/vertex-ai.md
+      - AWS Bedrock: providers/bedrock.md
+      - Troubleshooting: providers/troubleshooting.md
+  - Reference:
+      - CLI Commands: reference/cli-commands.md
+      - Configuration Options: reference/configuration.md
+      - Environment Variables: reference/environment-variables.md
+      - AIRS Constraints: reference/airs-constraints.md
+      - Metrics & Evaluation: features/metrics.md
+      - Topic Constraints: features/topic-constraints.md
+      - Resumable Runs: features/resumable-runs.md
+  - Guides:
+      - Guardrail to Red Team: examples/guardrail-to-redteam.md
+      - Managing Targets: examples/managing-targets.md
+      - Managing Prompt Sets: examples/managing-prompt-sets.md
+      - Running Scans: examples/running-scans.md
+      - Model Security: examples/model-security.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+      - Local Setup: development/local-setup.md
+  - About:
+      - Release Notes: about/release-notes.md
+      - License: about/license.md
