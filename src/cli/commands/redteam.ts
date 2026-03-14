@@ -52,73 +52,17 @@ export function registerRedteamCommand(program: Command): void {
   const redteam = program.command('redteam').description('AI Red Team scan operations');
 
   // -----------------------------------------------------------------------
-  // redteam scan — execute a red team scan
+  // redteam abort — abort a running scan
   // -----------------------------------------------------------------------
   redteam
-    .command('scan')
-    .description('Execute a red team scan against a target')
-    .requiredOption('--target <uuid>', 'Target UUID')
-    .requiredOption('--name <name>', 'Scan name')
-    .option('--type <type>', 'Job type: STATIC, DYNAMIC, or CUSTOM', 'STATIC')
-    .option('--categories <json>', 'Category filter JSON (STATIC scans)')
-    .option('--prompt-sets <uuids>', 'Comma-separated prompt set UUIDs (CUSTOM scans)')
-    .option('--no-wait', 'Submit scan without waiting for completion')
-    .action(async (opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-
-        let categories: Record<string, unknown> | undefined;
-        if (opts.categories) {
-          categories = JSON.parse(opts.categories);
-        }
-
-        const customPromptSets = opts.promptSets
-          ? (opts.promptSets as string).split(',').map((s: string) => s.trim())
-          : undefined;
-
-        console.log(`  Creating ${opts.type} scan "${opts.name}"...`);
-        const job = await service.createScan({
-          name: opts.name,
-          targetUuid: opts.target,
-          jobType: opts.type,
-          categories,
-          customPromptSets,
-        });
-
-        renderScanStatus(job);
-
-        if (opts.wait !== false) {
-          console.log('  Waiting for completion...\n');
-          const completed = await service.waitForCompletion(job.uuid, (progress) =>
-            renderScanProgress(progress),
-          );
-          console.log('\n');
-          renderScanStatus(completed);
-          console.log(`  Job ID: ${completed.uuid}`);
-          console.log('  Run `airs redteam report <jobId>` to view results.\n');
-        } else {
-          console.log(`  Job ID: ${job.uuid}`);
-          console.log('  Run `airs redteam status <jobId>` to check progress.\n');
-        }
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // -----------------------------------------------------------------------
-  // redteam status — check scan status
-  // -----------------------------------------------------------------------
-  redteam
-    .command('status <jobId>')
-    .description('Check scan status')
+    .command('abort <jobId>')
+    .description('Abort a running scan')
     .action(async (jobId: string) => {
       try {
         renderRedteamHeader();
         const service = await createService();
-        const job = await service.getScan(jobId);
-        renderScanStatus(job);
+        await service.abortScan(jobId);
+        console.log(`  Scan ${jobId} aborted.\n`);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -126,43 +70,17 @@ export function registerRedteamCommand(program: Command): void {
     });
 
   // -----------------------------------------------------------------------
-  // redteam report — view scan report
+  // redteam categories — list attack categories
   // -----------------------------------------------------------------------
   redteam
-    .command('report <jobId>')
-    .description('View scan report')
-    .option('--attacks', 'Include attack list', false)
-    .option('--severity <level>', 'Filter attacks by severity')
-    .option('--limit <n>', 'Max attacks to show', '20')
-    .action(async (jobId: string, opts) => {
+    .command('categories')
+    .description('List available attack categories')
+    .action(async () => {
       try {
         renderRedteamHeader();
         const service = await createService();
-        const job = await service.getScan(jobId);
-        renderScanStatus(job);
-
-        if (job.jobType === 'CUSTOM') {
-          const report = await service.getCustomReport(jobId);
-          renderCustomReport(report);
-        } else {
-          const report = await service.getStaticReport(jobId);
-          renderStaticReport(report);
-        }
-
-        if (opts.attacks) {
-          if (job.jobType === 'CUSTOM') {
-            const attacks = await service.listCustomAttacks(jobId, {
-              limit: Number.parseInt(opts.limit, 10),
-            });
-            renderCustomAttackList(attacks);
-          } else {
-            const attacks = await service.listAttacks(jobId, {
-              severity: opts.severity,
-              limit: Number.parseInt(opts.limit, 10),
-            });
-            renderAttackList(attacks);
-          }
-        }
+        const categories = await service.getCategories();
+        renderCategories(categories);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -190,171 +108,6 @@ export function registerRedteamCommand(program: Command): void {
           limit: Number.parseInt(opts.limit, 10),
         });
         renderScanList(scans);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // -----------------------------------------------------------------------
-  // redteam targets — target CRUD subcommands
-  // -----------------------------------------------------------------------
-  const targets = redteam.command('targets').description('Manage red team targets');
-
-  targets
-    .command('list')
-    .description('List configured red team targets')
-    .action(async () => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const list = await service.listTargets();
-        renderTargetList(list);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('get <uuid>')
-    .description('Get target details')
-    .action(async (uuid: string) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const target = await service.getTarget(uuid);
-        renderTargetDetail(target);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('create')
-    .description('Create a new red team target')
-    .requiredOption('--config <path>', 'JSON file with target configuration')
-    .option('--validate', 'Validate target connection before saving')
-    .action(async (opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const target = await service.createTarget(
-          config,
-          opts.validate ? { validate: true } : undefined,
-        );
-        console.log(`  Target created: ${target.uuid}\n`);
-        renderTargetDetail(target);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('update <uuid>')
-    .description('Update a red team target')
-    .requiredOption('--config <path>', 'JSON file with target updates')
-    .option('--validate', 'Validate target connection before saving')
-    .action(async (uuid: string, opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const target = await service.updateTarget(
-          uuid,
-          config,
-          opts.validate ? { validate: true } : undefined,
-        );
-        console.log(`  Target updated: ${target.uuid}\n`);
-        renderTargetDetail(target);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('delete <uuid>')
-    .description('Delete a red team target')
-    .action(async (uuid: string) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        await service.deleteTarget(uuid);
-        console.log(`  Target ${uuid} deleted.\n`);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('probe')
-    .description('Test target connection without saving')
-    .requiredOption('--config <path>', 'JSON file with connection params')
-    .action(async (opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const result = await service.probeTarget(config);
-        console.log('  Probe result:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('profile <uuid>')
-    .description('View target profile')
-    .action(async (uuid: string) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const profile = await service.getTargetProfile(uuid);
-        console.log('  Target Profile:');
-        console.log(`    ${JSON.stringify(profile, null, 2)}\n`);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  targets
-    .command('update-profile <uuid>')
-    .description('Update target profile')
-    .requiredOption('--config <path>', 'JSON file with profile updates')
-    .action(async (uuid: string, opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const result = await service.updateTargetProfile(uuid, config);
-        console.log('  Profile updated:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // -----------------------------------------------------------------------
-  // redteam categories — list attack categories
-  // -----------------------------------------------------------------------
-  redteam
-    .command('categories')
-    .description('List available attack categories')
-    .action(async () => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const categories = await service.getCategories();
-        renderCategories(categories);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -647,17 +400,264 @@ export function registerRedteamCommand(program: Command): void {
     });
 
   // -----------------------------------------------------------------------
-  // redteam abort — abort a running scan
+  // redteam report — view scan report
   // -----------------------------------------------------------------------
   redteam
-    .command('abort <jobId>')
-    .description('Abort a running scan')
+    .command('report <jobId>')
+    .description('View scan report')
+    .option('--attacks', 'Include attack list', false)
+    .option('--severity <level>', 'Filter attacks by severity')
+    .option('--limit <n>', 'Max attacks to show', '20')
+    .action(async (jobId: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const job = await service.getScan(jobId);
+        renderScanStatus(job);
+
+        if (job.jobType === 'CUSTOM') {
+          const report = await service.getCustomReport(jobId);
+          renderCustomReport(report);
+        } else {
+          const report = await service.getStaticReport(jobId);
+          renderStaticReport(report);
+        }
+
+        if (opts.attacks) {
+          if (job.jobType === 'CUSTOM') {
+            const attacks = await service.listCustomAttacks(jobId, {
+              limit: Number.parseInt(opts.limit, 10),
+            });
+            renderCustomAttackList(attacks);
+          } else {
+            const attacks = await service.listAttacks(jobId, {
+              severity: opts.severity,
+              limit: Number.parseInt(opts.limit, 10),
+            });
+            renderAttackList(attacks);
+          }
+        }
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam scan — execute a red team scan
+  // -----------------------------------------------------------------------
+  redteam
+    .command('scan')
+    .description('Execute a red team scan against a target')
+    .requiredOption('--target <uuid>', 'Target UUID')
+    .requiredOption('--name <name>', 'Scan name')
+    .option('--type <type>', 'Job type: STATIC, DYNAMIC, or CUSTOM', 'STATIC')
+    .option('--categories <json>', 'Category filter JSON (STATIC scans)')
+    .option('--prompt-sets <uuids>', 'Comma-separated prompt set UUIDs (CUSTOM scans)')
+    .option('--no-wait', 'Submit scan without waiting for completion')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+
+        let categories: Record<string, unknown> | undefined;
+        if (opts.categories) {
+          categories = JSON.parse(opts.categories);
+        }
+
+        const customPromptSets = opts.promptSets
+          ? (opts.promptSets as string).split(',').map((s: string) => s.trim())
+          : undefined;
+
+        console.log(`  Creating ${opts.type} scan "${opts.name}"...`);
+        const job = await service.createScan({
+          name: opts.name,
+          targetUuid: opts.target,
+          jobType: opts.type,
+          categories,
+          customPromptSets,
+        });
+
+        renderScanStatus(job);
+
+        if (opts.wait !== false) {
+          console.log('  Waiting for completion...\n');
+          const completed = await service.waitForCompletion(job.uuid, (progress) =>
+            renderScanProgress(progress),
+          );
+          console.log('\n');
+          renderScanStatus(completed);
+          console.log(`  Job ID: ${completed.uuid}`);
+          console.log('  Run `airs redteam report <jobId>` to view results.\n');
+        } else {
+          console.log(`  Job ID: ${job.uuid}`);
+          console.log('  Run `airs redteam status <jobId>` to check progress.\n');
+        }
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam status — check scan status
+  // -----------------------------------------------------------------------
+  redteam
+    .command('status <jobId>')
+    .description('Check scan status')
     .action(async (jobId: string) => {
       try {
         renderRedteamHeader();
         const service = await createService();
-        await service.abortScan(jobId);
-        console.log(`  Scan ${jobId} aborted.\n`);
+        const job = await service.getScan(jobId);
+        renderScanStatus(job);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam targets — target CRUD subcommands
+  // -----------------------------------------------------------------------
+  const targets = redteam.command('targets').description('Manage red team targets');
+
+  targets
+    .command('list')
+    .description('List configured red team targets')
+    .action(async () => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const list = await service.listTargets();
+        renderTargetList(list);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('get <uuid>')
+    .description('Get target details')
+    .action(async (uuid: string) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const target = await service.getTarget(uuid);
+        renderTargetDetail(target);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('create')
+    .description('Create a new red team target')
+    .requiredOption('--config <path>', 'JSON file with target configuration')
+    .option('--validate', 'Validate target connection before saving')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const target = await service.createTarget(
+          config,
+          opts.validate ? { validate: true } : undefined,
+        );
+        console.log(`  Target created: ${target.uuid}\n`);
+        renderTargetDetail(target);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('update <uuid>')
+    .description('Update a red team target')
+    .requiredOption('--config <path>', 'JSON file with target updates')
+    .option('--validate', 'Validate target connection before saving')
+    .action(async (uuid: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const target = await service.updateTarget(
+          uuid,
+          config,
+          opts.validate ? { validate: true } : undefined,
+        );
+        console.log(`  Target updated: ${target.uuid}\n`);
+        renderTargetDetail(target);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('delete <uuid>')
+    .description('Delete a red team target')
+    .action(async (uuid: string) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        await service.deleteTarget(uuid);
+        console.log(`  Target ${uuid} deleted.\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('probe')
+    .description('Test target connection without saving')
+    .requiredOption('--config <path>', 'JSON file with connection params')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const result = await service.probeTarget(config);
+        console.log('  Probe result:');
+        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('profile <uuid>')
+    .description('View target profile')
+    .action(async (uuid: string) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const profile = await service.getTargetProfile(uuid);
+        console.log('  Target Profile:');
+        console.log(`    ${JSON.stringify(profile, null, 2)}\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('update-profile <uuid>')
+    .description('Update target profile')
+    .requiredOption('--config <path>', 'JSON file with profile updates')
+    .action(async (uuid: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const result = await service.updateTargetProfile(uuid, config);
+        console.log('  Profile updated:');
+        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

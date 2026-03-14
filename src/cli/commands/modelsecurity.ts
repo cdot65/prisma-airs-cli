@@ -152,41 +152,111 @@ export function registerModelSecurityCommand(program: Command): void {
     });
 
   // -----------------------------------------------------------------------
-  // model-security rules — browse security rules (read-only)
+  // model-security labels — scan label management
   // -----------------------------------------------------------------------
-  const rules = ms.command('rules').description('Browse security rules');
+  const labels = ms.command('labels').description('Manage scan labels');
 
-  rules
-    .command('list')
-    .description('List available security rules')
-    .option('--source-type <type>', 'Filter by source type')
-    .option('--search <query>', 'Search by name or UUID')
-    .option('--limit <n>', 'Max results', '20')
-    .action(async (opts) => {
+  labels
+    .command('add <scanUuid>')
+    .description('Add labels to a scan')
+    .requiredOption('--labels <json>', 'JSON array of {key, value} labels')
+    .action(async (scanUuid: string, opts) => {
       try {
         renderModelSecurityHeader();
         const service = await createService();
-        const result = await service.listRules({
-          sourceType: opts.sourceType,
-          searchQuery: opts.search,
-          limit: Number.parseInt(opts.limit, 10),
-        });
-        renderRuleList(result.rules);
+        const parsed = JSON.parse(opts.labels);
+        await service.addLabels(scanUuid, parsed);
+        console.log('  Labels added.\n');
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
       }
     });
 
-  rules
-    .command('get <uuid>')
-    .description('Get security rule details')
-    .action(async (uuid: string) => {
+  labels
+    .command('set <scanUuid>')
+    .description('Replace all labels on a scan')
+    .requiredOption('--labels <json>', 'JSON array of {key, value} labels')
+    .action(async (scanUuid: string, opts) => {
       try {
         renderModelSecurityHeader();
         const service = await createService();
-        const rule = await service.getRule(uuid);
-        renderRuleDetail(rule);
+        const parsed = JSON.parse(opts.labels);
+        await service.setLabels(scanUuid, parsed);
+        console.log('  Labels set.\n');
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  labels
+    .command('delete <scanUuid>')
+    .description('Delete labels from a scan by key')
+    .requiredOption('--keys <keys>', 'Comma-separated label keys to delete')
+    .action(async (scanUuid: string, opts) => {
+      try {
+        renderModelSecurityHeader();
+        const service = await createService();
+        const keys = (opts.keys as string).split(',').map((k: string) => k.trim());
+        await service.deleteLabels(scanUuid, keys);
+        console.log('  Labels deleted.\n');
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  labels
+    .command('keys')
+    .description('List available label keys')
+    .option('--limit <n>', 'Max results', '20')
+    .action(async (opts) => {
+      try {
+        renderModelSecurityHeader();
+        const service = await createService();
+        const result = await service.getLabelKeys({
+          limit: Number.parseInt(opts.limit, 10),
+        });
+        renderLabelKeys(result.keys);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  labels
+    .command('values <key>')
+    .description('List values for a label key')
+    .option('--limit <n>', 'Max results', '20')
+    .action(async (key: string, opts) => {
+      try {
+        renderModelSecurityHeader();
+        const service = await createService();
+        const result = await service.getLabelValues(key, {
+          limit: Number.parseInt(opts.limit, 10),
+        });
+        renderLabelValues(key, result.values);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // model-security pypi-auth — PyPI authentication for Google Artifact Registry
+  // -----------------------------------------------------------------------
+  ms.command('pypi-auth')
+    .description('Get PyPI authentication URL for Google Artifact Registry')
+    .action(async () => {
+      try {
+        renderModelSecurityHeader();
+        const service = await createService();
+        const auth = await service.getPyPIAuth();
+        console.log(chalk.bold('\n  PyPI Authentication:\n'));
+        console.log(`    URL:     ${auth.url}`);
+        console.log(`    Expires: ${chalk.dim(auth.expiresAt)}`);
+        console.log();
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -250,6 +320,48 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         console.log(`  Rule instance updated: ${instance.uuid}\n`);
         renderRuleInstanceDetail(instance);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // model-security rules — browse security rules (read-only)
+  // -----------------------------------------------------------------------
+  const rules = ms.command('rules').description('Browse security rules');
+
+  rules
+    .command('list')
+    .description('List available security rules')
+    .option('--source-type <type>', 'Filter by source type')
+    .option('--search <query>', 'Search by name or UUID')
+    .option('--limit <n>', 'Max results', '20')
+    .action(async (opts) => {
+      try {
+        renderModelSecurityHeader();
+        const service = await createService();
+        const result = await service.listRules({
+          sourceType: opts.sourceType,
+          searchQuery: opts.search,
+          limit: Number.parseInt(opts.limit, 10),
+        });
+        renderRuleList(result.rules);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  rules
+    .command('get <uuid>')
+    .description('Get security rule details')
+    .action(async (uuid: string) => {
+      try {
+        renderModelSecurityHeader();
+        const service = await createService();
+        const rule = await service.getRule(uuid);
+        renderRuleDetail(rule);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -402,118 +514,6 @@ export function registerModelSecurityCommand(program: Command): void {
           limit: Number.parseInt(opts.limit, 10),
         });
         renderFileList(result.files);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // -----------------------------------------------------------------------
-  // model-security labels — scan label management
-  // -----------------------------------------------------------------------
-  const labels = ms.command('labels').description('Manage scan labels');
-
-  labels
-    .command('add <scanUuid>')
-    .description('Add labels to a scan')
-    .requiredOption('--labels <json>', 'JSON array of {key, value} labels')
-    .action(async (scanUuid: string, opts) => {
-      try {
-        renderModelSecurityHeader();
-        const service = await createService();
-        const parsed = JSON.parse(opts.labels);
-        await service.addLabels(scanUuid, parsed);
-        console.log('  Labels added.\n');
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  labels
-    .command('set <scanUuid>')
-    .description('Replace all labels on a scan')
-    .requiredOption('--labels <json>', 'JSON array of {key, value} labels')
-    .action(async (scanUuid: string, opts) => {
-      try {
-        renderModelSecurityHeader();
-        const service = await createService();
-        const parsed = JSON.parse(opts.labels);
-        await service.setLabels(scanUuid, parsed);
-        console.log('  Labels set.\n');
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  labels
-    .command('delete <scanUuid>')
-    .description('Delete labels from a scan by key')
-    .requiredOption('--keys <keys>', 'Comma-separated label keys to delete')
-    .action(async (scanUuid: string, opts) => {
-      try {
-        renderModelSecurityHeader();
-        const service = await createService();
-        const keys = (opts.keys as string).split(',').map((k: string) => k.trim());
-        await service.deleteLabels(scanUuid, keys);
-        console.log('  Labels deleted.\n');
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  labels
-    .command('keys')
-    .description('List available label keys')
-    .option('--limit <n>', 'Max results', '20')
-    .action(async (opts) => {
-      try {
-        renderModelSecurityHeader();
-        const service = await createService();
-        const result = await service.getLabelKeys({
-          limit: Number.parseInt(opts.limit, 10),
-        });
-        renderLabelKeys(result.keys);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  labels
-    .command('values <key>')
-    .description('List values for a label key')
-    .option('--limit <n>', 'Max results', '20')
-    .action(async (key: string, opts) => {
-      try {
-        renderModelSecurityHeader();
-        const service = await createService();
-        const result = await service.getLabelValues(key, {
-          limit: Number.parseInt(opts.limit, 10),
-        });
-        renderLabelValues(key, result.values);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // -----------------------------------------------------------------------
-  // model-security pypi-auth — PyPI authentication for Google Artifact Registry
-  // -----------------------------------------------------------------------
-  ms.command('pypi-auth')
-    .description('Get PyPI authentication URL for Google Artifact Registry')
-    .action(async () => {
-      try {
-        renderModelSecurityHeader();
-        const service = await createService();
-        const auth = await service.getPyPIAuth();
-        console.log(chalk.bold('\n  PyPI Authentication:\n'));
-        console.log(`    URL:     ${auth.url}`);
-        console.log(`    Expires: ${chalk.dim(auth.expiresAt)}`);
-        console.log();
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
