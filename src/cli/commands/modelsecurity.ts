@@ -1,3 +1,4 @@
+import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import chalk from 'chalk';
 import type { Command } from 'commander';
@@ -22,6 +23,21 @@ import {
   renderViolationDetail,
   renderViolationList,
 } from '../renderer/index.js';
+
+const VALID_EXTRAS = ['all', 'aws', 'gcp', 'azure', 'artifactory', 'gitlab'] as const;
+
+/** Detect whether uv or pip is available on PATH. Prefers uv. */
+function detectInstaller(): 'uv' | 'pip' | null {
+  for (const bin of ['uv', 'pip'] as const) {
+    try {
+      execFileSync(bin, ['--version'], { stdio: 'ignore' });
+      return bin;
+    } catch {
+      // not found
+    }
+  }
+  return null;
+}
 
 /** Create an SdkModelSecurityService from config. */
 async function createService() {
@@ -145,6 +161,97 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         await service.deleteGroup(uuid);
         console.log(`  Group ${uuid} deleted.\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // model-security install — install model-security-client Python package
+  // -----------------------------------------------------------------------
+  ms.command('install')
+    .description('Install the model-security-client Python package from AIRS PyPI')
+    .option('--installer <type>', 'Package installer: pip or uv (auto-detected if omitted)')
+    .option(
+      '--extras <type>',
+      'Source type extras to install (all, aws, gcp, azure, artifactory, gitlab)',
+      'all',
+    )
+    .option('--dry-run', 'Print the install command without executing')
+    .action(async (opts) => {
+      try {
+        renderModelSecurityHeader();
+
+        // Validate extras
+        const extras = opts.extras as string;
+        if (!VALID_EXTRAS.includes(extras as (typeof VALID_EXTRAS)[number])) {
+          renderError(`Invalid extras "${extras}". Valid: ${VALID_EXTRAS.join(', ')}`);
+          process.exit(1);
+        }
+
+        // Resolve installer
+        let installer: 'uv' | 'pip';
+        if (opts.installer) {
+          if (opts.installer !== 'pip' && opts.installer !== 'uv') {
+            renderError('--installer must be "pip" or "uv"');
+            process.exit(1);
+          }
+          try {
+            execFileSync(opts.installer, ['--version'], { stdio: 'ignore' });
+          } catch {
+            renderError(`${opts.installer} not found on PATH`);
+            process.exit(1);
+          }
+          installer = opts.installer;
+        } else {
+          const detected = detectInstaller();
+          if (!detected) {
+            renderError('Neither uv nor pip found on PATH. Install one first.');
+            process.exit(1);
+          }
+          installer = detected;
+        }
+
+        // Fetch PyPI auth URL
+        const service = await createService();
+        const auth = await service.getPyPIAuth();
+        const pkg = `model-security-client[${extras}]`;
+
+        // Build command
+        const args =
+          installer === 'uv'
+            ? ['pip', 'install', pkg, '--index-url', auth.url]
+            : ['install', pkg, '--extra-index-url', auth.url];
+
+        if (opts.dryRun) {
+          console.log(`\n  ${installer} ${args.join(' ')}\n`);
+          return;
+        }
+
+        console.log(
+          chalk.dim(
+            `\n  Running: ${installer} ${args.map((a) => (a.includes('[') ? `"${a}"` : a)).join(' ')}\n`,
+          ),
+        );
+
+        const child: ChildProcess = spawn(installer, args, { stdio: 'inherit' });
+
+        child.on('error', (err) => {
+          renderError(`Failed to start ${installer}: ${err.message}`);
+          process.exit(1);
+        });
+
+        await new Promise<void>((resolve) => {
+          child.on('close', (code) => {
+            if (code !== 0) {
+              renderError(`Install failed with exit code ${code}`);
+              process.exit(1);
+            }
+            console.log(chalk.green('\n  model-security-client installed successfully.\n'));
+            resolve();
+          });
+        });
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
