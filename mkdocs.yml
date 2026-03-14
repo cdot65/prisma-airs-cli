@@ -90,6 +90,7 @@ nav:
       - AWS Bedrock: providers/bedrock.md
       - Troubleshooting: providers/troubleshooting.md
   - Reference:
+      - AI Agent Instructions: reference/agent-instructions.md
       - CLI Commands: reference/cli-commands.md
       - Configuration Options: reference/configuration.md
       - Environment Variables: reference/environment-variables.md
