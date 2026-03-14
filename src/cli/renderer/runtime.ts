@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { formatOutput, type OutputFormat } from './common.js';
 
 /** Render polling progress inline. */
 export function renderScanProgress(job: {
@@ -85,11 +86,30 @@ export function renderProfileList(
     active?: boolean;
     lastModifiedTs?: string;
   }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (profiles.length === 0) {
     console.log(chalk.dim('  No profiles found.\n'));
     return;
   }
+
+  if (format !== 'pretty') {
+    const rows = profiles.map((p) => ({
+      id: p.profileId,
+      name: p.profileName,
+      status: p.active ? 'active' : 'inactive',
+      revision: p.revision ?? '',
+    }));
+    const columns = [
+      { key: 'id', label: 'ID' },
+      { key: 'name', label: 'Name' },
+      { key: 'status', label: 'Status' },
+      { key: 'revision', label: 'Revision' },
+    ];
+    console.log(formatOutput(rows, columns, format));
+    return;
+  }
+
   console.log(chalk.bold('\n  Security Profiles:\n'));
   for (const p of profiles) {
     console.log(`  ${chalk.dim(p.profileId)}`);
@@ -135,9 +155,31 @@ export function renderTopicList(
     description?: string;
     revision?: number;
   }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (topics.length === 0) {
     console.log(chalk.dim('  No topics found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = topics.map((t) => ({
+      id: t.topic_id ?? '',
+      name: t.topic_name,
+      revision: t.revision ?? '',
+      description: t.description ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'revision', label: 'Revision' },
+          { key: 'description', label: 'Description' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Custom Topics:\n'));
@@ -181,9 +223,31 @@ export function renderTopicDetail(topic: {
 /** Render API key list. */
 export function renderApiKeyList(
   keys: Array<{ id: string; name: string; createdAt?: string; expiresAt?: string }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (keys.length === 0) {
     console.log(chalk.dim('  No API keys found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = keys.map((k) => ({
+      id: k.id,
+      name: k.name,
+      createdAt: k.createdAt ?? '',
+      expiresAt: k.expiresAt ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'createdAt', label: 'Created' },
+          { key: 'expiresAt', label: 'Expires' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  API Keys:\n'));
@@ -213,9 +277,29 @@ export function renderApiKeyDetail(key: {
 /** Render customer app list. */
 export function renderCustomerAppList(
   apps: Array<{ id?: string; name: string; description?: string }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (apps.length === 0) {
     console.log(chalk.dim('  No customer apps found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = apps.map((a) => ({
+      id: a.id ?? '',
+      name: a.name,
+      description: a.description ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'description', label: 'Description' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Customer Apps:\n'));
@@ -245,9 +329,29 @@ export function renderCustomerAppDetail(app: {
 /** Render deployment profile list. */
 export function renderDeploymentProfileList(
   profiles: Array<{ raw: Record<string, unknown> }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (profiles.length === 0) {
     console.log(chalk.dim('  No deployment profiles found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = profiles.map((p) => ({
+      name: (p.raw.dp_name ?? p.raw.profile_name ?? p.raw.name ?? '') as string,
+      status: (p.raw.status ?? '') as string,
+      authCode: (p.raw.auth_code ?? '') as string,
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+          { key: 'authCode', label: 'Auth Code' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Deployment Profiles:\n'));
@@ -264,9 +368,29 @@ export function renderDeploymentProfileList(
 }
 
 /** Render DLP profile list. */
-export function renderDlpProfileList(profiles: Array<{ raw: Record<string, unknown> }>): void {
+export function renderDlpProfileList(
+  profiles: Array<{ raw: Record<string, unknown> }>,
+  format: OutputFormat = 'pretty',
+): void {
   if (profiles.length === 0) {
     console.log(chalk.dim('  No DLP profiles found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = profiles.map((p) => ({
+      id: (p.raw.uuid ?? '') as string,
+      name: (p.raw.name ?? p.raw.profile_name ?? '') as string,
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  DLP Profiles:\n'));
@@ -280,9 +404,36 @@ export function renderDlpProfileList(profiles: Array<{ raw: Record<string, unkno
 }
 
 /** Render scan log results. */
-export function renderScanLogList(results: Record<string, unknown>[], pageToken?: string): void {
+export function renderScanLogList(
+  results: Record<string, unknown>[],
+  pageToken?: string,
+  format: OutputFormat = 'pretty',
+): void {
   if (results.length === 0) {
     console.log(chalk.dim('  No scan logs found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = results.map((r) => ({
+      scanId: (r.scan_id ?? '') as string,
+      timestamp: (r.received_ts ?? r.timestamp ?? '') as string,
+      action: (r.action ?? r.verdict ?? '') as string,
+      profile: (r.profile_name ?? '') as string,
+      app: (r.app_name ?? '') as string,
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'scanId', label: 'Scan ID' },
+          { key: 'timestamp', label: 'Timestamp' },
+          { key: 'action', label: 'Action' },
+          { key: 'profile', label: 'Profile' },
+          { key: 'app', label: 'App' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold(`\n  Scan Logs (${results.length} results):\n`));

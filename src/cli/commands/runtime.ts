@@ -9,6 +9,8 @@ import { loadConfig } from '../../config/loader.js';
 import { loadBulkScanState, saveBulkScanState } from '../bulk-scan-state.js';
 import { parseInputFile } from '../parse-input.js';
 import {
+  OUTPUT_FORMATS,
+  type OutputFormat,
   renderApiKeyDetail,
   renderApiKeyList,
   renderCustomerAppDetail,
@@ -74,14 +76,16 @@ export function registerRuntimeCommand(program: Command): void {
     .command('list')
     .description('List API keys')
     .option('--limit <n>', 'Max results', '100')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const result = await service.listApiKeys({
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderApiKeyList(result.apiKeys);
+        renderApiKeyList(result.apiKeys, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -238,14 +242,16 @@ export function registerRuntimeCommand(program: Command): void {
     .command('list')
     .description('List customer apps')
     .option('--limit <n>', 'Max results', '100')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const result = await service.listCustomerApps({
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderCustomerAppList(result.apps);
+        renderCustomerAppList(result.apps, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -312,14 +318,16 @@ export function registerRuntimeCommand(program: Command): void {
     .command('list')
     .description('List deployment profiles')
     .option('--unactivated', 'Include unactivated profiles')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const profiles = await service.listDeploymentProfiles({
           unactivated: opts.unactivated,
         });
-        renderDeploymentProfileList(profiles);
+        renderDeploymentProfileList(profiles, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -334,12 +342,14 @@ export function registerRuntimeCommand(program: Command): void {
   dlpProfiles
     .command('list')
     .description('List DLP profiles')
-    .action(async () => {
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const profiles = await service.listDlpProfiles();
-        renderDlpProfileList(profiles);
+        renderDlpProfileList(profiles, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -356,16 +366,22 @@ export function registerRuntimeCommand(program: Command): void {
     .description('List security profiles')
     .option('--limit <n>', 'Max results', '100')
     .option('--offset <n>', 'Starting offset', '0')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (!OUTPUT_FORMATS.includes(fmt)) {
+          renderError(`Invalid output format "${fmt}". Valid: ${OUTPUT_FORMATS.join(', ')}`);
+          process.exit(1);
+        }
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const result = await service.listProfiles({
           limit: Number.parseInt(opts.limit, 10),
           offset: Number.parseInt(opts.offset, 10),
         });
-        renderProfileList(result.profiles);
-        if (result.nextOffset != null) {
+        renderProfileList(result.profiles, fmt);
+        if (fmt === 'pretty' && result.nextOffset != null) {
           console.log(chalk.dim(`  Next offset: ${result.nextOffset}\n`));
         }
       } catch (err) {
@@ -536,9 +552,11 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--filter <filter>', 'Filter: all, benign, threat', 'all')
     .option('--page <n>', 'Page number', '1')
     .option('--page-size <n>', 'Page size', '50')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const result = await service.queryScanLogs({
           timeInterval: Number.parseInt(opts.interval, 10),
@@ -547,7 +565,7 @@ export function registerRuntimeCommand(program: Command): void {
           pageSize: Number.parseInt(opts.pageSize, 10),
           filter: opts.filter,
         });
-        renderScanLogList(result.results, result.pageToken);
+        renderScanLogList(result.results, result.pageToken, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -566,17 +584,19 @@ export function registerRuntimeCommand(program: Command): void {
     .description('List custom topics')
     .option('--limit <n>', 'Max results', '100')
     .option('--offset <n>', 'Starting offset', '0')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const allTopics = await service.listTopics();
         // Client-side pagination since SDK returns all
         const offset = Number.parseInt(opts.offset, 10);
         const limit = Number.parseInt(opts.limit, 10);
         const page = allTopics.slice(offset, offset + limit);
-        renderTopicList(page);
-        if (offset + limit < allTopics.length) {
+        renderTopicList(page, fmt);
+        if (fmt === 'pretty' && offset + limit < allTopics.length) {
           console.log(chalk.dim(`  Showing ${page.length} of ${allTopics.length} topics\n`));
         }
       } catch (err) {

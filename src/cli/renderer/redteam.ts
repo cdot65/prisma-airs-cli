@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { formatOutput, type OutputFormat } from './common.js';
 
 /** Render the red team banner. */
 export function renderRedteamHeader(): void {
@@ -80,9 +81,35 @@ export function renderScanList(
     score?: number | null;
     createdAt?: string | null;
   }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (jobs.length === 0) {
     console.log(chalk.dim('  No scans found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = jobs.map((j) => ({
+      id: j.uuid,
+      name: j.name,
+      status: j.status,
+      type: j.jobType,
+      score: j.score ?? '',
+      createdAt: j.createdAt ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+          { key: 'type', label: 'Type' },
+          { key: 'score', label: 'Score' },
+          { key: 'createdAt', label: 'Created' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Recent Scans:\n'));
@@ -231,9 +258,31 @@ export function renderTargetList(
     targetType?: string;
     active: boolean;
   }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (targets.length === 0) {
     console.log(chalk.dim('  No targets found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = targets.map((t) => ({
+      id: t.uuid,
+      name: t.name,
+      status: t.active ? 'active' : 'inactive',
+      type: t.targetType ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+          { key: 'type', label: 'Type' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Targets:\n'));
@@ -276,9 +325,29 @@ export function renderCategories(
 /** Render prompt set list. */
 export function renderPromptSetList(
   promptSets: Array<{ uuid: string; name: string; active: boolean }>,
+  format: OutputFormat = 'pretty',
 ): void {
   if (promptSets.length === 0) {
     console.log(chalk.dim('  No prompt sets found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = promptSets.map((ps) => ({
+      id: ps.uuid,
+      name: ps.name,
+      status: ps.active ? 'active' : 'inactive',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+        ],
+        format,
+      ),
+    );
     return;
   }
   console.log(chalk.bold('\n  Prompt Sets:\n'));
@@ -409,9 +478,17 @@ export function renderPromptDetail(p: {
 }
 
 /** Render property names list. */
-export function renderPropertyNames(names: Array<{ name: string }>): void {
+export function renderPropertyNames(
+  names: Array<{ name: string }>,
+  format: OutputFormat = 'pretty',
+): void {
   if (names.length === 0) {
     console.log(chalk.dim('  No property names found.\n'));
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = names.map((n) => ({ name: n.name }));
+    console.log(formatOutput(rows, [{ key: 'name', label: 'Name' }], format));
     return;
   }
   console.log(chalk.bold('\n  Property Names:\n'));
