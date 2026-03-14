@@ -57,7 +57,6 @@ profile
 
 - **Profile updates create new revisions** with new UUIDs. Always reference profiles by **name**, never by ID.
 - **Topics can't be deleted** while referenced by any profile revision.
-- After deploying a topic, Prisma AIRS CLI waits `propagationDelayMs` (default: 10s) before scanning.
 
 !!! danger "Never reference profiles by UUID"
     Each profile update generates a new revision with a new UUID. Storing or referencing a profile by UUID will break on the next update. Use the profile **name** as the stable identifier.

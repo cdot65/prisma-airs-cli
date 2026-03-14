@@ -26,7 +26,6 @@ function fromEnv(): Record<string, unknown> {
     mgmtEndpoint: env.PANW_MGMT_ENDPOINT,
     mgmtTokenEndpoint: env.PANW_MGMT_TOKEN_ENDPOINT,
     scanConcurrency: env.SCAN_CONCURRENCY,
-    propagationDelayMs: env.PROPAGATION_DELAY_MS,
     accumulateTests: env.ACCUMULATE_TESTS,
     maxAccumulatedTests: env.MAX_ACCUMULATED_TESTS,
     dataDir: env.DATA_DIR,

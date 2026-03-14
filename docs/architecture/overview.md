@@ -43,11 +43,11 @@ graph LR
 
 | Domain | CLI Commands | Service Layer |
 |--------|-------------|---------------|
-| **Guardrail Generation** | `generate`, `resume`, `report`, `list` | Core loop + LLM + Scanner + Management |
+| **Guardrail Generation** | `runtime topics generate`, `runtime topics resume`, `runtime topics report`, `runtime topics runs` | Core loop + LLM + Scanner + Management |
 | **Runtime Security** | `runtime scan`, `runtime bulk-scan`, `runtime profiles`, `runtime topics`, `runtime api-keys`, `runtime customer-apps`, `runtime deployment-profiles`, `runtime dlp-profiles`, `runtime scan-logs` | `SdkRuntimeService` (sync + async scan) + `SdkManagementService` (config CRUD) |
 | **AI Red Teaming** | `redteam scan`, `redteam targets`, `redteam prompt-sets`, `redteam prompts`, `redteam properties` | `SdkRedTeamService` + `SdkPromptSetService` |
 | **Model Security** | `model-security groups`, `model-security rules`, `model-security scans`, `model-security labels` | `SdkModelSecurityService` |
-| **Profile Audits** | `audit` | Audit runner + Scanner + LLM |
+| **Profile Audits** | `runtime profiles audit` | Audit runner + Scanner + LLM |
 
 ## Guardrail Generation Data Flow
 
@@ -61,8 +61,7 @@ graph TD
     C -->|No| E[LLM: Improve Topic]
     D --> F[Deploy to AIRS]
     E --> F
-    F --> G[Wait for Propagation]
-    G --> H[LLM: Generate Tests]
+    F --> H[LLM: Generate Tests]
     H --> I[Scan Test Prompts]
     I --> J[Compute Metrics]
     J --> K[LLM: Analyze FP/FN]
@@ -71,9 +70,6 @@ graph TD
     L -->|Yes| M[Extract Learnings]
     M --> N[Save Run State]
 ```
-
-!!! info "Propagation delay"
-    After deploying a topic, Prisma AIRS CLI waits a configurable delay (default 10s) before scanning. AIRS needs this time to propagate changes.
 
 ## Runtime Security Data Flow
 
@@ -92,7 +88,7 @@ graph TD
 
 | Module | What it does |
 |--------|-------------|
-| **`cli/`** | Commander CLI with 8 command groups (`generate`, `resume`, `report`, `list`, `runtime`, `audit`, `redteam`, `model-security`), Inquirer prompts, and Chalk terminal output |
+| **`cli/`** | Commander CLI with 3 top-level command groups (`runtime`, `redteam`, `model-security`), Inquirer prompts, and Chalk terminal output |
 | **`config/`** | Zod schema with coercion and defaults; cascade loader merges CLI flags, env vars, config file, and defaults |
 | **`core/`** | AsyncGenerator loop that yields typed events, metric computation (TPR/TNR/F1), and AIRS constraint validation |
 | **`llm/`** | Factory for 6 LangChain providers, structured output with Zod schemas, and prompt templates for all 4 LLM calls |

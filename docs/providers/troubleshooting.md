@@ -102,8 +102,3 @@ All providers use `withStructuredOutput(ZodSchema)` with 3 automatic retries. If
 - The schema constraints may be too tight -- check AIRS constraints (100 char name, 250 char description)
 - `clampTopic()` handles post-LLM constraint enforcement, but extreme violations may still fail
 
-### Timeout issues
-
-!!! info "Propagation delay"
-
-    Prisma AIRS CLI waits `propagationDelayMs` (default: 10s) after creating/updating AIRS topics. This is not a provider issue -- AIRS needs time to propagate changes before scanning works correctly.

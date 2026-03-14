@@ -145,6 +145,4 @@ export type LoopEvent =
   | { type: 'topic:duplicate'; topic: CustomTopic; duplicateOfIteration: number }
   | { type: 'promptset:created'; promptSetId: string; promptSetName: string; promptCount: number }
   | { type: 'companion:generated'; topic: CustomTopic }
-  | { type: 'companion:created'; topicId: string; topic: CustomTopic }
-  | { type: 'probe:waiting'; attempt: number; maxAttempts: number }
-  | { type: 'probe:ready'; attempts: number };
+  | { type: 'companion:created'; topicId: string; topic: CustomTopic };

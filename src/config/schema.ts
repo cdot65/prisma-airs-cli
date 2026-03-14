@@ -42,7 +42,6 @@ export const ConfigSchema = z.object({
 
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),
-  propagationDelayMs: z.coerce.number().int().min(0).default(10000),
   accumulateTests: z.coerce.boolean().default(false),
   maxAccumulatedTests: z.coerce.number().int().min(1).optional(),
 

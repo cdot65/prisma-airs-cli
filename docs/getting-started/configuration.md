@@ -24,7 +24,6 @@ For settings you use across every run, create `~/.prisma-airs/config.json`:
 {
   "llmProvider": "claude-api",
   "scanConcurrency": 5,
-  "propagationDelayMs": 10000,
   "maxMemoryChars": 3000,
   "memoryEnabled": true
 }
@@ -53,7 +52,6 @@ These settings control how Prisma AIRS CLI interacts with AIRS and the memory sy
 | Env Var | Config Key | Default | What it does |
 |---------|-----------|---------|-------------|
 | `SCAN_CONCURRENCY` | `scanConcurrency` | `5` | Parallel scan requests per batch (1--20) |
-| `PROPAGATION_DELAY_MS` | `propagationDelayMs` | `10000` | Wait time after topic deploy, in ms |
 | `MAX_MEMORY_CHARS` | `maxMemoryChars` | `3000` | Character budget for memory injection (500--10000) |
 | `MEMORY_ENABLED` | `memoryEnabled` | `true` | Toggle cross-run learning on/off |
 | `ACCUMULATE_TESTS` | `accumulateTests` | `false` | Carry forward tests across iterations |
@@ -63,9 +61,6 @@ These settings control how Prisma AIRS CLI interacts with AIRS and the memory sy
 
 !!! tip "Concurrency vs. rate limits"
     Keep `scanConcurrency` at 5 or lower to avoid AIRS rate limiting. Increase only if your tenant has elevated quotas.
-
-!!! tip "Propagation delay"
-    AIRS needs time to propagate topic changes. The default 10 seconds works for most cases. Reduce for faster iteration during development; increase if you see stale scan results.
 
 ## Data Locations
 
