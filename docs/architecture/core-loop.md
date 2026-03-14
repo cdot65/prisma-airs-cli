@@ -14,8 +14,7 @@ flowchart TD
     Generate --> Clamp[clampTopic - enforce AIRS limits]
     Improve --> Clamp
     Clamp --> Deploy[Deploy via Management API]
-    Deploy --> Wait[Wait for Propagation - 10s default]
-    Wait --> TestGen[Generate Test Cases via LLM]
+    Deploy --> TestGen[Generate Test Cases via LLM]
     TestGen --> Scan[Batch Scan via Scanner API]
     Scan --> Metrics[Compute Metrics - TPR, TNR, Coverage, F1]
     Metrics --> Analyze[Analyze FP/FN Patterns via LLM]

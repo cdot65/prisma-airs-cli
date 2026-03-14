@@ -48,7 +48,6 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 | Variable | Default | Range | What it controls |
 |----------|---------|-------|-----------------|
 | `SCAN_CONCURRENCY` | `5` | 1--20 | Parallel scan requests per batch |
-| `PROPAGATION_DELAY_MS` | `10000` | >=0 | Wait time after topic deploy (ms) |
 | `MAX_MEMORY_CHARS` | `3000` | 500--10000 | Memory injection character budget |
 | `MEMORY_ENABLED` | `true` | -- | Toggle memory system on/off |
 | `ACCUMULATE_TESTS` | `false` | -- | Carry forward test prompts across iterations |

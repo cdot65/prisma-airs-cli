@@ -91,8 +91,6 @@ describe('Loop Integration', () => {
       llm,
       management,
       scanner,
-      propagationDelayMs: 0,
-      probeIntervalMs: 0,
     };
 
     const input: UserInput = {
@@ -139,8 +137,6 @@ describe('Loop Integration', () => {
       llm,
       management: createMockManagementService(),
       scanner,
-      propagationDelayMs: 0,
-      probeIntervalMs: 0,
     };
 
     const input: UserInput = {
@@ -177,8 +173,6 @@ describe('Loop Integration', () => {
       llm,
       management: createMockManagementService(),
       scanner,
-      propagationDelayMs: 0,
-      probeIntervalMs: 0,
     };
     const input: UserInput = {
       topicDescription: 'Allow only weapons discussions',
@@ -250,8 +244,6 @@ describe('Loop Integration', () => {
       llm,
       management: createMockManagementService(),
       scanner: createMockScanService([]),
-      propagationDelayMs: 0,
-      probeIntervalMs: 0,
     };
 
     const input: UserInput = {
@@ -287,7 +279,6 @@ describe('Loop Integration', () => {
       llm,
       management: createMockManagementService(),
       scanner,
-      propagationDelayMs: 0,
       promptSets,
     };
 

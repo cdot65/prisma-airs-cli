@@ -52,8 +52,8 @@ Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `s
 
 ```
 src/
-├── cli/                   # CLI entry, 3 top-level groups + deprecated aliases, prompts, renderer
-│   ├── index.ts           # Commander program — registers runtime/redteam/model-security + deprecated top-level aliases
+├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
+│   ├── index.ts           # Commander program — registers runtime/redteam/model-security
 │   ├── commands/
 │   │   ├── generate.ts    # Main loop orchestration, wires all services (registered under runtime topics)
 │   │   ├── resume.ts      # Resume paused/failed run from disk (registered under runtime topics)
@@ -138,10 +138,9 @@ tests/
 
 ### Core Loop (`src/core/loop.ts`)
 - `runLoop()` async generator yields typed `LoopEvent` discriminated unions
-- Events yielded by `runLoop()`: `iteration:start`, `generate:complete`, `companion:generated` (block-intent iter 1), `companion:created` (block-intent iter 1), `apply:complete`, `probe:waiting` (iter 1 only, topic not yet active), `probe:ready` (iter 1 only, topic confirmed active), `tests:composed` (iter 2+, always-on composition), `tests:accumulated` (if accumulation enabled, iter 2+), `test:progress`, `evaluate:complete`, `analyze:complete`, `iteration:complete`, `topic:duplicate` (when improveTopic/simplifyTopic returns identical topic), `topic:reverted` (tier 1 recovery), `topic:simplified` (tier 2 recovery), `loop:plateau` (opt-in plateau detection), `memory:extracted` (if memory enabled), `promptset:created` (if `--create-prompt-set`), `loop:complete`
+- Events yielded by `runLoop()`: `iteration:start`, `generate:complete`, `companion:generated` (block-intent iter 1), `companion:created` (block-intent iter 1), `apply:complete`, `tests:composed` (iter 2+, always-on composition), `tests:accumulated` (if accumulation enabled, iter 2+), `test:progress`, `evaluate:complete`, `analyze:complete`, `iteration:complete`, `topic:duplicate` (when improveTopic/simplifyTopic returns identical topic), `topic:reverted` (tier 1 recovery), `topic:simplified` (tier 2 recovery), `loop:plateau` (opt-in plateau detection), `memory:extracted` (if memory enabled), `promptset:created` (if `--create-prompt-set`), `loop:complete`
 - Events defined in `LoopEvent` union but **not yielded** by `runLoop()`: `loop:paused` (reserved for future use), `memory:loaded` (emitted by CLI before loop starts)
 - `apply:complete` is yielded but intentionally unhandled in CLI commands (no user-facing output needed)
-- **Warm-up probe** (iter 1 only): after propagation delay, scans `topic.examples[0]` via `scanner.scan()` in a retry loop (default 6 attempts, 5s interval) to verify topic+profile revision are active before full test suite. Skipped if topic has no examples. Configurable via `LoopDependencies.probeIntervalMs` and `maxProbeAttempts`
 - **Two-phase generation** (block-intent only): AIRS needs BOTH allow and block topics sharing the same vocabulary domain. On iter 1, generates a domain-specific allow companion via `LlmService.generateCompanionTopic()` that covers the benign/legitimate side of the same domain (e.g., "Legal Tax Planning" as companion to "Tax Evasion"). Wires both to profile with `guardrailAction='allow'` (default: allow everything, block topic carves out violations). Companion is one-shot (no refinement). Iter 2+ only updates block topic content. Allow-intent runs use `guardrailAction='block'` with a single topic.
 - Topic name **locked after iteration 1** — only description+examples change thereafter
 - `analyzeResults()` and `improveTopic()` receive intent param — prioritizes FN for block, FP for allow
@@ -190,7 +189,6 @@ tests/
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
   - `airs runtime dlp-profiles {list}` — DLP profile listing
   - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`)
-- Deprecated top-level aliases (`airs generate`, `airs resume`, `airs report`, `airs list`, `airs audit`) still work with deprecation warnings
 
 ### Red Team (`src/airs/redteam.ts`, `src/airs/promptsets.ts`)
 - `SdkRedTeamService` wraps `RedTeamClient` for scan CRUD, polling, reports, **target CRUD**
@@ -257,7 +255,6 @@ tests/
 
 ## Critical Details
 
-- `propagationDelayMs` default 10s — AIRS needs propagation time after topic create/update
 - `scanConcurrency` default 5 — higher risks rate limiting
 - LLM description output routinely exceeds 250 char AIRS limit — `clampTopic()` handles this
 
@@ -290,7 +287,6 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 | `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
 | `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
 | `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
-| `PROPAGATION_DELAY_MS` | `10000` | Wait after topic create/update (ms) |
 | `ACCUMULATE_TESTS` | `false` | Carry test pool across iterations |
 | `MAX_ACCUMULATED_TESTS` | — | Cap on accumulated tests |
 | `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |

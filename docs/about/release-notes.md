@@ -2,7 +2,7 @@
 
 ## v1.0.0
 
-First release of Prisma AIRS CLI (renamed from `daystrom`). See [MIGRATION.md](../../MIGRATION.md) for upgrade steps.
+First release of Prisma AIRS CLI (renamed from `daystrom`). See [MIGRATION.md](https://github.com/cdot65/prisma-airs-cli/blob/main/MIGRATION.md) for upgrade steps.
 
 ### Highlights
 

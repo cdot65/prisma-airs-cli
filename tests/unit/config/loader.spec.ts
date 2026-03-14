@@ -18,7 +18,6 @@ describe('loadConfig', () => {
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', '');
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', '');
     vi.stubEnv('AWS_REGION', '');
-    vi.stubEnv('PROPAGATION_DELAY_MS', '');
     vi.stubEnv('MEMORY_ENABLED', '');
     vi.stubEnv('DATA_DIR', '');
     vi.stubEnv('MEMORY_DIR', '');
@@ -44,7 +43,6 @@ describe('loadConfig', () => {
     const config = await loadConfig({}, configPath);
     expect(config.llmProvider).toBe('claude-api');
     expect(config.scanConcurrency).toBe(5);
-    expect(config.propagationDelayMs).toBe(10000);
     expect(config.memoryEnabled).toBe(true);
   });
 

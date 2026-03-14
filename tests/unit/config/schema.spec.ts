@@ -8,7 +8,6 @@ describe('ConfigSchema', () => {
     expect(config.googleCloudLocation).toBe('us-central1');
     expect(config.awsRegion).toBe('us-east-1');
     expect(config.scanConcurrency).toBe(5);
-    expect(config.propagationDelayMs).toBe(10000);
     expect(config.dataDir).toBe('~/.prisma-airs/runs');
     expect(config.memoryEnabled).toBe(true);
     expect(config.memoryDir).toBe('~/.prisma-airs/memory');
@@ -16,9 +15,8 @@ describe('ConfigSchema', () => {
   });
 
   it('coerces strings to numbers', () => {
-    const config = ConfigSchema.parse({ scanConcurrency: '10', propagationDelayMs: '5000' });
+    const config = ConfigSchema.parse({ scanConcurrency: '10' });
     expect(config.scanConcurrency).toBe(10);
-    expect(config.propagationDelayMs).toBe(5000);
   });
 
   it('coerces boolean values', () => {
@@ -41,11 +39,6 @@ describe('ConfigSchema', () => {
 
   it('rejects maxMemoryChars above 10000', () => {
     expect(() => ConfigSchema.parse({ maxMemoryChars: 10001 })).toThrow();
-  });
-
-  it('accepts propagationDelayMs=0 (min boundary)', () => {
-    const config = ConfigSchema.parse({ propagationDelayMs: 0 });
-    expect(config.propagationDelayMs).toBe(0);
   });
 
   it('preserves optional string fields when provided', () => {

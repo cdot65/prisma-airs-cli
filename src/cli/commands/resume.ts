@@ -103,7 +103,6 @@ export function registerResumeCommand(parent: Command): void {
           llm,
           management,
           scanner,
-          propagationDelayMs: config.propagationDelayMs,
           promptSets,
         })) {
           switch (event.type) {
@@ -141,14 +140,6 @@ export function registerResumeCommand(parent: Command): void {
               break;
             case 'iteration:complete':
               renderIterationSummary(event.result);
-              break;
-            case 'probe:waiting':
-              console.log(
-                `  ⏳ Waiting for topic propagation (attempt ${event.attempt}/${event.maxAttempts})...`,
-              );
-              break;
-            case 'probe:ready':
-              console.log(`  ✓ Topic active after ${event.attempts} probe(s)`);
               break;
             case 'promptset:created':
               console.log(

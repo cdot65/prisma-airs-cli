@@ -27,7 +27,6 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
   "llmProvider": "claude-api",
   "llmModel": "claude-opus-4-6",
   "scanConcurrency": 3,
-  "propagationDelayMs": 15000,
   "maxMemoryChars": 5000,
   "memoryEnabled": true,
   "accumulateTests": false,
@@ -45,7 +44,6 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
 | `llmProvider` | `--provider` | `LLM_PROVIDER` | `claude-api` | LLM provider selection |
 | `llmModel` | `--model` | `LLM_MODEL` | per-provider | Model override |
 | `scanConcurrency` | -- | `SCAN_CONCURRENCY` | `5` | Parallel scan requests (1--20) |
-| `propagationDelayMs` | -- | `PROPAGATION_DELAY_MS` | `10000` | Wait after topic deploy (ms) |
 | `maxMemoryChars` | -- | `MAX_MEMORY_CHARS` | `3000` | Memory injection budget (500--10000) |
 | `memoryEnabled` | `--no-memory` | `MEMORY_ENABLED` | `true` | Toggle cross-run learning |
 | `accumulateTests` | `--accumulate-tests` | `ACCUMULATE_TESTS` | `false` | Carry forward tests across iterations |
@@ -67,5 +65,3 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
 !!! warning "Concurrency tuning"
     `scanConcurrency` above 5 risks AIRS rate limiting. Increase cautiously.
 
-!!! note "Propagation delay"
-    AIRS needs time to propagate topic changes. The default 10 seconds is usually sufficient; increase if scans fail immediately after deployment.
