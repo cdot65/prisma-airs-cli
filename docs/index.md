@@ -4,7 +4,7 @@ title: Home
 
 <div class="hero" markdown>
 
-![Daystrom Logo](images/daystrom-logo.svg){ .hero-logo }
+![Prisma AIRS CLI](images/logo.svg){ .hero-logo }
 
 # Prisma AIRS CLI
 

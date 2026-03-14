@@ -61,10 +61,10 @@ Model names match the Anthropic API format -- no special Vertex-specific naming 
 ### Usage
 
 ```bash
-pnpm run generate -- --provider claude-vertex
+airs runtime topics generate --provider claude-vertex
 
 # Override region
-GOOGLE_CLOUD_LOCATION=us-east5 pnpm run generate -- --provider claude-vertex
+GOOGLE_CLOUD_LOCATION=us-east5 airs runtime topics generate --provider claude-vertex
 ```
 
 ---
@@ -93,10 +93,10 @@ Gemini models on Vertex AI via `@langchain/google-vertexai` (`ChatVertexAI`). Th
 ### Usage
 
 ```bash
-pnpm run generate -- --provider gemini-vertex
+airs runtime topics generate --provider gemini-vertex
 
 # Override model and region
-pnpm run generate -- --provider gemini-vertex --model gemini-2.5-pro \
+airs runtime topics generate --provider gemini-vertex --model gemini-2.5-pro \
   GOOGLE_CLOUD_LOCATION=europe-west1
 ```
 

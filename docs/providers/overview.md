@@ -19,7 +19,7 @@ Use `--model` or the `LLM_MODEL` env var:
 
 ```bash
 # CLI flag
-airs generate --model claude-sonnet-4-20250514
+airs runtime topics generate --model claude-sonnet-4-20250514
 
 # Environment variable
 export LLM_MODEL=claude-sonnet-4-20250514

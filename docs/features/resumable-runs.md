@@ -49,7 +49,7 @@ Full run state is written to disk after each iteration at `~/.prisma-airs/runs/{
 ## Resuming
 
 ```bash
-airs resume <runId>
+airs runtime topics resume <runId>
 ```
 
 The resumed run continues with:
@@ -63,7 +63,7 @@ The resumed run continues with:
 
 ```bash
 # Resume with up to 10 more iterations from current position
-airs resume abc123 --max-iterations 10
+airs runtime topics resume abc123 --max-iterations 10
 ```
 
 ---
@@ -73,7 +73,7 @@ airs resume abc123 --max-iterations 10
 ### List All Runs
 
 ```bash
-airs list
+airs runtime topics runs
 ```
 
 Summary table with run ID, status, topic name, iterations completed, best coverage, and timestamps.
@@ -82,10 +82,10 @@ Summary table with run ID, status, topic name, iterations completed, best covera
 
 ```bash
 # Best iteration (highest coverage)
-airs report <runId>
+airs runtime topics report <runId>
 
 # A specific iteration
-airs report <runId> --iteration 3
+airs runtime topics report <runId> --iteration 3
 ```
 
 Shows topic definition, test results, metrics, and analysis for the selected iteration.

@@ -13,7 +13,6 @@ Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverag
 pnpm install               # Install deps
 pnpm run build             # tsc compile to dist/
 pnpm run dev               # Run CLI via tsx (any subcommand)
-pnpm run generate          # Interactive guardrail generation loop (deprecated alias)
 
 # Test
 pnpm test                  # All tests (vitest run)

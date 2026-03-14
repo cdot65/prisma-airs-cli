@@ -91,7 +91,7 @@ Something not working? Find your error below.
 Set `DEBUG=true` to see detailed request/response logs:
 
 ```bash
-DEBUG=true pnpm run generate
+DEBUG=true airs runtime topics generate
 ```
 
 ### Structured output parse failures

@@ -37,9 +37,6 @@ airs runtime topics report <runId>
 airs runtime topics runs
 ```
 
-!!! note "Backward compatibility"
-    Top-level aliases (`airs generate`, `airs resume`, etc.) still work but print a deprecation warning. Use the `runtime topics` paths going forward.
-
 ## Key Concepts
 
 - **Intent**: `block` (detect violating prompts) or `allow` (detect benign prompts that should pass through)

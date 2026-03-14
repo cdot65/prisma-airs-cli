@@ -79,10 +79,10 @@ Claude models on AWS Bedrock.
 ### Usage
 
 ```bash
-pnpm run generate -- --provider claude-bedrock
+airs runtime topics generate --provider claude-bedrock
 
 # Override model
-pnpm run generate -- --provider claude-bedrock --model anthropic.claude-sonnet-4-20250514-v1
+airs runtime topics generate --provider claude-bedrock --model anthropic.claude-sonnet-4-20250514-v1
 ```
 
 ---
@@ -112,10 +112,10 @@ Gemini models on AWS Bedrock, also via `@langchain/aws` (`ChatBedrockConverse`).
 ### Usage
 
 ```bash
-pnpm run generate -- --provider gemini-bedrock
+airs runtime topics generate --provider gemini-bedrock
 
 # Override model
-pnpm run generate -- --provider gemini-bedrock --model gemini-2.5-pro
+airs runtime topics generate --provider gemini-bedrock --model gemini-2.5-pro
 ```
 
 ---
