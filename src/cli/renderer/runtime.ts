@@ -222,7 +222,13 @@ export function renderTopicDetail(topic: {
 
 /** Render API key list. */
 export function renderApiKeyList(
-  keys: Array<{ id: string; name: string; createdAt?: string; expiresAt?: string }>,
+  keys: Array<{
+    id: string;
+    name: string;
+    last8?: string;
+    createdAt?: string;
+    expiresAt?: string;
+  }>,
   format: OutputFormat = 'pretty',
 ): void {
   if (keys.length === 0) {
@@ -233,6 +239,7 @@ export function renderApiKeyList(
     const rows = keys.map((k) => ({
       id: k.id,
       name: k.name,
+      last8: k.last8 ?? '',
       createdAt: k.createdAt ?? '',
       expiresAt: k.expiresAt ?? '',
     }));
@@ -242,6 +249,7 @@ export function renderApiKeyList(
         [
           { key: 'id', label: 'ID' },
           { key: 'name', label: 'Name' },
+          { key: 'last8', label: 'Key (last 8)' },
           { key: 'createdAt', label: 'Created' },
           { key: 'expiresAt', label: 'Expires' },
         ],
@@ -253,8 +261,9 @@ export function renderApiKeyList(
   console.log(chalk.bold('\n  API Keys:\n'));
   for (const k of keys) {
     console.log(`  ${chalk.dim(k.id)}`);
+    const last8 = k.last8 ? chalk.dim(` key: …${k.last8}`) : '';
     const expires = k.expiresAt ? chalk.dim(` expires: ${k.expiresAt}`) : '';
-    console.log(`    ${k.name}${expires}`);
+    console.log(`    ${k.name}${last8}${expires}`);
   }
   console.log();
 }
@@ -263,12 +272,16 @@ export function renderApiKeyList(
 export function renderApiKeyDetail(key: {
   id: string;
   name: string;
+  apiKey?: string;
+  last8?: string;
   createdAt?: string;
   expiresAt?: string;
 }): void {
   console.log(chalk.bold('\n  API Key Detail:\n'));
   console.log(`    ID:      ${chalk.dim(key.id)}`);
   console.log(`    Name:    ${key.name}`);
+  if (key.apiKey) console.log(`    Key:     ${key.apiKey}`);
+  else if (key.last8) console.log(`    Key:     ${chalk.dim('…')}${key.last8}`);
   if (key.createdAt) console.log(`    Created: ${chalk.dim(key.createdAt)}`);
   if (key.expiresAt) console.log(`    Expires: ${chalk.dim(key.expiresAt)}`);
   console.log();
