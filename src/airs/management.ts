@@ -269,6 +269,8 @@ export class SdkManagementService implements ManagementService {
     return {
       id: (k.id ?? k.api_key_id ?? '') as string,
       name: (k.name ?? k.api_key_name ?? '') as string,
+      apiKey: k.api_key as string | undefined,
+      last8: k.api_key_last8 as string | undefined,
       createdAt: k.created_at as string | undefined,
       expiresAt: k.expires_at as string | undefined,
     };

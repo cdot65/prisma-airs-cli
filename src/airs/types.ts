@@ -687,6 +687,8 @@ export interface PaginationOptions {
 export interface ApiKeyInfo {
   id: string;
   name: string;
+  apiKey?: string;
+  last8?: string;
   createdAt?: string;
   expiresAt?: string;
 }
