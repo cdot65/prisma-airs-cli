@@ -38,7 +38,7 @@ export interface Learning {
   insight: string;
   strategy: string;
   outcome: 'improved' | 'degraded' | 'neutral';
-  changeType: 'description-only' | 'examples-only' | 'both' | 'initial';
+  changeType?: 'description-only' | 'examples-only' | 'both' | 'initial';
   metrics: {
     coverage: number;
     tpr: number;

@@ -47,7 +47,7 @@ export class LearningExtractor {
       insight: l.insight,
       strategy: l.strategy,
       outcome: l.outcome,
-      changeType: l.changeType,
+      changeType: l.changeType ?? 'initial',
       metrics: {
         coverage: bestIter.metrics.coverage,
         tpr: bestIter.metrics.truePositiveRate,
