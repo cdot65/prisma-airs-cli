@@ -286,6 +286,43 @@ describe('LearningExtractor', () => {
     expect(result.learnings).toHaveLength(1);
   });
 
+  it('handles learnings without changeType (neutral outcome)', async () => {
+    const mockResponse = {
+      learnings: [
+        {
+          insight: 'Broad descriptions cause FP overlap',
+          strategy: 'Observed overlap without making changes',
+          outcome: 'neutral' as const,
+          // changeType intentionally omitted — LLM does this for neutral outcomes
+          tags: ['fp-reduction'],
+        },
+        {
+          insight: 'Short descriptions work better',
+          strategy: 'Shortened description',
+          outcome: 'improved' as const,
+          changeType: 'description-only' as const,
+          tags: ['brevity'],
+        },
+      ],
+      antiPatterns: [],
+    };
+
+    const model = {
+      withStructuredOutput: vi
+        .fn()
+        .mockReturnValue(new RunnableLambda({ func: async () => mockResponse })),
+    };
+
+    const extractor = new LearningExtractor(model as BaseChatModel, store);
+    const result = await extractor.extractAndSave(makeRunState());
+
+    expect(result.learnings).toHaveLength(2);
+    // Missing changeType should default to 'initial'
+    expect(result.learnings[0].changeType).toBe('initial');
+    // Explicit changeType should be preserved
+    expect(result.learnings[1].changeType).toBe('description-only');
+  });
+
   it('skips runs with < 1 iteration', async () => {
     const model = createMockModel();
     const extractor = new LearningExtractor(model as BaseChatModel, store);
