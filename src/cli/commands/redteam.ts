@@ -4,7 +4,6 @@ import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
 import { loadConfig } from '../../config/loader.js';
 import {
-  OUTPUT_FORMATS,
   type OutputFormat,
   renderAttackList,
   renderCategories,
