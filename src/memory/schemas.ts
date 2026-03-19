@@ -4,7 +4,7 @@ export const ExtractedLearningSchema = z.object({
   insight: z.string().min(1),
   strategy: z.string().min(1),
   outcome: z.enum(['improved', 'degraded', 'neutral']),
-  changeType: z.enum(['description-only', 'examples-only', 'both', 'initial']),
+  changeType: z.enum(['description-only', 'examples-only', 'both', 'initial']).optional(),
   tags: z.array(z.string()),
 });
 
