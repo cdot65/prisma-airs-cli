@@ -320,7 +320,15 @@ describe('LangChainLlmService', () => {
         falseNegativePatterns: [],
         suggestions: [],
       };
-      const result = await service.improveTopic(validTopic, metrics, emptyAnalysis, [], 2, 0.9);
+      const result = await service.improveTopic(
+        validTopic,
+        metrics,
+        emptyAnalysis,
+        [],
+        2,
+        0.9,
+        'block',
+      );
       expect(result.name).toBe('Weapons');
     });
 
