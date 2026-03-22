@@ -182,12 +182,24 @@ Prisma AIRS CLI exposes full CRUD over AIRS runtime configuration resources via 
 ### Security Profiles & Profile Audit
 
 ```bash
-# CRUD
+# List and inspect
 airs runtime profiles list
 airs runtime profiles get <nameOrId>
 airs runtime profiles get <nameOrId> --output json
-airs runtime profiles create --config profile.json
-airs runtime profiles update <profileId> --config profile.json
+
+# Create with CLI flags
+airs runtime profiles create \
+  --name "My Security Profile" \
+  --prompt-injection block \
+  --toxic-content "high:block, moderate:block" \
+  --malicious-code block \
+  --agent-security block
+
+# Update — only specify what changes (existing config preserved via read-modify-write)
+airs runtime profiles update <profileId> \
+  --toxic-content "high:alert, moderate:allow"
+
+# Delete
 airs runtime profiles delete <profileId>
 airs runtime profiles delete <profileId> --force --updated-by user@example.com
 
@@ -195,6 +207,8 @@ airs runtime profiles delete <profileId> --force --updated-by user@example.com
 airs runtime profiles audit <profileName>
 airs runtime profiles audit <profileName> --format html --output audit.html
 ```
+
+Available protection flags for `create` and `update`: `--prompt-injection`, `--toxic-content`, `--contextual-grounding`, `--malicious-code`, `--url-action`, `--allow-url-categories`, `--block-url-categories`, `--alert-url-categories`, `--agent-security`, `--dlp-action`, `--dlp-profiles`, `--mask-data-inline`, `--db-security-create/read/update/delete`, `--inline-timeout-action`, `--max-inline-latency`, `--mask-data-in-storage`. See [CLI reference](../reference/cli-commands.md#profile-protection-flags) for details.
 
 ### Custom Topics & Guardrail Generation
 
