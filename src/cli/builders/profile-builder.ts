@@ -50,9 +50,7 @@ function parseList(value: string | undefined): string[] | undefined {
 }
 
 /** Build model-protection items from flags. Returns undefined if none set. */
-function buildModelProtection(
-  flags: Partial<ProfileFlags>,
-): Record<string, unknown>[] | undefined {
+function buildModelProtection(flags: Partial<ProfileFlags>): Record<string, unknown>[] | undefined {
   const items: Record<string, unknown>[] = [];
 
   if (flags.promptInjection) {
@@ -69,9 +67,7 @@ function buildModelProtection(
 }
 
 /** Build app-protection object from flags. Returns undefined if none set. */
-function buildAppProtection(
-  flags: Partial<ProfileFlags>,
-): Record<string, unknown> | undefined {
+function buildAppProtection(flags: Partial<ProfileFlags>): Record<string, unknown> | undefined {
   const ap: Record<string, unknown> = {};
   let hasAny = false;
 
@@ -106,17 +102,13 @@ function buildAppProtection(
 }
 
 /** Build agent-protection array from flags. Returns undefined if none set. */
-function buildAgentProtection(
-  flags: Partial<ProfileFlags>,
-): Record<string, unknown>[] | undefined {
+function buildAgentProtection(flags: Partial<ProfileFlags>): Record<string, unknown>[] | undefined {
   if (!flags.agentSecurity) return undefined;
   return [{ name: 'agent-security', action: flags.agentSecurity }];
 }
 
 /** Build data-protection object from flags. Returns undefined if none set. */
-function buildDataProtection(
-  flags: Partial<ProfileFlags>,
-): Record<string, unknown> | undefined {
+function buildDataProtection(flags: Partial<ProfileFlags>): Record<string, unknown> | undefined {
   const dp: Record<string, unknown> = {};
   let hasAny = false;
 
@@ -155,9 +147,7 @@ function buildDataProtection(
 }
 
 /** Build latency object from flags. Returns undefined if none set. */
-function buildLatency(
-  flags: Partial<ProfileFlags>,
-): Record<string, unknown> | undefined {
+function buildLatency(flags: Partial<ProfileFlags>): Record<string, unknown> | undefined {
   if (!flags.inlineTimeoutAction && flags.maxInlineLatency == null) return undefined;
   const lat: Record<string, unknown> = {};
   if (flags.inlineTimeoutAction) lat['inline-timeout-action'] = flags.inlineTimeoutAction;
@@ -277,9 +267,7 @@ export function mergeProfilePolicy(
 
   // Ensure base has ai-security-profiles structure
   if (!base['ai-security-profiles']) {
-    base['ai-security-profiles'] = [
-      { 'model-type': 'default', 'model-configuration': {} },
-    ];
+    base['ai-security-profiles'] = [{ 'model-type': 'default', 'model-configuration': {} }];
   }
   const baseProfiles = base['ai-security-profiles'] as Record<string, unknown>[];
   const baseConfig = (baseProfiles[0]['model-configuration'] ?? {}) as Record<string, unknown>;

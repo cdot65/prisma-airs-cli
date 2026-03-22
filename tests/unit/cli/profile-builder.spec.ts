@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  type ProfileFlags,
   buildProfileOverrides,
   buildProfileRequest,
   mergeProfilePolicy,
+  type ProfileFlags,
 } from '../../../src/cli/builders/profile-builder.js';
 
 describe('buildProfileRequest', () => {
@@ -119,10 +119,22 @@ describe('buildProfileRequest', () => {
     });
     const config = getModelConfiguration(result);
     const dp = config?.['data-protection'];
-    expect(dp?.['database-security']).toContainEqual({ name: 'database-security-create', action: 'block' });
-    expect(dp?.['database-security']).toContainEqual({ name: 'database-security-read', action: 'alert' });
-    expect(dp?.['database-security']).toContainEqual({ name: 'database-security-update', action: 'block' });
-    expect(dp?.['database-security']).toContainEqual({ name: 'database-security-delete', action: 'block' });
+    expect(dp?.['database-security']).toContainEqual({
+      name: 'database-security-create',
+      action: 'block',
+    });
+    expect(dp?.['database-security']).toContainEqual({
+      name: 'database-security-read',
+      action: 'alert',
+    });
+    expect(dp?.['database-security']).toContainEqual({
+      name: 'database-security-update',
+      action: 'block',
+    });
+    expect(dp?.['database-security']).toContainEqual({
+      name: 'database-security-delete',
+      action: 'block',
+    });
   });
 
   it('builds latency config from flags', () => {
@@ -291,7 +303,9 @@ describe('mergeProfilePolicy', () => {
     const tg = mp?.find((item: Record<string, unknown>) => item.name === 'topic-guardrails');
     expect(tg).toBeDefined();
     expect(tg?.['topic-list']).toEqual(
-      existingPolicy['ai-security-profiles'][0]['model-configuration']['model-protection'][2]['topic-list'],
+      existingPolicy['ai-security-profiles'][0]['model-configuration']['model-protection'][2][
+        'topic-list'
+      ],
     );
     // toxic-content updated
     const tc = mp?.find((item: Record<string, unknown>) => item.name === 'toxic-content');
@@ -327,9 +341,15 @@ describe('mergeProfilePolicy', () => {
     const cg = mp?.find((item: Record<string, unknown>) => item.name === 'contextual-grounding');
     expect(cg?.action).toBe('block');
     // existing items preserved
-    expect(mp?.find((item: Record<string, unknown>) => item.name === 'prompt-injection')).toBeDefined();
-    expect(mp?.find((item: Record<string, unknown>) => item.name === 'toxic-content')).toBeDefined();
-    expect(mp?.find((item: Record<string, unknown>) => item.name === 'topic-guardrails')).toBeDefined();
+    expect(
+      mp?.find((item: Record<string, unknown>) => item.name === 'prompt-injection'),
+    ).toBeDefined();
+    expect(
+      mp?.find((item: Record<string, unknown>) => item.name === 'toxic-content'),
+    ).toBeDefined();
+    expect(
+      mp?.find((item: Record<string, unknown>) => item.name === 'topic-guardrails'),
+    ).toBeDefined();
   });
 
   it('merges app-protection fields without wiping existing', () => {
@@ -349,9 +369,13 @@ describe('mergeProfilePolicy', () => {
     const result = mergeProfilePolicy(existingPolicy, overrides);
     const dp = result['ai-security-profiles']?.[0]?.['model-configuration']?.['data-protection'];
     const dbItems = dp?.['database-security'];
-    expect(dbItems?.find((i: Record<string, unknown>) => i.name === 'database-security-read')?.action).toBe('alert');
+    expect(
+      dbItems?.find((i: Record<string, unknown>) => i.name === 'database-security-read')?.action,
+    ).toBe('alert');
     // create preserved
-    expect(dbItems?.find((i: Record<string, unknown>) => i.name === 'database-security-create')?.action).toBe('block');
+    expect(
+      dbItems?.find((i: Record<string, unknown>) => i.name === 'database-security-create')?.action,
+    ).toBe('block');
     // DLP preserved
     expect(dp?.['data-leak-detection']?.action).toBe('block');
   });
@@ -361,7 +385,9 @@ describe('mergeProfilePolicy', () => {
     const result = mergeProfilePolicy(undefined, overrides);
     const config = result['ai-security-profiles']?.[0]?.['model-configuration'];
     const mp = config?.['model-protection'];
-    expect(mp).toContainEqual(expect.objectContaining({ name: 'prompt-injection', action: 'block' }));
+    expect(mp).toContainEqual(
+      expect.objectContaining({ name: 'prompt-injection', action: 'block' }),
+    );
     expect(config?.['agent-protection']).toContainEqual(
       expect.objectContaining({ name: 'agent-security', action: 'alert' }),
     );
@@ -386,14 +412,20 @@ describe('mergeProfilePolicy', () => {
 
 // --- Helper functions ---
 
-function getModelConfiguration(request: Record<string, unknown>): Record<string, unknown> | undefined {
+function getModelConfiguration(
+  request: Record<string, unknown>,
+): Record<string, unknown> | undefined {
   const policy = request.policy as Record<string, unknown> | undefined;
   const aiProfiles = policy?.['ai-security-profiles'] as Record<string, unknown>[] | undefined;
   return aiProfiles?.[0]?.['model-configuration'] as Record<string, unknown> | undefined;
 }
 
-function getModelProtection(request: Record<string, unknown>): Record<string, unknown>[] | undefined {
-  return getModelConfiguration(request)?.['model-protection'] as Record<string, unknown>[] | undefined;
+function getModelProtection(
+  request: Record<string, unknown>,
+): Record<string, unknown>[] | undefined {
+  return getModelConfiguration(request)?.['model-protection'] as
+    | Record<string, unknown>[]
+    | undefined;
 }
 
 function getAppProtection(request: Record<string, unknown>): Record<string, unknown> | undefined {

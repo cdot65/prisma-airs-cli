@@ -4,9 +4,13 @@ import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import { SdkRuntimeService } from '../../airs/runtime.js';
-import type { RuntimeScanResult } from '../../airs/types.js';
+import type { RuntimeScanResult, SecurityProfileInfo } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
-import { buildProfileOverrides, buildProfileRequest, mergeProfilePolicy } from '../builders/profile-builder.js';
+import {
+  buildProfileOverrides,
+  buildProfileRequest,
+  mergeProfilePolicy,
+} from '../builders/profile-builder.js';
 import { loadBulkScanState, saveBulkScanState } from '../bulk-scan-state.js';
 import { parseInputFile } from '../parse-input.js';
 import {
@@ -460,7 +464,7 @@ export function registerRuntimeCommand(program: Command): void {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
 
-        let profile;
+        let profile: SecurityProfileInfo;
         if (opts.config) {
           // Legacy JSON file path
           const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
@@ -531,7 +535,7 @@ export function registerRuntimeCommand(program: Command): void {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
 
-        let profile;
+        let profile: SecurityProfileInfo;
         if (opts.config) {
           // Legacy JSON file path
           const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
