@@ -1,3 +1,7 @@
+---
+title: Running Scans
+---
+
 # Running Red Team Scans
 
 This walkthrough demonstrates how to launch adversarial scans against AI targets, monitor progress, and review reports with attack-level detail.
@@ -8,7 +12,7 @@ All output shown below is from real commands run against Prisma AIRS.
 
 - Prisma AIRS CLI installed and configured ([Installation](../getting-started/installation.md))
 - AIRS management credentials set
-- At least one target configured (see [Managing Targets](managing-targets.md))
+- At least one target configured (see [Managing Targets](targets.md))
 
 ---
 
@@ -23,41 +27,41 @@ airs redteam categories
 ```
   Attack Categories:
 
-  Security — Select categories for adversarial testing of security vulnerabilities
-    • Adversarial Suffix — Adversarial suffix attacks
-    • Evasion — Evasion techniques
-    • Indirect Prompt Injection — Indirect prompt injection attacks
-    • Jailbreak — Jailbreak attempts
-    • Multi-turn — Multi-turn conversation exploits
-    • Prompt Injection — Direct prompt injection attacks
-    • Remote Code Execution — Remote code execution attempts
-    • System Prompt leak — System prompt extraction
-    • Tool Leak — Tool information leakage
-    • Malware Generation — Malware generation requests
+  Security -- Select categories for adversarial testing of security vulnerabilities
+    * Adversarial Suffix -- Adversarial suffix attacks
+    * Evasion -- Evasion techniques
+    * Indirect Prompt Injection -- Indirect prompt injection attacks
+    * Jailbreak -- Jailbreak attempts
+    * Multi-turn -- Multi-turn conversation exploits
+    * Prompt Injection -- Direct prompt injection attacks
+    * Remote Code Execution -- Remote code execution attempts
+    * System Prompt leak -- System prompt extraction
+    * Tool Leak -- Tool information leakage
+    * Malware Generation -- Malware generation requests
 
-  Safety — Select categories for testing harmful or toxic content
-    • Bias — Bias-related content
-    • CBRN — Chemical, Biological, Radiological, Nuclear content
-    • Cybercrime — Cybercrime-related content
-    • Drugs — Drug-related content
-    • Hate / Toxic / Abuse — Hate speech, toxic, or abusive content
-    • Non Violent Crimes — Non-violent criminal activities
-    • Political — Political content
-    • Self Harm — Self-harm related content
-    • Sexual — Sexual content
-    • Violent Crimes / Weapons — Violent crimes and weapons
+  Safety -- Select categories for testing harmful or toxic content
+    * Bias -- Bias-related content
+    * CBRN -- Chemical, Biological, Radiological, Nuclear content
+    * Cybercrime -- Cybercrime-related content
+    * Drugs -- Drug-related content
+    * Hate / Toxic / Abuse -- Hate speech, toxic, or abusive content
+    * Non Violent Crimes -- Non-violent criminal activities
+    * Political -- Political content
+    * Self Harm -- Self-harm related content
+    * Sexual -- Sexual content
+    * Violent Crimes / Weapons -- Violent crimes and weapons
 
-  Brand Reputation — Select categories for testing off-brand content
-    • Competitor Endorsements
-    • Brand Tarnishing / Self-Criticism
-    • Discriminating Claims
-    • Political Endorsements
+  Brand Reputation -- Select categories for testing off-brand content
+    * Competitor Endorsements
+    * Brand Tarnishing / Self-Criticism
+    * Discriminating Claims
+    * Political Endorsements
 
-  Compliance — Select framework for compliance across security and safety standards
-    • OWASP Top 10 for LLMs 2025
-    • MITRE ATLAS
-    • NIST AI-RMF
-    • DASF V2.0
+  Compliance -- Select framework for compliance across security and safety standards
+    * OWASP Top 10 for LLMs 2025
+    * MITRE ATLAS
+    * NIST AI-RMF
+    * DASF V2.0
 ```
 
 ## Launch a Scan
@@ -99,7 +103,7 @@ airs redteam scan \
 ```
 
 ```
-  Prisma AIRS — AI Red Team
+  Prisma AIRS -- AI Red Team
   Adversarial scan operations
 
   Creating CUSTOM scan "Pokemon guardrail validation"...
@@ -185,6 +189,9 @@ airs redteam list --status COMPLETED --type CUSTOM
 
 # Scans for a specific target
 airs redteam list --target <uuid> --limit 20
+
+# Structured output (table, csv, json, yaml)
+airs redteam list --output json
 ```
 
 ---
@@ -243,9 +250,9 @@ airs redteam report 304becf3-7090-413a-aa41-2cd327b7f0c5 --attacks --limit 5
 
 Each prompt shows:
 
-- **THREAT / SAFE** — whether the target's response was flagged as a threat
-- **ASR** — attack success rate across multiple attempts
-- **Goal** — the expected guardrail behavior
+- **THREAT / SAFE** -- whether the target's response was flagged as a threat
+- **ASR** -- attack success rate across multiple attempts
+- **Goal** -- the expected guardrail behavior
 
 ### Filter by Severity (Static Scans)
 
@@ -280,6 +287,6 @@ airs redteam abort <jobId>
 | `CUSTOM` | Your prompt sets | Validate specific guardrails, regression testing |
 
 !!! info "When to use each type"
-    - **STATIC** for initial security assessment — covers prompt injection, jailbreak, CBRN, and 20+ categories
+    - **STATIC** for initial security assessment -- covers prompt injection, jailbreak, CBRN, and 20+ categories
     - **DYNAMIC** for sophisticated multi-turn attacks that adapt to the target's responses
-    - **CUSTOM** for targeted validation — use prompts from `airs runtime topics generate --create-prompt-set` or hand-crafted prompt sets
+    - **CUSTOM** for targeted validation -- use prompts from `airs runtime topics generate --create-prompt-set` or hand-crafted prompt sets

@@ -184,7 +184,12 @@ tests/
 - Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
 - CLI: `airs runtime resume-poll <stateFile> [--output <file>]` — resume polling from saved scan IDs
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
-  - `airs runtime profiles {list,get,create,update,delete,audit}` — security profile CRUD + profile audit (`get` accepts name or UUID, supports `--output pretty|json|yaml`; `create` uses CLI flags for all policy sections (`--prompt-injection`, `--toxic-content`, etc.); `update` uses read-modify-write pattern (fetch → merge flags → PUT full payload); `delete` supports `--force --updated-by`)
+  - `airs runtime profiles {list,get,create,update,delete,audit}` — security profile CRUD + profile audit
+    - `get` accepts name or UUID, supports `--output pretty|json|yaml`
+    - `create` requires `--name`, plus optional protection flags: `--prompt-injection`, `--toxic-content`, `--contextual-grounding`, `--malicious-code`, `--url-action`, `--allow-url-categories`, `--block-url-categories`, `--alert-url-categories`, `--agent-security`, `--dlp-action`, `--dlp-profiles`, `--mask-data-inline`, `--db-security-{create,read,update,delete}`, `--inline-timeout-action`, `--max-inline-latency`, `--mask-data-in-storage`, `--no-active`. Hidden `--config <path>` legacy escape hatch.
+    - `update` uses read-modify-write: fetches current profile → merges only specified flags → PUTs full payload. Same protection flags as create. Topic-guardrails never modified by CLI flags. Hidden `--config <path>` legacy escape hatch.
+    - `delete` supports `--force --updated-by`
+    - Profile builder: `src/cli/builders/profile-builder.ts` — `buildProfileRequest()` (create), `buildProfileOverrides()` (update), `mergeProfilePolicy()` (deep merge). Arrays merge by `name` field; objects overlay specified fields.
   - `airs runtime topics {list,create,update,delete,generate,resume,report,runs}` — custom topic CRUD + guardrail generation (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD

@@ -1,3 +1,7 @@
+---
+title: Model Security
+---
+
 # Model Security
 
 Prisma AIRS CLI integrates with Palo Alto Prisma AIRS AI Model Security to manage ML model supply chain security. This enables scanning model artifacts for vulnerabilities, malicious code, and compliance issues before deployment.
@@ -103,8 +107,10 @@ airs model-security labels add <scanUuid> --labels '[{"key":"env","value":"prod"
 airs model-security labels keys
 ```
 
-## CLI Reference
+## Sub-pages
 
-See [CLI Commands — model-security](../reference/cli-commands.md#model-security) for full option details.
-
-See [Model Security Examples](../examples/model-security.md) for hands-on walkthroughs.
+- [Security Groups](groups.md) — CRUD operations for security groups
+- [Rules & Instances](rules.md) — browsing rules and configuring rule instances
+- [Scans & Results](scans.md) — listing scans, evaluations, violations, and files
+- [Labels](labels.md) — organizing scans with key-value metadata
+- [Python SDK](install.md) — installing the model-security-client and PyPI authentication

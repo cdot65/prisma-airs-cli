@@ -138,9 +138,52 @@ All CRUD commands require Management API credentials.
 ```bash
 airs runtime profiles list [--limit <n>] [--offset <n>] [--output <format>]
 airs runtime profiles get <nameOrId> [--output <pretty|json|yaml>]
-airs runtime profiles create --name <name> [--prompt-injection <action>] [--toxic-content <action>] [...]
-airs runtime profiles update <profileId> [--prompt-injection <action>] [--toxic-content <action>] [...]
+airs runtime profiles create --name <name> [protection flags...]
+airs runtime profiles update <profileId> [protection flags...]
 airs runtime profiles delete <profileId> [--force --updated-by <email>]
+```
+
+**`create`** requires `--name`. All protection flags are optional — omitted sections get AIRS defaults.
+
+**`update`** uses read-modify-write: fetches the current profile, merges only the flags you specify, PUTs the full payload. Existing policy sections (including topic-guardrails) are preserved. Only specify what you want to change.
+
+**Profile protection flags** (available on both `create` and `update`):
+
+| Flag | Description |
+|------|-------------|
+| `--prompt-injection <action>` | Prompt injection action (`block`/`allow`/`alert`) |
+| `--toxic-content <action>` | Toxic content action (e.g. `"high:block, moderate:block"`) |
+| `--contextual-grounding <action>` | Contextual grounding action |
+| `--malicious-code <action>` | Malicious code protection action |
+| `--url-action <action>` | URL detected action |
+| `--allow-url-categories <list>` | Comma-separated URL categories to allow |
+| `--block-url-categories <list>` | Comma-separated URL categories to block |
+| `--alert-url-categories <list>` | Comma-separated URL categories to alert |
+| `--agent-security <action>` | Agent security action |
+| `--dlp-action <action>` | Data leak detection action |
+| `--dlp-profiles <list>` | Comma-separated DLP profile names |
+| `--mask-data-inline` | Mask detected data inline (boolean) |
+| `--db-security-create <action>` | Database create action |
+| `--db-security-read <action>` | Database read action |
+| `--db-security-update <action>` | Database update action |
+| `--db-security-delete <action>` | Database delete action |
+| `--inline-timeout-action <action>` | Inline timeout action (`block`/`allow`) |
+| `--max-inline-latency <n>` | Max inline latency in seconds |
+| `--mask-data-in-storage` | Mask data in storage (boolean) |
+| `--no-active` | Create/set profile as inactive |
+
+**Examples:**
+
+```bash
+# Create with multiple protections
+airs runtime profiles create --name "Prod Firewall" \
+  --prompt-injection block \
+  --toxic-content "high:block, moderate:alert" \
+  --malicious-code block \
+  --agent-security block
+
+# Update only one setting (everything else preserved)
+airs runtime profiles update <profileId> --toxic-content "high:alert"
 ```
 
 #### Custom Topics
@@ -499,6 +542,24 @@ airs runtime profiles get 03e9d2aa-64e0-4734-a21e-de85c7d0d728 --output json
 ```
 
 Returns full profile detail including the complete `policy` JSON (topic guardrails, DLP, app protection, etc.). Auto-detects UUID vs name.
+
+### Workflow 2c: Create or update a security profile
+
+```bash
+# Create a profile with protections
+airs runtime profiles create --name "Prod Firewall" \
+  --prompt-injection block \
+  --toxic-content "high:block, moderate:alert" \
+  --malicious-code block
+
+# Update a single setting (read-modify-write — all other policy preserved)
+airs runtime profiles update <profileId> --toxic-content "high:alert"
+
+# Verify the update
+airs runtime profiles get "Prod Firewall" --output json
+```
+
+**IMPORTANT for update:** The CLI fetches the existing profile, merges your flags into it, and PUTs the full payload. You only specify what you want to change. Topic-guardrails are never modified by CLI flags.
 
 ### Workflow 3: Create a custom topic, then scan against it
 

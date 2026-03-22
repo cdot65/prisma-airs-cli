@@ -1,5 +1,35 @@
 # Release Notes
 
+## v1.3.0
+
+### New
+
+- **Docs restructured by AIRS module** — navigation reorganized into Runtime Security, AI Red Teaming, and Model Security top-level sections instead of flat Capabilities/Guides layout
+- **Profile create/update CLI flags** — `profiles create` and `profiles update` now use 20 CLI flags (`--prompt-injection`, `--toxic-content`, `--malicious-code`, etc.) instead of `--config` JSON files
+- **Read-modify-write profile updates** — `profiles update` fetches current profile, merges only specified flags, then PUTs full payload (no config overwrites)
+
+### Changed
+
+- Docs site navigation: features/ and examples/ directories merged into runtime/, redteam/, model-security/ module sections
+- Architecture and LLM Providers moved under Reference tab
+
+## v1.2.1
+
+### Fixed
+
+- Docs updated to show CLI flags for `profiles create`/`update` (was still showing `--config` pattern)
+
+## v1.2.0
+
+### New
+
+- **Profile builder** (`src/cli/builders/profile-builder.ts`) — converts CLI flags to `CreateSecurityProfileRequest`, supports all 20 protection flags
+- **`mergeProfilePolicy()`** — deep-merges CLI flag overrides into existing profile policy for PUT-only API
+- **`profiles create`** — create security profiles with CLI flags for all protection categories
+- **`profiles update`** — update profiles with read-modify-write pattern; only specify what changes
+- **`profiles get`** — accepts profile name or UUID, supports `--output pretty|json|yaml`
+- **`profiles delete --force --updated-by`** — force deletion of profiles with dependencies
+
 ## v1.0.6
 
 ### New

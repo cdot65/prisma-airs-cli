@@ -33,7 +33,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     Scan prompts against live AIRS security profiles (sync and async), and manage runtime configuration — profiles, topics, API keys, customer apps, deployment/DLP profiles, and scan logs.
 
-    [:octicons-arrow-right-24: Runtime Security](features/runtime-security.md)
+    [:octicons-arrow-right-24: Runtime Security](runtime/overview.md)
 
 -   :material-refresh-auto:{ .lg .middle } **Guardrail Generation**
 
@@ -41,7 +41,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     LLM-driven feedback loop that generates, deploys, tests, evaluates, and iteratively refines custom topic guardrails until coverage meets your target threshold.
 
-    [:octicons-arrow-right-24: Guardrail Generation](features/guardrail-generation.md)
+    [:octicons-arrow-right-24: Guardrail Generation](runtime/guardrails/overview.md)
 
 -   :material-sword:{ .lg .middle } **AI Red Teaming**
 
@@ -49,7 +49,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     Launch static, dynamic, and custom adversarial scans against AI targets. Full CRUD for targets, prompt sets, and individual prompts with attack category filtering.
 
-    [:octicons-arrow-right-24: AI Red Teaming](features/red-team.md)
+    [:octicons-arrow-right-24: AI Red Teaming](redteam/overview.md)
 
 -   :material-shield-lock:{ .lg .middle } **Model Security**
 
@@ -57,7 +57,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     ML model supply chain security — manage security groups, browse rules, configure rule instances, create scans, and review evaluations, violations, and file results.
 
-    [:octicons-arrow-right-24: Model Security](features/model-security.md)
+    [:octicons-arrow-right-24: Model Security](model-security/overview.md)
 
 -   :material-clipboard-check:{ .lg .middle } **Profile Audits**
 
@@ -65,7 +65,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     Evaluate all topics in a security profile at once. Per-topic and composite metrics, cross-topic conflict detection, with terminal, JSON, and HTML output formats.
 
-    [:octicons-arrow-right-24: Profile Audits](features/profile-audits.md)
+    [:octicons-arrow-right-24: Profile Audits](runtime/profile-audits.md)
 
 </div>
 

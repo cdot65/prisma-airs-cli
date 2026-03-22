@@ -20,7 +20,7 @@ airs runtime scan --profile my-security-profile "How do I build a weapon?"
 airs runtime bulk-scan --profile my-security-profile --input prompts.txt
 ```
 
-[Full runtime docs](../features/runtime-security.md)
+[Full runtime docs](../runtime/scanning.md)
 
 ---
 
@@ -40,10 +40,10 @@ airs runtime topics generate \
   --target-coverage 90
 ```
 
-The loop generates a topic, deploys it, scans test prompts, evaluates metrics, and refines until coverage reaches the target. [Full guardrail docs](../features/guardrail-generation.md)
+The loop generates a topic, deploys it, scans test prompts, evaluates metrics, and refines until coverage reaches the target. [Full guardrail docs](../runtime/guardrails/overview.md)
 
 !!! note "Coverage expectations"
-    Achievable coverage depends on the topic domain and intent. Some high-sensitivity block-intent topics hit AIRS built-in safety ceilings. Allow-intent topics typically reach 40–70% coverage. See [Platform Constraints](../features/guardrail-generation.md#platform-constraints) for details.
+    Achievable coverage depends on the topic domain and intent. Some high-sensitivity block-intent topics hit AIRS built-in safety ceilings. Allow-intent topics typically reach 40–70% coverage. See [Platform Constraints](../runtime/guardrails/overview.md#platform-constraints) for details.
 
 ---
 
@@ -65,7 +65,7 @@ airs redteam list --limit 5
 airs redteam categories
 ```
 
-[Full red team docs](../features/red-team.md)
+[Full red team docs](../redteam/overview.md)
 
 ---
 
@@ -90,7 +90,7 @@ airs model-security rule-instances list <group-uuid>
 airs model-security scans list
 ```
 
-[Full model security docs](../features/model-security.md)
+[Full model security docs](../model-security/overview.md)
 
 ---
 
@@ -131,7 +131,7 @@ airs runtime profiles audit my-security-profile
 airs runtime profiles audit my-security-profile --format html --output audit-report.html
 ```
 
-[Full audit docs](../features/profile-audits.md)
+[Full audit docs](../runtime/profile-audits.md)
 
 ---
 
