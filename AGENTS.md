@@ -488,6 +488,18 @@ airs runtime profiles list --output json
 
 Returns JSON array of `{ id, name, state }` objects.
 
+### Workflow 2b: Get a specific profile's full configuration
+
+```bash
+# By name
+airs runtime profiles get AI-Firewall-High-Security-Profile --output json
+
+# By UUID
+airs runtime profiles get 03e9d2aa-64e0-4734-a21e-de85c7d0d728 --output json
+```
+
+Returns full profile detail including the complete `policy` JSON (topic guardrails, DLP, app protection, etc.). Auto-detects UUID vs name.
+
 ### Workflow 3: Create a custom topic, then scan against it
 
 ```bash
