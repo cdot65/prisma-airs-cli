@@ -138,12 +138,10 @@ All CRUD commands require Management API credentials.
 ```bash
 airs runtime profiles list [--limit <n>] [--offset <n>] [--output <format>]
 airs runtime profiles get <nameOrId> [--output <pretty|json|yaml>]
-airs runtime profiles create --name <name> [--prompt-injection <action>] [--toxic-content <action>] [...]
-airs runtime profiles update <profileId> [--prompt-injection <action>] [--toxic-content <action>] [...]
+airs runtime profiles create --config <json-file>
+airs runtime profiles update <profileId> --config <json-file>
 airs runtime profiles delete <profileId> [--force --updated-by <email>]
 ```
-
-Profile `create` and `update` accept CLI flags for all policy sections: `--prompt-injection`, `--toxic-content`, `--contextual-grounding`, `--malicious-code`, `--url-action`, `--allow-url-categories`, `--block-url-categories`, `--alert-url-categories`, `--agent-security`, `--dlp-action`, `--dlp-profiles`, `--mask-data-inline`, `--db-security-create/read/update/delete`, `--inline-timeout-action`, `--max-inline-latency`, `--mask-data-in-storage`, `--no-active`. The `update` command uses a read-modify-write pattern (fetch existing profile → merge flags → PUT full payload) so unspecified sections are preserved.
 
 #### Custom Topics
 
