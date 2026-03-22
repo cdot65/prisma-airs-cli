@@ -94,6 +94,19 @@ airs model-security scans list
 
 ---
 
+## Profile Management
+
+View and inspect your security profiles.
+
+```bash
+# List all profiles
+airs runtime profiles list --output json
+
+# Get full configuration of a specific profile (by name or UUID)
+airs runtime profiles get AI-Firewall-High-Security-Profile
+airs runtime profiles get AI-Firewall-High-Security-Profile --output json
+```
+
 ## Profile Audits
 
 Evaluate all topics in a security profile at once, with conflict detection.

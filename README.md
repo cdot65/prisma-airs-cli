@@ -55,7 +55,7 @@ airs model-security scans create --config scan-config.json
 | `runtime scan` | Single prompt scanning against AIRS profiles |
 | `runtime bulk-scan` | Batch prompt scanning with CSV output |
 | `runtime topics` | Custom topic CRUD + guardrail generation (`generate`, `resume`, `report`, `runs`) |
-| `runtime profiles` | Security profile CRUD + multi-topic `audit` |
+| `runtime profiles` | Security profile CRUD (`list`, `get`, `create`, `update`, `delete`) + multi-topic `audit` |
 | `runtime api-keys` | API key management |
 | `runtime customer-apps` | Customer app CRUD |
 | `runtime deployment-profiles` | Deployment profile listing |
