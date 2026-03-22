@@ -184,6 +184,8 @@ Prisma AIRS CLI exposes full CRUD over AIRS runtime configuration resources via 
 ```bash
 # CRUD
 airs runtime profiles list
+airs runtime profiles get <nameOrId>
+airs runtime profiles get <nameOrId> --output json
 airs runtime profiles create --config profile.json
 airs runtime profiles update <profileId> --config profile.json
 airs runtime profiles delete <profileId>

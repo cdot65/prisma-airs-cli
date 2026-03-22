@@ -228,6 +228,16 @@ export class SdkManagementService implements ManagementService {
     };
   }
 
+  async getProfile(profileId: string): Promise<SecurityProfileInfo> {
+    const response = await this.client.profiles.get(profileId);
+    return this.normalizeProfile(response as unknown as Record<string, unknown>);
+  }
+
+  async getProfileByName(profileName: string): Promise<SecurityProfileInfo> {
+    const response = await this.client.profiles.getByName(profileName);
+    return this.normalizeProfile(response as unknown as Record<string, unknown>);
+  }
+
   async listProfiles(opts?: PaginationOptions): Promise<SecurityProfileListResult> {
     const response = await this.client.profiles.list(opts);
     return {

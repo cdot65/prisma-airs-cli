@@ -391,6 +391,45 @@ export function registerRuntimeCommand(program: Command): void {
     });
 
   profiles
+    .command('get <nameOrId>')
+    .description('Get a security profile by name or UUID')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (nameOrId: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt !== 'pretty' && fmt !== 'json' && fmt !== 'yaml') {
+          renderError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
+          process.exit(1);
+        }
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
+        const service = await createMgmtService();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          nameOrId,
+        );
+        const profile = isUuid
+          ? await service.getProfile(nameOrId)
+          : await service.getProfileByName(nameOrId);
+        if (fmt === 'json') {
+          console.log(JSON.stringify(profile, null, 2));
+        } else if (fmt === 'yaml') {
+          const lines = [`profileId: ${profile.profileId}`, `profileName: ${profile.profileName}`];
+          if (profile.revision != null) lines.push(`revision: ${profile.revision}`);
+          if (profile.active != null) lines.push(`active: ${profile.active}`);
+          if (profile.createdBy) lines.push(`createdBy: ${profile.createdBy}`);
+          if (profile.updatedBy) lines.push(`updatedBy: ${profile.updatedBy}`);
+          if (profile.lastModifiedTs) lines.push(`lastModifiedTs: ${profile.lastModifiedTs}`);
+          if (profile.policy) lines.push(`policy: ${JSON.stringify(profile.policy, null, 2)}`);
+          console.log(lines.join('\n'));
+        } else {
+          renderProfileDetail(profile);
+        }
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  profiles
     .command('create')
     .description('Create a new security profile')
     .requiredOption('--config <path>', 'JSON file with profile configuration')

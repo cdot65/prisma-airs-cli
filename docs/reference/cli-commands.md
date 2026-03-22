@@ -175,6 +175,7 @@ Security profile CRUD and profile-level audit.
 
 ```bash
 airs runtime profiles list
+airs runtime profiles get <nameOrId>
 airs runtime profiles create --config <path>
 airs runtime profiles update <profileId> --config <path>
 airs runtime profiles delete <profileId>
@@ -185,6 +186,7 @@ airs runtime profiles audit <profileName> [options]
 | Subcommand | Flags |
 |------------|-------|
 | `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
+| `get <nameOrId>` | `--output <format>` (pretty/json/yaml, default pretty). Auto-detects UUID vs name. |
 | `create` | `--config <path>` (required) |
 | `update <profileId>` | `--config <path>` (required) |
 | `delete <profileId>` | `--force`, `--updated-by <email>` |

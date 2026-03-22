@@ -182,7 +182,7 @@ tests/
 - Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
 - CLI: `airs runtime resume-poll <stateFile> [--output <file>]` — resume polling from saved scan IDs
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
-  - `airs runtime profiles {list,create,update,delete,audit}` — security profile CRUD + profile audit (supports `--force --updated-by`)
+  - `airs runtime profiles {list,get,create,update,delete,audit}` — security profile CRUD + profile audit (`get` accepts name or UUID, supports `--output pretty|json|yaml`; `delete` supports `--force --updated-by`)
   - `airs runtime topics {list,create,update,delete,generate,resume,report,runs}` — custom topic CRUD + guardrail generation (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD

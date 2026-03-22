@@ -31,6 +31,8 @@ const mockDelete = vi.fn();
 const mockList = vi.fn();
 const mockForceDelete = vi.fn();
 const mockProfileList = vi.fn();
+const mockProfileGet = vi.fn();
+const mockProfileGetByName = vi.fn();
 const mockProfileUpdate = vi.fn();
 const mockProfileCreate = vi.fn();
 const mockProfileDelete = vi.fn();
@@ -58,6 +60,8 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
     },
     profiles: {
       list: mockProfileList,
+      get: mockProfileGet,
+      getByName: mockProfileGetByName,
       update: mockProfileUpdate,
       create: mockProfileCreate,
       delete: mockProfileDelete,
@@ -912,6 +916,67 @@ describe('SdkManagementService', () => {
       const result = await service.forceDeleteProfile('p-1', 'admin@example.com');
       expect(result.message).toBe('force deleted');
       expect(mockProfileForceDelete).toHaveBeenCalledWith('p-1', 'admin@example.com');
+    });
+  });
+
+  describe('getProfile', () => {
+    it('gets a profile by UUID and returns normalized result', async () => {
+      mockProfileGet.mockResolvedValue({
+        profile_id: 'p-1',
+        profile_name: 'Test Profile',
+        revision: 3,
+        active: true,
+        policy: { 'ai-security-profiles': [] },
+        created_by: 'admin@example.com',
+        updated_by: 'editor@example.com',
+        last_modified_ts: '2026-01-15T00:00:00Z',
+      });
+
+      const result = await service.getProfile('p-1');
+      expect(result.profileId).toBe('p-1');
+      expect(result.profileName).toBe('Test Profile');
+      expect(result.revision).toBe(3);
+      expect(result.active).toBe(true);
+      expect(result.policy).toEqual({ 'ai-security-profiles': [] });
+      expect(result.createdBy).toBe('admin@example.com');
+      expect(result.updatedBy).toBe('editor@example.com');
+      expect(result.lastModifiedTs).toBe('2026-01-15T00:00:00Z');
+      expect(mockProfileGet).toHaveBeenCalledWith('p-1');
+    });
+
+    it('propagates error when profile not found', async () => {
+      mockProfileGet.mockRejectedValue(new Error('Profile not found: p-999'));
+
+      await expect(service.getProfile('p-999')).rejects.toThrow('Profile not found: p-999');
+    });
+  });
+
+  describe('getProfileByName', () => {
+    it('gets a profile by name and returns normalized result', async () => {
+      mockProfileGetByName.mockResolvedValue({
+        profile_id: 'p-2',
+        profile_name: 'AI-Firewall-High-Security-Profile',
+        revision: 5,
+        active: true,
+        policy: { 'ai-security-profiles': [{ 'model-type': 'default' }] },
+      });
+
+      const result = await service.getProfileByName('AI-Firewall-High-Security-Profile');
+      expect(result.profileId).toBe('p-2');
+      expect(result.profileName).toBe('AI-Firewall-High-Security-Profile');
+      expect(result.revision).toBe(5);
+      expect(result.policy).toEqual({
+        'ai-security-profiles': [{ 'model-type': 'default' }],
+      });
+      expect(mockProfileGetByName).toHaveBeenCalledWith('AI-Firewall-High-Security-Profile');
+    });
+
+    it('propagates error when profile name not found', async () => {
+      mockProfileGetByName.mockRejectedValue(new Error('Profile not found: nonexistent'));
+
+      await expect(service.getProfileByName('nonexistent')).rejects.toThrow(
+        'Profile not found: nonexistent',
+      );
     });
   });
 

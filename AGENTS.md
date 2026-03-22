@@ -137,6 +137,7 @@ All CRUD commands require Management API credentials.
 
 ```bash
 airs runtime profiles list [--limit <n>] [--offset <n>] [--output <format>]
+airs runtime profiles get <nameOrId> [--output <pretty|json|yaml>]
 airs runtime profiles create --config <json-file>
 airs runtime profiles update <profileId> --config <json-file>
 airs runtime profiles delete <profileId> [--force --updated-by <email>]
