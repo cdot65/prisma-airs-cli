@@ -54,6 +54,8 @@ Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `s
 src/
 ├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
 │   ├── index.ts           # Commander program — registers runtime/redteam/model-security
+│   ├── builders/
+│   │   └── profile-builder.ts # CLI flags → CreateSecurityProfileRequest builder + merge utility
 │   ├── commands/
 │   │   ├── generate.ts    # Main loop orchestration, wires all services (registered under runtime topics)
 │   │   ├── resume.ts      # Resume paused/failed run from disk (registered under runtime topics)
@@ -182,7 +184,7 @@ tests/
 - Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
 - CLI: `airs runtime resume-poll <stateFile> [--output <file>]` — resume polling from saved scan IDs
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
-  - `airs runtime profiles {list,get,create,update,delete,audit}` — security profile CRUD + profile audit (`get` accepts name or UUID, supports `--output pretty|json|yaml`; `delete` supports `--force --updated-by`)
+  - `airs runtime profiles {list,get,create,update,delete,audit}` — security profile CRUD + profile audit (`get` accepts name or UUID, supports `--output pretty|json|yaml`; `create` uses CLI flags for all policy sections (`--prompt-injection`, `--toxic-content`, etc.); `update` uses read-modify-write pattern (fetch → merge flags → PUT full payload); `delete` supports `--force --updated-by`)
   - `airs runtime topics {list,create,update,delete,generate,resume,report,runs}` — custom topic CRUD + guardrail generation (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD
