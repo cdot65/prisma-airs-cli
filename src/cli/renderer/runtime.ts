@@ -140,9 +140,12 @@ export function renderProfileDetail(profile: {
   if (profile.updatedBy) console.log(`    Updated:  ${chalk.dim(profile.updatedBy)}`);
   if (profile.lastModifiedTs) console.log(`    Modified: ${chalk.dim(profile.lastModifiedTs)}`);
   if (profile.policy) {
-    console.log(
-      `    Policy:   ${chalk.dim(JSON.stringify(profile.policy, null, 2).slice(0, 500))}`,
-    );
+    const policyJson = JSON.stringify(profile.policy, null, 2);
+    const indented = policyJson
+      .split('\n')
+      .map((line, i) => (i === 0 ? line : `              ${line}`))
+      .join('\n');
+    console.log(`    Policy:   ${chalk.dim(indented)}`);
   }
   console.log();
 }

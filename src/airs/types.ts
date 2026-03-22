@@ -788,6 +788,10 @@ export interface ManagementService {
   /** List all topics configured in a profile with full details. */
   getProfileTopics(profileName: string): Promise<ProfileTopic[]>;
 
+  /** Get a single security profile by UUID. */
+  getProfile(profileId: string): Promise<SecurityProfileInfo>;
+  /** Get a single security profile by name (returns highest revision). */
+  getProfileByName(profileName: string): Promise<SecurityProfileInfo>;
   /** List security profiles. */
   listProfiles(opts?: PaginationOptions): Promise<SecurityProfileListResult>;
   /** Create a security profile. */
