@@ -186,8 +186,8 @@ Prisma AIRS CLI exposes full CRUD over AIRS runtime configuration resources via 
 airs runtime profiles list
 airs runtime profiles get <nameOrId>
 airs runtime profiles get <nameOrId> --output json
-airs runtime profiles create --config profile.json
-airs runtime profiles update <profileId> --config profile.json
+airs runtime profiles create --name "My Profile" --prompt-injection block --toxic-content alert
+airs runtime profiles update <profileId> --prompt-injection alert --malicious-code block
 airs runtime profiles delete <profileId>
 airs runtime profiles delete <profileId> --force --updated-by user@example.com
 
