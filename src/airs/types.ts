@@ -5,6 +5,7 @@
 
 import type {
   CreateCustomTopicRequest,
+  CreateSecurityProfileRequest,
   CustomTopic as SdkCustomTopic,
 } from '@cdot65/prisma-airs-sdk';
 import type { ProfileTopic } from '../audit/types.js';
@@ -12,7 +13,7 @@ import type { ProfileTopic } from '../audit/types.js';
 // ---------------------------------------------------------------------------
 // SDK re-exports — upstream types used across the AIRS layer
 // ---------------------------------------------------------------------------
-export type { CreateCustomTopicRequest, SdkCustomTopic };
+export type { CreateCustomTopicRequest, CreateSecurityProfileRequest, SdkCustomTopic };
 
 // ---------------------------------------------------------------------------
 // Scan result — normalized output from a single AIRS prompt scan
@@ -795,9 +796,12 @@ export interface ManagementService {
   /** List security profiles. */
   listProfiles(opts?: PaginationOptions): Promise<SecurityProfileListResult>;
   /** Create a security profile. */
-  createProfile(request: Record<string, unknown>): Promise<SecurityProfileInfo>;
+  createProfile(request: CreateSecurityProfileRequest): Promise<SecurityProfileInfo>;
   /** Update a security profile. */
-  updateProfile(profileId: string, request: Record<string, unknown>): Promise<SecurityProfileInfo>;
+  updateProfile(
+    profileId: string,
+    request: CreateSecurityProfileRequest,
+  ): Promise<SecurityProfileInfo>;
   /** Delete a security profile. */
   deleteProfile(profileId: string): Promise<DeleteResponse>;
   /** Force-delete a security profile (removes from referencing policies). */

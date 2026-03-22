@@ -176,8 +176,8 @@ Security profile CRUD and profile-level audit.
 ```bash
 airs runtime profiles list
 airs runtime profiles get <nameOrId>
-airs runtime profiles create --config <path>
-airs runtime profiles update <profileId> --config <path>
+airs runtime profiles create --name "My Profile" --prompt-injection block
+airs runtime profiles update <profileId> --toxic-content "high:alert"
 airs runtime profiles delete <profileId>
 airs runtime profiles delete <profileId> --force --updated-by <email>
 airs runtime profiles audit <profileName> [options]
@@ -187,10 +187,37 @@ airs runtime profiles audit <profileName> [options]
 |------------|-------|
 | `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
 | `get <nameOrId>` | `--output <format>` (pretty/json/yaml, default pretty). Auto-detects UUID vs name. |
-| `create` | `--config <path>` (required) |
-| `update <profileId>` | `--config <path>` (required) |
+| `create` | `--name <name>` (required), protection flags (see below), `--config <path>` (legacy) |
+| `update <profileId>` | Protection flags (see below), `--name <name>`, `--config <path>` (legacy). Uses read-modify-write (fetches existing, merges flags, sends full payload via PUT). |
 | `delete <profileId>` | `--force`, `--updated-by <email>` |
 | `audit <profileName>` | `--max-tests-per-topic <n>` (default 20), `--format <fmt>` (terminal/json/html), `--output <path>`, `--provider <name>`, `--model <name>` |
+
+#### Profile Protection Flags
+
+These flags are available on both `create` and `update`:
+
+| Flag | Description |
+|------|-------------|
+| `--prompt-injection <action>` | Prompt injection action (`block`/`allow`/`alert`) |
+| `--toxic-content <action>` | Toxic content action (e.g. `"high:block, moderate:block"`) |
+| `--contextual-grounding <action>` | Contextual grounding action |
+| `--malicious-code <action>` | Malicious code protection action |
+| `--url-action <action>` | URL detected action |
+| `--allow-url-categories <list>` | Comma-separated URL categories to allow |
+| `--block-url-categories <list>` | Comma-separated URL categories to block |
+| `--alert-url-categories <list>` | Comma-separated URL categories to alert |
+| `--agent-security <action>` | Agent security action |
+| `--dlp-action <action>` | Data leak detection action |
+| `--dlp-profiles <list>` | Comma-separated DLP profile names |
+| `--mask-data-inline` | Mask detected data inline |
+| `--db-security-create <action>` | Database create action |
+| `--db-security-read <action>` | Database read action |
+| `--db-security-update <action>` | Database update action |
+| `--db-security-delete <action>` | Database delete action |
+| `--inline-timeout-action <action>` | Inline timeout action (`block`/`allow`) |
+| `--max-inline-latency <n>` | Max inline latency in seconds |
+| `--mask-data-in-storage` | Mask data in storage |
+| `--no-active` | Create/set profile as inactive |
 
 #### runtime profiles audit
 

@@ -96,7 +96,7 @@ airs model-security scans list
 
 ## Profile Management
 
-View and inspect your security profiles.
+Create, inspect, and update security profiles using CLI flags.
 
 ```bash
 # List all profiles
@@ -105,6 +105,18 @@ airs runtime profiles list --output json
 # Get full configuration of a specific profile (by name or UUID)
 airs runtime profiles get AI-Firewall-High-Security-Profile
 airs runtime profiles get AI-Firewall-High-Security-Profile --output json
+
+# Create a profile with CLI flags
+airs runtime profiles create \
+  --name "My Security Profile" \
+  --prompt-injection block \
+  --toxic-content "high:block, moderate:block" \
+  --malicious-code block \
+  --agent-security block
+
+# Update a profile — only specify what changes (existing config preserved)
+airs runtime profiles update <profileId> \
+  --toxic-content "high:alert, moderate:allow"
 ```
 
 ## Profile Audits

@@ -1,5 +1,6 @@
 import {
   type CreateCustomTopicRequest,
+  type CreateSecurityProfileRequest,
   ManagementClient,
   type ManagementClientOptions,
   type CustomTopic as SdkCustomTopic,
@@ -248,16 +249,16 @@ export class SdkManagementService implements ManagementService {
     };
   }
 
-  async createProfile(request: Record<string, unknown>): Promise<SecurityProfileInfo> {
-    const response = await this.client.profiles.create(request as never);
+  async createProfile(request: CreateSecurityProfileRequest): Promise<SecurityProfileInfo> {
+    const response = await this.client.profiles.create(request);
     return this.normalizeProfile(response as unknown as Record<string, unknown>);
   }
 
   async updateProfile(
     profileId: string,
-    request: Record<string, unknown>,
+    request: CreateSecurityProfileRequest,
   ): Promise<SecurityProfileInfo> {
-    const response = await this.client.profiles.update(profileId, request as never);
+    const response = await this.client.profiles.update(profileId, request);
     return this.normalizeProfile(response as unknown as Record<string, unknown>);
   }
 

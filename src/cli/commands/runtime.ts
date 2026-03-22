@@ -4,8 +4,13 @@ import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import { SdkRuntimeService } from '../../airs/runtime.js';
-import type { RuntimeScanResult } from '../../airs/types.js';
+import type { RuntimeScanResult, SecurityProfileInfo } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
+import {
+  buildProfileOverrides,
+  buildProfileRequest,
+  mergeProfilePolicy,
+} from '../builders/profile-builder.js';
 import { loadBulkScanState, saveBulkScanState } from '../bulk-scan-state.js';
 import { parseInputFile } from '../parse-input.js';
 import {
@@ -432,13 +437,65 @@ export function registerRuntimeCommand(program: Command): void {
   profiles
     .command('create')
     .description('Create a new security profile')
-    .requiredOption('--config <path>', 'JSON file with profile configuration')
+    .requiredOption('--name <name>', 'Profile name')
+    .option('--no-active', 'Create profile as inactive')
+    .option('--prompt-injection <action>', 'Prompt injection action (block/allow/alert)')
+    .option('--toxic-content <action>', 'Toxic content action (e.g. "high:block, moderate:block")')
+    .option('--contextual-grounding <action>', 'Contextual grounding action (block/allow/alert)')
+    .option('--malicious-code <action>', 'Malicious code protection action (block/allow/alert)')
+    .option('--url-action <action>', 'URL detected action (block/allow/alert)')
+    .option('--allow-url-categories <list>', 'Comma-separated URL categories to allow')
+    .option('--block-url-categories <list>', 'Comma-separated URL categories to block')
+    .option('--alert-url-categories <list>', 'Comma-separated URL categories to alert')
+    .option('--agent-security <action>', 'Agent security action (block/allow/alert)')
+    .option('--dlp-action <action>', 'Data leak detection action (block/allow/alert)')
+    .option('--dlp-profiles <list>', 'Comma-separated DLP profile names')
+    .option('--mask-data-inline', 'Mask detected data inline')
+    .option('--db-security-create <action>', 'Database create action (block/allow/alert)')
+    .option('--db-security-read <action>', 'Database read action (block/allow/alert)')
+    .option('--db-security-update <action>', 'Database update action (block/allow/alert)')
+    .option('--db-security-delete <action>', 'Database delete action (block/allow/alert)')
+    .option('--inline-timeout-action <action>', 'Inline timeout action (block/allow)')
+    .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number.parseFloat)
+    .option('--mask-data-in-storage', 'Mask data in storage')
+    .option('--config <path>', 'JSON file with profile configuration (legacy)')
     .action(async (opts) => {
       try {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const profile = await service.createProfile(config);
+
+        let profile: SecurityProfileInfo;
+        if (opts.config) {
+          // Legacy JSON file path
+          const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+          profile = await service.createProfile(config);
+        } else {
+          const request = buildProfileRequest({
+            name: opts.name,
+            active: opts.active,
+            promptInjection: opts.promptInjection,
+            toxicContent: opts.toxicContent,
+            contextualGrounding: opts.contextualGrounding,
+            maliciousCode: opts.maliciousCode,
+            urlAction: opts.urlAction,
+            allowUrlCategories: opts.allowUrlCategories,
+            blockUrlCategories: opts.blockUrlCategories,
+            alertUrlCategories: opts.alertUrlCategories,
+            agentSecurity: opts.agentSecurity,
+            dlpAction: opts.dlpAction,
+            dlpProfiles: opts.dlpProfiles,
+            maskDataInline: opts.maskDataInline,
+            dbSecurityCreate: opts.dbSecurityCreate,
+            dbSecurityRead: opts.dbSecurityRead,
+            dbSecurityUpdate: opts.dbSecurityUpdate,
+            dbSecurityDelete: opts.dbSecurityDelete,
+            inlineTimeoutAction: opts.inlineTimeoutAction,
+            maxInlineLatency: opts.maxInlineLatency,
+            maskDataInStorage: opts.maskDataInStorage,
+          });
+          profile = await service.createProfile(request);
+        }
+
         console.log(`  Profile created: ${profile.profileId}\n`);
         renderProfileDetail(profile);
       } catch (err) {
@@ -450,13 +507,72 @@ export function registerRuntimeCommand(program: Command): void {
   profiles
     .command('update <profileId>')
     .description('Update a security profile')
-    .requiredOption('--config <path>', 'JSON file with profile updates')
+    .option('--name <name>', 'Update profile name')
+    .option('--no-active', 'Set profile as inactive')
+    .option('--active', 'Set profile as active')
+    .option('--prompt-injection <action>', 'Prompt injection action (block/allow/alert)')
+    .option('--toxic-content <action>', 'Toxic content action (e.g. "high:block, moderate:block")')
+    .option('--contextual-grounding <action>', 'Contextual grounding action (block/allow/alert)')
+    .option('--malicious-code <action>', 'Malicious code protection action (block/allow/alert)')
+    .option('--url-action <action>', 'URL detected action (block/allow/alert)')
+    .option('--allow-url-categories <list>', 'Comma-separated URL categories to allow')
+    .option('--block-url-categories <list>', 'Comma-separated URL categories to block')
+    .option('--alert-url-categories <list>', 'Comma-separated URL categories to alert')
+    .option('--agent-security <action>', 'Agent security action (block/allow/alert)')
+    .option('--dlp-action <action>', 'Data leak detection action (block/allow/alert)')
+    .option('--dlp-profiles <list>', 'Comma-separated DLP profile names')
+    .option('--mask-data-inline', 'Mask detected data inline')
+    .option('--db-security-create <action>', 'Database create action (block/allow/alert)')
+    .option('--db-security-read <action>', 'Database read action (block/allow/alert)')
+    .option('--db-security-update <action>', 'Database update action (block/allow/alert)')
+    .option('--db-security-delete <action>', 'Database delete action (block/allow/alert)')
+    .option('--inline-timeout-action <action>', 'Inline timeout action (block/allow)')
+    .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number.parseFloat)
+    .option('--mask-data-in-storage', 'Mask data in storage')
+    .option('--config <path>', 'JSON file with profile updates (legacy)')
     .action(async (profileId: string, opts) => {
       try {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const profile = await service.updateProfile(profileId, config);
+
+        let profile: SecurityProfileInfo;
+        if (opts.config) {
+          // Legacy JSON file path
+          const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+          profile = await service.updateProfile(profileId, config);
+        } else {
+          // Read-modify-write: fetch current profile, merge flags, PUT full payload
+          const current = await service.getProfile(profileId);
+          const overrides = buildProfileOverrides({
+            promptInjection: opts.promptInjection,
+            toxicContent: opts.toxicContent,
+            contextualGrounding: opts.contextualGrounding,
+            maliciousCode: opts.maliciousCode,
+            urlAction: opts.urlAction,
+            allowUrlCategories: opts.allowUrlCategories,
+            blockUrlCategories: opts.blockUrlCategories,
+            alertUrlCategories: opts.alertUrlCategories,
+            agentSecurity: opts.agentSecurity,
+            dlpAction: opts.dlpAction,
+            dlpProfiles: opts.dlpProfiles,
+            maskDataInline: opts.maskDataInline,
+            dbSecurityCreate: opts.dbSecurityCreate,
+            dbSecurityRead: opts.dbSecurityRead,
+            dbSecurityUpdate: opts.dbSecurityUpdate,
+            dbSecurityDelete: opts.dbSecurityDelete,
+            inlineTimeoutAction: opts.inlineTimeoutAction,
+            maxInlineLatency: opts.maxInlineLatency,
+            maskDataInStorage: opts.maskDataInStorage,
+          });
+          const mergedPolicy = mergeProfilePolicy(current.policy, overrides);
+
+          profile = await service.updateProfile(profileId, {
+            profile_name: opts.name ?? current.profileName,
+            active: opts.active ?? current.active ?? true,
+            policy: mergedPolicy,
+          });
+        }
+
         console.log(`  Profile updated: ${profile.profileId}\n`);
         renderProfileDetail(profile);
       } catch (err) {
