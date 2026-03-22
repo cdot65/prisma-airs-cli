@@ -82,7 +82,7 @@ AIRS enforces hard limits on topic definitions. Descriptions exceeding 250 chara
 
 ## Related
 
-- [Core Loop Architecture](../architecture/core-loop.md) — detailed loop state machine
+- [Core Loop Architecture](../../architecture/core-loop.md) — detailed loop state machine
 - [Memory System](memory-system.md) — cross-run learning persistence
 - [Metrics & Evaluation](metrics.md) — how TP/TN/FP/FN are classified
 - [Topic Constraints](topic-constraints.md) — AIRS limits on topic definitions

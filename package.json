@@ -1,7 +1,7 @@
 {
   "name": "@cdot65/prisma-airs-cli",
   "packageManager": "pnpm@10.6.5",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits",
   "type": "module",
   "main": "dist/index.js",

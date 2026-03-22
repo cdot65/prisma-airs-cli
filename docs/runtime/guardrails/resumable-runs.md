@@ -1,19 +1,12 @@
+---
+title: Resumable Runs
+---
+
 # Resumable Runs
 
 Runs checkpoint after every iteration. If something goes wrong — network error, rate limit, or you just hit Ctrl+C — pick up right where you left off. No wasted API calls.
 
 ## Run Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> running: generate
-    running --> paused: interrupted
-    running --> completed: target reached / max iterations
-    running --> failed: unrecoverable error
-    paused --> running: resume
-    failed --> running: resume
-    completed --> [*]
-```
 
 | Status | Meaning |
 |--------|---------|

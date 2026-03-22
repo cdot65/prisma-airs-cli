@@ -1,3 +1,7 @@
+---
+title: Metrics & Evaluation
+---
+
 # Metrics & Evaluation
 
 Every iteration measures how well the guardrail performs, then uses that data to guide improvement. Here's what gets measured and why.
@@ -56,14 +60,6 @@ Per-category error rates from the previous iteration are injected into the test 
 ## Scanning
 
 Test prompts are scanned against AIRS in parallel batches:
-
-```mermaid
-graph LR
-    A[Test Cases] --> B[Batch Scanner]
-    B --> C[Concurrent Requests]
-    C --> D[AIRS Scan API]
-    D --> E[Results]
-```
 
 - **Concurrency**: controlled by `scanConcurrency` (default 5)
 - **Detection**: checks `prompt_detected.topic_violation` (fallback: `topic_guardrails_details`)

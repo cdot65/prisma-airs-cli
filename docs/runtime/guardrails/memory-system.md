@@ -1,13 +1,10 @@
+---
+title: Memory System
+---
+
 # Memory System
 
 Prisma AIRS CLI learns from every run. After a guardrail generation completes, the system extracts insights and stores them for future runs on similar topics. Over time, this means faster convergence and fewer iterations.
-
-```mermaid
-graph LR
-    A[Run Completes] --> B[Extract Learnings]
-    B --> C[Store by Category]
-    C --> D[Inject into Future Prompts]
-```
 
 ## How Learnings Work
 
@@ -45,7 +42,7 @@ Each category gets its own file on disk.
 
 ## Cross-Topic Transfer
 
-Here's where memory gets powerful: learnings transfer to _related_ topics, not just exact matches.
+Learnings transfer to _related_ topics, not just exact matches.
 
 Any topic whose keywords have **50% or more overlap** with a stored category receives those learnings.
 

@@ -72,38 +72,46 @@ nav:
       - Installation: getting-started/installation.md
       - Configuration: getting-started/configuration.md
       - Quick Start: getting-started/quick-start.md
-  - Capabilities:
-      - Runtime Security: features/runtime-security.md
-      - Guardrail Generation: features/guardrail-generation.md
-      - AI Red Teaming: features/red-team.md
-      - Model Security: features/model-security.md
-      - Profile Audits: features/profile-audits.md
-  - Architecture:
-      - Overview: architecture/overview.md
-      - Core Loop: architecture/core-loop.md
-      - Memory System: features/memory-system.md
-      - Design Decisions: architecture/design-decisions.md
-  - LLM Providers:
-      - Overview: providers/overview.md
-      - SaaS APIs: providers/saas-apis.md
-      - Vertex AI: providers/vertex-ai.md
-      - AWS Bedrock: providers/bedrock.md
-      - Troubleshooting: providers/troubleshooting.md
+  - Runtime Security:
+      - Overview: runtime/overview.md
+      - Prompt Scanning: runtime/scanning.md
+      - Configuration Management: runtime/config-management.md
+      - Guardrail Generation:
+          - How It Works: runtime/guardrails/overview.md
+          - Metrics & Evaluation: runtime/guardrails/metrics.md
+          - Topic Constraints: runtime/guardrails/topic-constraints.md
+          - Memory System: runtime/guardrails/memory-system.md
+          - Resumable Runs: runtime/guardrails/resumable-runs.md
+      - Profile Audits: runtime/profile-audits.md
+  - AI Red Teaming:
+      - Overview: redteam/overview.md
+      - Running Scans: redteam/scanning.md
+      - Managing Targets: redteam/targets.md
+      - Prompt Sets & Prompts: redteam/prompt-sets.md
+      - Guardrail to Red Team: redteam/guardrail-to-redteam.md
+  - Model Security:
+      - Overview: model-security/overview.md
+      - Security Groups: model-security/groups.md
+      - Rules & Instances: model-security/rules.md
+      - Scans & Results: model-security/scans.md
+      - Labels: model-security/labels.md
+      - Python SDK: model-security/install.md
   - Reference:
-      - AI Agent Instructions: reference/agent-instructions.md
+      - Architecture:
+          - Overview: architecture/overview.md
+          - Core Loop: architecture/core-loop.md
+          - Design Decisions: architecture/design-decisions.md
+      - LLM Providers:
+          - Overview: providers/overview.md
+          - SaaS APIs: providers/saas-apis.md
+          - Vertex AI: providers/vertex-ai.md
+          - AWS Bedrock: providers/bedrock.md
+          - Troubleshooting: providers/troubleshooting.md
       - CLI Commands: reference/cli-commands.md
       - Configuration Options: reference/configuration.md
       - Environment Variables: reference/environment-variables.md
       - AIRS Constraints: reference/airs-constraints.md
-      - Metrics & Evaluation: features/metrics.md
-      - Topic Constraints: features/topic-constraints.md
-      - Resumable Runs: features/resumable-runs.md
-  - Guides:
-      - Guardrail to Red Team: examples/guardrail-to-redteam.md
-      - Managing Targets: examples/managing-targets.md
-      - Managing Prompt Sets: examples/managing-prompt-sets.md
-      - Running Scans: examples/running-scans.md
-      - Model Security: examples/model-security.md
+      - AI Agent Instructions: reference/agent-instructions.md
   - Development:
       - Contributing: development/contributing.md
       - Testing: development/testing.md

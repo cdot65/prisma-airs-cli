@@ -1,3 +1,7 @@
+---
+title: Topic Constraints
+---
+
 # Topic Constraints
 
 Prisma AIRS enforces hard limits on custom topic definitions. Prisma AIRS CLI handles these automatically so you don't have to worry about truncation or rejection.
@@ -19,24 +23,7 @@ Prisma AIRS enforces hard limits on custom topic definitions. Prisma AIRS CLI ha
 
 ## Automatic Clamping
 
-The LLM frequently exceeds the 250-character description limit — natural language tends to be verbose. The `clampTopic()` function enforces limits automatically after every LLM call:
-
-```mermaid
-graph TD
-    A[LLM Output] --> B{Name > 100?}
-    B -->|Yes| C[Truncate name]
-    B -->|No| D{Examples > 250 each?}
-    C --> D
-    D -->|Yes| E[Truncate each example]
-    D -->|No| F{Combined > 1000?}
-    E --> F
-    F -->|Yes| G[Drop trailing examples]
-    G --> H{Still > 1000?}
-    H -->|Yes| I[Truncate description]
-    H -->|No| J[Done]
-    F -->|No| J
-    I --> J
-```
+The LLM frequently exceeds the 250-character description limit — natural language tends to be verbose. The `clampTopic()` function enforces limits automatically after every LLM call.
 
 The strategy is ordered by impact: drop trailing examples first, truncate the description only as a last resort. This preserves as much semantic content as possible.
 
