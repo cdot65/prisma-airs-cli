@@ -53,7 +53,8 @@ Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `s
 ```
 src/
 ├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
-│   ├── index.ts           # Commander program — registers runtime/redteam/model-security
+│   ├── index.ts           # Commander program — registers runtime/redteam/model-security, --debug global flag
+│   ├── debug-logger.ts    # Global fetch interceptor — logs AIRS/SCM API traffic to JSONL
 │   ├── builders/
 │   │   └── profile-builder.ts # CLI flags → CreateSecurityProfileRequest builder + merge utility
 │   ├── commands/
@@ -160,6 +161,7 @@ tests/
 - **Scanner**: `Scanner.syncScan()` via SDK, detection = `prompt_detected.topic_violation === true` (sole signal, no fallbacks). `category` still extracted for weighted test generation but not used for detection
 - **Detection**: Both block and allow intents use `triggered` (= `topic_violation`) as the sole guardrail detection signal. No category-based or action-based detection.
 - **`DebugScanService`**: Wrapper that appends raw scan responses to a JSONL file when `--debug-scans` is passed
+- **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses (not LLM calls) to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Auth tokens are redacted. Works with any subcommand.
 - **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD; `--create-prompt-set` auto-creates a prompt set from the best iteration's test cases
 - **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment/DLP profile listing, scan log querying, plus profile linking for guardrail generation
 - Profile updates create **new revisions with new UUIDs** — always reference profiles by name, never ID

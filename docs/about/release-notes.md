@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.3.1
+
+### New
+
+- **`--debug` global flag** — logs all AIRS and Strata Cloud Manager API requests and responses to a JSONL file (`~/.prisma-airs/debug-api-<timestamp>.jsonl`) for offline inspection and sharing with Palo Alto Networks support. Works with any subcommand across all three command groups. Auth tokens are redacted.
+
 ## v1.3.0
 
 ### New

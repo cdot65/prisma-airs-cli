@@ -86,6 +86,17 @@ Something not working? Find your error below.
 
 ## General Debugging
 
+### API request/response logging
+
+Use the global `--debug` flag to capture every AIRS and Strata Cloud Manager API request and response to a JSONL file:
+
+```bash
+airs --debug runtime scan --profile my-profile "test prompt"
+airs --debug runtime topics generate
+```
+
+The log file is written to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Each line contains the full request (method, URL, headers, body) and response (status, headers, body). Auth tokens are redacted. This is useful for sharing raw API traffic with Palo Alto Networks support when troubleshooting rate limiting, unexpected responses, or authentication issues.
+
 ### Enable verbose logging
 
 Set `DEBUG=true` to see detailed request/response logs:

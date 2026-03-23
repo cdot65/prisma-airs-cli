@@ -14,7 +14,7 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 4. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 5. **Profile Audits** — multi-topic evaluation with conflict detection
 
-The binary is `airs`. Three top-level command groups: `runtime`, `redteam`, `model-security`.
+The binary is `airs`. Three top-level command groups: `runtime`, `redteam`, `model-security`. Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
 
 ---
 
@@ -645,7 +645,7 @@ This runs fully autonomously — no interactive prompts. On completion, it creat
 | `Missing required option: --profile` | Forgot required flag | Add the flag |
 | `PANW_AI_SEC_API_KEY is not set` | Scanner API key missing | Set env var |
 | `OAuth2 token error` / `401` | Management credentials wrong/missing | Check `PANW_MGMT_CLIENT_ID`, `SECRET`, `TSG_ID` |
-| `429 Too Many Requests` | Rate limited | CLI retries automatically with backoff; reduce `--scan-concurrency` |
+| `429 Too Many Requests` | Rate limited | CLI retries automatically with backoff; reduce `--scan-concurrency`; use `--debug` to capture raw API traffic |
 | `Topic not found` / `Profile not found` | Resource doesn't exist or wrong ID | Use `list` commands to find correct IDs |
 | `AIRS rejects empty topic-list` | Profile update with empty topic list | Ensure at least one topic entry |
 
