@@ -124,6 +124,14 @@ If the AIRS API returns a rate limit error during polling, Prisma AIRS CLI retri
   ⚠ Rate limited — retry 3 in 40s...
 ```
 
+To capture the raw API traffic for troubleshooting, use the global `--debug` flag:
+
+```bash
+airs --debug runtime bulk-scan --profile my-profile --input prompts.txt
+```
+
+This writes every request/response to `~/.prisma-airs/debug-api-<timestamp>.jsonl` — useful for sharing with Palo Alto Networks support.
+
 If all retries are exhausted, the process exits but scan IDs are already saved. Resume with:
 
 ```bash

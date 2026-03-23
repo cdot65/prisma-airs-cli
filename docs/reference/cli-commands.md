@@ -2,7 +2,7 @@
 
 Binary: `airs` (or `pnpm run dev` during development).
 
-Three top-level command groups: `runtime`, `redteam`, `model-security`.
+Three top-level command groups: `runtime`, `redteam`, `model-security`. One global flag: `--debug`.
 
 All list commands support `--output <format>` for structured output: `pretty` (default), `table`, `csv`, `json`, `yaml`.
 
@@ -15,6 +15,7 @@ teaming, model security scanning, profile audits
 
 Options:
   -V, --version   output the version number
+  --debug          Log all AIRS/SCM API requests and responses to a JSONL file
   -h, --help      display help for command
 
 Commands:
@@ -23,6 +24,34 @@ Commands:
   model-security  AI Model Security operations — groups, rules, scans
   help [command]  display help for command
 ```
+
+### Global Flag: `--debug`
+
+Log every AIRS and Strata Cloud Manager API request/response to a JSONL file for offline inspection and sharing with Palo Alto Networks support.
+
+```bash
+airs --debug runtime scan --profile my-profile "test prompt"
+airs --debug runtime topics generate
+airs --debug redteam scan --target <uuid> --name "Scan"
+```
+
+When enabled, the CLI prints the log file path at startup:
+
+```
+  Debug: API log → ~/.prisma-airs/debug-api-1711234567890.jsonl
+```
+
+Each line in the JSONL file is a JSON object containing:
+
+| Field | Description |
+|-------|-------------|
+| `timestamp` | ISO 8601 timestamp |
+| `durationMs` | Round-trip time in milliseconds |
+| `request` | `{ method, url, headers, body }` — auth tokens are redacted |
+| `response` | `{ status, statusText, headers, body }` — full response body |
+| `error` | Present instead of `response` on network errors |
+
+Only AIRS/SCM API traffic is logged (not LLM provider calls). The flag works with any subcommand across all three command groups.
 
 ---
 
