@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.3.2
+
+### New
+
+- **`--rate <n>` flag for generate/resume** — caps AIRS scan API calls to N per second during guardrail generation and resumed runs. Uses a sliding-window token bucket. Default: unlimited (current behavior). Prevents hitting API rate limits during intensive scan loops.
+
 ## v1.3.1
 
 ### New

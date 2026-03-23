@@ -2,7 +2,11 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AirsScanService, DebugScanService } from '../../../src/airs/scanner.js';
+import {
+  AirsScanService,
+  DebugScanService,
+  RateLimitedScanService,
+} from '../../../src/airs/scanner.js';
 import type { ScanResult, ScanService } from '../../../src/airs/types.js';
 
 // Mock the SDK
@@ -263,5 +267,107 @@ describe('DebugScanService', () => {
     expect(lines).toHaveLength(3);
 
     await fs.unlink(tmpFile).catch(() => {});
+  });
+});
+
+describe('RateLimitedScanService', () => {
+  function createMockInner(): ScanService {
+    return {
+      scan: vi.fn(
+        async (): Promise<ScanResult> => ({
+          scanId: 'scan-1',
+          reportId: 'report-1',
+          action: 'allow',
+          triggered: false,
+          category: 'benign',
+        }),
+      ),
+      scanBatch: vi.fn(
+        async (_p: string, prompts: string[]): Promise<ScanResult[]> =>
+          prompts.map(() => ({
+            scanId: 'scan-1',
+            reportId: 'report-1',
+            action: 'allow' as const,
+            triggered: false,
+            category: 'benign',
+          })),
+      ),
+    };
+  }
+
+  it('delegates scan calls to inner service', async () => {
+    const inner = createMockInner();
+    const limited = new RateLimitedScanService(inner, 100);
+
+    const result = await limited.scan('profile', 'hello');
+    expect(result.scanId).toBe('scan-1');
+    expect(inner.scan).toHaveBeenCalledWith('profile', 'hello', undefined);
+  });
+
+  it('allows up to maxPerSecond calls without delay', async () => {
+    const inner = createMockInner();
+    const rate = 10;
+    const limited = new RateLimitedScanService(inner, rate);
+
+    const start = Date.now();
+    const promises = Array.from({ length: rate }, (_, i) => limited.scan('profile', `prompt-${i}`));
+    await Promise.all(promises);
+    const elapsed = Date.now() - start;
+
+    // 10 calls at rate 10/s should complete in well under 1s
+    expect(elapsed).toBeLessThan(500);
+    expect(inner.scan).toHaveBeenCalledTimes(rate);
+  });
+
+  it('delays calls that exceed the per-second rate', async () => {
+    const inner = createMockInner();
+    const rate = 5;
+    const limited = new RateLimitedScanService(inner, rate);
+
+    const start = Date.now();
+    // Fire rate+1 calls — the last one must wait for the window to slide
+    const promises = Array.from({ length: rate + 1 }, (_, i) =>
+      limited.scan('profile', `prompt-${i}`),
+    );
+    await Promise.all(promises);
+    const elapsed = Date.now() - start;
+
+    // The 6th call should have been delayed until the 1s window slides
+    expect(elapsed).toBeGreaterThanOrEqual(200);
+    expect(inner.scan).toHaveBeenCalledTimes(rate + 1);
+  });
+
+  it('scanBatch respects rate limit across concurrent calls', async () => {
+    const callTimes: number[] = [];
+    const inner: ScanService = {
+      scan: vi.fn(async (): Promise<ScanResult> => {
+        callTimes.push(Date.now());
+        return {
+          scanId: 's',
+          reportId: 'r',
+          action: 'allow',
+          triggered: false,
+        };
+      }),
+      scanBatch: vi.fn(),
+    };
+
+    const rate = 5;
+    const limited = new RateLimitedScanService(inner, rate);
+
+    // 8 prompts at rate 5/s — first 5 immediate, next 3 delayed
+    await limited.scanBatch('profile', Array(8).fill('test'), 8);
+
+    expect(callTimes).toHaveLength(8);
+    // Verify the batch was processed through the rate limiter
+    expect(inner.scan).toHaveBeenCalledTimes(8);
+  });
+
+  it('passes sessionId through to inner scan', async () => {
+    const inner = createMockInner();
+    const limited = new RateLimitedScanService(inner, 10);
+
+    await limited.scan('profile', 'hello', 'session-123');
+    expect(inner.scan).toHaveBeenCalledWith('profile', 'hello', 'session-123');
   });
 });

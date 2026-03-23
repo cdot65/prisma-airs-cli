@@ -2,7 +2,7 @@ import * as path from 'node:path';
 import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import { SdkPromptSetService } from '../../airs/promptsets.js';
-import { AirsScanService, DebugScanService } from '../../airs/scanner.js';
+import { AirsScanService, DebugScanService, RateLimitedScanService } from '../../airs/scanner.js';
 import type { ScanService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
 import { runLoop } from '../../core/loop.js';
@@ -30,6 +30,7 @@ export function registerResumeCommand(parent: Command): void {
     .command('resume <runId>')
     .description('Resume a paused or failed run')
     .option('--max-iterations <n>', 'Additional iterations to run', '10')
+    .option('--rate <n>', 'Max AIRS scan API calls per second (default: unlimited)')
     .option('--debug-scans', 'Dump raw AIRS scan responses to JSONL for debugging', false)
     .option('--create-prompt-set', 'Create custom prompt set from test cases after loop', false)
     .option('--prompt-set-name <name>', 'Override auto-generated prompt set name')
@@ -75,6 +76,9 @@ export function registerResumeCommand(parent: Command): void {
         const llm = new LangChainLlmService(model);
         if (!config.airsApiKey) throw new Error('PANW_AI_SEC_API_KEY is required');
         let scanner: ScanService = new AirsScanService(config.airsApiKey);
+        if (opts.rate) {
+          scanner = new RateLimitedScanService(scanner, Number.parseInt(opts.rate, 10));
+        }
         if (opts.debugScans) {
           const debugPath = path.join(config.dataDir, '..', `debug-scans-${runId}.jsonl`);
           scanner = new DebugScanService(scanner, debugPath);

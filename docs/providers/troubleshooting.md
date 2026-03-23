@@ -9,7 +9,7 @@ Something not working? Find your error below.
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `401 Unauthorized` / `invalid x-api-key` | Missing or invalid API key | Verify `ANTHROPIC_API_KEY` or `GOOGLE_API_KEY` is set and correct |
-| `429 Rate limit exceeded` | Too many requests | Reduce `SCAN_CONCURRENCY` or wait before retrying |
+| `429 Rate limit exceeded` | Too many requests | Use `--rate <n>` to cap scans/second, reduce `SCAN_CONCURRENCY`, or wait before retrying |
 | `Could not resolve model` | Wrong model name for provider | Verify model name matches API format (see [overview](overview.md#override-the-default-model)) |
 | `ENOTFOUND api.anthropic.com` | Network / DNS issue | Check internet connectivity and proxy settings |
 
