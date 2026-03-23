@@ -31,6 +31,9 @@ airs runtime topics generate \
   --target-coverage 90 \
   --max-iterations 5
 
+# Rate-limit scans to avoid API throttling
+airs runtime topics generate --rate 10 --topic "..." --profile ...
+
 # Resume, report, list runs
 airs runtime topics resume <runId>
 airs runtime topics report <runId>

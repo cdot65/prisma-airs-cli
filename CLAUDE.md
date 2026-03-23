@@ -91,7 +91,7 @@ src/
 │   ├── schemas.ts         # Zod output schemas for structured LLM responses
 │   └── prompts/           # ChatPromptTemplate definitions (6 files)
 ├── airs/
-│   ├── scanner.ts         # AirsScanService + DebugScanService — syncScan + scanBatch
+│   ├── scanner.ts         # AirsScanService + DebugScanService + RateLimitedScanService — syncScan + scanBatch
 │   ├── runtime.ts         # SdkRuntimeService — sync scan, async bulk scan, poll results, CSV export
 │   ├── management.ts      # SdkManagementService — topic CRUD, profile CRUD, API keys, customer apps, deployment/DLP profiles, scan logs
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
@@ -161,6 +161,7 @@ tests/
 - **Scanner**: `Scanner.syncScan()` via SDK, detection = `prompt_detected.topic_violation === true` (sole signal, no fallbacks). `category` still extracted for weighted test generation but not used for detection
 - **Detection**: Both block and allow intents use `triggered` (= `topic_violation`) as the sole guardrail detection signal. No category-based or action-based detection.
 - **`DebugScanService`**: Wrapper that appends raw scan responses to a JSONL file when `--debug-scans` is passed
+- **`RateLimitedScanService`**: Wrapper that caps scan throughput to N calls/second via sliding-window token bucket. Enabled by `--rate <n>` on generate/resume.
 - **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses (not LLM calls) to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Auth tokens are redacted. Works with any subcommand.
 - **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD; `--create-prompt-set` auto-creates a prompt set from the best iteration's test cases
 - **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment/DLP profile listing, scan log querying, plus profile linking for guardrail generation

@@ -260,6 +260,7 @@ airs runtime topics generate [options]
 | `--accumulate-tests` | off | Carry test pool across iterations |
 | `--max-accumulated-tests <n>` | unlimited | Cap on accumulated tests |
 | `--no-memory` | memory on | Disable cross-run learning |
+| `--rate <n>` | unlimited | Max AIRS scan API calls per second |
 | `--debug-scans` | off | Dump raw scan responses to JSONL |
 | `--create-prompt-set` | off | Create red team prompt set from best tests |
 | `--prompt-set-name <name>` | auto | Override prompt set name |
@@ -281,7 +282,7 @@ airs runtime topics generate \
 #### Resume a run
 
 ```bash
-airs runtime topics resume <runId> [--max-iterations <n>] [--debug-scans] [--create-prompt-set] [--prompt-set-name <name>]
+airs runtime topics resume <runId> [--max-iterations <n>] [--rate <n>] [--debug-scans] [--create-prompt-set] [--prompt-set-name <name>]
 ```
 
 #### View run report
@@ -645,7 +646,7 @@ This runs fully autonomously — no interactive prompts. On completion, it creat
 | `Missing required option: --profile` | Forgot required flag | Add the flag |
 | `PANW_AI_SEC_API_KEY is not set` | Scanner API key missing | Set env var |
 | `OAuth2 token error` / `401` | Management credentials wrong/missing | Check `PANW_MGMT_CLIENT_ID`, `SECRET`, `TSG_ID` |
-| `429 Too Many Requests` | Rate limited | CLI retries automatically with backoff; reduce `--scan-concurrency`; use `--debug` to capture raw API traffic |
+| `429 Too Many Requests` | Rate limited | Use `--rate <n>` to cap scans/second; CLI retries automatically with backoff; use `--debug` to capture raw API traffic |
 | `Topic not found` / `Profile not found` | Resource doesn't exist or wrong ID | Use `list` commands to find correct IDs |
 | `AIRS rejects empty topic-list` | Profile update with empty topic list | Ensure at least one topic entry |
 

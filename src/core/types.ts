@@ -28,6 +28,8 @@ export interface UserInput {
   maxAccumulatedTests?: number;
   createPromptSet?: boolean;
   promptSetName?: string;
+  /** Max AIRS scan API calls per second. Undefined = unlimited. */
+  scanRate?: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -85,3 +85,54 @@ export class DebugScanService implements ScanService {
     );
   }
 }
+
+/**
+ * Rate-limiting wrapper that caps scan throughput to N calls per second.
+ * Uses a sliding-window token bucket — tracks timestamps of recent calls
+ * and delays when the window is full.
+ */
+export class RateLimitedScanService implements ScanService {
+  private timestamps: number[] = [];
+
+  constructor(
+    private inner: ScanService,
+    private maxPerSecond: number,
+  ) {}
+
+  private async acquireToken(): Promise<void> {
+    const now = Date.now();
+    // Evict timestamps older than 1 second
+    this.timestamps = this.timestamps.filter((t) => now - t < 1000);
+
+    if (this.timestamps.length >= this.maxPerSecond) {
+      // Wait until the oldest timestamp in the window expires
+      const oldest = this.timestamps[0];
+      const waitMs = 1000 - (now - oldest);
+      if (waitMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+      }
+      // Re-evict after waiting
+      const after = Date.now();
+      this.timestamps = this.timestamps.filter((t) => after - t < 1000);
+    }
+
+    this.timestamps.push(Date.now());
+  }
+
+  async scan(profileName: string, prompt: string, sessionId?: string): Promise<ScanResult> {
+    await this.acquireToken();
+    return this.inner.scan(profileName, prompt, sessionId);
+  }
+
+  async scanBatch(
+    profileName: string,
+    prompts: string[],
+    concurrency?: number,
+    sessionId?: string,
+  ): Promise<ScanResult[]> {
+    const limit = pLimit(concurrency ?? 5);
+    return Promise.all(
+      prompts.map((prompt) => limit(() => this.scan(profileName, prompt, sessionId))),
+    );
+  }
+}

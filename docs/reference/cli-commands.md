@@ -308,6 +308,7 @@ Start a new guardrail generation run.
 | `--accumulate-tests` | off | Carry forward test prompts across iterations |
 | `--max-accumulated-tests <n>` | unlimited | Cap on accumulated test count |
 | `--no-memory` | memory on | Disable cross-run learning |
+| `--rate <n>` | unlimited | Max AIRS scan API calls per second |
 | `--debug-scans` | off | Dump raw AIRS scan responses to JSONL for debugging |
 | `--create-prompt-set` | off | Create custom prompt set in AI Red Team from test cases |
 | `--prompt-set-name <name>` | auto | Override auto-generated prompt set name |
@@ -344,6 +345,7 @@ Pick up a paused or failed run from where it left off.
 | Flag | Default | What it does |
 |------|---------|-------------|
 | `--max-iterations <n>` | `10` | Additional iterations from current position |
+| `--rate <n>` | unlimited | Max AIRS scan API calls per second |
 | `--debug-scans` | off | Dump raw AIRS scan responses to JSONL for debugging |
 | `--create-prompt-set` | off | Create custom prompt set in AI Red Team from test cases |
 | `--prompt-set-name <name>` | auto | Override auto-generated prompt set name |
