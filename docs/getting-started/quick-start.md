@@ -115,7 +115,7 @@ airs runtime profiles create \
   --agent-security block
 
 # Update a profile — only specify what changes (existing config preserved)
-airs runtime profiles update <profileId> \
+airs runtime profiles update <nameOrId> \
   --toxic-content "high:alert, moderate:allow"
 ```
 

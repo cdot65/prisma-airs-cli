@@ -499,14 +499,19 @@ export function registerRuntimeCommand(program: Command): void {
         console.log(`  Profile created: ${profile.profileId}\n`);
         renderProfileDetail(profile);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('409')) {
+          renderError(`Profile "${opts.name}" already exists. Use 'profiles update' to modify it.`);
+        } else {
+          renderError(msg);
+        }
         process.exit(1);
       }
     });
 
   profiles
-    .command('update <profileId>')
-    .description('Update a security profile')
+    .command('update <nameOrId>')
+    .description('Update a security profile by name or UUID')
     .option('--name <name>', 'Update profile name')
     .option('--no-active', 'Set profile as inactive')
     .option('--active', 'Set profile as active')
@@ -530,10 +535,17 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number.parseFloat)
     .option('--mask-data-in-storage', 'Mask data in storage')
     .option('--config <path>', 'JSON file with profile updates (legacy)')
-    .action(async (profileId: string, opts) => {
+    .action(async (nameOrId: string, opts) => {
       try {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          nameOrId,
+        );
+        const resolved = isUuid
+          ? await service.getProfile(nameOrId)
+          : await service.getProfileByName(nameOrId);
+        const profileId = resolved.profileId;
 
         let profile: SecurityProfileInfo;
         if (opts.config) {
@@ -542,7 +554,7 @@ export function registerRuntimeCommand(program: Command): void {
           profile = await service.updateProfile(profileId, config);
         } else {
           // Read-modify-write: fetch current profile, merge flags, PUT full payload
-          const current = await service.getProfile(profileId);
+          const current = resolved;
           const overrides = buildProfileOverrides({
             promptInjection: opts.promptInjection,
             toxicContent: opts.toxicContent,
@@ -582,25 +594,34 @@ export function registerRuntimeCommand(program: Command): void {
     });
 
   profiles
-    .command('delete <profileId>')
-    .description('Delete a security profile')
+    .command('delete <nameOrId>')
+    .description('Delete a security profile by name or UUID')
     .option('--force', 'Force delete (removes from referencing policies)')
     .option('--updated-by <email>', 'Email of user performing force deletion')
-    .action(async (profileId: string, opts) => {
+    .action(async (nameOrId: string, opts) => {
       try {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          nameOrId,
+        );
+        let profileId = nameOrId;
+        let profileName = nameOrId;
+        if (!isUuid) {
+          const profile = await service.getProfileByName(nameOrId);
+          profileId = profile.profileId;
+          profileName = profile.profileName;
+        }
         if (opts.force) {
           if (!opts.updatedBy) {
             renderError('--updated-by <email> is required with --force');
             process.exit(1);
           }
-          const result = await service.forceDeleteProfile(profileId, opts.updatedBy);
-          console.log(`  ${result.message}\n`);
+          await service.forceDeleteProfile(profileId, opts.updatedBy);
         } else {
-          const result = await service.deleteProfile(profileId);
-          console.log(`  ${result.message}\n`);
+          await service.deleteProfile(profileId);
         }
+        console.log(`  Profile deleted: ${profileName} (${profileId})\n`);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
