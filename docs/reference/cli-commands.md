@@ -206,9 +206,9 @@ Security profile CRUD and profile-level audit.
 airs runtime profiles list
 airs runtime profiles get <nameOrId>
 airs runtime profiles create --name "My Profile" --prompt-injection block
-airs runtime profiles update <profileId> --toxic-content "high:alert"
-airs runtime profiles delete <profileId>
-airs runtime profiles delete <profileId> --force --updated-by <email>
+airs runtime profiles update <nameOrId> --toxic-content "high:alert"
+airs runtime profiles delete <nameOrId>
+airs runtime profiles delete <nameOrId> --force --updated-by <email>
 airs runtime profiles audit <profileName> [options]
 ```
 
@@ -217,8 +217,8 @@ airs runtime profiles audit <profileName> [options]
 | `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
 | `get <nameOrId>` | `--output <format>` (pretty/json/yaml, default pretty). Auto-detects UUID vs name. |
 | `create` | `--name <name>` (required), protection flags (see below), `--config <path>` (legacy) |
-| `update <profileId>` | Protection flags (see below), `--name <name>`, `--config <path>` (legacy). Uses read-modify-write (fetches existing, merges flags, sends full payload via PUT). |
-| `delete <profileId>` | `--force`, `--updated-by <email>` |
+| `update <nameOrId>` | Protection flags (see below), `--name <name>`, `--config <path>` (legacy). Auto-detects UUID vs name. Uses read-modify-write (fetches existing, merges flags, sends full payload via PUT). |
+| `delete <nameOrId>` | `--force`, `--updated-by <email>`. Auto-detects UUID vs name. |
 | `audit <profileName>` | `--max-tests-per-topic <n>` (default 20), `--format <fmt>` (terminal/json/html), `--output <path>`, `--provider <name>`, `--model <name>` |
 
 #### Profile Protection Flags
