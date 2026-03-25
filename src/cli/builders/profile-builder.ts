@@ -195,7 +195,7 @@ function buildModelConfiguration(flags: Partial<ProfileFlags>): Record<string, u
   if (dp) config['data-protection'] = dp;
 
   const lat = buildLatency(flags);
-  if (lat) config.latency = lat;
+  config.latency = lat ?? { 'inline-timeout-action': 'block', 'max-inline-latency': 5 };
 
   if (flags.maskDataInStorage != null) {
     config['mask-data-in-storage'] = flags.maskDataInStorage;

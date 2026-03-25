@@ -211,7 +211,10 @@ describe('buildProfileRequest', () => {
     expect(config?.['app-protection']).toBeUndefined();
     expect(config?.['agent-protection']).toBeUndefined();
     expect(config?.['data-protection']).toBeUndefined();
-    expect(config?.latency).toBeUndefined();
+    expect(config?.latency).toEqual({
+      'inline-timeout-action': 'block',
+      'max-inline-latency': 5,
+    });
   });
 });
 

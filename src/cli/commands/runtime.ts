@@ -460,9 +460,9 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--mask-data-in-storage', 'Mask data in storage')
     .option('--config <path>', 'JSON file with profile configuration (legacy)')
     .action(async (opts) => {
+      const service = await createMgmtService();
       try {
         renderRuntimeConfigHeader();
-        const service = await createMgmtService();
 
         let profile: SecurityProfileInfo;
         if (opts.config) {
@@ -501,7 +501,18 @@ export function registerRuntimeCommand(program: Command): void {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('409')) {
-          renderError(`Profile "${opts.name}" already exists. Use 'profiles update' to modify it.`);
+          // AIRS may create the profile but also return 409 — check if it exists
+          try {
+            const created = await service.getProfileByName(opts.name);
+            console.log(`  Profile created: ${created.profileId}\n`);
+            renderProfileDetail(created);
+            return;
+          } catch {
+            // Profile truly already existed before our call
+            renderError(
+              `Profile "${opts.name}" already exists. Use 'profiles update' to modify it.`,
+            );
+          }
         } else {
           renderError(msg);
         }
@@ -607,7 +618,10 @@ export function registerRuntimeCommand(program: Command): void {
         );
         let profileId = nameOrId;
         let profileName = nameOrId;
-        if (!isUuid) {
+        if (isUuid) {
+          const profile = await service.getProfile(nameOrId);
+          profileName = profile.profileName;
+        } else {
           const profile = await service.getProfileByName(nameOrId);
           profileId = profile.profileId;
           profileName = profile.profileName;
