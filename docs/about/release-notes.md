@@ -1,23 +1,40 @@
 # Release Notes
 
-## v1.3.2
+## v1.4.2
+
+### Fixed
+
+- Profile create now includes AIRS UI-required defaults: `app-protection`, `data-protection`, `latency`, `mask-data-in-storage`
+- `--toxic-content alert` expands to `"high:alert, moderate:alert"` (AIRS UI expects `severity:action` format)
+- Fixes "is not iterable" crash in AIRS UI when viewing CLI-created profiles
+
+## v1.4.1
+
+### Fixed
+
+- `profiles delete` by UUID now shows profile name in success message
+- `profiles create` handles AIRS 409 race — detects successful creation despite SDK error
+- `profiles create` defaults latency config to `block` / `5s` when not explicitly set
+
+## v1.4.0
 
 ### New
 
-- **`--rate <n>` flag for generate/resume** — caps AIRS scan API calls to N per second during guardrail generation and resumed runs. Uses a sliding-window token bucket. Default: unlimited (current behavior). Prevents hitting API rate limits during intensive scan loops.
-
-## v1.3.1
-
-### New
-
+- **`--rate <n>` flag for generate/resume** — caps AIRS scan API calls to N per second during guardrail generation and resumed runs. Uses a sliding-window token bucket. Default: unlimited. Prevents hitting API rate limits during intensive scan loops.
 - **`--debug` global flag** — logs all AIRS and Strata Cloud Manager API requests and responses to a JSONL file (`~/.prisma-airs/debug-api-<timestamp>.jsonl`) for offline inspection and sharing with Palo Alto Networks support. Works with any subcommand across all three command groups. Auth tokens are redacted.
+
+### Fixed
+
+- `profiles delete` and `profiles update` now accept name or UUID (same auto-detect as `profiles get`)
+- `profiles delete` prints proper success message instead of `undefined`
+- `profiles create` gives actionable error on 409 conflict: suggests `profiles update`
 
 ## v1.3.0
 
 ### New
 
 - **Docs restructured by AIRS module** — navigation reorganized into Runtime Security, AI Red Teaming, and Model Security top-level sections instead of flat Capabilities/Guides layout
-- **Profile create/update CLI flags** — `profiles create` and `profiles update` now use 20 CLI flags (`--prompt-injection`, `--toxic-content`, `--malicious-code`, etc.) instead of `--config` JSON files
+- **Profile create/update CLI flags** — `profiles create` and `profiles update` now use 20+ CLI flags (`--prompt-injection`, `--toxic-content`, `--malicious-code`, etc.) instead of `--config` JSON files
 - **Read-modify-write profile updates** — `profiles update` fetches current profile, merges only specified flags, then PUTs full payload (no config overwrites)
 
 ### Changed
@@ -25,22 +42,59 @@
 - Docs site navigation: features/ and examples/ directories merged into runtime/, redteam/, model-security/ module sections
 - Architecture and LLM Providers moved under Reference tab
 
-## v1.2.1
-
-### Fixed
-
-- Docs updated to show CLI flags for `profiles create`/`update` (was still showing `--config` pattern)
-
 ## v1.2.0
 
 ### New
 
-- **Profile builder** (`src/cli/builders/profile-builder.ts`) — converts CLI flags to `CreateSecurityProfileRequest`, supports all 20 protection flags
+- **Profile builder** — converts CLI flags to `CreateSecurityProfileRequest`, supports all protection flags
 - **`mergeProfilePolicy()`** — deep-merges CLI flag overrides into existing profile policy for PUT-only API
 - **`profiles create`** — create security profiles with CLI flags for all protection categories
 - **`profiles update`** — update profiles with read-modify-write pattern; only specify what changes
-- **`profiles get`** — accepts profile name or UUID, supports `--output pretty|json|yaml`
 - **`profiles delete --force --updated-by`** — force deletion of profiles with dependencies
+
+## v1.1.0
+
+### New
+
+- **`profiles get` command** — retrieve full security profile configuration by name or UUID
+    - Auto-detects UUID vs profile name
+    - Supports `--output pretty|json|yaml`
+    - Shows complete policy JSON (topic guardrails, DLP, app protection, etc.)
+- Bump `@cdot65/prisma-airs-sdk` to v0.6.10
+
+## v1.0.9
+
+### Fixed
+
+- Make `changeType` optional in learning extraction schema — LLM omits it for neutral-outcome learnings, causing `OUTPUT_PARSING_FAILURE` during memory extraction. Defaults to `'initial'` when omitted.
+
+## v1.0.8
+
+### Fixed
+
+- Remove unused `OUTPUT_FORMATS` import in redteam.ts
+- Add missing `intent` parameter to improveTopic test
+- Update langchain ecosystem to resolve `standard_schema` export crash
+
+### Dependencies
+
+- `@cdot65/prisma-airs-sdk` 0.6.3 → 0.6.7
+- `@langchain/aws` 1.3.0 → 1.3.3
+- `@langchain/core` 1.1.29 → 1.1.34
+- `@langchain/anthropic` 1.3.21 → 1.3.25
+- `@langchain/google-genai` 2.1.22 → 2.1.26
+- `@langchain/google-vertexai` 2.1.22 → 2.1.26
+
+### Security
+
+- Resolved transitive `fast-xml-parser` CVE via `@langchain/aws` update
+
+## v1.0.7
+
+### Fixed
+
+- Display full API key value on create/regenerate
+- Show last 8 characters of API key in list and detail views
 
 ## v1.0.6
 
