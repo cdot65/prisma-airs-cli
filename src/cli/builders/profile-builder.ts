@@ -57,7 +57,10 @@ function buildModelProtection(flags: Partial<ProfileFlags>): Record<string, unkn
     items.push({ name: 'prompt-injection', action: flags.promptInjection });
   }
   if (flags.toxicContent) {
-    items.push({ name: 'toxic-content', action: flags.toxicContent });
+    // AIRS UI expects "high:<action>, moderate:<action>" format — expand bare values
+    const tc = flags.toxicContent;
+    const toxicAction = tc.includes(':') ? tc : `high:${tc}, moderate:${tc}`;
+    items.push({ name: 'toxic-content', action: toxicAction });
   }
   if (flags.contextualGrounding) {
     items.push({ name: 'contextual-grounding', action: flags.contextualGrounding });
@@ -195,7 +198,7 @@ function buildModelConfiguration(flags: Partial<ProfileFlags>): Record<string, u
   if (dp) config['data-protection'] = dp;
 
   const lat = buildLatency(flags);
-  config.latency = lat ?? { 'inline-timeout-action': 'block', 'max-inline-latency': 5 };
+  if (lat) config.latency = lat;
 
   if (flags.maskDataInStorage != null) {
     config['mask-data-in-storage'] = flags.maskDataInStorage;
@@ -213,6 +216,25 @@ export function buildProfileRequest(flags: ProfileFlags): CreateSecurityProfileR
 
   if (hasAnyProtectionFlag(flags)) {
     const modelConfig = buildModelConfiguration(flags);
+    // AIRS UI requires these sections to exist — crashes with "is not iterable" otherwise
+    if (!modelConfig['app-protection']) {
+      modelConfig['app-protection'] = {
+        'default-url-category': { member: ['malicious'] },
+        'url-detected-action': 'block',
+      };
+    }
+    if (!modelConfig['data-protection']) {
+      modelConfig['data-protection'] = {
+        'data-leak-detection': { action: '', 'mask-data-inline': false, member: null },
+        'database-security': null,
+      };
+    }
+    if (!modelConfig.latency) {
+      modelConfig.latency = { 'inline-timeout-action': 'block', 'max-inline-latency': 5 };
+    }
+    if (modelConfig['mask-data-in-storage'] == null) {
+      modelConfig['mask-data-in-storage'] = false;
+    }
     request.policy = {
       'ai-security-profiles': [
         {

@@ -201,20 +201,27 @@ describe('buildProfileRequest', () => {
     expect(config?.['mask-data-in-storage']).toBe(true);
   });
 
-  it('does not create empty policy sections when no flags provided for a section', () => {
+  it('includes AIRS UI-required defaults even when flags not provided for a section', () => {
     const result = buildProfileRequest({
       name: 'Test',
       promptInjection: 'block',
       // No app-protection, agent-protection, data-protection, or latency flags
     });
     const config = getModelConfiguration(result);
-    expect(config?.['app-protection']).toBeUndefined();
+    expect(config?.['app-protection']).toEqual({
+      'default-url-category': { member: ['malicious'] },
+      'url-detected-action': 'block',
+    });
     expect(config?.['agent-protection']).toBeUndefined();
-    expect(config?.['data-protection']).toBeUndefined();
+    expect(config?.['data-protection']).toEqual({
+      'data-leak-detection': { action: '', 'mask-data-inline': false, member: null },
+      'database-security': null,
+    });
     expect(config?.latency).toEqual({
       'inline-timeout-action': 'block',
       'max-inline-latency': 5,
     });
+    expect(config?.['mask-data-in-storage']).toBe(false);
   });
 });
 
