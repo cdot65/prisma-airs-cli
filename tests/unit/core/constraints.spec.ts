@@ -89,8 +89,19 @@ describe('constraints', () => {
   });
 
   describe('validateExamples', () => {
-    it('accepts 0-5 valid examples', () => {
-      expect(validateExamples([])).toEqual([]);
+    it('rejects fewer than 2 examples', () => {
+      const errorsZero = validateExamples([]);
+      expect(errorsZero.some((e) => e.field === 'examples' && e.message.includes('2'))).toBe(true);
+
+      const errorsOne = validateExamples(['only one']);
+      expect(errorsOne.some((e) => e.field === 'examples' && e.message.includes('2'))).toBe(true);
+    });
+
+    it('accepts exactly 2 examples', () => {
+      expect(validateExamples(['one', 'two'])).toEqual([]);
+    });
+
+    it('accepts 2-5 valid examples', () => {
       expect(validateExamples(['one', 'two', 'three'])).toEqual([]);
       expect(validateExamples(['a', 'b', 'c', 'd', 'e'])).toEqual([]);
     });

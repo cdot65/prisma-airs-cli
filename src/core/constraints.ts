@@ -9,6 +9,7 @@ export const MAX_NAME_LENGTH = 100;
 export const MAX_DESCRIPTION_LENGTH = 250;
 export const MAX_EXAMPLE_LENGTH = 250;
 export const MAX_EXAMPLES = 5;
+export const MIN_EXAMPLES = 2;
 export const MAX_COMBINED_LENGTH = 1000;
 
 /** UTF-8 byte length — AIRS API enforces limits in bytes, not JS characters. */
@@ -54,6 +55,12 @@ export function validateExample(example: string, index: number): ValidationError
 
 export function validateExamples(examples: string[]): ValidationError[] {
   const errors: ValidationError[] = [];
+  if (examples.length < MIN_EXAMPLES) {
+    errors.push({
+      field: 'examples',
+      message: `At least ${MIN_EXAMPLES} examples required`,
+    });
+  }
   if (examples.length > MAX_EXAMPLES) {
     errors.push({
       field: 'examples',
