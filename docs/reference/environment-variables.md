@@ -48,10 +48,6 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 | Variable | Default | Range | What it controls |
 |----------|---------|-------|-----------------|
 | `SCAN_CONCURRENCY` | `5` | 1--20 | Parallel scan requests per batch |
-| `MAX_MEMORY_CHARS` | `3000` | 500--10000 | Memory injection character budget |
-| `MEMORY_ENABLED` | `true` | -- | Toggle memory system on/off |
-| `ACCUMULATE_TESTS` | `false` | -- | Carry forward test prompts across iterations |
-| `MAX_ACCUMULATED_TESTS` | unlimited | >=1 | Cap on accumulated test count |
 
 !!! warning
     `SCAN_CONCURRENCY` above 5 may trigger AIRS rate limits. Increase cautiously.
@@ -62,8 +58,7 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 
 | Variable | Default | What it does |
 |----------|---------|-------------|
-| `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
-| `MEMORY_DIR` | `~/.prisma-airs/memory` | Learning store directory |
+| `DATA_DIR` | `~/.prisma-airs/runs` | Data directory |
 
 !!! tip
     The `~` prefix is expanded to `$HOME` automatically.

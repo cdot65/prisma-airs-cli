@@ -31,7 +31,7 @@ Log every AIRS and Strata Cloud Manager API request/response to a JSONL file for
 
 ```bash
 airs --debug runtime scan --profile my-profile "test prompt"
-airs --debug runtime topics generate
+airs --debug runtime topics eval --profile my-profile --input prompts.csv
 airs --debug redteam scan --target <uuid> --name "Scan"
 ```
 
@@ -57,7 +57,7 @@ Only AIRS/SCM API traffic is logged (not LLM provider calls). The flag works wit
 
 ## runtime
 
-Runtime prompt scanning, AIRS configuration management, guardrail generation, and profile audits.
+Runtime prompt scanning, AIRS configuration management, guardrail optimization, and profile audits.
 
 ```
 $ airs runtime --help
@@ -265,118 +265,91 @@ airs runtime profiles audit my-security-profile --format html --output audit-rep
 
 ### runtime topics
 
-Custom topic CRUD and guardrail generation.
+Custom topic management and guardrail optimization.
 
 ```bash
 # CRUD
 airs runtime topics list
-airs runtime topics create --config <path>
 airs runtime topics update <topicId> --config <path>
 airs runtime topics delete <topicId>
 airs runtime topics delete <topicId> --force --updated-by <email>
 
-# Guardrail generation
-airs runtime topics generate [options]
-airs runtime topics resume <runId> [options]
-airs runtime topics report <runId> [options]
-airs runtime topics runs
+# Guardrail optimization (atomic commands for agent loops)
+airs runtime topics create --topic <desc> --intent <block|allow> [--examples <json>]
+airs runtime topics apply --profile <name> --topic <name>
+airs runtime topics eval --profile <name> --input <csv> [--output json]
+airs runtime topics revert --profile <name> --topic <name>
 ```
 
 | Subcommand | Flags |
 |------------|-------|
 | `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
-| `create` | `--config <path>` (required) |
 | `update <topicId>` | `--config <path>` (required) |
 | `delete <topicId>` | `--force`, `--updated-by <email>` |
 
-#### runtime topics generate
+#### runtime topics create
 
-Start a new guardrail generation run.
+Create or update a custom topic definition. Upserts by name -- if a topic with the same name exists, it is updated.
 
 | Flag | Default | What it does |
 |------|---------|-------------|
-| `--provider <name>` | `claude-api` | LLM provider (`claude-api`, `claude-vertex`, `claude-bedrock`, `gemini-api`, `gemini-vertex`, `gemini-bedrock`) |
-| `--model <name>` | per-provider | Override default model |
-| `--profile <name>` | _(prompted)_ | AIRS security profile name |
-| `--topic <desc>` | _(prompted)_ | Natural language description of content to detect |
+| `--topic <desc>` | _(required)_ | Natural language description of content to detect |
 | `--intent <block\|allow>` | `block` | Whether matching prompts are blocked or allowed |
-| `--max-iterations <n>` | `20` | Maximum refinement iterations |
-| `--target-coverage <n>` | `90` | Coverage percentage to stop at |
-| `--max-regressions <n>` | `3` | Stop after N consecutive coverage regressions (0 = disable) |
-| `--plateau-window <n>` | `0` | Iterations to check for plateau (0 = disable) |
-| `--plateau-band <pct>` | `0.05` | Max coverage variance for plateau detection |
-| `--accumulate-tests` | off | Carry forward test prompts across iterations |
-| `--max-accumulated-tests <n>` | unlimited | Cap on accumulated test count |
-| `--no-memory` | memory on | Disable cross-run learning |
-| `--rate <n>` | unlimited | Max AIRS scan API calls per second |
-| `--debug-scans` | off | Dump raw AIRS scan responses to JSONL for debugging |
-| `--create-prompt-set` | off | Create custom prompt set in AI Red Team from test cases |
-| `--prompt-set-name <name>` | auto | Override auto-generated prompt set name |
-| `--save-tests <path>` | — | Save best iteration test cases to CSV |
+| `--examples <json>` | — | JSON array of example prompts |
 
-!!! tip "Skip all prompts"
-    When both `--topic` and `--profile` are provided, interactive mode is skipped entirely.
+**Auth:** Management API
 
 ```bash
-# Interactive — prompts for everything
-airs runtime topics generate
-
-# Non-interactive — all inputs via flags
-airs runtime topics generate \
-  --provider claude-api \
-  --profile my-security-profile \
-  --topic "Block discussions about building explosives" \
-  --intent block \
-  --target-coverage 90
-
-# With test accumulation
-airs runtime topics generate \
-  --topic "Allow recipe discussions" \
-  --intent allow \
-  --profile cooking-policy \
-  --accumulate-tests \
-  --max-accumulated-tests 60
+airs runtime topics create --topic "Block weapons manufacturing" --intent block
+airs runtime topics create --topic "Allow recipe discussions" --intent allow \
+  --examples '["How to make pasta","Best bread recipe"]'
 ```
 
-#### runtime topics resume
+#### runtime topics apply
 
-Pick up a paused or failed run from where it left off.
+Assign a topic to a security profile. Additive -- preserves existing topics already on the profile.
 
 | Flag | Default | What it does |
 |------|---------|-------------|
-| `--max-iterations <n>` | `10` | Additional iterations from current position |
-| `--rate <n>` | unlimited | Max AIRS scan API calls per second |
-| `--debug-scans` | off | Dump raw AIRS scan responses to JSONL for debugging |
-| `--create-prompt-set` | off | Create custom prompt set in AI Red Team from test cases |
-| `--prompt-set-name <name>` | auto | Override auto-generated prompt set name |
+| `--profile <name>` | _(required)_ | AIRS security profile name |
+| `--topic <name>` | _(required)_ | Topic name to assign |
+
+**Auth:** Management API
 
 ```bash
-airs runtime topics resume abc123xyz --max-iterations 10
+airs runtime topics apply --profile my-security-profile --topic "Weapons Manufacturing"
 ```
 
-#### runtime topics report
+#### runtime topics eval
 
-View results for a saved run.
+Scan a static CSV prompt set against a profile and compute metrics.
 
 | Flag | Default | What it does |
 |------|---------|-------------|
-| `--iteration <n>` | _(best)_ | Show a specific iteration instead of the best |
-| `--format <fmt>` | `terminal` | Output format: `terminal`, `json`, `html` |
-| `--tests` | _(off)_ | Include per-test-case details |
-| `--diff <runId>` | _(none)_ | Compare with another run side-by-side |
-| `--output <path>` | `<runId>-report.html` | Output file path (html format only) |
+| `--profile <name>` | _(required)_ | AIRS security profile name |
+| `--input <csv>` | _(required)_ | CSV file with `prompt` and `expectedTriggered` columns |
+| `--output <format>` | `pretty` | Output format (`pretty`, `json`) |
+
+**Auth:** Scanner API + Management API
 
 ```bash
-airs runtime topics report abc123xyz --format html --tests
-airs runtime topics report abc123xyz --diff def456uvw
+airs runtime topics eval --profile my-security-profile --input prompts.csv
+airs runtime topics eval --profile my-security-profile --input prompts.csv --output json
 ```
 
-#### runtime topics runs
+#### runtime topics revert
 
-List all saved generation runs.
+Remove a topic from a profile and delete the topic definition.
+
+| Flag | Default | What it does |
+|------|---------|-------------|
+| `--profile <name>` | _(required)_ | AIRS security profile name |
+| `--topic <name>` | _(required)_ | Topic name to remove and delete |
+
+**Auth:** Management API
 
 ```bash
-airs runtime topics runs
+airs runtime topics revert --profile my-security-profile --topic "Weapons Manufacturing"
 ```
 
 ### runtime api-keys

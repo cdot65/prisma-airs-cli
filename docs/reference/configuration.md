@@ -27,11 +27,7 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
   "llmProvider": "claude-api",
   "llmModel": "claude-opus-4-6",
   "scanConcurrency": 3,
-  "maxMemoryChars": 5000,
-  "memoryEnabled": true,
-  "accumulateTests": false,
-  "dataDir": "~/.prisma-airs/runs",
-  "memoryDir": "~/.prisma-airs/memory"
+  "dataDir": "~/.prisma-airs/runs"
 }
 ```
 
@@ -41,15 +37,10 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
 
 | Setting | CLI Flag | Env Var | Default | What it does |
 |---------|----------|---------|---------|-------------|
-| `llmProvider` | `--provider` | `LLM_PROVIDER` | `claude-api` | LLM provider selection |
+| `llmProvider` | `--provider` | `LLM_PROVIDER` | `claude-api` | LLM provider selection (used by audit) |
 | `llmModel` | `--model` | `LLM_MODEL` | per-provider | Model override |
 | `scanConcurrency` | -- | `SCAN_CONCURRENCY` | `5` | Parallel scan requests (1--20) |
-| `maxMemoryChars` | -- | `MAX_MEMORY_CHARS` | `3000` | Memory injection budget (500--10000) |
-| `memoryEnabled` | `--no-memory` | `MEMORY_ENABLED` | `true` | Toggle cross-run learning |
-| `accumulateTests` | `--accumulate-tests` | `ACCUMULATE_TESTS` | `false` | Carry forward tests across iterations |
-| `maxAccumulatedTests` | `--max-accumulated-tests` | `MAX_ACCUMULATED_TESTS` | unlimited | Cap on accumulated test count |
-| `dataDir` | -- | `DATA_DIR` | `~/.prisma-airs/runs` | Run state directory |
-| `memoryDir` | -- | `MEMORY_DIR` | `~/.prisma-airs/memory` | Learning store directory |
+| `dataDir` | -- | `DATA_DIR` | `~/.prisma-airs/runs` | Data directory |
 
 ### Provider Default Models
 

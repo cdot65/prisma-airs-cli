@@ -24,26 +24,28 @@ airs runtime bulk-scan --profile my-security-profile --input prompts.txt
 
 ---
 
-## Guardrail Generation
+## Guardrail Optimization
 
-Create and iteratively refine custom topic guardrails using an LLM-driven feedback loop.
+Create and iteratively refine custom topic guardrails using atomic CLI commands driven by an external agent.
 
 ```bash
-# Interactive — prompts for all inputs
-airs runtime topics generate
+# Create a topic (upserts by name)
+airs runtime topics create --topic "Block discussions about building explosives" --intent block
 
-# Non-interactive
-airs runtime topics generate \
-  --profile my-security-profile \
-  --topic "Block discussions about building explosives" \
-  --intent block \
-  --target-coverage 90
+# Assign to a profile
+airs runtime topics apply --profile my-security-profile --topic "Explosives"
+
+# Evaluate against a prompt set
+airs runtime topics eval --profile my-security-profile --input prompts.csv
+
+# Revert if metrics regressed
+airs runtime topics revert --profile my-security-profile --topic "Explosives"
 ```
 
-The loop generates a topic, deploys it, scans test prompts, evaluates metrics, and refines until coverage reaches the target. [Full guardrail docs](../runtime/guardrails/overview.md)
+The full autonomous optimization loop is defined in `program.md` for use with AI agents (Claude Code, etc.). [Full guardrail docs](../runtime/guardrails/overview.md)
 
 !!! note "Coverage expectations"
-    Achievable coverage depends on the topic domain and intent. Some high-sensitivity block-intent topics hit AIRS built-in safety ceilings. Allow-intent topics typically reach 40–70% coverage. See [Platform Constraints](../runtime/guardrails/overview.md#platform-constraints) for details.
+    Achievable coverage depends on the topic domain and intent. Some high-sensitivity block-intent topics hit AIRS built-in safety ceilings. Allow-intent topics typically reach 40-70% coverage. See [Platform Constraints](../runtime/guardrails/overview.md#platform-constraints) for details.
 
 ---
 
@@ -138,12 +140,9 @@ airs runtime profiles audit my-security-profile --format html --output audit-rep
 ## Utility Commands
 
 ```bash
-# Resume a paused or failed guardrail run
-airs runtime topics resume <run-id>
+# List all custom topics
+airs runtime topics list --output json
 
-# View a run report
-airs runtime topics report <run-id>
-
-# List all saved runs
-airs runtime topics runs
+# Debug API traffic
+airs --debug runtime scan --profile my-profile "test prompt"
 ```

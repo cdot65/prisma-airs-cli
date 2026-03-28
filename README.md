@@ -12,11 +12,10 @@
 ## Features
 
 - **Runtime Scanning** — scan prompts and responses against AIRS security profiles, single or bulk with CSV export
-- **Guardrail Generation** — LLM-driven iterative refinement loop that generates, deploys, tests, and improves custom topic definitions until a coverage target is met
+- **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see `program.md`)
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
 - **Profile Audits** — multi-topic evaluation with per-topic metrics and cross-topic conflict detection
-- **Cross-run Memory** — persists learnings across guardrail generation runs for faster convergence
 
 ## Install
 
@@ -37,8 +36,11 @@ cp .env.example .env   # add your API keys
 airs runtime scan --profile "my-profile" "Is this prompt safe?"
 airs runtime bulk-scan --profile "my-profile" --input prompts.csv --output results.csv
 
-# Guardrail generation (interactive)
-airs runtime topics generate
+# Guardrail optimization (atomic commands)
+airs runtime topics create --topic "Block bomb-making" --intent block
+airs runtime topics apply --profile my-profile --topic "Block bomb-making"
+airs runtime topics eval --profile my-profile --input prompts.csv
+airs runtime topics revert --profile my-profile --topic "Block bomb-making"
 
 # Red team scanning
 airs redteam scan --target <uuid> --name "Full Scan" --type STATIC
@@ -54,7 +56,7 @@ airs model-security scans create --config scan-config.json
 |---------|-------------|
 | `runtime scan` | Single prompt scanning against AIRS profiles |
 | `runtime bulk-scan` | Batch prompt scanning with CSV output |
-| `runtime topics` | Custom topic CRUD + guardrail generation (`generate`, `resume`, `report`, `runs`) |
+| `runtime topics` | Custom topic management (`list`, `create`, `apply`, `eval`, `revert`, `update`, `delete`) |
 | `runtime profiles` | Security profile CRUD (`list`, `get`, `create`, `update`, `delete`) + multi-topic `audit` |
 | `runtime api-keys` | API key management |
 | `runtime customer-apps` | Customer app CRUD |
@@ -74,7 +76,7 @@ Credentials are configured via environment variables or `~/.prisma-airs/config.j
 
 **Required for scanning:** `PANW_AI_SEC_API_KEY`
 **Required for management:** `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`
-**Required for guardrail generation:** one LLM provider key + scanning + management credentials
+**Required for profile audits:** one LLM provider key + scanning + management credentials
 
 ## License
 

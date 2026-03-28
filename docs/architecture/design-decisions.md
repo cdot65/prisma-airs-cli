@@ -2,20 +2,14 @@
 
 The "why" behind Prisma AIRS CLI's architecture. Each decision below was made deliberately — this page explains the trade-offs.
 
-## 1. Async Generator Loop
+## 1. Atomic CLI Commands
 
-`runLoop()` is an async generator that yields typed `LoopEvent` discriminated unions rather than calling renderers or side-effecting functions directly.
+The guardrail workflow uses four atomic commands (`create`, `apply`, `eval`, `revert`) instead of an embedded LLM-driven loop.
 
-**Rationale:** Decouples the iteration engine from the UI layer. The CLI iterates the generator and dispatches events to its Chalk-based renderer, but the loop itself has no knowledge of how events are consumed. This makes the entire loop testable with mock event consumers -- no mocking of terminal output required.
+**Rationale:** Decouples the optimization intelligence from the CLI. An external agent (Claude Code, Gemini CLI, etc.) orchestrates the commands following the protocol in `program.md`. Each command succeeds or fails independently, making the workflow recoverable at any point. The CLI is stateless -- no run persistence, no cross-run memory, no embedded LLM calls for guardrail optimization.
 
-```typescript
-for await (const event of runLoop(services, config)) {
-  renderer.handle(event); // CLI dispatches here; tests collect events instead
-}
-```
-
-!!! note "Swap-friendly"
-    A web UI or API server could consume the same generator without changing any core loop code.
+!!! note "Agent-driven"
+    The agent provides all intelligence (topic generation, analysis, improvement decisions). The CLI provides only the AIRS API operations and metric computation.
 
 ## 2. Topic Name Locking
 
@@ -23,19 +17,11 @@ The topic name is generated in iteration 1 and locked for all subsequent iterati
 
 **Rationale:** AIRS topics are identified by name. Changing the name each iteration would create new entities rather than updating the existing one, leaving orphaned topics and breaking profile references. Locking the name ensures a stable identity throughout the refinement process.
 
-## 3. Budget-Aware Memory Injection
+## 3. Static Prompt Set Evaluation
 
-Memory injection uses a character budget (default 3000, configurable 500--10000) instead of a hard item count.
+The `eval` command scans a static CSV prompt set rather than generating test prompts dynamically via LLM.
 
-**Rationale:** A fixed count cap treats all learnings equally regardless of length. Budget-based injection prioritizes high-value content:
-
-| Priority | Format | Description |
-|----------|--------|-------------|
-| Highest | Verbose | Full learning text with examples; used for top-corroborated learnings |
-| Medium | Compact | Shortened summary; used when budget is tight |
-| Lowest | Omitted | Excluded entirely; count appended as "and N more learnings..." |
-
-Learnings are sorted by corroboration count (descending) before budget allocation. This ensures battle-tested insights always make it into the prompt.
+**Rationale:** Static prompt sets are deterministic and reproducible. The external agent can curate and evolve the prompt set over time. This removes the LLM dependency from the guardrail optimization loop (LLM is still used for profile audits).
 
 ## 4. Config Cascade
 
@@ -69,21 +55,11 @@ The clamping strategy is ordered: drop trailing examples first if the combined l
 !!! warning "Why Not Zod Alone?"
     Zod `.max()` would reject the entire response on overflow, requiring a full retry. Clamping is cheaper and deterministic -- it always produces a valid topic on the first pass.
 
-## 6. Category-Based Memory
+## 6. Upsert-by-Name Semantics
 
-Learnings are stored in files keyed by a normalized category derived from the topic's keywords.
+The `create` command upserts topics by name rather than requiring separate create/update paths.
 
-**Normalization pipeline:**
-
-1. Lowercase all keywords
-2. Strip punctuation
-3. Remove stop words
-4. Sort alphabetically
-5. Join with hyphens
-
-**Cross-topic transfer** occurs when two categories share 50% or more keyword overlap. This allows learnings from "api-injection-sql" to inform a run targeting "injection-prompt-sql" without requiring exact matches.
-
-**Rationale:** File-per-category keeps I/O simple (no database) while keyword overlap enables knowledge transfer across related topics without manual tagging.
+**Rationale:** The external agent doesn't need to track topic IDs. It specifies the topic by name, and the CLI handles create-vs-update internally. This simplifies the agent loop protocol.
 
 ## 7. Structured Output via Zod
 
@@ -98,24 +74,11 @@ const chain = llm.withStructuredOutput(TopicSchema, {
 // Returns a typed CustomTopic or throws after 3 retries
 ```
 
-## 8. Event-Driven Architecture
+## 8. External Agent Orchestration
 
-The `LoopEvent` union defines 12 event types. Of these, 10 are yielded by `runLoop()`:
+The CLI provides atomic operations; an external agent provides the intelligence and orchestration.
 
-| Phase | Events |
-|-------|--------|
-| Per-iteration | `iteration:start`, `generate:complete`, `apply:complete`, `test:progress`, `evaluate:complete`, `analyze:complete`, `iteration:complete` |
-| Post-loop | `memory:extracted` (if memory enabled), `promptset:created` (if `--create-prompt-set`) |
-| Terminal | `loop:complete` |
-
-Two events are defined in the type union but not yielded by the loop:
-
-| Event | Status |
-|-------|--------|
-| `memory:loaded` | Emitted by CLI command before the loop starts |
-| `loop:paused` | Reserved for future use |
-
-**Rationale:** Fine-grained events enable rich progress reporting (the CLI shows per-test scan progress), clean separation of concerns (renderer knows nothing about LLM calls), and future extensibility (logging, metrics dashboards, web UIs) without modifying the core loop.
+**Rationale:** Embedding the LLM loop inside the CLI created tight coupling between the optimization strategy and the CLI tool. By extracting the loop to an external agent (defined in `program.md`), the optimization strategy can evolve independently. Different agents can use the same CLI commands with different strategies.
 
 ## 9. Intent-Aware Refinement
 
@@ -147,22 +110,11 @@ For allow intent, `triggered` is never `true`. The `action` field is also unreli
 
 The LLM is instructed to vary example count between 2-5 across iterations. The AIRS API requires a minimum of 2 examples. The description field carries the most weight in AIRS topic matching, so fewer, sharper examples often outperform many broad ones. The memory system tracks example count per iteration and extracts learnings about which counts correlate with better efficacy.
 
-## 10. Optional Test Accumulation
+## 10. CSV Prompt Sets
 
-When `accumulateTests` is enabled, test prompts carry forward across iterations instead of being regenerated fresh each time. New tests take priority during deduplication (case-insensitive, by prompt text). An optional `maxAccumulatedTests` cap limits growth.
+The `eval` command accepts CSV prompt sets with `prompt` and `expectedTriggered` columns.
 
-**Rationale:** Fresh test generation each iteration can miss regression detection — a fix for false negatives might introduce new false positives that go undetected because the triggering prompts were only present in the previous iteration's test set. Accumulation ensures previously-failing prompts remain in the test pool.
-
-!!! tip "Cap Behavior"
-    When `maxAccumulatedTests` is set, the newest tests are kept and oldest are dropped. This prevents unbounded growth while preserving the most relevant test cases.
-
-## 11. Custom Prompt Set Export
-
-When `--create-prompt-set` is passed, the loop auto-creates a custom prompt set in AI Runtime Security's Red Team module using the best iteration's test cases.
-
-**Rationale:** The test prompts generated during refinement are high-quality, topic-specific attack and benign prompts. Exporting them as a reusable prompt set closes the loop — Prisma AIRS CLI generates guardrails AND the test assets to validate them in production. This also validates the Management SDK's `RedTeamClient.customAttacks` API end-to-end.
-
-**Implementation:** After `loop:complete` is determined but before the event is yielded, the loop creates a prompt set via `PromptSetService.createPromptSet()`, then adds each test case as a prompt with a goal indicating whether it should trigger the guardrail.
+**Rationale:** CSV is simple, diffable, and easy to generate. The external agent or a human can curate prompt sets outside the CLI. This replaces LLM-generated test prompts with deterministic, reproducible evaluation.
 
 !!! abstract "Summary"
-    The common thread across these decisions is **separation of concerns**: the loop generates events, the renderer displays them, the memory system persists learnings, and the config system resolves settings. Each subsystem is independently testable and replaceable.
+    The common thread across these decisions is **separation of concerns**: the CLI provides atomic AIRS operations, the agent provides intelligence and orchestration, and the config system resolves settings. Each subsystem is independently testable and replaceable.
