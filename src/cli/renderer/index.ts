@@ -1,5 +1,6 @@
 export * from './audit.js';
 export * from './common.js';
+export * from './eval.js';
 export * from './generate.js';
 export * from './modelsecurity.js';
 export * from './redteam.js';
