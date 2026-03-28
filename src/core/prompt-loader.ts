@@ -8,12 +8,7 @@ function parseCsvLine(line: string): string[] {
   const fields: string[] = [];
   let i = 0;
 
-  while (i <= line.length) {
-    if (i === line.length) {
-      fields.push('');
-      break;
-    }
-
+  while (i < line.length) {
     if (line[i] === '"') {
       // Quoted field
       i++; // skip opening quote
@@ -44,6 +39,10 @@ function parseCsvLine(line: string): string[] {
       } else {
         fields.push(line.slice(i, end));
         i = end + 1;
+        // trailing comma: push empty final field
+        if (i === line.length) {
+          fields.push('');
+        }
       }
     }
   }

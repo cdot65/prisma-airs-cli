@@ -7,7 +7,11 @@ describe('loadPrompts', () => {
     const results = loadPrompts(csv);
     expect(results).toHaveLength(2);
     expect(results[0]).toEqual({ prompt: 'Hello, world', expectedTriggered: true, category: '' });
-    expect(results[1]).toEqual({ prompt: 'Goodbye, world', expectedTriggered: false, category: '' });
+    expect(results[1]).toEqual({
+      prompt: 'Goodbye, world',
+      expectedTriggered: false,
+      category: '',
+    });
   });
 
   it('handles unquoted prompts', () => {
@@ -51,5 +55,9 @@ describe('loadPrompts', () => {
     const csv = `prompt,expected\n"She said ""hello""",true\nnormal,false`;
     const results = loadPrompts(csv);
     expect(results[0].prompt).toBe('She said "hello"');
+  });
+
+  it('throws on empty CSV', () => {
+    expect(() => loadPrompts('')).toThrow();
   });
 });

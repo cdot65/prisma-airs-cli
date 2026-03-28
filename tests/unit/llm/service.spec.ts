@@ -264,7 +264,11 @@ describe('LangChainLlmService', () => {
 
     it('returns clamped topic', async () => {
       const longDesc = 'X'.repeat(300);
-      const model = createMockModel({ name: 'Weapons', description: longDesc, examples: ['ex1', 'ex2'] });
+      const model = createMockModel({
+        name: 'Weapons',
+        description: longDesc,
+        examples: ['ex1', 'ex2'],
+      });
       const service = new LangChainLlmService(model as BaseChatModel);
       const result = await service.improveTopic(validTopic, metrics, analysis, [], 2, 0.9, 'block');
       expect(result.description.length).toBeLessThanOrEqual(MAX_DESCRIPTION_LENGTH);
