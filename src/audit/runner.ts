@@ -3,8 +3,8 @@
  */
 
 import type { ManagementService, ScanService } from '../airs/types.js';
-import type { LlmService } from '../core/loop.js';
 import type { TestCase, TestResult } from '../core/types.js';
+import type { LlmService } from '../llm/types.js';
 import { computeCompositeMetrics, computeTopicAuditResults, detectConflicts } from './evaluator.js';
 import type { AuditEvent, AuditResult } from './types.js';
 
