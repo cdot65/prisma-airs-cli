@@ -31,10 +31,10 @@ import {
   renderTopicList,
 } from '../renderer/index.js';
 import { registerAuditCommand } from './audit.js';
-import { registerGenerateCommand } from './generate.js';
-import { registerListCommand } from './list.js';
-import { registerReportCommand } from './report.js';
-import { registerResumeCommand } from './resume.js';
+import { registerApplyCommand } from './topics-apply.js';
+import { registerCreateCommand } from './topics-create.js';
+import { registerEvalCommand } from './topics-eval.js';
+import { registerRevertCommand } from './topics-revert.js';
 
 function renderScanResult(result: RuntimeScanResult): void {
   const actionColor = result.action === 'block' ? chalk.red : chalk.green;
@@ -796,24 +796,6 @@ export function registerRuntimeCommand(program: Command): void {
     });
 
   topics
-    .command('create')
-    .description('Create a new custom topic')
-    .requiredOption('--config <path>', 'JSON file with topic configuration')
-    .action(async (opts) => {
-      try {
-        renderRuntimeConfigHeader();
-        const service = await createMgmtService();
-        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-        const topic = await service.createTopic(config);
-        console.log(`  Topic created: ${topic.topic_id}\n`);
-        renderTopicDetail(topic);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  topics
     .command('update <topicId>')
     .description('Update a custom topic')
     .requiredOption('--config <path>', 'JSON file with topic updates')
@@ -853,9 +835,9 @@ export function registerRuntimeCommand(program: Command): void {
       }
     });
 
-  // Register guardrail generation commands under topics
-  registerGenerateCommand(topics);
-  registerResumeCommand(topics);
-  registerReportCommand(topics);
-  registerListCommand(topics, 'runs');
+  // Register autoresearch-pattern commands under topics
+  registerCreateCommand(topics);
+  registerApplyCommand(topics);
+  registerEvalCommand(topics);
+  registerRevertCommand(topics);
 }
