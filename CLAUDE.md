@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Summary
 
-Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, LLM-driven guardrail generation with iterative refinement, adversarial red team scanning, ML model supply chain security, and multi-topic profile audits with conflict detection. The guardrail loop uses an LLM to produce topic definitions, deploys to Prisma AIRS, scans test prompts, evaluates efficacy (TPR, TNR, coverage, F1), and improves until a coverage target is met. Cross-run memory persists learnings for future runs.
+Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, ML model supply chain security, and multi-topic profile audits with conflict detection.
 
 ## Commands
 
@@ -36,9 +36,9 @@ pnpm run format:check      # Biome format (check only, no write)
 pnpm tsc --noEmit
 ```
 
-## Tech Stack
+## Agent-Driven Optimization
 
-TypeScript ESM, Node 20+, pnpm. LangChain.js w/ structured output (Zod). `@cdot65/prisma-airs-sdk` for AIRS scan+management APIs. Commander.js CLI, Inquirer prompts, Chalk rendering. Vitest+MSW tests. Biome lint/format.
+The `topics create/apply/eval/revert` commands are designed for autonomous agent loops (autoresearch pattern). An agent can: create a topic, apply it to a profile, eval against a static prompt set, keep or revert based on FP/FN metrics, and repeat. See `AGENTS.md` for the agent loop protocol.
 
 ## Code Style (Biome)
 
@@ -58,11 +58,11 @@ src/
 │   ├── builders/
 │   │   └── profile-builder.ts # CLI flags → CreateSecurityProfileRequest builder + merge utility
 │   ├── commands/
-│   │   ├── generate.ts    # Main loop orchestration, wires all services (registered under runtime topics)
-│   │   ├── resume.ts      # Resume paused/failed run from disk (registered under runtime topics)
-│   │   ├── report.ts      # View run results by ID (registered under runtime topics)
-│   │   ├── list.ts        # List all saved runs (registered as "runs" under runtime topics)
-│   │   ├── runtime.ts     # Runtime scanning + config management + guardrail generation (topics) + audit (profiles)
+│   │   ├── topics-create.ts  # Create or update a custom topic (validates constraints, upserts by name)
+│   │   ├── topics-apply.ts   # Assign topic to profile (additive, preserves existing topics)
+│   │   ├── topics-eval.ts    # Scan static prompt set, compute metrics, return FP/FN lists
+│   │   ├── topics-revert.ts  # Remove topic from profile and delete it
+│   │   ├── runtime.ts     # Runtime scanning + config management + topics + audit (profiles)
 │   │   ├── audit.ts       # Profile-level multi-topic evaluation (registered under runtime profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD, prompt-sets CRUD, prompts CRUD, properties)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
@@ -72,7 +72,7 @@ src/
 │   └── renderer/          # Terminal output (chalk), split by command group
 │       ├── index.ts       # Barrel re-exports
 │       ├── common.ts      # renderError
-│       ├── generate.ts    # Guardrail loop rendering (header, topic, metrics, analysis)
+│       ├── eval.ts        # Eval metrics, FP/FN list rendering
 │       ├── redteam.ts     # Red team scan/target/prompt-set rendering
 │       ├── runtime.ts     # Runtime scan + config management rendering
 │       ├── audit.ts       # Audit topics, results, conflicts
@@ -81,15 +81,15 @@ src/
 │   ├── schema.ts          # Zod ConfigSchema — all config fields w/ defaults
 │   └── loader.ts          # Config cascade: CLI > env > file > Zod defaults
 ├── core/
-│   ├── loop.ts            # AsyncGenerator main loop — yields LoopEvent
-│   ├── types.ts           # CustomTopic, UserInput, TestCase, TestResult, EfficacyMetrics, AnalysisReport, IterationResult, RunState, LoopEvent
+│   ├── prompt-loader.ts   # Load static prompt set from CSV/text for eval command
+│   ├── types.ts           # CustomTopic, EvalMetrics, EvalResult, TopicConstraints
 │   ├── metrics.ts         # computeMetrics() — TP/TN/FP/FN → TPR/TNR/accuracy/coverage/F1
 │   └── constraints.ts     # AIRS topic limits: 100 name, 250 desc, 250/example, 5 max, 1000 combined
 ├── llm/
-│   ├── provider.ts        # createLlmProvider() — factory for 6 LangChain providers
-│   ├── service.ts         # LangChainLlmService — generateTopic, generateTests, improveTopic, analyzeResults
+│   ├── provider.ts        # createLlmProvider() — factory for LangChain providers (used by audit)
+│   ├── service.ts         # LangChainLlmService
 │   ├── schemas.ts         # Zod output schemas for structured LLM responses
-│   └── prompts/           # ChatPromptTemplate definitions (6 files)
+│   └── prompts/           # ChatPromptTemplate definitions
 ├── airs/
 │   ├── scanner.ts         # AirsScanService + DebugScanService + RateLimitedScanService — syncScan + scanBatch
 │   ├── runtime.ts         # SdkRuntimeService — sync scan, async bulk scan, poll results, CSV export
@@ -98,18 +98,6 @@ src/
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
-├── memory/
-│   ├── store.ts           # MemoryStore — file-based persistence, keyword category matching (≥50% overlap)
-│   ├── extractor.ts       # LearningExtractor — post-loop LLM extraction, merge/corroboration
-│   ├── injector.ts        # MemoryInjector — budget-aware prompt injection (3000 char default)
-│   ├── diff.ts            # computeIterationDiff() — metric deltas between iterations
-│   ├── types.ts           # Learning, TopicMemory, IterationDiff
-│   ├── schemas.ts         # LearningExtractionOutputSchema
-│   └── prompts/
-│       └── extract-learnings.ts
-├── persistence/
-│   ├── store.ts           # JsonFileStore — save/load/list RunState as JSON
-│   └── types.ts           # RunStore, RunStateSummary
 ├── audit/
 │   ├── types.ts           # ProfileTopic, TopicAuditResult, ConflictPair, AuditResult, AuditEvent
 │   ├── evaluator.ts       # groupResultsByTopic, computeTopicAuditResults, computeCompositeMetrics, detectConflicts
@@ -122,57 +110,43 @@ src/
 └── index.ts               # Library exports
 
 tests/
-├── unit/                  # 28 spec files
+├── unit/                  # spec files
 │   ├── airs/              # scanner.spec.ts, management.spec.ts, modelsecurity.spec.ts, promptsets.spec.ts, redteam.spec.ts, runtime.spec.ts
 │   ├── audit/             # evaluator.spec.ts, runner.spec.ts, report.spec.ts
 │   ├── cli/               # parse-input.spec.ts, bulk-scan-state.spec.ts
 │   ├── config/            # schema.spec.ts, loader.spec.ts
-│   ├── core/              # loop.spec.ts, metrics.spec.ts, constraints.spec.ts
+│   ├── core/              # metrics.spec.ts, constraints.spec.ts
 │   ├── llm/               # provider.spec.ts, schemas.spec.ts, service.spec.ts, prompts.spec.ts
-│   ├── memory/            # store.spec.ts, extractor.spec.ts, injector.spec.ts, diff.spec.ts, prompts.spec.ts
-│   ├── persistence/       # store.spec.ts
 │   └── report/            # json.spec.ts, html.spec.ts
-├── integration/           # loop.integration.spec.ts (full loop w/ mocks)
 ├── e2e/                   # vertex-provider.e2e.spec.ts (opt-in, requires real creds)
 └── helpers/               # mocks.ts
 ```
 
 ## Architecture
 
-### Core Loop (`src/core/loop.ts`)
-- `runLoop()` async generator yields typed `LoopEvent` discriminated unions
-- Events yielded by `runLoop()`: `iteration:start`, `generate:complete`, `companion:generated` (block-intent iter 1), `companion:created` (block-intent iter 1), `apply:complete`, `tests:composed` (iter 2+, always-on composition), `tests:accumulated` (if accumulation enabled, iter 2+), `test:progress`, `evaluate:complete`, `analyze:complete`, `iteration:complete`, `topic:duplicate` (when improveTopic/simplifyTopic returns identical topic), `topic:reverted` (tier 1 recovery), `topic:simplified` (tier 2 recovery), `loop:plateau` (opt-in plateau detection), `memory:extracted` (if memory enabled), `promptset:created` (if `--create-prompt-set`), `loop:complete`
-- Events defined in `LoopEvent` union but **not yielded** by `runLoop()`: `loop:paused` (reserved for future use), `memory:loaded` (emitted by CLI before loop starts)
-- `apply:complete` is yielded but intentionally unhandled in CLI commands (no user-facing output needed)
-- **Two-phase generation** (block-intent only): AIRS needs BOTH allow and block topics sharing the same vocabulary domain. On iter 1, generates a domain-specific allow companion via `LlmService.generateCompanionTopic()` that covers the benign/legitimate side of the same domain (e.g., "Legal Tax Planning" as companion to "Tax Evasion"). Wires both to profile with `guardrailAction='allow'` (default: allow everything, block topic carves out violations). Companion is one-shot (no refinement). Iter 2+ only updates block topic content. Allow-intent runs use `guardrailAction='block'` with a single topic.
-- Topic name **locked after iteration 1** — only description+examples change thereafter
-- `analyzeResults()` and `improveTopic()` receive intent param — prioritizes FN for block, FP for allow
-- **Test composition** (always-on, iter 2+): carried FP/FN failures + regression tier (TP/TN re-scanned) + fresh LLM tests. `TestCase.source` tags each test's origin. `EfficacyMetrics.regressionCount` tracks regression-tier failures.
-- **Weighted category generation** (always-on, iter 2+): `computeCategoryBreakdown()` passes per-category error rates to the LLM prompt, biasing test generation toward weak areas
-- Optional test accumulation (`accumulateTests`) carries full test pool across iterations with case-insensitive dedup; `maxAccumulatedTests` caps growth
-- Stop conditions: `coverage >= targetCoverage` (default 0.9), `consecutiveRegressions >= maxRegressions` (default 3, 0 = disabled), or plateau detection (`--plateau-window`, opt-in). Coverage = `min(TPR, TNR)`
-- **3-tier recovery** on consecutive regressions: (1) revert to best-performing topic (no LLM), (2) LLM simplification, (3) early stop. Each tier gets 2 regressions before escalating.
-- **Duplicate detection**: `findDuplicateIteration()` compares description+examples against all prior iterations. Duplicates skip scanning, increment regression counter, and trigger recovery tiers.
-- **Plateau detection** (opt-in, `--plateau-window N`): if last N iterations are within ±band% without exceeding best, yields `loop:plateau` and stops.
-- **Early stopping on regression**: `RunState.consecutiveRegressions` tracks how many consecutive iterations failed to improve `bestCoverage`. Resets to 0 on improvement. `UserInput.maxRegressions` controls the threshold (default 3, 0 disables).
-- **Description simplification**: After 2 consecutive regressions, if `hasTriedSimplification` is false and a best iteration exists, the loop calls `simplifyTopic()` to strip exclusion clauses and shorten the description. Resets regression counter to 0. Only attempted once per run (`RunState.hasTriedSimplification`). If simplification also regresses, early stopping kicks in at `maxRegressions`.
+### Topic Commands (`src/cli/commands/topics-*.ts`)
+- **`create`** (`topics-create.ts`): create or update a custom topic; validates AIRS constraints (name ≤100, desc ≤250, each example ≤250, combined ≤1000, max 5 examples), upserts by name
+- **`apply`** (`topics-apply.ts`): assign topic to a security profile; additive — reads current profile topic-list, appends the new topic with correct `revision`, writes back; never clobbers existing topics
+- **`eval`** (`topics-eval.ts`): load a static prompt set (CSV or text), scan each prompt against the named profile, compute TP/TN/FP/FN → TPR/TNR/coverage/F1, return FP and FN lists for agent inspection
+- **`revert`** (`topics-revert.ts`): remove topic from profile topic-list and delete the topic; safe — checks profile reference before deleting
+
+These four commands compose into an autoresearch-style optimization loop: an agent calls `create → apply → eval`, decides keep or `revert`, then iterates.
 
 ### AIRS Integration (`src/airs/`)
-- **Scanner**: `Scanner.syncScan()` via SDK, detection = `prompt_detected.topic_violation === true` (sole signal, no fallbacks). `category` still extracted for weighted test generation but not used for detection
-- **Detection**: Both block and allow intents use `triggered` (= `topic_violation`) as the sole guardrail detection signal. No category-based or action-based detection.
+- **Scanner**: `Scanner.syncScan()` via SDK, detection = `prompt_detected.topic_violation === true` (sole signal, no fallbacks)
+- **Detection**: `triggered` (= `topic_violation`) is the sole guardrail detection signal. No category-based or action-based detection.
 - **`DebugScanService`**: Wrapper that appends raw scan responses to a JSONL file when `--debug-scans` is passed
-- **`RateLimitedScanService`**: Wrapper that caps scan throughput to N calls/second via sliding-window token bucket. Enabled by `--rate <n>` on generate/resume.
-- **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses (not LLM calls) to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Auth tokens are redacted. Works with any subcommand.
-- **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD; `--create-prompt-set` auto-creates a prompt set from the best iteration's test cases
-- **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment/DLP profile listing, scan log querying, plus profile linking for guardrail generation
+- **`RateLimitedScanService`**: Wrapper that caps scan throughput to N calls/second via sliding-window token bucket
+- **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Auth tokens are redacted. Works with any subcommand.
+- **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD
+- **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment/DLP profile listing, scan log querying
 - Profile updates create **new revisions with new UUIDs** — always reference profiles by name, never ID
 - Topics must be added to profile's `model-protection` → `topic-guardrails` → `topic-list`
-- AIRS rejects empty `topic-list` entries — only include entries with topics (no empty opposite-action entry)
-- **Block-intent requires domain-specific allow topic**: AIRS needs BOTH allow and block topics sharing the same vocabulary domain. `assignTopicsToProfile()` wires both with `guardrailAction='allow'` for block-intent (default: allow everything, block topics carve out violations). Allow-intent uses `guardrailAction='block'`.
-- **CRITICAL: topic-list `revision` field**: AIRS pins topic content to the `revision` number in the profile's topic-list. Omitting it defaults to revision 0 (original creation content). `assignTopicsToProfile()` fetches current topic revisions via `listTopics()` and includes them.
+- AIRS rejects empty `topic-list` entries — only include entries with topics
+- **CRITICAL: topic-list `revision` field**: AIRS pins topic content to the `revision` number in the profile's topic-list. Omitting it defaults to revision 0 (original creation content). `topics apply` fetches current topic revisions via `listTopics()` and includes them.
 - **CRITICAL: always scan by profile NAME**, never by profile ID/UUID. Scanning by name always uses the latest profile version; scanning by ID pins to a versioned snapshot.
 - Topics can't be deleted while referenced by any profile revision
-- **Platform ceilings**: Block-intent topics in high-sensitivity domains (explosives, weapons) trigger built-in AIRS safety that overrides custom definitions (0% TNR). Allow-intent topics use broad semantic matching — exclusion clauses increase FP; shorter descriptions outperform longer ones. Typical block-intent ceiling: 40–50% coverage due to vocabulary overlap between allow and block domains.
+- **Platform ceilings**: Topics in high-sensitivity domains (explosives, weapons) trigger built-in AIRS safety that overrides custom definitions. Shorter descriptions generally outperform longer ones with exclusion clauses.
 
 ### Runtime Scanning (`src/airs/runtime.ts`)
 - `SdkRuntimeService` wraps SDK `Scanner` for sync and async scanning
@@ -193,7 +167,7 @@ tests/
     - `update` uses read-modify-write: fetches current profile → merges only specified flags → PUTs full payload. Same protection flags as create. Topic-guardrails never modified by CLI flags. Hidden `--config <path>` legacy escape hatch.
     - `delete` supports `--force --updated-by`
     - Profile builder: `src/cli/builders/profile-builder.ts` — `buildProfileRequest()` (create), `buildProfileOverrides()` (update), `mergeProfilePolicy()` (deep merge). Arrays merge by `name` field; objects overlay specified fields.
-  - `airs runtime topics {list,create,update,delete,generate,resume,report,runs}` — custom topic CRUD + guardrail generation (supports `--force --updated-by`)
+  - `airs runtime topics {list,create,update,delete,apply,eval,revert}` — custom topic CRUD + agent-driven topic commands (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
@@ -222,27 +196,15 @@ tests/
 - Scans: create/list/get with evaluations, violations, files sub-queries
 
 ### LLM Service (`src/llm/`)
+- Used by the `audit` command for test generation and analysis
 - 6 providers: `claude-api` (default), `claude-vertex`, `claude-bedrock`, `gemini-api`, `gemini-vertex`, `gemini-bedrock`
 - Default model: `claude-opus-4-6` (Vertex: `claude-opus-4-6`, Bedrock: `anthropic.claude-opus-4-6-v1`), Gemini providers: `gemini-2.5-pro`
 - `claude-vertex` default region: `global` (not `us-central1`)
-- All 6 calls (generateTopic, generateCompanionTopic, generateTests, analyzeResults, improveTopic, simplifyTopic) use `withStructuredOutput(ZodSchema)` — 3 retries on parse failure
-- Memory injected via `{memorySection}` template variable
-- `clampTopic()` enforces AIRS constraints post-LLM (not Zod) — drops examples, trims description
-- `improveTopic()` accepts optional `bestContext` param `{ bestCoverage, bestIteration, bestTopic? }` — injects regression warnings into the prompt when coverage drops below the best iteration, and always shows best-iteration context
-- Improve-topic system prompt includes CRITICAL PLATFORM CONSTRAINT section warning against exclusion clauses and favoring shorter descriptions
-
-### Memory System (`src/memory/`)
-- File-based at `~/.prisma-airs/memory/{category}.json`
-- Category = normalized keyword extraction (stop-word removal, alphabetical sort)
-- Cross-topic transfer when keyword overlap ≥ 50%
-- Budget-aware injection (3000 char default): sorts by corroboration count desc, verbose→compact→omit
+- Structured output via `withStructuredOutput(ZodSchema)` — 3 retries on parse failure
 
 ### Config (`src/config/`)
 - Priority: CLI flags > env vars > `~/.prisma-airs/config.json` > Zod defaults
 - All fields in `ConfigSchema` with coercion + defaults; `~` expanded via `expandHome()`
-
-### Persistence (`src/persistence/`)
-- `JsonFileStore` saves/loads `RunState` as JSON at `~/.prisma-airs/runs/{runId}.json`
 
 ### Reports (`src/report/`)
 - `buildReportJson(run, opts)` maps `RunState` → `ReportOutput` (pure function, no I/O)
@@ -267,7 +229,7 @@ tests/
 ## Critical Details
 
 - `scanConcurrency` default 5 — higher risks rate limiting
-- LLM description output routinely exceeds 250 char AIRS limit — `clampTopic()` handles this
+- `topics create` validates and rejects descriptions exceeding 250 bytes (UTF-8) rather than silently truncating
 
 ## Environment Variables
 
@@ -298,9 +260,4 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 | `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
 | `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
 | `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
-| `ACCUMULATE_TESTS` | `false` | Carry test pool across iterations |
-| `MAX_ACCUMULATED_TESTS` | — | Cap on accumulated tests |
 | `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
-| `MEMORY_ENABLED` | `true` | Cross-run learning memory |
-| `MEMORY_DIR` | `~/.prisma-airs/memory` | Memory store directory |
-| `MAX_MEMORY_CHARS` | `3000` | Memory injection budget (500-10000) |
