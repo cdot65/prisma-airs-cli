@@ -18,10 +18,7 @@ describe('loadConfig', () => {
     vi.stubEnv('GOOGLE_CLOUD_PROJECT', '');
     vi.stubEnv('GOOGLE_CLOUD_LOCATION', '');
     vi.stubEnv('AWS_REGION', '');
-    vi.stubEnv('MEMORY_ENABLED', '');
     vi.stubEnv('DATA_DIR', '');
-    vi.stubEnv('MEMORY_DIR', '');
-    vi.stubEnv('MAX_MEMORY_CHARS', '');
     vi.stubEnv('LLM_MODEL', '');
     vi.stubEnv('GOOGLE_API_KEY', '');
     vi.stubEnv('AWS_ACCESS_KEY_ID', '');
@@ -43,7 +40,6 @@ describe('loadConfig', () => {
     const config = await loadConfig({}, configPath);
     expect(config.llmProvider).toBe('claude-api');
     expect(config.scanConcurrency).toBe(5);
-    expect(config.memoryEnabled).toBe(true);
   });
 
   it('reads env vars', async () => {
@@ -88,11 +84,6 @@ describe('loadConfig', () => {
     const config = await loadConfig({}, configPath);
     expect(config.dataDir).toBe(join(homedir(), '.prisma-airs/runs'));
     expect(config.dataDir).not.toContain('~');
-  });
-
-  it('expands ~ in memoryDir', async () => {
-    const config = await loadConfig({}, configPath);
-    expect(config.memoryDir).toBe(join(homedir(), '.prisma-airs/memory'));
   });
 
   it('treats empty strings as unset (stripUndefined)', async () => {
