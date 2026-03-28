@@ -68,7 +68,7 @@ describe('topics-create', () => {
           description: 'A test description',
           examples: ['Only one'],
         }),
-      ).rejects.toThrow(/at least 2/);
+      ).rejects.toThrow(/at least 2/i);
     });
 
     it('throws on constraint validation failure — more than 5 examples', async () => {

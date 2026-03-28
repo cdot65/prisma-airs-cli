@@ -37,9 +37,17 @@ export async function createOrUpdateTopic(
     examples: input.examples,
   };
 
+  if (match && !match.topic_id) {
+    throw new Error(`Existing topic '${input.name}' has no topic_id`);
+  }
+
   const result = match
-    ? await mgmt.updateTopic(match.topic_id, request)
+    ? await mgmt.updateTopic(match.topic_id as string, request)
     : await mgmt.createTopic(request);
+
+  if (!result.topic_id) {
+    throw new Error('API response missing topic_id');
+  }
 
   return {
     topicId: result.topic_id,

@@ -58,7 +58,7 @@ export function validateExamples(examples: string[]): ValidationError[] {
   if (examples.length < MIN_EXAMPLES) {
     errors.push({
       field: 'examples',
-      message: `at least ${MIN_EXAMPLES} examples required`,
+      message: `At least ${MIN_EXAMPLES} examples required`,
     });
   }
   if (examples.length > MAX_EXAMPLES) {
