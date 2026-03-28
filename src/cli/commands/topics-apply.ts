@@ -61,6 +61,11 @@ export function registerApplyCommand(parent: Command): void {
     .option('--format <format>', 'Output format: json or terminal', 'terminal')
     .action(async (opts) => {
       try {
+        if (opts.intent !== 'allow' && opts.intent !== 'block') {
+          renderError(`--intent must be "allow" or "block", got: "${opts.intent}"`);
+          process.exit(1);
+        }
+
         const config = await loadConfig();
         const mgmt = new SdkManagementService({
           clientId: config.mgmtClientId,
