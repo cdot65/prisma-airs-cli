@@ -64,6 +64,7 @@ export function createMockManagementService(): ManagementService {
       active: true,
     }),
     deleteTopic: async () => {},
+    forceDeleteTopic: async () => ({ message: 'deleted' }),
     listTopics: async () => [],
     assignTopicToProfile: async () => {},
     assignTopicsToProfile: async () => {},

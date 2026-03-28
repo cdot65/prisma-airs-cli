@@ -25,7 +25,9 @@ export async function revertTopic(
     .filter((t) => t.topicName !== topicName)
     .map((t) => ({ topicId: t.topicId, topicName: t.topicName, action: t.action }));
 
-  await mgmt.assignTopicsToProfile(profileName, remaining);
+  const hasBlockTopics = remaining.some((t) => t.action === 'block');
+  const guardrailAction = hasBlockTopics ? 'allow' : 'block';
+  await mgmt.assignTopicsToProfile(profileName, remaining, guardrailAction);
 
   await mgmt.forceDeleteTopic(match.topic_id, undefined);
 
