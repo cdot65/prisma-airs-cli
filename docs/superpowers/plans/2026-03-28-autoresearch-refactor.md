@@ -2,11 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the embedded LLM-driven `generate` loop with atomic CLI commands (`apply`, `eval`, `revert`) that an external agent orchestrates, following the autoresearch pattern.
+**Goal:** Replace the embedded LLM-driven `generate` loop with atomic CLI commands (`create`, `apply`, `eval`, `revert`) that an external agent orchestrates, following the autoresearch pattern.
 
-**Architecture:** Strip the LLM service, memory system, persistence layer, and loop orchestrator. Add three new commands under `airs runtime topics` that operate on AIRS topics atomically. The external agent (Claude Code / Codex) drives the optimization loop via a `program.md` that mirrors autoresearch's experiment loop.
+**Architecture:** Strip the LLM service, memory system, persistence layer, and loop orchestrator. Add four new commands under `airs runtime topics` that operate atomically. `create` handles topic CRUD, `apply` handles profile assignment (additive), `eval` scans a static prompt set, `revert` cleans up. The external agent drives the optimization loop via `program.md`.
 
 **Tech Stack:** TypeScript ESM, Commander.js, `@cdot65/prisma-airs-sdk`, Vitest, Biome
+
+**Decisions:**
+- Companion topics for block-intent: agent calls `create` + `apply` twice (once for block, once for allow). CLI stays dumb.
+- `report` and `runs` commands: deleted (depend on RunState).
+- Audit command: left as-is for now.
+- Examples: minimum 2, maximum 5 (AIRS requirement).
 
 ---
 
@@ -17,32 +23,36 @@
 | File | Purpose |
 |------|---------|
 | `src/core/prompt-loader.ts` | Parse CSV prompt sets into TestCase arrays |
-| `src/cli/commands/topics-apply.ts` | `airs runtime topics apply` command |
-| `src/cli/commands/topics-eval.ts` | `airs runtime topics eval` command |
-| `src/cli/commands/topics-revert.ts` | `airs runtime topics revert` command |
+| `src/cli/commands/topics-create.ts` | `airs runtime topics create` — create or update a topic |
+| `src/cli/commands/topics-apply.ts` | `airs runtime topics apply` — assign topic to profile (additive) |
+| `src/cli/commands/topics-eval.ts` | `airs runtime topics eval` — scan static prompts, compute metrics |
+| `src/cli/commands/topics-revert.ts` | `airs runtime topics revert` — remove topic from profile, delete |
 | `src/cli/renderer/eval.ts` | Terminal + JSON output for eval results |
 | `tests/unit/core/prompt-loader.spec.ts` | Tests for CSV parsing and validation |
+| `tests/unit/cli/topics-create.spec.ts` | Tests for create command logic |
 | `tests/unit/cli/topics-apply.spec.ts` | Tests for apply command logic |
 | `tests/unit/cli/topics-eval.spec.ts` | Tests for eval command logic |
 | `tests/unit/cli/topics-revert.spec.ts` | Tests for revert command logic |
-| `program.md` | Agent instructions for the autoresearch loop (replaces old generate workflow) |
+| `program.md` | Agent instructions for the autoresearch loop |
 
 ### Modified files
 
 | File | Change |
 |------|--------|
-| `src/cli/commands/runtime.ts` | Remove generate/resume/report/runs imports; register apply/eval/revert |
+| `src/core/constraints.ts` | Add `MIN_EXAMPLES = 2`, enforce in `validateExamples()` |
+| `src/cli/commands/runtime.ts` | Remove generate/resume/report/runs imports; register create/apply/eval/revert |
 | `src/cli/renderer/index.ts` | Remove generate re-export; add eval re-export |
 | `src/core/types.ts` | Remove loop-specific types (keep CustomTopic, TestCase, TestResult, EfficacyMetrics) |
 | `src/index.ts` | Remove llm/memory/persistence/loop exports |
 | `package.json` | Remove LangChain deps |
-| `tests/helpers/mocks.ts` | Remove loop-specific mocks (RunState, IterationResult, AnalysisReport) |
+| `tests/helpers/mocks.ts` | Remove loop-specific mocks |
+| `tests/unit/core/constraints.spec.ts` | Add test for MIN_EXAMPLES |
 
 ### Deleted files/directories
 
 | Path | Reason |
 |------|--------|
-| `src/llm/` | Entire LLM service layer (6 providers, prompts, schemas) |
+| `src/llm/` | Entire LLM service layer |
 | `src/memory/` | Cross-run learning persistence |
 | `src/persistence/` | RunState JSON store |
 | `src/core/loop.ts` | Async generator loop |
@@ -56,11 +66,72 @@
 | `tests/unit/persistence/` | All persistence tests |
 | `tests/unit/core/loop.spec.ts` | Loop tests |
 | `tests/integration/loop.integration.spec.ts` | Integration test |
-| `tests/unit/report/` | Report tests (depend on RunState) |
+| `tests/unit/report/` | Report tests |
 
 ---
 
-### Task 1: CSV Prompt Loader
+### Task 1: Add MIN_EXAMPLES Constraint
+
+**Files:**
+- Modify: `src/core/constraints.ts`
+- Modify: `tests/unit/core/constraints.spec.ts`
+
+- [ ] **Step 1: Write failing test for minimum examples**
+
+Add to the existing `tests/unit/core/constraints.spec.ts`:
+
+```typescript
+it('rejects fewer than MIN_EXAMPLES examples', () => {
+  const errors = validateExamples(['Only one example']);
+  expect(errors).toContainEqual(
+    expect.objectContaining({ field: 'examples', message: expect.stringContaining('at least 2') }),
+  );
+});
+
+it('accepts exactly 2 examples', () => {
+  const errors = validateExamples(['Example one', 'Example two']);
+  expect(errors).toHaveLength(0);
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm test -- tests/unit/core/constraints.spec.ts`
+Expected: FAIL — no minimum check exists
+
+- [ ] **Step 3: Add MIN_EXAMPLES constant and enforce it**
+
+In `src/core/constraints.ts`, add after `MAX_EXAMPLES`:
+
+```typescript
+export const MIN_EXAMPLES = 2;
+```
+
+In `validateExamples()`, add at the top of the function:
+
+```typescript
+if (examples.length < MIN_EXAMPLES) {
+  errors.push({
+    field: 'examples',
+    message: `At least ${MIN_EXAMPLES} examples required`,
+  });
+}
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm test -- tests/unit/core/constraints.spec.ts`
+Expected: All tests PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/core/constraints.ts tests/unit/core/constraints.spec.ts && git commit -m "feat: enforce minimum 2 examples for custom topic guardrails"
+```
+
+---
+
+### Task 2: CSV Prompt Loader
 
 **Files:**
 - Create: `src/core/prompt-loader.ts`
@@ -138,7 +209,7 @@ describe('prompt-loader', () => {
     });
 
     it('handles escaped quotes in CSV', () => {
-      const csv = 'prompt,expected\n"He said ""hello"" to me",false';
+      const csv = 'prompt,expected\n"He said ""hello"" to me",false\nother,true';
       const result = loadPrompts(csv);
       expect(result[0].prompt).toBe('He said "hello" to me');
     });
@@ -246,7 +317,7 @@ function parseCsvLine(line: string): string[] {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm test -- tests/unit/core/prompt-loader.spec.ts`
-Expected: All 7 tests PASS
+Expected: All 8 tests PASS
 
 - [ ] **Step 5: Commit**
 
@@ -256,7 +327,7 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/core/prompt-loa
 
 ---
 
-### Task 2: Eval Renderer
+### Task 3: Eval Renderer
 
 **Files:**
 - Create: `src/cli/renderer/eval.ts`
@@ -378,40 +449,35 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/renderer/ev
 
 ---
 
-### Task 3: `topics apply` Command
+### Task 4: `topics create` Command
 
 **Files:**
-- Create: `src/cli/commands/topics-apply.ts`
-- Test: `tests/unit/cli/topics-apply.spec.ts`
+- Create: `src/cli/commands/topics-create.ts`
+- Test: `tests/unit/cli/topics-create.spec.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 ```typescript
-// tests/unit/cli/topics-apply.spec.ts
+// tests/unit/cli/topics-create.spec.ts
 import { describe, expect, it, vi } from 'vitest';
-import { applyTopic } from '../../src/cli/commands/topics-apply.js';
+import { createOrUpdateTopic } from '../../src/cli/commands/topics-create.js';
 import { createMockManagementService } from '../helpers/mocks.js';
 
-describe('topics-apply', () => {
-  describe('applyTopic', () => {
-    it('creates a new topic and assigns to profile', async () => {
+describe('topics-create', () => {
+  describe('createOrUpdateTopic', () => {
+    it('creates a new topic when none exists with that name', async () => {
       const mgmt = createMockManagementService();
       mgmt.listTopics = vi.fn().mockResolvedValue([]);
-      mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
 
-      const result = await applyTopic(mgmt, {
-        profileName: 'test-profile',
+      const result = await createOrUpdateTopic(mgmt, {
         name: 'Test Topic',
         description: 'A test description',
         examples: ['Example 1', 'Example 2'],
-        intent: 'block',
       });
 
       expect(result.topicId).toBe('topic-1');
       expect(result.topicName).toBe('Test Topic');
-      expect(result.profileName).toBe('test-profile');
-      expect(result.intent).toBe('block');
-      expect(mgmt.assignTopicsToProfile).toHaveBeenCalled();
+      expect(result.created).toBe(true);
     });
 
     it('updates existing topic when name matches', async () => {
@@ -423,75 +489,295 @@ describe('topics-apply', () => {
         topic_id: 'existing-1',
         topic_name: 'Test Topic',
         description: 'A test description',
-        examples: ['Example 1'],
+        examples: ['Example 1', 'Example 2'],
+        revision: 2,
       });
-      mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
 
-      const result = await applyTopic(mgmt, {
-        profileName: 'test-profile',
+      const result = await createOrUpdateTopic(mgmt, {
         name: 'Test Topic',
         description: 'A test description',
-        examples: ['Example 1'],
-        intent: 'block',
+        examples: ['Example 1', 'Example 2'],
       });
 
       expect(result.topicId).toBe('existing-1');
+      expect(result.created).toBe(false);
       expect(mgmt.updateTopic).toHaveBeenCalledWith('existing-1', expect.any(Object));
     });
 
-    it('throws on constraint validation failure', async () => {
+    it('throws on constraint validation failure — name too long', async () => {
       const mgmt = createMockManagementService();
       mgmt.listTopics = vi.fn().mockResolvedValue([]);
 
       await expect(
-        applyTopic(mgmt, {
-          profileName: 'test-profile',
+        createOrUpdateTopic(mgmt, {
           name: 'x'.repeat(200),
           description: 'A test description',
-          examples: [],
-          intent: 'block',
+          examples: ['Example 1', 'Example 2'],
         }),
       ).rejects.toThrow(/bytes/);
     });
 
-    it('sets guardrailAction to allow for block-intent', async () => {
+    it('throws on constraint validation failure — fewer than 2 examples', async () => {
       const mgmt = createMockManagementService();
       mgmt.listTopics = vi.fn().mockResolvedValue([]);
+
+      await expect(
+        createOrUpdateTopic(mgmt, {
+          name: 'Test Topic',
+          description: 'A test description',
+          examples: ['Only one'],
+        }),
+      ).rejects.toThrow(/at least 2/);
+    });
+
+    it('throws on constraint validation failure — more than 5 examples', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi.fn().mockResolvedValue([]);
+
+      await expect(
+        createOrUpdateTopic(mgmt, {
+          name: 'Test Topic',
+          description: 'desc',
+          examples: ['a', 'b', 'c', 'd', 'e', 'f'],
+        }),
+      ).rejects.toThrow(/5/);
+    });
+  });
+});
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm test -- tests/unit/cli/topics-create.spec.ts`
+Expected: FAIL — module not found
+
+- [ ] **Step 3: Implement create command**
+
+```typescript
+// src/cli/commands/topics-create.ts
+import type { Command } from 'commander';
+import { SdkManagementService } from '../../airs/management.js';
+import type { ManagementService } from '../../airs/types.js';
+import { loadConfig } from '../../config/loader.js';
+import { validateTopic } from '../../core/constraints.js';
+import { renderError } from '../renderer/index.js';
+
+export interface CreateInput {
+  name: string;
+  description: string;
+  examples: string[];
+}
+
+export interface CreateOutput {
+  topicId: string;
+  topicName: string;
+  revision: number;
+  created: boolean;
+}
+
+/**
+ * Create a new custom topic, or update it if one with the same name exists.
+ * Validates AIRS constraints (name, description, examples, combined length).
+ */
+export async function createOrUpdateTopic(
+  mgmt: ManagementService,
+  input: CreateInput,
+): Promise<CreateOutput> {
+  const topic = { name: input.name, description: input.description, examples: input.examples };
+  const errors = validateTopic(topic);
+  if (errors.length > 0) {
+    throw new Error(errors.map((e) => `${e.field}: ${e.message}`).join('; '));
+  }
+
+  const existing = await mgmt.listTopics();
+  const match = existing.find((t) => t.topic_name === input.name);
+
+  const request = {
+    topic_name: input.name,
+    description: input.description,
+    examples: input.examples,
+  };
+
+  const result = match
+    ? await mgmt.updateTopic(match.topic_id, request)
+    : await mgmt.createTopic(request);
+
+  return {
+    topicId: result.topic_id,
+    topicName: result.topic_name,
+    revision: result.revision ?? 0,
+    created: !match,
+  };
+}
+
+export function registerCreateCommand(parent: Command): void {
+  parent
+    .command('create')
+    .description('Create or update a custom topic definition')
+    .requiredOption('--name <name>', 'Topic name')
+    .requiredOption('--description <desc>', 'Topic description')
+    .requiredOption('--examples <examples...>', 'Example prompts (2-5 required)')
+    .option('--format <format>', 'Output format: json or terminal', 'terminal')
+    .action(async (opts) => {
+      try {
+        const config = await loadConfig();
+        const mgmt = new SdkManagementService({
+          clientId: config.mgmtClientId,
+          clientSecret: config.mgmtClientSecret,
+          tsgId: config.mgmtTsgId,
+          tokenEndpoint: config.mgmtTokenEndpoint,
+        });
+
+        const result = await createOrUpdateTopic(mgmt, {
+          name: opts.name,
+          description: opts.description,
+          examples: opts.examples,
+        });
+
+        if (opts.format === 'json') {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          console.log(`\n  Topic ${result.created ? 'created' : 'updated'}: ${result.topicName}`);
+          console.log(`  ID:       ${result.topicId}`);
+          console.log(`  Revision: ${result.revision}\n`);
+        }
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+}
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm test -- tests/unit/cli/topics-create.spec.ts`
+Expected: All 5 tests PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/topics-create.ts tests/unit/cli/topics-create.spec.ts && git commit -m "feat: add topics create command for topic CRUD"
+```
+
+---
+
+### Task 5: `topics apply` Command (Additive Profile Assignment)
+
+**Files:**
+- Create: `src/cli/commands/topics-apply.ts`
+- Test: `tests/unit/cli/topics-apply.spec.ts`
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+// tests/unit/cli/topics-apply.spec.ts
+import { describe, expect, it, vi } from 'vitest';
+import { applyTopicToProfile } from '../../src/cli/commands/topics-apply.js';
+import { createMockManagementService } from '../helpers/mocks.js';
+
+describe('topics-apply', () => {
+  describe('applyTopicToProfile', () => {
+    it('assigns a topic to a profile with block intent', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi.fn().mockResolvedValue([
+        { topic_id: 'topic-1', topic_name: 'My Topic', revision: 1 },
+      ]);
+      mgmt.getProfileTopics = vi.fn().mockResolvedValue([]);
       mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
 
-      await applyTopic(mgmt, {
+      const result = await applyTopicToProfile(mgmt, {
         profileName: 'test-profile',
-        name: 'Test Topic',
-        description: 'desc',
-        examples: ['ex'],
+        topicName: 'My Topic',
         intent: 'block',
       });
 
+      expect(result.topicName).toBe('My Topic');
+      expect(result.intent).toBe('block');
       expect(mgmt.assignTopicsToProfile).toHaveBeenCalledWith(
         'test-profile',
-        expect.arrayContaining([expect.objectContaining({ action: 'block' })]),
+        [{ topicId: 'topic-1', topicName: 'My Topic', action: 'block' }],
         'allow',
       );
     });
 
-    it('sets guardrailAction to block for allow-intent', async () => {
+    it('assigns a topic with allow intent', async () => {
       const mgmt = createMockManagementService();
-      mgmt.listTopics = vi.fn().mockResolvedValue([]);
+      mgmt.listTopics = vi.fn().mockResolvedValue([
+        { topic_id: 'topic-1', topic_name: 'My Topic', revision: 1 },
+      ]);
+      mgmt.getProfileTopics = vi.fn().mockResolvedValue([]);
       mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
 
-      await applyTopic(mgmt, {
+      await applyTopicToProfile(mgmt, {
         profileName: 'test-profile',
-        name: 'Test Topic',
-        description: 'desc',
-        examples: ['ex'],
+        topicName: 'My Topic',
         intent: 'allow',
       });
 
       expect(mgmt.assignTopicsToProfile).toHaveBeenCalledWith(
         'test-profile',
-        expect.arrayContaining([expect.objectContaining({ action: 'allow' })]),
+        [{ topicId: 'topic-1', topicName: 'My Topic', action: 'allow' }],
         'block',
       );
+    });
+
+    it('preserves existing topics when adding a new one (additive)', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi.fn().mockResolvedValue([
+        { topic_id: 'topic-1', topic_name: 'Existing Topic', revision: 1 },
+        { topic_id: 'topic-2', topic_name: 'New Topic', revision: 1 },
+      ]);
+      mgmt.getProfileTopics = vi.fn().mockResolvedValue([
+        { topicId: 'topic-1', topicName: 'Existing Topic', action: 'block' },
+      ]);
+      mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
+
+      await applyTopicToProfile(mgmt, {
+        profileName: 'test-profile',
+        topicName: 'New Topic',
+        intent: 'block',
+      });
+
+      const call = (mgmt.assignTopicsToProfile as ReturnType<typeof vi.fn>).mock.calls[0];
+      const topics = call[1] as Array<{ topicName: string }>;
+      expect(topics).toHaveLength(2);
+      expect(topics.map((t) => t.topicName)).toContain('Existing Topic');
+      expect(topics.map((t) => t.topicName)).toContain('New Topic');
+    });
+
+    it('replaces existing topic entry when re-applying same name', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi.fn().mockResolvedValue([
+        { topic_id: 'topic-1', topic_name: 'My Topic', revision: 2 },
+      ]);
+      mgmt.getProfileTopics = vi.fn().mockResolvedValue([
+        { topicId: 'topic-1', topicName: 'My Topic', action: 'block' },
+      ]);
+      mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
+
+      await applyTopicToProfile(mgmt, {
+        profileName: 'test-profile',
+        topicName: 'My Topic',
+        intent: 'block',
+      });
+
+      const call = (mgmt.assignTopicsToProfile as ReturnType<typeof vi.fn>).mock.calls[0];
+      const topics = call[1] as Array<{ topicName: string }>;
+      expect(topics).toHaveLength(1);
+    });
+
+    it('throws when topic not found', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi.fn().mockResolvedValue([]);
+
+      await expect(
+        applyTopicToProfile(mgmt, {
+          profileName: 'test-profile',
+          topicName: 'Missing',
+          intent: 'block',
+        }),
+      ).rejects.toThrow(/not found/);
     });
   });
 });
@@ -507,70 +793,62 @@ Expected: FAIL — module not found
 ```typescript
 // src/cli/commands/topics-apply.ts
 import type { Command } from 'commander';
-import type { ManagementService } from '../../airs/types.js';
 import { SdkManagementService } from '../../airs/management.js';
+import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
-import { validateTopic } from '../../core/constraints.js';
 import { renderError } from '../renderer/index.js';
 
 export interface ApplyInput {
   profileName: string;
-  name: string;
-  description: string;
-  examples: string[];
+  topicName: string;
   intent: 'allow' | 'block';
 }
 
 export interface ApplyOutput {
   topicId: string;
   topicName: string;
-  revision: number;
   profileName: string;
   intent: string;
 }
 
 /**
- * Create or update a custom topic and assign it to a security profile.
- * If a topic with the given name already exists, it is updated.
+ * Assign a topic to a security profile. Additive — preserves existing
+ * topics already on the profile. If the same topic name is already assigned,
+ * its entry is replaced (picks up new revision).
  */
-export async function applyTopic(
+export async function applyTopicToProfile(
   mgmt: ManagementService,
   input: ApplyInput,
 ): Promise<ApplyOutput> {
-  const topic = { name: input.name, description: input.description, examples: input.examples };
-  const errors = validateTopic(topic);
-  if (errors.length > 0) {
-    throw new Error(errors.map((e) => `${e.field}: ${e.message}`).join('; '));
+  // Find topic by name
+  const allTopics = await mgmt.listTopics();
+  const match = allTopics.find((t) => t.topic_name === input.topicName);
+  if (!match) {
+    throw new Error(`Topic "${input.topicName}" not found. Create it first with "topics create".`);
   }
 
-  // Check if topic exists by name
-  const existing = await mgmt.listTopics();
-  const match = existing.find((t) => t.topic_name === input.name);
+  // Read existing profile topics to preserve them
+  const existing = await mgmt.getProfileTopics(input.profileName);
 
-  const request = {
-    topic_name: input.name,
-    description: input.description,
-    examples: input.examples,
-  };
+  // Build merged topic list: replace if same name, otherwise keep existing
+  const merged = existing
+    .filter((t) => t.topicName !== input.topicName)
+    .map((t) => ({ topicId: t.topicId, topicName: t.topicName, action: t.action }));
 
-  const result = match
-    ? await mgmt.updateTopic(match.topic_id, request)
-    : await mgmt.createTopic(request);
+  merged.push({
+    topicId: match.topic_id,
+    topicName: match.topic_name,
+    action: input.intent,
+  });
 
-  // Assign to profile with correct guardrail action
+  // Guardrail-level action: 'allow' for block-intent, 'block' for allow-intent
   const guardrailAction = input.intent === 'block' ? 'allow' : 'block';
-  const topicAction = input.intent;
 
-  await mgmt.assignTopicsToProfile(
-    input.profileName,
-    [{ topicId: result.topic_id, topicName: result.topic_name, action: topicAction }],
-    guardrailAction,
-  );
+  await mgmt.assignTopicsToProfile(input.profileName, merged, guardrailAction);
 
   return {
-    topicId: result.topic_id,
-    topicName: result.topic_name,
-    revision: result.revision ?? 0,
+    topicId: match.topic_id,
+    topicName: match.topic_name,
     profileName: input.profileName,
     intent: input.intent,
   };
@@ -579,11 +857,9 @@ export async function applyTopic(
 export function registerApplyCommand(parent: Command): void {
   parent
     .command('apply')
-    .description('Create or update a custom topic and assign it to a security profile')
+    .description('Assign a topic to a security profile (additive)')
     .requiredOption('--profile <name>', 'Security profile name')
-    .requiredOption('--name <name>', 'Topic name')
-    .requiredOption('--description <desc>', 'Topic description')
-    .option('--examples <examples...>', 'Example prompts (2-5 recommended)', [])
+    .requiredOption('--name <name>', 'Topic name to assign')
     .option('--intent <intent>', 'Topic intent: block or allow', 'block')
     .option('--format <format>', 'Output format: json or terminal', 'terminal')
     .action(async (opts) => {
@@ -596,22 +872,18 @@ export function registerApplyCommand(parent: Command): void {
           tokenEndpoint: config.mgmtTokenEndpoint,
         });
 
-        const result = await applyTopic(mgmt, {
+        const result = await applyTopicToProfile(mgmt, {
           profileName: opts.profile,
-          name: opts.name,
-          description: opts.description,
-          examples: opts.examples,
+          topicName: opts.name,
           intent: opts.intent as 'allow' | 'block',
         });
 
         if (opts.format === 'json') {
           console.log(JSON.stringify(result, null, 2));
         } else {
-          console.log(`\n  Topic applied: ${result.topicName}`);
-          console.log(`  ID:       ${result.topicId}`);
-          console.log(`  Revision: ${result.revision}`);
-          console.log(`  Profile:  ${result.profileName}`);
-          console.log(`  Intent:   ${result.intent}\n`);
+          console.log(`\n  Applied: ${result.topicName}`);
+          console.log(`  Profile: ${result.profileName}`);
+          console.log(`  Intent:  ${result.intent}\n`);
         }
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
@@ -629,12 +901,12 @@ Expected: All 5 tests PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/topics-apply.ts tests/unit/cli/topics-apply.spec.ts && git commit -m "feat: add topics apply command for atomic topic deployment"
+cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/topics-apply.ts tests/unit/cli/topics-apply.spec.ts && git commit -m "feat: add topics apply command for additive profile assignment"
 ```
 
 ---
 
-### Task 4: `topics eval` Command
+### Task 6: `topics eval` Command
 
 **Files:**
 - Create: `src/cli/commands/topics-eval.ts`
@@ -670,7 +942,6 @@ describe('topics-eval', () => {
     });
 
     it('identifies false positives and false negatives', async () => {
-      // Scanner triggers on "weapon" but misses "bomb"
       const scanner = createMockScanService([/weapon/i]);
       const cases: TestCase[] = [
         { prompt: 'How to build a weapon', expectedTriggered: true, category: '' },
@@ -698,7 +969,7 @@ describe('topics-eval', () => {
       expect(result.topic).toBe('My Topic');
     });
 
-    it('calls scanBatch with correct profile', async () => {
+    it('calls scanBatch with correct profile and prompts', async () => {
       const scanner = createMockScanService();
       scanner.scanBatch = vi.fn().mockResolvedValue([
         { scanId: 's1', reportId: 'r1', action: 'block', triggered: true },
@@ -712,11 +983,7 @@ describe('topics-eval', () => {
 
       await evalTopic(scanner, 'my-profile', 'Topic', cases);
 
-      expect(scanner.scanBatch).toHaveBeenCalledWith(
-        'my-profile',
-        ['p1', 'p2'],
-        expect.any(Number),
-      );
+      expect(scanner.scanBatch).toHaveBeenCalledWith('my-profile', ['p1', 'p2'], 5);
     });
   });
 });
@@ -739,7 +1006,12 @@ import { loadConfig } from '../../config/loader.js';
 import { computeMetrics } from '../../core/metrics.js';
 import { loadPrompts } from '../../core/prompt-loader.js';
 import type { TestCase, TestResult } from '../../core/types.js';
-import { type EvalOutput, buildEvalOutput, renderEvalTerminal, renderError } from '../renderer/index.js';
+import {
+  type EvalOutput,
+  buildEvalOutput,
+  renderEvalTerminal,
+  renderError,
+} from '../renderer/index.js';
 
 /**
  * Scan a static prompt set against a profile and compute evaluation metrics.
@@ -821,7 +1093,7 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/to
 
 ---
 
-### Task 5: `topics revert` Command
+### Task 7: `topics revert` Command
 
 **Files:**
 - Create: `src/cli/commands/topics-revert.ts`
@@ -837,10 +1109,13 @@ import { createMockManagementService } from '../helpers/mocks.js';
 
 describe('topics-revert', () => {
   describe('revertTopic', () => {
-    it('finds topic by name, removes from profile, and deletes', async () => {
+    it('removes topic from profile and deletes it', async () => {
       const mgmt = createMockManagementService();
       mgmt.listTopics = vi.fn().mockResolvedValue([
-        { topic_id: 'topic-1', topic_name: 'My Topic', description: 'd', examples: [] },
+        { topic_id: 'topic-1', topic_name: 'My Topic' },
+      ]);
+      mgmt.getProfileTopics = vi.fn().mockResolvedValue([
+        { topicId: 'topic-1', topicName: 'My Topic', action: 'block' },
       ]);
       mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
       mgmt.forceDeleteTopic = vi.fn().mockResolvedValue({ message: 'deleted' });
@@ -851,26 +1126,32 @@ describe('topics-revert', () => {
       expect(mgmt.forceDeleteTopic).toHaveBeenCalledWith('topic-1', undefined);
     });
 
-    it('throws when topic not found', async () => {
-      const mgmt = createMockManagementService();
-      mgmt.listTopics = vi.fn().mockResolvedValue([]);
-
-      await expect(revertTopic(mgmt, 'test-profile', 'Missing')).rejects.toThrow(
-        /not found/,
-      );
-    });
-
-    it('clears topic-guardrails on profile by assigning empty list', async () => {
+    it('preserves other topics on the profile', async () => {
       const mgmt = createMockManagementService();
       mgmt.listTopics = vi.fn().mockResolvedValue([
-        { topic_id: 'topic-1', topic_name: 'My Topic', description: 'd', examples: [] },
+        { topic_id: 'topic-1', topic_name: 'Remove Me' },
+        { topic_id: 'topic-2', topic_name: 'Keep Me' },
+      ]);
+      mgmt.getProfileTopics = vi.fn().mockResolvedValue([
+        { topicId: 'topic-1', topicName: 'Remove Me', action: 'block' },
+        { topicId: 'topic-2', topicName: 'Keep Me', action: 'allow' },
       ]);
       mgmt.assignTopicsToProfile = vi.fn().mockResolvedValue(undefined);
       mgmt.forceDeleteTopic = vi.fn().mockResolvedValue({ message: 'deleted' });
 
-      await revertTopic(mgmt, 'test-profile', 'My Topic');
+      await revertTopic(mgmt, 'test-profile', 'Remove Me');
 
-      expect(mgmt.assignTopicsToProfile).toHaveBeenCalledWith('test-profile', []);
+      const call = (mgmt.assignTopicsToProfile as ReturnType<typeof vi.fn>).mock.calls[0];
+      const topics = call[1] as Array<{ topicName: string }>;
+      expect(topics).toHaveLength(1);
+      expect(topics[0].topicName).toBe('Keep Me');
+    });
+
+    it('throws when topic not found', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi.fn().mockResolvedValue([]);
+
+      await expect(revertTopic(mgmt, 'test-profile', 'Missing')).rejects.toThrow(/not found/);
     });
   });
 });
@@ -886,8 +1167,8 @@ Expected: FAIL — module not found
 ```typescript
 // src/cli/commands/topics-revert.ts
 import type { Command } from 'commander';
-import type { ManagementService } from '../../airs/types.js';
 import { SdkManagementService } from '../../airs/management.js';
+import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
 import { renderError } from '../renderer/index.js';
 
@@ -898,7 +1179,7 @@ export interface RevertOutput {
 
 /**
  * Remove a topic from a profile and delete it from AIRS.
- * Uses forceDeleteTopic to handle profile references.
+ * Preserves other topics already assigned to the profile.
  */
 export async function revertTopic(
   mgmt: ManagementService,
@@ -907,15 +1188,19 @@ export async function revertTopic(
 ): Promise<RevertOutput> {
   const topics = await mgmt.listTopics();
   const match = topics.find((t) => t.topic_name === topicName);
-
   if (!match) {
     throw new Error(`Topic "${topicName}" not found`);
   }
 
-  // Clear topic-guardrails on the profile by assigning empty list
-  await mgmt.assignTopicsToProfile(profileName, []);
+  // Read current profile topics and remove the target
+  const profileTopics = await mgmt.getProfileTopics(profileName);
+  const remaining = profileTopics
+    .filter((t) => t.topicName !== topicName)
+    .map((t) => ({ topicId: t.topicId, topicName: t.topicName, action: t.action }));
 
-  // Force-delete the topic (removes from any remaining profile references)
+  await mgmt.assignTopicsToProfile(profileName, remaining);
+
+  // Force-delete the topic
   await mgmt.forceDeleteTopic(match.topic_id);
 
   return { profileName, deleted: [match.topic_id] };
@@ -968,12 +1253,12 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/to
 
 ---
 
-### Task 6: Wire New Commands Into Runtime
+### Task 8: Wire New Commands Into Runtime
 
 **Files:**
 - Modify: `src/cli/commands/runtime.ts`
 
-- [ ] **Step 1: Replace generate/resume/report/runs imports with apply/eval/revert**
+- [ ] **Step 1: Replace old imports with new command imports**
 
 In `src/cli/commands/runtime.ts`, replace lines 34-37:
 
@@ -986,13 +1271,16 @@ import { registerResumeCommand } from './resume.js';
 
 // New:
 import { registerApplyCommand } from './topics-apply.js';
+import { registerCreateCommand } from './topics-create.js';
 import { registerEvalCommand } from './topics-eval.js';
 import { registerRevertCommand } from './topics-revert.js';
 ```
 
 - [ ] **Step 2: Replace command registration at bottom of file**
 
-Replace lines 856-860:
+Replace the existing `topics create` command block (lines 798-814) and the guardrail registration block (lines 856-860).
+
+Remove the old inline `topics create` command (the one that takes `--config <path>`). Then replace lines 856-860:
 
 ```typescript
 // Old:
@@ -1002,6 +1290,7 @@ Replace lines 856-860:
   registerListCommand(topics, 'runs');
 
 // New:
+  registerCreateCommand(topics);
   registerApplyCommand(topics);
   registerEvalCommand(topics);
   registerRevertCommand(topics);
@@ -1010,26 +1299,26 @@ Replace lines 856-860:
 - [ ] **Step 3: Verify build compiles**
 
 Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm tsc --noEmit`
-Expected: No errors (old files still exist, just not imported)
+Expected: No errors
 
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/runtime.ts && git commit -m "feat: wire apply/eval/revert commands into runtime topics"
+cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/cli/commands/runtime.ts && git commit -m "feat: wire create/apply/eval/revert commands into runtime topics"
 ```
 
 ---
 
-### Task 7: Remove Old Code
+### Task 9: Remove Old Code
 
 **Files:**
 - Delete: `src/llm/`, `src/memory/`, `src/persistence/`, `src/core/loop.ts`
-- Delete: `src/cli/commands/generate.ts`, `src/cli/commands/resume.ts`, `src/cli/commands/report.ts`, `src/cli/commands/list.ts`
+- Delete: `src/cli/commands/generate.ts`, `resume.ts`, `report.ts`, `list.ts`
 - Delete: `src/cli/renderer/generate.ts`
 - Delete: `tests/unit/llm/`, `tests/unit/memory/`, `tests/unit/persistence/`, `tests/unit/core/loop.spec.ts`, `tests/unit/report/`, `tests/integration/`
 - Modify: `src/cli/renderer/index.ts`, `src/core/types.ts`, `src/index.ts`, `tests/helpers/mocks.ts`
 
-- [ ] **Step 1: Delete LLM, memory, persistence directories and old commands**
+- [ ] **Step 1: Delete old source directories and files**
 
 ```bash
 cd /Users/cdot/development/cdot65/prisma-airs-cli && rm -rf src/llm src/memory src/persistence && rm src/core/loop.ts && rm src/cli/commands/generate.ts src/cli/commands/resume.ts src/cli/commands/report.ts src/cli/commands/list.ts && rm src/cli/renderer/generate.ts
@@ -1043,12 +1332,8 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && rm -rf tests/unit/llm tests
 
 - [ ] **Step 3: Remove generate re-export from renderer index**
 
-In `src/cli/renderer/index.ts`, remove:
-```typescript
-export * from './generate.js';
-```
+In `src/cli/renderer/index.ts`, remove `export * from './generate.js';`. Final file:
 
-Final file should be:
 ```typescript
 export * from './audit.js';
 export * from './common.js';
@@ -1058,28 +1343,21 @@ export * from './redteam.js';
 export * from './runtime.js';
 ```
 
-- [ ] **Step 4: Clean up types — remove loop-specific types from `src/core/types.ts`**
+- [ ] **Step 4: Remove loop-specific types from `src/core/types.ts`**
 
-Remove the following types (keep `CustomTopic`, `TestCase`, `CategoryBreakdown`, `TestResult`, `EfficacyMetrics`):
-- `UserInput`
-- `AnalysisReport`
-- `IterationResult`
-- `RunState`
-- `LoopEvent` (entire union type)
+Remove: `UserInput`, `AnalysisReport`, `IterationResult`, `RunState`, `LoopEvent` (entire union).
+
+Keep: `CustomTopic`, `TestCase`, `CategoryBreakdown`, `TestResult`, `EfficacyMetrics`.
 
 - [ ] **Step 5: Clean up library exports in `src/index.ts`**
 
-Read the current file and remove any re-exports of `llm`, `memory`, `persistence`, `loop`, or types that no longer exist.
+Read the file and remove any re-exports of `llm`, `memory`, `persistence`, `loop`, or types that no longer exist.
 
 - [ ] **Step 6: Clean up test mocks in `tests/helpers/mocks.ts`**
 
-Remove functions that depend on deleted types:
-- `mockAnalysis()` (depends on `AnalysisReport`)
-- `mockIterationResult()` (depends on `IterationResult`)
-- `mockRunState()` (depends on `RunState`)
-- `createMockPromptSetService()` (depends on `PromptSetService`)
+Remove: `mockAnalysis()`, `mockIterationResult()`, `mockRunState()`, `createMockPromptSetService()`.
 
-Remove corresponding imports of `AnalysisReport`, `IterationResult`, `RunState` from the import block.
+Remove imports: `AnalysisReport`, `IterationResult`, `RunState` from the import block. Remove `PromptSetService` from the airs/types import.
 
 Keep: `mockTopic()`, `mockTestCases()`, `createMockManagementService()`, `createMockScanService()`, `createMockAllowScanService()`, `mockMetrics()`, `mockTestResults()`.
 
@@ -1091,7 +1369,7 @@ Expected: No errors
 - [ ] **Step 8: Run all remaining tests**
 
 Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm test`
-Expected: All tests pass (deleted tests no longer run)
+Expected: All tests pass
 
 - [ ] **Step 9: Commit**
 
@@ -1101,10 +1379,12 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add -A && git commit -m
 
 ---
 
-### Task 8: Remove LangChain Dependencies
+### Task 10: Remove LangChain Dependencies and Clean Config
 
 **Files:**
 - Modify: `package.json`
+- Modify: `src/config/schema.ts`
+- Modify: `src/config/loader.ts`
 
 - [ ] **Step 1: Remove LangChain packages**
 
@@ -1112,67 +1392,37 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add -A && git commit -m
 cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm remove @langchain/anthropic @langchain/aws @langchain/core @langchain/google-genai @langchain/google-vertexai
 ```
 
-- [ ] **Step 2: Verify install and build**
+- [ ] **Step 2: Remove LLM/memory config fields from schema**
 
-```bash
-cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm install && pnpm tsc --noEmit && pnpm test
-```
-Expected: All pass — no code references LangChain anymore
-
-- [ ] **Step 3: Run lint**
-
-```bash
-cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm run lint
-```
-Expected: Clean (or only pre-existing warnings)
-
-- [ ] **Step 4: Commit**
-
-```bash
-cd /Users/cdot/development/cdot65/prisma-airs-cli && git add package.json pnpm-lock.yaml && git commit -m "chore: remove LangChain dependencies"
-```
-
----
-
-### Task 9: Clean Up Config Schema
-
-**Files:**
-- Modify: `src/config/schema.ts`
-- Modify: `src/config/loader.ts`
-
-- [ ] **Step 1: Read config schema**
-
-Read `src/config/schema.ts` to identify LLM/memory/persistence config fields.
-
-- [ ] **Step 2: Remove LLM-specific config fields**
-
-Remove from the Zod schema: `llmProvider`, `llmModel`, `anthropicApiKey`, `googleApiKey`, `googleCloudProject`, `googleCloudLocation`, `awsRegion`, `awsAccessKeyId`, `awsSecretAccessKey`, `accumulateTests`, `maxAccumulatedTests`, `memoryEnabled`, `memoryDir`, `maxMemoryChars`, `dataDir`.
+Read `src/config/schema.ts`. Remove from the Zod schema: `llmProvider`, `llmModel`, `anthropicApiKey`, `googleApiKey`, `googleCloudProject`, `googleCloudLocation`, `awsRegion`, `awsAccessKeyId`, `awsSecretAccessKey`, `accumulateTests`, `maxAccumulatedTests`, `memoryEnabled`, `memoryDir`, `maxMemoryChars`, `dataDir`.
 
 Keep: `airsApiKey`, `mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId`, `mgmtEndpoint`, `mgmtTokenEndpoint`, `scanConcurrency`.
 
 - [ ] **Step 3: Remove corresponding env mappings from loader**
 
-In `src/config/loader.ts`, remove env mappings for deleted fields from the `fromEnv()` function. Remove `expandHome()` calls for `memoryDir` and `dataDir` in the return statement.
+In `src/config/loader.ts`, remove env mappings for deleted fields from `fromEnv()`. Remove `expandHome()` calls for `memoryDir` and `dataDir` in the return.
 
-- [ ] **Step 4: Verify build and tests**
+- [ ] **Step 4: Verify everything**
 
-Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm tsc --noEmit && pnpm test`
+```bash
+cd /Users/cdot/development/cdot65/prisma-airs-cli && pnpm install && pnpm tsc --noEmit && pnpm test && pnpm run lint
+```
 Expected: All pass
 
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/cdot/development/cdot65/prisma-airs-cli && git add src/config/schema.ts src/config/loader.ts && git commit -m "chore: remove LLM/memory config fields from schema"
+cd /Users/cdot/development/cdot65/prisma-airs-cli && git add package.json pnpm-lock.yaml src/config/schema.ts src/config/loader.ts && git commit -m "chore: remove LangChain deps and LLM/memory config fields"
 ```
 
 ---
 
-### Task 10: Write program.md
+### Task 11: Write program.md
 
 **Files:**
 - Create: `program.md` (in prisma-airs-cli repo root)
 
-- [ ] **Step 1: Write the agent instructions**
+- [ ] **Step 1: Write agent instructions**
 
 ```markdown
 # autoresearch: custom topic guardrail optimization
@@ -1182,27 +1432,40 @@ Autonomous loop to find the optimal custom topic guardrail configuration for Pri
 ## Setup
 
 1. **Confirm inputs** with the user:
-   - Profile name (AIRS security profile, must already exist)
-   - Topic description (what the guardrail should detect)
+   - Security profile name (must already exist in AIRS)
+   - Topic name and initial description
+   - Initial example prompts (2-5 required)
+   - Intent: `block` or `allow`
    - Path to prompt CSV file (columns: `prompt`, `expected`)
+   - Whether a companion allow topic is needed (block-intent usually requires one)
 2. **Verify AIRS credentials**: run `airs runtime topics list` — if it errors, credentials are missing.
 3. **Initialize results.tsv** with header row:
    ```
-   iteration\tcoverage\ttpr\ttnr\tf1\tstatus\tdescription_summary
+   iteration	coverage	tpr	tnr	f1	status	description_summary
    ```
 
 ## Baseline
 
-Run the user's initial topic definition unmodified:
+Create the topic and assign it to the profile:
 
 ```bash
-airs runtime topics apply \
-  --profile "<profile>" \
+# Create block topic
+airs runtime topics create \
   --name "<topic-name>" \
   --description "<user-provided-description>" \
   --examples "<ex1>" "<ex2>" \
-  --intent block \
   --format json
+
+# If block-intent, create allow companion
+airs runtime topics create \
+  --name "<companion-name>" \
+  --description "<companion-description>" \
+  --examples "<comp-ex1>" "<comp-ex2>" \
+  --format json
+
+# Apply both to profile
+airs runtime topics apply --profile "<profile>" --name "<topic-name>" --intent block --format json
+airs runtime topics apply --profile "<profile>" --name "<companion-name>" --intent allow --format json
 ```
 
 Then evaluate:
@@ -1230,19 +1493,22 @@ LOOP FOREVER:
    - **Never** use exclusion language ("not X", "excluding Y", "no Z") — it increases FP by adding semantic overlap.
    - **Shorter descriptions outperform longer ones** (under 100 chars is a good target).
    - Make the positive definition more precise rather than adding exceptions.
-   - Max 5 examples, 250 bytes each, 1000 bytes combined (name + description + all examples).
+   - 2-5 examples required, 250 bytes each, 1000 bytes combined (name + description + all examples).
    - Topic name stays fixed — only change description and examples.
-4. **Apply the new definition:**
+4. **Update the topic definition:**
    ```bash
-   airs runtime topics apply \
-     --profile "<profile>" \
+   airs runtime topics create \
      --name "<topic-name>" \
      --description "<new-description>" \
      --examples "<new-ex1>" "<new-ex2>" \
-     --intent block \
      --format json
    ```
-5. **Evaluate against the same static prompt set:**
+   Note: `create` updates the existing topic when the name matches.
+5. **Re-apply to profile** (picks up new revision):
+   ```bash
+   airs runtime topics apply --profile "<profile>" --name "<topic-name>" --intent block --format json
+   ```
+6. **Evaluate against the same static prompt set:**
    ```bash
    airs runtime topics eval \
      --profile "<profile>" \
@@ -1250,26 +1516,10 @@ LOOP FOREVER:
      --topic "<topic-name>" \
      --format json
    ```
-6. **Decide:**
+7. **Decide:**
    - If **coverage improved** (higher than best so far): **keep**. Record in results.tsv.
-   - If **coverage equal or worse**: **revert**. Re-apply the previous best definition, record as `discard` in results.tsv.
-7. **Never stop.** Do not ask the user if you should continue. Run until manually interrupted.
-
-## Revert procedure
-
-When discarding a failed experiment, re-apply the best-known definition:
-
-```bash
-airs runtime topics apply \
-  --profile "<profile>" \
-  --name "<topic-name>" \
-  --description "<best-description>" \
-  --examples "<best-ex1>" "<best-ex2>" \
-  --intent block \
-  --format json
-```
-
-Do NOT use `airs runtime topics revert` unless you want to fully remove the topic from the profile. Revert is for cleanup, not for undoing an experiment.
+   - If **coverage equal or worse**: **discard**. Re-apply the previous best definition (steps 4-5 with best-known description/examples), record as `discard`.
+8. **Never stop.** Do not ask the user if you should continue. Run until manually interrupted.
 
 ## Logging
 
@@ -1282,14 +1532,15 @@ iteration	coverage	tpr	tnr	f1	status	description_summary
 2	0.860	0.860	0.940	0.890	discard	tried adding modifier example
 ```
 
-## Platform constraints
+## Platform Constraints
 
-- Block-intent coverage ceiling: typically 40–50% due to vocabulary overlap.
-- Allow-intent ceiling: typically 40–70%.
+- Block-intent coverage ceiling: typically 40-50% due to vocabulary overlap.
+- Allow-intent ceiling: typically 40-70%.
 - High-sensitivity domains (explosives, weapons) may hit AIRS built-in safety that overrides custom definitions.
 - If coverage plateaus for 5+ iterations, try a fundamentally different description angle rather than incremental tweaks.
+- The companion allow topic may also need refinement — if FP is high, the allow companion's description may be too narrow.
 
-## When the user returns
+## When the User Returns
 
 Report:
 1. Best coverage achieved and the iteration that produced it.
@@ -1305,38 +1556,29 @@ cd /Users/cdot/development/cdot65/prisma-airs-cli && git add program.md && git c
 
 ---
 
-### Task 11: Update CLAUDE.md
+### Task 12: Update CLAUDE.md
 
 **Files:**
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Update project summary**
 
-Replace the LLM-loop description with the new atomic-command architecture. Remove references to LangChain, memory system, persistence, and the loop. Document the three new commands and the `program.md` workflow.
-
-Key changes:
-- Project summary: remove "LLM-driven guardrail generation with iterative refinement" and "cross-run memory" — replace with "atomic topic commands for agent-driven optimization"
-- Directory structure: remove `src/llm/`, `src/memory/`, `src/persistence/`, `src/core/loop.ts`, old commands
-- Add `src/core/prompt-loader.ts`, new commands, `src/cli/renderer/eval.ts`
-- Architecture section: replace Core Loop section with new commands section
-- Remove LLM Service, Memory System sections
-- Remove LLM-related env vars from environment variables table
+Replace LLM-loop description with new atomic-command architecture. Key changes:
+- Summary: remove "LLM-driven guardrail generation with iterative refinement" and "cross-run memory" — replace with "atomic topic commands (create, apply, eval, revert) for agent-driven optimization"
+- Directory structure: remove `src/llm/`, `src/memory/`, `src/persistence/`, `src/core/loop.ts`, old commands. Add `src/core/prompt-loader.ts`, new command files, `src/cli/renderer/eval.ts`.
+- Architecture section: replace Core Loop section with new commands section documenting `create`, `apply`, `eval`, `revert`
+- Remove LLM Service, Memory System, Persistence sections
+- Remove LLM-related env vars (ANTHROPIC_API_KEY, GOOGLE_*, AWS_*, LLM_*, MEMORY_*, DATA_DIR, ACCUMULATE_*)
 - Tech stack: remove "LangChain.js w/ structured output"
+- Add reference to `program.md` for agent-driven optimization workflow
 
-- [ ] **Step 2: Verify accuracy against current code**
+- [ ] **Step 2: Verify accuracy against file tree**
 
-Scan the modified CLAUDE.md against the actual file tree to ensure no stale references.
+Run: `cd /Users/cdot/development/cdot65/prisma-airs-cli && ls src/`
+Confirm no stale references in CLAUDE.md.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 cd /Users/cdot/development/cdot65/prisma-airs-cli && git add CLAUDE.md && git commit -m "docs: update CLAUDE.md for autoresearch refactor"
 ```
-
----
-
-## Unresolved Questions
-
-- companion topics for block-intent: currently LLM-generated. In new model, agent handles this. Does `apply` need a `--companion` flag, or is the agent just expected to call `apply` twice (once for block topic, once for allow companion)?
-- `report` and `runs` commands: these depend on RunState/persistence. Deleting them means losing run history viewing. OK to lose, or should we keep a simplified version that reads `results.tsv`?
-- audit command: currently depends on `LlmService` for test generation. Does it stay as-is (it's a separate workflow) or does it also need refactoring?
