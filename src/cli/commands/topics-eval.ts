@@ -23,6 +23,10 @@ export async function evalTopic(
   const prompts = cases.map((c) => c.prompt);
   const scanResults = await scanner.scanBatch(profileName, prompts, concurrency);
 
+  if (scanResults.length !== cases.length) {
+    throw new Error(`scanBatch returned ${scanResults.length} results for ${cases.length} prompts`);
+  }
+
   const testResults: TestResult[] = cases.map((testCase, i) => {
     const scan = scanResults[i];
     return {

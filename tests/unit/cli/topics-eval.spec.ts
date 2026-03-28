@@ -51,6 +51,20 @@ describe('topics-eval', () => {
       expect(result.topic).toBe('My Topic');
     });
 
+    it('throws when scanBatch returns wrong length', async () => {
+      const scanner = createMockScanService();
+      scanner.scanBatch = vi
+        .fn()
+        .mockResolvedValue([{ scanId: 's1', reportId: 'r1', action: 'block', triggered: true }]);
+      const cases: TestCase[] = [
+        { prompt: 'p1', expectedTriggered: true, category: '' },
+        { prompt: 'p2', expectedTriggered: false, category: '' },
+      ];
+      await expect(evalTopic(scanner, 'profile', 'Topic', cases)).rejects.toThrow(
+        /scanBatch returned 1 results for 2 prompts/,
+      );
+    });
+
     it('calls scanBatch with correct profile and prompts', async () => {
       const scanner = createMockScanService();
       scanner.scanBatch = vi.fn().mockResolvedValue([
