@@ -13,26 +13,21 @@ This workflow walks through a complete end-to-end cycle: generate a custom topic
 - A security profile in Prisma AIRS
 - A red team target configured in AI Runtime Security
 
-## Step 1: Generate a Guardrail + Prompt Set
+## Step 1: Create a Guardrail
 
-Use `airs runtime topics generate` with `--create-prompt-set` to build a topic guardrail **and** automatically export the best iteration's test cases as a custom prompt set in AI Red Team.
+Create a custom topic guardrail and optimize it using the atomic CLI commands (or let an AI agent follow the protocol in `program.md`):
 
 ```bash
-airs runtime topics generate \
-  --profile "Custom Topics Test" \
-  --topic "Pokemon discussions" \
-  --intent block \
-  --max-iterations 3 \
-  --target-coverage 90 \
-  --create-prompt-set \
-  --prompt-set-name "pokemon-guardrail-tests"
+# Create and apply the topic
+airs runtime topics create --name "Pokemon" \
+  --description "Pokemon discussions" --examples "Pikachu evolution" "Pokemon battle strategy"
+airs runtime topics apply --profile "Custom Topics Test" --name "Pokemon" --intent block
+
+# Evaluate against a prompt set (CSV: prompt, expected, intent columns)
+airs runtime topics eval --profile "Custom Topics Test" --prompts pokemon-prompts.csv --topic "Pokemon" --format json
 ```
 
-When the loop completes, Prisma AIRS CLI:
-
-1. Deploys the refined topic guardrail to your AIRS profile
-2. Creates a custom prompt set named `pokemon-guardrail-tests` in AI Red Team
-3. Prints the prompt set name and prompt count
+Once you have an optimized guardrail, export the eval prompts as a red team prompt set:
 
 ## Step 2: Find Your Prompt Set UUID
 
@@ -91,8 +86,8 @@ If the ASR is too high (meaning the target is vulnerable), you can:
 
 1. **Add guardrails** — deploy the topic guardrail to the target's security profile
 2. **Re-scan** — run the same prompt set again to validate the guardrail is effective
-3. **Re-run generation** with more iterations or a higher coverage target
-4. **Resume a previous run** with `airs runtime topics resume <runId>` to continue refining
+3. **Re-evaluate** with `airs runtime topics eval` using updated prompts and iterate
+4. **Revert a topic** with `airs runtime topics revert` to roll back a bad change
 5. **Abort a running scan** if needed: `airs redteam abort <jobId>`
 
 ## Complete Script
@@ -102,25 +97,22 @@ If the ASR is too high (meaning the target is vulnerable), you can:
 set -euo pipefail
 
 PROFILE="Custom Topics Test"
-TOPIC="Pokemon discussions"
+TOPIC="Pokemon"
 TARGET_UUID="<target-uuid>"
-PROMPT_SET_NAME="pokemon-guardrail-tests"
 
-# 1. Generate guardrail + export prompt set
-airs runtime topics generate \
-  --profile "$PROFILE" \
-  --topic "$TOPIC" \
-  --intent block \
-  --max-iterations 3 \
-  --target-coverage 90 \
-  --create-prompt-set \
-  --prompt-set-name "$PROMPT_SET_NAME"
+# 1. Create and apply topic guardrail
+airs runtime topics create --name "$TOPIC" \
+  --description "Pokemon discussions" --examples "Pikachu evolution" "Pokemon battle strategy"
+airs runtime topics apply --profile "$PROFILE" --name "$TOPIC" --intent block
 
-# 2. Find the prompt set UUID
+# 2. Evaluate (iterate as needed)
+airs runtime topics eval --profile "$PROFILE" --prompts pokemon-prompts.csv --topic "$TOPIC" --format json
+
+# 3. Find the prompt set UUID
 airs redteam prompt-sets list
 PROMPT_SET_UUID="<uuid-from-output>"
 
-# 3. Launch red team scan (async)
+# 4. Launch red team scan (async)
 airs redteam scan \
   --target "$TARGET_UUID" \
   --name "Validate: $TOPIC" \
@@ -128,11 +120,11 @@ airs redteam scan \
   --prompt-sets "$PROMPT_SET_UUID" \
   --no-wait
 
-# 4. Check status
-JOB_ID="<job-id-from-step-3>"
+# 5. Check status
+JOB_ID="<job-id-from-step-4>"
 airs redteam status "$JOB_ID"
 
-# 5. View report with per-prompt details
+# 6. View report with per-prompt details
 airs redteam report "$JOB_ID" --attacks
 ```
 

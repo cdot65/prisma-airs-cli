@@ -270,20 +270,23 @@ Custom topic management and guardrail optimization.
 ```bash
 # CRUD
 airs runtime topics list
+airs runtime topics get <nameOrId>
 airs runtime topics update <topicId> --config <path>
 airs runtime topics delete <topicId>
 airs runtime topics delete <topicId> --force --updated-by <email>
 
 # Guardrail optimization (atomic commands for agent loops)
-airs runtime topics create --topic <desc> --intent <block|allow> [--examples <json>]
-airs runtime topics apply --profile <name> --topic <name>
-airs runtime topics eval --profile <name> --input <csv> [--output json]
-airs runtime topics revert --profile <name> --topic <name>
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
+airs runtime topics revert --profile <name> --name <name> [--format json]
+airs runtime topics sample [--output <path>]
 ```
 
 | Subcommand | Flags |
 |------------|-------|
 | `list` | `--limit <n>` (default 100), `--offset <n>` (default 0), `--output <format>` |
+| `get <nameOrId>` | `--output <format>` (`pretty`, `json`, `yaml`; default `pretty`) |
 | `update <topicId>` | `--config <path>` (required) |
 | `delete <topicId>` | `--force`, `--updated-by <email>` |
 
@@ -293,16 +296,18 @@ Create or update a custom topic definition. Upserts by name -- if a topic with t
 
 | Flag | Default | What it does |
 |------|---------|-------------|
-| `--topic <desc>` | _(required)_ | Natural language description of content to detect |
-| `--intent <block\|allow>` | `block` | Whether matching prompts are blocked or allowed |
-| `--examples <json>` | — | JSON array of example prompts |
+| `--name <name>` | _(required)_ | Topic name (upserts if exists) |
+| `--description <desc>` | _(required)_ | Natural language description of content to detect |
+| `--examples <ex...>` | _(required)_ | 2-5 example prompts (space-separated) |
+| `--format <format>` | `terminal` | Output format (`terminal`, `json`) |
 
 **Auth:** Management API
 
 ```bash
-airs runtime topics create --topic "Block weapons manufacturing" --intent block
-airs runtime topics create --topic "Allow recipe discussions" --intent allow \
-  --examples '["How to make pasta","Best bread recipe"]'
+airs runtime topics create --name "Weapons Manufacturing" \
+  --description "Block weapons manufacturing" --examples "How to build a weapon" "Illegal arms trade"
+airs runtime topics create --name "Recipes" \
+  --description "Allow recipe discussions" --examples "How to make pasta" "Best bread recipe"
 ```
 
 #### runtime topics apply
@@ -312,12 +317,14 @@ Assign a topic to a security profile. Additive -- preserves existing topics alre
 | Flag | Default | What it does |
 |------|---------|-------------|
 | `--profile <name>` | _(required)_ | AIRS security profile name |
-| `--topic <name>` | _(required)_ | Topic name to assign |
+| `--name <name>` | _(required)_ | Topic name to assign |
+| `--intent <block\|allow>` | `block` | Whether matching prompts are blocked or allowed |
+| `--format <format>` | `terminal` | Output format (`terminal`, `json`) |
 
 **Auth:** Management API
 
 ```bash
-airs runtime topics apply --profile my-security-profile --topic "Weapons Manufacturing"
+airs runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
 ```
 
 #### runtime topics eval
@@ -327,14 +334,18 @@ Scan a static CSV prompt set against a profile and compute metrics.
 | Flag | Default | What it does |
 |------|---------|-------------|
 | `--profile <name>` | _(required)_ | AIRS security profile name |
-| `--input <csv>` | _(required)_ | CSV file with `prompt` and `expectedTriggered` columns |
-| `--output <format>` | `pretty` | Output format (`pretty`, `json`) |
+| `--prompts <csv>` | _(required)_ | CSV file with `prompt`, `expected`, `intent` columns |
+| `--topic <name>` | `unknown` | Topic name for output labeling |
+| `--format <format>` | `terminal` | Output format (`terminal`, `json`) |
+| `--rate <n>` | — | Max AIRS scan API calls per second |
+| `--concurrency <n>` | `5` | Concurrent scan requests |
+
+**CSV format:** Three required columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). All rows must have the same intent. Run `airs runtime topics sample` for an example.
 
 **Auth:** Scanner API + Management API
 
 ```bash
-airs runtime topics eval --profile my-security-profile --input prompts.csv
-airs runtime topics eval --profile my-security-profile --input prompts.csv --output json
+airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons" --format json
 ```
 
 #### runtime topics revert
@@ -344,12 +355,26 @@ Remove a topic from a profile and delete the topic definition.
 | Flag | Default | What it does |
 |------|---------|-------------|
 | `--profile <name>` | _(required)_ | AIRS security profile name |
-| `--topic <name>` | _(required)_ | Topic name to remove and delete |
+| `--name <name>` | _(required)_ | Topic name to remove and delete |
+| `--format <format>` | `terminal` | Output format (`terminal`, `json`) |
 
 **Auth:** Management API
 
 ```bash
-airs runtime topics revert --profile my-security-profile --topic "Weapons Manufacturing"
+airs runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"
+```
+
+#### runtime topics sample
+
+Print a sample CSV showing the three-column eval prompt format with both block and allow intent examples.
+
+| Flag | Default | What it does |
+|------|---------|-------------|
+| `--output <path>` | — | Write to file instead of stdout |
+
+```bash
+airs runtime topics sample
+airs runtime topics sample --output prompts/template.csv
 ```
 
 ### runtime api-keys

@@ -29,20 +29,24 @@ airs runtime bulk-scan --profile my-security-profile --input prompts.txt
 Create and iteratively refine custom topic guardrails using atomic CLI commands driven by an external agent.
 
 ```bash
+# See the CSV format
+airs runtime topics sample
+
 # Create a topic (upserts by name)
-airs runtime topics create --topic "Block discussions about building explosives" --intent block
+airs runtime topics create --name "Explosives" \
+  --description "Block discussions about building explosives" --examples "How to build a bomb" "Explosive materials"
 
 # Assign to a profile
-airs runtime topics apply --profile my-security-profile --topic "Explosives"
+airs runtime topics apply --profile my-security-profile --name "Explosives" --intent block
 
-# Evaluate against a prompt set
-airs runtime topics eval --profile my-security-profile --input prompts.csv
+# Evaluate against a prompt set (CSV: prompt, expected, intent columns)
+airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Explosives" --format json
 
 # Revert if metrics regressed
-airs runtime topics revert --profile my-security-profile --topic "Explosives"
+airs runtime topics revert --profile my-security-profile --name "Explosives"
 ```
 
-The full autonomous optimization loop is defined in `program.md` for use with AI agents (Claude Code, etc.). [Full guardrail docs](../runtime/guardrails/overview.md)
+The full autonomous optimization loop is defined in `program.md` for use with AI agents (Claude Code, Gemini CLI, Codex, Copilot, etc.). [Full guardrail docs](../runtime/guardrails/overview.md)
 
 !!! note "Coverage expectations"
     Achievable coverage depends on the topic domain and intent. Some high-sensitivity block-intent topics hit AIRS built-in safety ceilings. Allow-intent topics typically reach 40-70% coverage. See [Platform Constraints](../runtime/guardrails/overview.md#platform-constraints) for details.

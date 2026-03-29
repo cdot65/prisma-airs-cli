@@ -29,24 +29,24 @@ airs runtime profiles audit <profileName> --format html --output audit.html
 
 See [CLI Commands — Profile Protection Flags](../reference/cli-commands.md#profile-protection-flags) for the full flag table.
 
-## Custom Topics & Guardrail Generation
+## Custom Topics & Guardrail Optimization
 
 ```bash
 # CRUD
-airs runtime topics list
-airs runtime topics create --config topic.json
-airs runtime topics update <topicId> --config topic.json
-airs runtime topics delete <topicId>
-airs runtime topics delete <topicId> --force --updated-by user@example.com
+airs runtime topics list [--limit <n>] [--offset <n>] [--output <format>]
+airs runtime topics get <nameOrId> [--output pretty|json|yaml]
+airs runtime topics update <topicId> --config <json-file>
+airs runtime topics delete <topicId> [--force --updated-by <email>]
 
-# Guardrail generation (LLM-driven iterative refinement)
-airs runtime topics generate
-airs runtime topics resume <runId>
-airs runtime topics report <runId>
-airs runtime topics runs
+# Guardrail optimization (atomic commands for agent loops)
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
+airs runtime topics revert --profile <name> --name <name> [--format json]
+airs runtime topics sample [--output <path>]
 ```
 
-See [Guardrail Generation](guardrails/overview.md) for details on the generation loop.
+See [Guardrail Optimization](guardrails/overview.md) for details on the optimization loop and `program.md` for the agent protocol.
 
 ## API Keys
 

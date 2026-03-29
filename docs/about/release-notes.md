@@ -1,5 +1,35 @@
 # Release Notes
 
+## v2.1.0
+
+### New
+
+- **Intent-aware eval CSV format** — eval CSV now requires three columns: `prompt`, `expected`, `intent` (block/allow). The `expected` column is intuitive (belongs to topic category: true/false) and `intent` controls the trigger mapping.
+- **`airs runtime topics sample` command** — prints a template CSV showing the three-column format with both block and allow intent examples. Supports `--output <path>` to write to file.
+- **Agent instruction ecosystem** — rewritten `program.md` with battle-tested optimization protocol. New agent entrypoints: `GEMINI.md`, `.github/copilot-instructions.md`. Any AI coding agent can now pick up the guardrail optimization loop.
+- **JSON eval output includes intent** — `--format json` output now includes an `intent` field at the top level.
+
+### Changed
+
+- `topics create` flags: `--name`, `--description`, `--examples` replace the old `--topic` flag
+- `topics apply` flags: `--name` replaces `--topic`, `--intent` added
+- `topics eval` flags: `--prompts` replaces `--input`, `--format` replaces `--output`
+- `topics revert` flags: `--name` replaces `--topic`
+- Updated `AGENTS.md` with correct flag names, sample command, and three-column CSV docs
+- Updated all mkdocs pages to reflect new CLI flags and CSV format
+
+### Breaking
+
+- Eval CSV files must now include an `intent` column. Existing two-column CSVs will error with "Missing required column: intent".
+
+## v2.0.0
+
+### Changed
+
+- Major refactor: removed embedded LLM-driven generation loop. CLI now provides atomic commands (`create`, `apply`, `eval`, `revert`) for external agent orchestration.
+- Removed `topics generate`, `topics resume`, `topics report`, `topics runs` commands.
+- Removed memory/persistence subsystem.
+
 ## v1.4.2
 
 ### Fixed

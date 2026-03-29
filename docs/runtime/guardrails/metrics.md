@@ -24,10 +24,18 @@ The `eval` command measures how well a guardrail performs against a static promp
 
 ## How Tests Work
 
-The `eval` command reads a static CSV prompt set with two required columns:
+The `eval` command reads a static CSV prompt set with three required columns:
 
 - **`prompt`** — the test prompt text
-- **`expectedTriggered`** — `true` if the guardrail should catch this, `false` if it should pass
+- **`expected`** — `true` if the prompt belongs to the topic category, `false` if not
+- **`intent`** — `block` or `allow` — how the topic is applied to the profile
+
+The eval command resolves whether each prompt should trigger from the combination of `expected` and `intent`:
+
+- **block intent:** `expected=true` prompts should trigger (block matching content)
+- **allow intent:** `expected=true` prompts should NOT trigger (they're within allowed bounds)
+
+Run `airs runtime topics sample` to see an example CSV.
 
 The prompt set should include both:
 
