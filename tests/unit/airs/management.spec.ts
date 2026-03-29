@@ -210,6 +210,49 @@ describe('SdkManagementService', () => {
     });
   });
 
+  describe('getTopic', () => {
+    it('returns matching topic by ID', async () => {
+      mockList.mockResolvedValue({
+        custom_topics: [
+          { topic_id: 't1', topic_name: 'Topic 1', description: 'd1', examples: ['ex1'] },
+          { topic_id: 't2', topic_name: 'Topic 2', description: 'd2', examples: [] },
+        ],
+      });
+
+      const topic = await service.getTopic('t1');
+      expect(topic.topic_id).toBe('t1');
+      expect(topic.topic_name).toBe('Topic 1');
+      expect(topic.examples).toEqual(['ex1']);
+    });
+
+    it('throws when topic not found', async () => {
+      mockList.mockResolvedValue({ custom_topics: [] });
+
+      await expect(service.getTopic('missing')).rejects.toThrow('Topic missing not found');
+    });
+  });
+
+  describe('getTopicByName', () => {
+    it('returns matching topic by name', async () => {
+      mockList.mockResolvedValue({
+        custom_topics: [
+          { topic_id: 't1', topic_name: 'Topic 1', description: 'd1', examples: ['ex1'] },
+          { topic_id: 't2', topic_name: 'Topic 2', description: 'd2', examples: [] },
+        ],
+      });
+
+      const topic = await service.getTopicByName('Topic 2');
+      expect(topic.topic_id).toBe('t2');
+      expect(topic.topic_name).toBe('Topic 2');
+    });
+
+    it('throws when topic name not found', async () => {
+      mockList.mockResolvedValue({ custom_topics: [] });
+
+      await expect(service.getTopicByName('Nope')).rejects.toThrow('Topic "Nope" not found');
+    });
+  });
+
   describe('assignTopicToProfile', () => {
     it('throws when profile not found', async () => {
       mockProfileList.mockResolvedValue({ ai_profiles: [] });

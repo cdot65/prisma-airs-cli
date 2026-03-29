@@ -55,6 +55,20 @@ export class SdkManagementService implements ManagementService {
     return response.custom_topics;
   }
 
+  async getTopic(topicId: string): Promise<SdkCustomTopic> {
+    const topics = await this.listTopics();
+    const topic = topics.find((t) => t.topic_id === topicId);
+    if (!topic) throw new Error(`Topic ${topicId} not found`);
+    return topic;
+  }
+
+  async getTopicByName(topicName: string): Promise<SdkCustomTopic> {
+    const topics = await this.listTopics();
+    const topic = topics.find((t) => t.topic_name === topicName);
+    if (!topic) throw new Error(`Topic "${topicName}" not found`);
+    return topic;
+  }
+
   /**
    * Sets a single custom topic on a profile's topic-guardrails config.
    * Delegates to {@link assignTopicsToProfile} for backward compatibility.

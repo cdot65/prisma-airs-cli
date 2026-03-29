@@ -16,7 +16,6 @@ import type {
   TestCase,
   TestResult,
 } from '../core/types.js';
-import type { MemoryInjector } from '../memory/injector.js';
 import { analyzeResultsPrompt } from './prompts/analyze-results.js';
 import { generateCompanionPrompt } from './prompts/generate-companion.js';
 import { generateTestsPrompt } from './prompts/generate-tests.js';
@@ -71,6 +70,11 @@ function clampTopic(topic: CustomTopicOutput): CustomTopicOutput {
  * Handles topic generation, test creation, result analysis, and topic improvement
  * with automatic retry and AIRS constraint clamping.
  */
+/** Minimal contract for memory injection (memory system was removed; kept for API compat). */
+interface MemoryInjector {
+  buildMemorySection(topicDescription: string): Promise<string>;
+}
+
 export class LangChainLlmService implements LlmService {
   private memorySection = '';
 

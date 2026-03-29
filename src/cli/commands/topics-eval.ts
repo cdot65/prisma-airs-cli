@@ -58,7 +58,9 @@ export function registerEvalCommand(parent: Command): void {
       try {
         const config = await loadConfig();
         const csvContent = await readFile(opts.prompts, 'utf-8');
-        const { cases, intent } = loadPrompts(csvContent, (msg) => console.warn(`  Warning: ${msg}`));
+        const { cases, intent } = loadPrompts(csvContent, (msg) =>
+          console.warn(`  Warning: ${msg}`),
+        );
 
         if (!config.airsApiKey) {
           renderError('PANW_AI_SEC_API_KEY is required');
@@ -70,7 +72,14 @@ export function registerEvalCommand(parent: Command): void {
         }
 
         const concurrency = Number.parseInt(opts.concurrency, 10);
-        const result = await evalTopic(scanner, opts.profile, opts.topic, cases, concurrency, intent);
+        const result = await evalTopic(
+          scanner,
+          opts.profile,
+          opts.topic,
+          cases,
+          concurrency,
+          intent,
+        );
 
         if (opts.format === 'json') {
           console.log(JSON.stringify(result, null, 2));
