@@ -78,6 +78,7 @@ nav:
       - Configuration Management: runtime/config-management.md
       - Guardrail Optimization:
           - How It Works: runtime/guardrails/overview.md
+          - Generate & Evaluate: runtime/guardrails/generate-and-evaluate.md
           - Metrics & Evaluation: runtime/guardrails/metrics.md
           - Topic Constraints: runtime/guardrails/topic-constraints.md
       - Profile Audits: runtime/profile-audits.md
