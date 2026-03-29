@@ -167,7 +167,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
     - `update` uses read-modify-write: fetches current profile → merges only specified flags → PUTs full payload. Same protection flags as create. Topic-guardrails never modified by CLI flags. Hidden `--config <path>` legacy escape hatch.
     - `delete` supports `--force --updated-by`
     - Profile builder: `src/cli/builders/profile-builder.ts` — `buildProfileRequest()` (create), `buildProfileOverrides()` (update), `mergeProfilePolicy()` (deep merge). Arrays merge by `name` field; objects overlay specified fields.
-  - `airs runtime topics {list,create,update,delete,apply,eval,revert}` — custom topic CRUD + agent-driven topic commands (supports `--force --updated-by`)
+  - `airs runtime topics {list,get,create,update,delete,apply,eval,revert}` — custom topic CRUD + agent-driven topic commands (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
@@ -261,3 +261,9 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 | `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
 | `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
 | `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
+
+## Guardrail Optimization Loop
+
+For autonomous custom topic guardrail optimization, follow the protocol in `program.md`. It covers setup, baseline, the iteration loop, revert procedure, plateau detection, and companion topics. All lessons from real optimization sessions are encoded there.
+
+Key commands: `topics create`, `topics apply`, `topics eval`, `topics revert`, `topics sample`, `topics get --output json`.
