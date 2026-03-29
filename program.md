@@ -1,49 +1,88 @@
-# autoresearch: custom topic guardrail optimization
+# Guardrail Optimization Protocol
 
-Autonomous loop to find the optimal custom topic guardrail configuration for Prisma AIRS.
+Autonomous loop to find the optimal custom topic guardrail configuration for Prisma AIRS. This protocol is designed to be executed by any AI coding agent (Claude Code, Codex, Gemini CLI, Copilot, Pi, etc.).
+
+You are the intelligence. The CLI is the instrument. Read eval output, reason about misclassifications, craft better definitions, decide keep/discard.
+
+## Prerequisites
+
+- `airs` CLI installed and on PATH
+- AIRS credentials configured (env vars or `~/.prisma-airs/config.json`):
+  - `PANW_AI_SEC_API_KEY` — for scanning
+  - `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` — for topic/profile management
+- A security profile already created in AIRS
+- A prompt CSV file (see CSV Format below)
 
 ## Setup
 
 1. **Confirm inputs** with the user:
    - Security profile name (must already exist in AIRS)
    - Topic name and initial description
-   - Initial example prompts (2-5 required)
+   - Initial example prompts (2-5 required, each max 250 bytes)
    - Intent: `block` or `allow`
-   - Path to prompt CSV file (columns: `prompt`, `expected`)
-   - Whether a companion allow topic is needed (block-intent usually requires one)
-2. **Verify AIRS credentials**: run `airs runtime topics list` — if it errors, credentials are missing.
-3. **Initialize results.tsv** with header row:
+   - Path to prompt CSV file
+   - Whether companion topics may be needed (see Companion Topics below)
+
+2. **Verify AIRS credentials:**
+   ```bash
+   airs runtime topics list --output json
    ```
-   iteration	coverage	tpr	tnr	f1	status	description_summary
+   If this errors, credentials are missing. Stop and tell the user.
+
+3. **Read current topic state** (if topic already exists):
+   ```bash
+   airs runtime topics get "<topic-name>" --output json
+   ```
+   Save the full response (description + examples). This is your revert target. If the topic doesn't exist yet, skip this step.
+
+4. **Initialize results.tsv:**
+   ```
+   iteration	coverage	tpr	tnr	f1	status	description	examples
    ```
 
-## Baseline
+## CSV Format
 
-Create the topic and assign it to the profile:
+The eval command reads a CSV with three required columns:
+
+| Column | Meaning |
+|--------|---------|
+| `prompt` | The prompt text to scan |
+| `expected` | Does this prompt belong to the topic category? `true` or `false` |
+| `intent` | `block` or `allow` — how the topic is applied to the profile |
+
+The `expected` column is intuitive — mark `true` if the prompt is about the topic, `false` if it isn't. The `intent` column tells the eval command how to interpret that:
+
+- **block intent:** `expected=true` → should trigger a violation (block it). `expected=false` → should NOT trigger.
+- **allow intent:** `expected=true` → should NOT trigger (it's allowed through). `expected=false` → SHOULD trigger (it's outside allowed bounds).
+
+Run `airs runtime topics sample` to see an example CSV.
+
+**Tips for good eval sets:**
+- Aim for 50/50 balance between expected=true and expected=false
+- Include hard negatives: prompts semantically close to the topic but NOT about it
+- All rows must have the same intent value
+- 50-100 total prompts is a good starting size
+
+## Baseline (Iteration 0)
+
+Create the topic and establish baseline metrics:
 
 ```bash
-# Create block topic
+# Create the topic (upserts by name if it already exists)
 airs runtime topics create \
   --name "<topic-name>" \
-  --description "<user-provided-description>" \
+  --description "<description>" \
   --examples "<ex1>" "<ex2>" \
   --format json
 
-# If block-intent, create allow companion
-airs runtime topics create \
-  --name "<companion-name>" \
-  --description "<companion-description>" \
-  --examples "<comp-ex1>" "<comp-ex2>" \
+# Apply to the security profile
+airs runtime topics apply \
+  --profile "<profile>" \
+  --name "<topic-name>" \
+  --intent <block|allow> \
   --format json
 
-# Apply both to profile
-airs runtime topics apply --profile "<profile>" --name "<topic-name>" --intent block --format json
-airs runtime topics apply --profile "<profile>" --name "<companion-name>" --intent allow --format json
-```
-
-Then evaluate:
-
-```bash
+# Evaluate
 airs runtime topics eval \
   --profile "<profile>" \
   --prompts <path-to-csv> \
@@ -51,24 +90,34 @@ airs runtime topics eval \
   --format json
 ```
 
-Record baseline metrics in `results.tsv`. This is iteration 0.
+Record iteration 0 in results.tsv with the full definition (description + examples). This is your "best known" state.
 
 ## Experiment Loop
 
-LOOP FOREVER:
+LOOP:
 
-1. **Read the eval output** — focus on the `false_positives` and `false_negatives` arrays.
+1. **Read the eval JSON output.** Focus on `false_positives` and `false_negatives` arrays.
+
 2. **Reason about misclassifications:**
-   - FP = prompt was flagged but shouldn't have been. Description is too broad.
-   - FN = prompt should have been flagged but wasn't. Description doesn't cover it or examples are insufficient.
-3. **Craft an improved description and/or examples.** Rules:
-   - AIRS uses **semantic similarity**, NOT logical constraints.
-   - **Never** use exclusion language ("not X", "excluding Y", "no Z") — it increases FP by adding semantic overlap.
-   - **Shorter descriptions outperform longer ones** (under 100 chars is a good target).
+   - **FP** (false positive) = prompt triggered but shouldn't have. The topic definition is too broad — it's matching content outside the intended category.
+   - **FN** (false negative) = prompt should have triggered but didn't. The definition doesn't cover this content — it's too narrow or the examples don't represent this case.
+
+3. **Craft an improved description and/or examples.** Follow these rules:
+   - AIRS uses **semantic similarity matching**, NOT logical rules or keyword matching.
+   - **Never use exclusion language** ("not X", "excluding Y", "no Z"). This adds semantic overlap with the excluded concept and INCREASES false positives.
+   - **Shorter descriptions outperform longer ones.** Target under 100 characters.
+   - **Examples significantly change the semantic profile.** Small example changes can cause dramatic metric swings. Change one thing at a time.
    - Make the positive definition more precise rather than adding exceptions.
-   - 2-5 examples required, 250 bytes each, 1000 bytes combined (name + description + all examples).
-   - Topic name stays fixed — only change description and examples.
-4. **Update the topic definition:**
+   - Constraints: 2-5 examples, each max 250 bytes, name + description + all examples combined max 1000 bytes.
+   - **Topic name stays fixed.** Only change description and examples.
+
+4. **Read current topic state before modifying:**
+   ```bash
+   airs runtime topics get "<topic-name>" --output json
+   ```
+   Confirm this matches your expected "current" state. Save it — you need it for revert if this iteration fails.
+
+5. **Update the topic:**
    ```bash
    airs runtime topics create \
      --name "<topic-name>" \
@@ -76,12 +125,17 @@ LOOP FOREVER:
      --examples "<new-ex1>" "<new-ex2>" \
      --format json
    ```
-   Note: `create` updates the existing topic when the name matches.
-5. **Re-apply to profile** (picks up new revision):
+
+6. **Re-apply to profile** (picks up the new revision):
    ```bash
-   airs runtime topics apply --profile "<profile>" --name "<topic-name>" --intent block --format json
+   airs runtime topics apply \
+     --profile "<profile>" \
+     --name "<topic-name>" \
+     --intent <block|allow> \
+     --format json
    ```
-6. **Evaluate against the same static prompt set:**
+
+7. **Evaluate:**
    ```bash
    airs runtime topics eval \
      --profile "<profile>" \
@@ -89,33 +143,79 @@ LOOP FOREVER:
      --topic "<topic-name>" \
      --format json
    ```
-7. **Decide:**
-   - If **coverage improved** (higher than best so far): **keep**. Record in results.tsv.
-   - If **coverage equal or worse**: **discard**. Re-apply the previous best definition (steps 4-5 with best-known description/examples), record as `discard`.
-8. **Never stop.** Do not ask the user if you should continue. Run until manually interrupted.
+
+8. **Decide — compare coverage to best-known:**
+   - **Coverage improved** (strictly greater than best): **KEEP.** Update best-known state (description + examples + metrics). Log as `keep`.
+   - **Coverage equal or worse**: **DISCARD.** Revert to best-known state (step 9). Log as `discard`.
+
+9. **Revert procedure** (on discard):
+   ```bash
+   # Re-create with the saved best-known definition
+   airs runtime topics create \
+     --name "<topic-name>" \
+     --description "<best-description>" \
+     --examples "<best-ex1>" "<best-ex2>" \
+     --format json
+
+   # Re-apply
+   airs runtime topics apply \
+     --profile "<profile>" \
+     --name "<topic-name>" \
+     --intent <block|allow> \
+     --format json
+   ```
+   **Critical:** Revert means restoring the EXACT best-known description AND examples. Not just the description.
+
+10. **Check for plateau:** If the last 5 iterations were all discards, **STOP** and report to the user (see When to Stop below).
+
+11. **Otherwise, go to step 1.**
 
 ## Logging
 
-Append to `results.tsv` (tab-separated, untracked by git):
+Append each iteration to `results.tsv` (tab-separated, untracked by git):
 
 ```
-iteration	coverage	tpr	tnr	f1	status	description_summary
-0	0.840	0.840	0.960	0.890	keep	baseline
-1	0.880	0.880	0.960	0.910	keep	shortened description, added ammo example
-2	0.860	0.860	0.940	0.890	discard	tried adding modifier example
+iteration	coverage	tpr	tnr	f1	status	description	examples
+0	0.808	0.808	0.980	0.884	keep	Discussions about the MLB team from the city of Houston, Texas	Houston Astros roster|Astros game score
+1	0.635	0.635	0.980	0.767	discard	Houston Astros MLB baseball team	Astros World Series championship|Jose Altuve and the Astros
 ```
 
-## Platform Constraints
+Examples are pipe-delimited within the examples column.
 
-- Block-intent coverage ceiling: typically 40-50% due to vocabulary overlap.
-- Allow-intent ceiling: typically 40-70%.
-- High-sensitivity domains (explosives, weapons) may hit AIRS built-in safety that overrides custom definitions.
-- If coverage plateaus for 5+ iterations, try a fundamentally different description angle rather than incremental tweaks.
-- The companion allow topic may also need refinement — if FP is high, the allow companion's description may be too narrow.
+## When to Stop
 
-## When the User Returns
+**After 5 consecutive discards**, stop the loop and report to the user:
 
-Report:
-1. Best coverage achieved and the iteration that produced it.
+1. Best coverage achieved and which iteration produced it.
 2. The best-performing topic definition (description + examples).
-3. Total iterations attempted, keeps vs discards.
+3. Total iterations attempted — keeps vs discards.
+4. The remaining FP and FN patterns.
+5. Recommendations:
+   - If FN are from completely unrelated content (other teams, other topics), suggest **companion topics** to extend coverage.
+   - If FP are from semantically adjacent content, suggest refining the description angle.
+   - If coverage has plateaued, suggest the user review whether the CSV expected values are correct.
+
+Let the user decide whether to continue with a new angle, add companion topics, or accept the current best.
+
+## Companion Topics
+
+A single topic has a coverage ceiling — it can only match content semantically similar to its definition. If false negatives are about completely unrelated content (e.g., "Houston Astros" topic can't catch "Chicago Cubs" prompts), that content is outside the topic's semantic reach.
+
+**When to add companions:**
+- FN are consistently about a different domain that the primary topic can't cover
+- Coverage has plateaued despite description/example changes
+- The user agrees to expand the topic constellation
+
+**How to manage companions:**
+- Create the companion: `airs runtime topics create --name "<companion>" ...`
+- Apply it: `airs runtime topics apply --profile "<profile>" --name "<companion>" --intent <intent>`
+- Re-eval: the same prompt CSV now evaluates against the full profile (all topics)
+- Track companion definitions in results.tsv alongside the primary
+- The optimization loop can refine companions the same way it refines the primary
+
+## Platform Notes
+
+- AIRS may need a few seconds to propagate topic changes before scans reflect them. If you see inconsistent results immediately after an update, wait 10-15 seconds and re-eval.
+- The `create` command upserts by name — if a topic with the same name exists, it updates instead of creating a duplicate.
+- The `apply` command is additive — it preserves other topics already assigned to the profile.
+- Use `--format json` on all commands so you can parse output programmatically.
