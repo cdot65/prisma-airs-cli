@@ -205,4 +205,3 @@ export function mockTestResults(): TestResult[] {
     },
   ];
 }
-

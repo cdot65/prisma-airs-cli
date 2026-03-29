@@ -117,4 +117,3 @@ export interface RunState {
   companionTopic?: CustomTopic;
   status: 'running' | 'paused' | 'completed' | 'failed';
 }
-
