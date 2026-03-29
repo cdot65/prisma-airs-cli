@@ -3,7 +3,7 @@ import { loadPrompts } from '../../../src/core/prompt-loader.js';
 
 describe('loadPrompts', () => {
   it('parses valid CSV with header row (quoted prompts, true/false)', () => {
-    const csv = `prompt,expected\n"Hello, world",true\n"Goodbye, world",false`;
+    const csv = `prompt,expected,intent\n"Hello, world",true,block\n"Goodbye, world",false,block`;
     const results = loadPrompts(csv);
     expect(results).toHaveLength(2);
     expect(results[0]).toEqual({ prompt: 'Hello, world', expectedTriggered: true, category: '' });
@@ -15,7 +15,7 @@ describe('loadPrompts', () => {
   });
 
   it('handles unquoted prompts', () => {
-    const csv = `prompt,expected\nhello,true\nworld,false`;
+    const csv = `prompt,expected,intent\nhello,true,block\nworld,false,block`;
     const results = loadPrompts(csv);
     expect(results).toHaveLength(2);
     expect(results[0]).toEqual({ prompt: 'hello', expectedTriggered: true, category: '' });
@@ -23,28 +23,28 @@ describe('loadPrompts', () => {
   });
 
   it('throws if prompt column is missing', () => {
-    const csv = `text,expected\nhello,true\nworld,false`;
+    const csv = `text,expected,intent\nhello,true,block\nworld,false,block`;
     expect(() => loadPrompts(csv)).toThrow(/prompt/i);
   });
 
   it('throws if expected column is missing', () => {
-    const csv = `prompt,result\nhello,true\nworld,false`;
+    const csv = `prompt,result,intent\nhello,true,block\nworld,false,block`;
     expect(() => loadPrompts(csv)).toThrow(/expected/i);
   });
 
-  it('throws if no true positives', () => {
-    const csv = `prompt,expected\nhello,false\nworld,false`;
+  it('throws if no true positives (after intent mapping)', () => {
+    const csv = `prompt,expected,intent\nhello,false,block\nworld,false,block`;
     expect(() => loadPrompts(csv)).toThrow(/true.positive/i);
   });
 
-  it('throws if no true negatives', () => {
-    const csv = `prompt,expected\nhello,true\nworld,true`;
+  it('throws if no true negatives (after intent mapping)', () => {
+    const csv = `prompt,expected,intent\nhello,true,block\nworld,true,block`;
     expect(() => loadPrompts(csv)).toThrow(/true.negative/i);
   });
 
   it('warns on imbalanced set via callback (9 true, 1 false = 90%)', () => {
-    const rows = Array.from({ length: 9 }, (_, i) => `prompt${i},true`).join('\n');
-    const csv = `prompt,expected\n${rows}\nlast,false`;
+    const rows = Array.from({ length: 9 }, (_, i) => `prompt${i},true,block`).join('\n');
+    const csv = `prompt,expected,intent\n${rows}\nlast,false,block`;
     const onWarning = vi.fn();
     loadPrompts(csv, onWarning);
     expect(onWarning).toHaveBeenCalledOnce();
@@ -52,12 +52,49 @@ describe('loadPrompts', () => {
   });
 
   it('handles escaped quotes in CSV ("" → ")', () => {
-    const csv = `prompt,expected\n"She said ""hello""",true\nnormal,false`;
+    const csv = `prompt,expected,intent\n"She said ""hello""",true,block\nnormal,false,block`;
     const results = loadPrompts(csv);
     expect(results[0].prompt).toBe('She said "hello"');
   });
 
   it('throws on empty CSV', () => {
     expect(() => loadPrompts('')).toThrow();
+  });
+
+  it('parses intent column and resolves shouldTrigger for block intent', () => {
+    const csv = `prompt,expected,intent\n"weapon talk",true,block\n"cat talk",false,block`;
+    const results = loadPrompts(csv);
+    expect(results).toHaveLength(2);
+    expect(results[0]).toEqual({ prompt: 'weapon talk', expectedTriggered: true, category: '' });
+    expect(results[1]).toEqual({ prompt: 'cat talk', expectedTriggered: false, category: '' });
+  });
+
+  it('flips expectedTriggered for allow intent', () => {
+    const csv = `prompt,expected,intent\n"astros roster",true,allow\n"weather forecast",false,allow`;
+    const results = loadPrompts(csv);
+    expect(results[0]).toEqual({ prompt: 'astros roster', expectedTriggered: false, category: '' });
+    expect(results[1]).toEqual({ prompt: 'weather forecast', expectedTriggered: true, category: '' });
+  });
+
+  it('throws if intent column is missing', () => {
+    const csv = `prompt,expected\nhello,true\nworld,false`;
+    expect(() => loadPrompts(csv)).toThrow(/intent/i);
+  });
+
+  it('throws if intent values are mixed', () => {
+    const csv = `prompt,expected,intent\nhello,true,block\nworld,false,allow`;
+    expect(() => loadPrompts(csv)).toThrow(/same intent/i);
+  });
+
+  it('throws on invalid intent value', () => {
+    const csv = `prompt,expected,intent\nhello,true,deny\nworld,false,deny`;
+    expect(() => loadPrompts(csv)).toThrow(/invalid intent/i);
+  });
+
+  it('handles case-insensitive intent values', () => {
+    const csv = `prompt,expected,intent\nhello,true,ALLOW\nworld,false,ALLOW`;
+    const results = loadPrompts(csv);
+    expect(results[0].expectedTriggered).toBe(false);
+    expect(results[1].expectedTriggered).toBe(true);
   });
 });

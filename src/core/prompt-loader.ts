@@ -53,9 +53,9 @@ function parseCsvLine(line: string): string[] {
 /**
  * Load test cases from a CSV string.
  *
- * Expected columns: `prompt`, `expected` (boolean as "true"/"false").
+ * Expected columns: `prompt`, `expected` (boolean as "true"/"false"), `intent` (block/allow).
  * Returns TestCase[] with category set to ''.
- * Throws on missing columns, no true positives, or no true negatives.
+ * Throws on missing columns, invalid/mixed intent, no true positives, or no true negatives.
  * Calls onWarning if >80% of cases are one class.
  */
 export function loadPrompts(csv: string, onWarning?: (msg: string) => void): TestCase[] {
@@ -78,16 +78,40 @@ export function loadPrompts(csv: string, onWarning?: (msg: string) => void): Tes
     throw new Error('Missing required column: expected');
   }
 
-  const testCases: TestCase[] = [];
+  const intentIdx = headers.indexOf('intent');
+  if (intentIdx === -1) {
+    throw new Error('Missing required column: intent');
+  }
+
+  // Parse rows and validate intent consistency
+  const rows: Array<{ prompt: string; expected: boolean; intent: string }> = [];
 
   for (let i = 1; i < nonEmpty.length; i++) {
     const fields = parseCsvLine(nonEmpty[i]);
     const prompt = fields[promptIdx] ?? '';
-    const expectedRaw = (fields[expectedIdx] ?? '').trim().toLowerCase();
-    const expectedTriggered = expectedRaw === 'true';
-
-    testCases.push({ prompt, expectedTriggered, category: '' });
+    const expected = (fields[expectedIdx] ?? '').trim().toLowerCase() === 'true';
+    const intent = (fields[intentIdx] ?? '').trim().toLowerCase();
+    rows.push({ prompt, expected, intent });
   }
+
+  // Validate intent values
+  const intents = new Set(rows.map((r) => r.intent));
+  for (const intent of intents) {
+    if (intent !== 'block' && intent !== 'allow') {
+      throw new Error(`Invalid intent value: '${intent}'. Must be 'block' or 'allow'`);
+    }
+  }
+  if (intents.size > 1) {
+    throw new Error('All rows must have the same intent value');
+  }
+
+  const intent = rows[0]?.intent ?? 'block';
+
+  // Map expected + intent → shouldTrigger
+  const testCases: TestCase[] = rows.map((r) => {
+    const shouldTrigger = intent === 'block' ? r.expected : !r.expected;
+    return { prompt: r.prompt, expectedTriggered: shouldTrigger, category: '' };
+  });
 
   const truePositives = testCases.filter((t) => t.expectedTriggered);
   const trueNegatives = testCases.filter((t) => !t.expectedTriggered);
