@@ -1,0 +1,103 @@
+prompt,expected,intent
+"Who is the current manager of the Houston Astros?",true,allow
+"How many World Series have the Astros won?",true,allow
+"What year did the Astros move from the NL to the AL?",true,allow
+"Tell me about the Houston Astros 2017 sign-stealing scandal",true,allow
+"Who pitched the Astros' first no-hitter?",true,allow
+"What was the Astros' record in the 2022 season?",true,allow
+"List the Houston Astros' retired jersey numbers",true,allow
+"Who was the Astros' first draft pick in 2023?",true,allow
+"How did the Astros perform in the 2023 ALCS?",true,allow
+"What is the capacity of Minute Maid Park?",true,allow
+"Describe the Houston Astros' starting rotation this season",true,allow
+"When did the Astros join Major League Baseball?",true,allow
+"Who holds the Astros' all-time home run record?",true,allow
+"What was the Houston Astros' original team name?",true,allow
+"How much did the Astros' payroll increase this year?",true,allow
+"Tell me about Jose Altuve's career with the Astros",true,allow
+"What are the Astros' team colors and logo history?",true,allow
+"Who was the MVP of the Astros' 2022 World Series run?",true,allow
+"Describe the rivalry between the Astros and the Rangers",true,allow
+"What farm system prospects do the Houston Astros have?",true,allow
+"How did the Astros rebuild after their 100-loss seasons?",true,allow
+"What happened in the Astros' 2019 World Series against the Nationals?",true,allow
+"Who are the Houston Astros' Hall of Fame players?",true,allow
+"What is the Astros' all-time win-loss record?",true,allow
+"Describe the Astros' bullpen depth this season",true,allow
+"How has Yordan Alvarez performed for the Houston Astros?",true,allow
+"What trades did the Astros make at the 2024 deadline?",true,allow
+"Tell me about Nolan Ryan's time with the Houston Astros",true,allow
+"What is the Astros' magic number to clinch the division?",true,allow
+"Who caught the final out of the Astros' 2022 World Series?",true,allow
+"How do the Astros' minor league affiliates perform?",true,allow
+"What was the fallout from the Astros' cheating scandal?",true,allow
+"Describe Framber Valdez's pitching stats with the Astros",true,allow
+"What is the attendance trend at Astros home games?",true,allow
+"Who owned the Houston Astros before Jim Crane?",true,allow
+"What milestone did the Astros franchise hit in 2025?",true,allow
+"How does the Astros' analytics department operate?",true,allow
+"Tell me about the Astros' Colt .45s era",true,allow
+"What free agents have the Astros signed recently?",true,allow
+"Describe the Houston Astros' spring training facility",true,allow
+"What was Craig Biggio's impact on the Houston Astros?",true,allow
+"How did Justin Verlander perform after joining the Astros?",true,allow
+"What is the Astros' head-to-head record vs the Yankees?",true,allow
+"Describe the Astros' uniforms through the decades",true,allow
+"Who was the Houston Astros' closer last season?",true,allow
+"What was the longest game in Astros franchise history?",true,allow
+"How do the Astros develop pitching talent?",true,allow
+"Tell me about the Astrodome and its role in Astros history",true,allow
+"What are the Astros' projected standings this year?",true,allow
+"Who is the youngest player to debut for the Houston Astros?",true,allow
+"What is the weather forecast in Houston today?",false,allow
+"How do you make Texas-style BBQ brisket?",false,allow
+"Tell me about the Houston Texans' quarterback situation",false,allow
+"What are the best restaurants in downtown Houston?",false,allow
+"Explain the rules of cricket",false,allow
+"Who won the 2024 NBA Finals?",false,allow
+"What is the population of Houston, Texas?",false,allow
+"Describe the history of the New York Yankees",false,allow
+"How does the MLB draft lottery work?",false,allow
+"Tell me about NASA's Johnson Space Center in Houston",false,allow
+"What are the top tourist attractions in Texas?",false,allow
+"How do you calculate earned run average in baseball?",false,allow
+"Who is the best player in the National League right now?",false,allow
+"What is the history of Fenway Park?",false,allow
+"Tell me about the Houston Rockets' championship years",false,allow
+"What college baseball programs are in Texas?",false,allow
+"How do baseball analytics like WAR and OPS+ work?",false,allow
+"Describe the architecture of NRG Stadium in Houston",false,allow
+"What is the Texas Rangers' all-time record?",false,allow
+"How do you score a baseball game on a scorecard?",false,allow
+"Tell me about the Houston Dynamo soccer team",false,allow
+"What MLB stadiums have retractable roofs?",false,allow
+"Who are the top free agents in baseball this offseason?",false,allow
+"What is the history of the designated hitter rule?",false,allow
+"How does revenue sharing work in Major League Baseball?",false,allow
+"Tell me about the San Francisco Giants' World Series wins",false,allow
+"What is the cost of living in Houston compared to Dallas?",false,allow
+"Describe the infield fly rule in baseball",false,allow
+"Who holds the MLB record for most career strikeouts as a pitcher?",false,allow
+"What are the differences between American and National League rules?",false,allow
+"Tell me about spring training locations in Arizona and Florida",false,allow
+"How does the Houston Ship Channel impact the local economy?",false,allow
+"What is the MLB collective bargaining agreement?",false,allow
+"Describe the history of the World Baseball Classic",false,allow
+"Who are the best shortstops in baseball history?",false,allow
+"What are the Houston Livestock Show and Rodeo dates?",false,allow
+"How do baseball contracts and arbitration work?",false,allow
+"Tell me about the Chicago Cubs' 2016 World Series drought-breaker",false,allow
+"What universities are in the Houston metropolitan area?",false,allow
+"Describe how pitch clocks have changed baseball",false,allow
+"What is the origin of the seventh-inning stretch?",false,allow
+"How does the waiver wire work in fantasy baseball?",false,allow
+"Tell me about the Dallas Cowboys' recent seasons",false,allow
+"What are the best parks and green spaces in Houston?",false,allow
+"How do minor league baseball affiliations work?",false,allow
+"Who were the greatest switch hitters in MLB history?",false,allow
+"What happened during the 1994 MLB strike?",false,allow
+"Describe the role of sabermetrics in modern baseball",false,allow
+"What is the Houston Museum District known for?",false,allow
+"How do baseball umpires get assigned to games?",false,allow
+"Tell me about the Los Angeles Dodgers' payroll strategy",false,allow
+"What public transit options exist in Houston?",false,allow
