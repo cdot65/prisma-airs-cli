@@ -26,12 +26,7 @@ function fromEnv(): Record<string, unknown> {
     mgmtEndpoint: env.PANW_MGMT_ENDPOINT,
     mgmtTokenEndpoint: env.PANW_MGMT_TOKEN_ENDPOINT,
     scanConcurrency: env.SCAN_CONCURRENCY,
-    accumulateTests: env.ACCUMULATE_TESTS,
-    maxAccumulatedTests: env.MAX_ACCUMULATED_TESTS,
     dataDir: env.DATA_DIR,
-    memoryEnabled: env.MEMORY_ENABLED,
-    memoryDir: env.MEMORY_DIR,
-    maxMemoryChars: env.MAX_MEMORY_CHARS,
   };
 }
 
@@ -68,6 +63,5 @@ export async function loadConfig(
   return {
     ...config,
     dataDir: expandHome(config.dataDir),
-    memoryDir: expandHome(config.memoryDir),
   };
 }

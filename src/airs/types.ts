@@ -773,6 +773,10 @@ export interface ManagementService {
   forceDeleteTopic(topicId: string, updatedBy?: string): Promise<DeleteResponse>;
   /** List all custom topics. */
   listTopics(): Promise<SdkCustomTopic[]>;
+  /** Get a single custom topic by ID. */
+  getTopic(topicId: string): Promise<SdkCustomTopic>;
+  /** Get a single custom topic by name. */
+  getTopicByName(topicName: string): Promise<SdkCustomTopic>;
   /** Assign a topic to a security profile's topic-guardrails. */
   assignTopicToProfile(
     profileName: string,

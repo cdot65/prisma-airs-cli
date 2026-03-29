@@ -1,0 +1,11 @@
+[Fri Mar 27 05:20:50 CDT 2026] 🚫 BLOCKED USER INPUT: malicious - detected: [agent,injection,toxic_content] (scan_id: f66cef70-d776-49f9-9e8f-04dc210d0084)
+[Fri Mar 27 05:21:57 CDT 2026] 🚫 BLOCKED USER INPUT: malicious - detected: [dlp,toxic_content] (scan_id: c689286e-4922-4ca4-b25d-1415e67e039e)
+[Fri Mar 27 05:22:10 CDT 2026] 🚫 BLOCKED USER INPUT: malicious - detected: [dlp] (scan_id: f237fe2a-b20b-4750-9f83-628c57112157)
+[Fri Mar 27 05:22:32 CDT 2026] 🚫 BLOCKED USER INPUT: malicious - detected: [dlp] (scan_id: d44b5921-c84c-4e48-b545-f7df47e0f72d)
+[Fri Mar 27 05:23:13 CDT 2026] 🚫 BLOCKED USER INPUT: malicious - detected: [agent,dlp,injection] (scan_id: 9bb14a4c-7e87-417b-a8a4-0dbda22e90a0)
+[Fri Mar 27 05:23:23 CDT 2026] 🚫 BLOCKED USER INPUT: malicious - detected: [dlp] (scan_id: f165a431-6356-46e9-9628-97d595b8f8a9)
+[Fri Mar 27 05:23:55 CDT 2026] ERROR: PRISMA_AIRS_API_KEY environment variable not set
+[Fri Mar 27 05:24:32 CDT 2026] ERROR: PRISMA_AIRS_API_KEY environment variable not set
+[Fri Mar 27 05:27:15 CDT 2026] ERROR: PRISMA_AIRS_API_KEY environment variable not set
+[Fri Mar 27 05:28:51 CDT 2026] ERROR: PRISMA_AIRS_API_KEY environment variable not set
+[Fri Mar 27 05:30:07 CDT 2026] ERROR: PRISMA_AIRS_API_KEY environment variable not set

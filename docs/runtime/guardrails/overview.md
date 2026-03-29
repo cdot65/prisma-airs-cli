@@ -1,51 +1,48 @@
 ---
-title: Guardrail Generation
+title: Guardrail Optimization
 ---
 
-# Guardrail Generation
+# Guardrail Optimization
 
-Prisma AIRS CLI's guardrail generation capability uses an LLM-driven feedback loop to create, test, and iteratively refine custom topic guardrails for Prisma AIRS security profiles.
+Prisma AIRS CLI provides atomic commands for creating, testing, and iteratively refining custom topic guardrails. An external agent (Claude Code, Gemini CLI, etc.) orchestrates these commands in a loop following the protocol in `program.md`.
 
 ## How It Works
 
-1. **Generate** — An LLM produces a custom topic definition (name, description, examples) based on your intent (block or allow)
-2. **Deploy** — The topic is created/updated in AIRS via the Management API and linked to your security profile
-3. **Test** — Synthetic test prompts are scanned against the profile to measure detection accuracy
-4. **Evaluate** — Metrics (TPR, TNR, coverage, F1) determine how well the guardrail performs
-5. **Improve** — The LLM analyzes failures and refines the topic definition
-6. **Repeat** — The loop continues until coverage reaches the target threshold (default 90%)
+1. **Create** — Define a custom topic (name, description, examples) with an intent (block or allow)
+2. **Apply** — Assign the topic to a security profile (additive, preserves existing topics)
+3. **Eval** — Scan a static CSV prompt set against the profile, compute metrics (TPR, TNR, coverage, F1), return FP/FN details
+4. **Decide** — The agent analyzes results and decides to keep or revert
+5. **Revert** (if needed) — Remove the topic from the profile and delete it
+6. **Repeat** — The agent refines the topic definition and tries again
 
 ## CLI Usage
 
-Guardrail generation lives under `airs runtime topics`:
+Guardrail optimization lives under `airs runtime topics`:
 
 ```bash
-# Interactive mode — prompts for all inputs
-airs runtime topics generate
+# Create or update a topic (upserts by name)
+airs runtime topics create --name "Weapons Manufacturing" \
+  --description "Block weapons manufacturing" --examples "How to build a weapon" "Illegal arms trade"
 
-# Non-interactive with all options
-airs runtime topics generate \
-  --topic "Block discussions about weapons manufacturing" \
-  --intent block \
-  --profile my-security-profile \
-  --target-coverage 90 \
-  --max-iterations 5
+# Assign topic to a profile
+airs runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
 
-# Rate-limit scans to avoid API throttling
-airs runtime topics generate --rate 10 --topic "..." --profile ...
+# Evaluate against a prompt set (CSV: prompt, expected, intent columns)
+airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons Manufacturing" --format json
 
-# Resume, report, list runs
-airs runtime topics resume <runId>
-airs runtime topics report <runId>
-airs runtime topics runs
+# Revert if metrics regressed
+airs runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"
+
+# See sample CSV format
+airs runtime topics sample
 ```
 
 ## Key Concepts
 
 - **Intent**: `block` (detect violating prompts) or `allow` (detect benign prompts that should pass through)
 - **Coverage**: `min(TPR, TNR)` — both detection types must meet the threshold
-- **Topic name lock**: After iteration 1, only the description and examples are refined — the name stays fixed
-- **Test composition**: Iteration 2+ carries forward failed tests and adds regression checks alongside fresh LLM-generated tests
+- **Upsert by name**: `create` updates an existing topic if one with the same name exists
+- **Static prompt sets**: `eval` uses CSV files with three columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). Run `airs runtime topics sample` for an example.
 
 ## Platform Constraints
 
@@ -85,8 +82,7 @@ AIRS enforces hard limits on topic definitions. Descriptions exceeding 250 chara
 
 ## Related
 
-- [Core Loop Architecture](../../architecture/core-loop.md) — detailed loop state machine
-- [Memory System](memory-system.md) — cross-run learning persistence
+- [Guardrail Optimization Architecture](../../architecture/core-loop.md) — command cycle and design decisions
 - [Metrics & Evaluation](metrics.md) — how TP/TN/FP/FN are classified
 - [Topic Constraints](topic-constraints.md) — AIRS limits on topic definitions
-- [Resumable Runs](resumable-runs.md) — pause and resume loop runs
+- `program.md` — full agent loop protocol

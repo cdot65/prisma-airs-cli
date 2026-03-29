@@ -117,34 +117,3 @@ export interface RunState {
   companionTopic?: CustomTopic;
   status: 'running' | 'paused' | 'completed' | 'failed';
 }
-
-// ---------------------------------------------------------------------------
-// Loop events — discriminated union yielded by the async generator loop
-// ---------------------------------------------------------------------------
-export type LoopEvent =
-  | { type: 'iteration:start'; iteration: number }
-  | { type: 'generate:complete'; topic: CustomTopic }
-  | { type: 'apply:complete'; topicId: string }
-  | { type: 'test:progress'; completed: number; total: number }
-  | { type: 'tests:accumulated'; newCount: number; totalCount: number; droppedCount: number }
-  | {
-      type: 'tests:composed';
-      generated: number;
-      carriedFailures: number;
-      regressionTier: number;
-      total: number;
-    }
-  | { type: 'evaluate:complete'; metrics: EfficacyMetrics }
-  | { type: 'analyze:complete'; analysis: AnalysisReport }
-  | { type: 'iteration:complete'; result: IterationResult }
-  | { type: 'loop:complete'; bestResult: IterationResult; runState: RunState }
-  | { type: 'loop:paused'; runState: RunState }
-  | { type: 'memory:loaded'; learningCount: number }
-  | { type: 'memory:extracted'; learningCount: number }
-  | { type: 'topic:simplified'; topic: CustomTopic }
-  | { type: 'topic:reverted'; topic: CustomTopic; revertedToIteration: number }
-  | { type: 'loop:plateau'; band: [number, number]; bestCoverage: number }
-  | { type: 'topic:duplicate'; topic: CustomTopic; duplicateOfIteration: number }
-  | { type: 'promptset:created'; promptSetId: string; promptSetName: string; promptCount: number }
-  | { type: 'companion:generated'; topic: CustomTopic }
-  | { type: 'companion:created'; topicId: string; topic: CustomTopic };

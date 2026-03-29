@@ -39,7 +39,8 @@ The agent instructions document covers:
 - **Authentication** — which credentials are needed for which commands, how to verify them
 - **Output formats** — how to use `--output json` for machine-parseable results
 - **Complete command reference** — every command, flag, default, and required parameter
-- **Common workflows** — step-by-step recipes for scanning, CRUD, red teaming, auditing
+- **Common workflows** — step-by-step recipes for scanning, CRUD, red teaming, auditing, guardrail optimization
+- **Agent loop protocol** — references `program.md` for the autonomous guardrail optimization loop
 - **Error handling** — common errors and fixes
 - **Platform rules** — critical AIRS behaviors agents must know (profile naming, propagation delays, etc.)
 - **Config file** — location, format, and field reference

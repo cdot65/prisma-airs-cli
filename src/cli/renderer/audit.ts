@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import type { AuditResult, ConflictPair, ProfileTopic } from '../../audit/types.js';
+import type { EfficacyMetrics } from '../../core/types.js';
 
 /** Render profile topics discovered during audit. */
 export function renderAuditTopics(topics: ProfileTopic[]): void {
@@ -29,6 +30,23 @@ export function renderAuditComplete(result: AuditResult): void {
     const covColor = m.coverage >= 0.9 ? chalk.green : m.coverage >= 0.5 ? chalk.yellow : chalk.red;
     console.log(`  ${name}  ${covColor(cov)}  ${tpr}  ${tnr}  ${acc}  ${tests}`);
   }
+}
+
+/** Render composite efficacy metrics summary. */
+export function renderMetrics(metrics: EfficacyMetrics): void {
+  const coverageColor =
+    metrics.coverage >= 0.9 ? chalk.green : metrics.coverage >= 0.7 ? chalk.yellow : chalk.red;
+
+  console.log(`    Coverage:  ${coverageColor(`${(metrics.coverage * 100).toFixed(1)}%`)}`);
+  console.log(`    Accuracy:  ${(metrics.accuracy * 100).toFixed(1)}%`);
+  console.log(`    TPR:       ${(metrics.truePositiveRate * 100).toFixed(1)}%`);
+  console.log(`    TNR:       ${(metrics.trueNegativeRate * 100).toFixed(1)}%`);
+  console.log(`    F1 Score:  ${metrics.f1Score.toFixed(3)}`);
+  let countsLine = `    TP: ${metrics.truePositives}  TN: ${metrics.trueNegatives}  FP: ${metrics.falsePositives}  FN: ${metrics.falseNegatives}`;
+  if (metrics.regressionCount > 0) {
+    countsLine += chalk.red(`  Regressions: ${metrics.regressionCount}`);
+  }
+  console.log(chalk.dim(countsLine));
 }
 
 /** Render detected cross-topic conflicts. */

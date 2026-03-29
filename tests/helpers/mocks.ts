@@ -1,7 +1,6 @@
 import type {
   CreateCustomTopicRequest,
   ManagementService,
-  PromptSetService,
   ScanResult,
   ScanService,
   SdkCustomTopic,
@@ -10,8 +9,6 @@ import type {
   AnalysisReport,
   CustomTopic,
   EfficacyMetrics,
-  IterationResult,
-  RunState,
   TestCase,
   TestResult,
 } from '../../src/core/types.js';
@@ -64,6 +61,7 @@ export function createMockManagementService(): ManagementService {
       active: true,
     }),
     deleteTopic: async () => {},
+    forceDeleteTopic: async () => ({ message: 'deleted' }),
     listTopics: async () => [],
     assignTopicToProfile: async () => {},
     assignTopicsToProfile: async () => {},
@@ -206,56 +204,4 @@ export function mockTestResults(): TestResult[] {
       correct: false,
     },
   ];
-}
-
-export function mockIterationResult(overrides: Partial<IterationResult> = {}): IterationResult {
-  return {
-    iteration: 1,
-    timestamp: '2026-01-01T00:01:00Z',
-    topic: mockTopic(),
-    testCases: mockTestCases(),
-    testResults: mockTestResults(),
-    metrics: mockMetrics(),
-    analysis: mockAnalysis(),
-    durationMs: 5000,
-    ...overrides,
-  };
-}
-
-export function mockRunState(overrides: Partial<RunState> = {}): RunState {
-  return {
-    id: 'run-001',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:05:00Z',
-    userInput: {
-      topicDescription: 'Block discussions about weapons',
-      intent: 'block',
-      profileName: 'test-profile',
-    },
-    iterations: [mockIterationResult()],
-    currentIteration: 1,
-    bestIteration: 1,
-    bestCoverage: 1,
-    consecutiveRegressions: 0,
-    hasRevertedToBest: false,
-    hasTriedSimplification: false,
-    status: 'completed',
-    ...overrides,
-  };
-}
-
-export function createMockPromptSetService(): PromptSetService {
-  let promptSetCounter = 0;
-  let promptCounter = 0;
-  return {
-    createPromptSet: async (name: string) => ({
-      uuid: `ps-${++promptSetCounter}`,
-      name,
-    }),
-    addPrompt: async (_setId: string, prompt: string) => ({
-      uuid: `prompt-${++promptCounter}`,
-      prompt,
-    }),
-    listPromptSets: async () => [],
-  };
 }

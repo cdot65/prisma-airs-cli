@@ -76,12 +76,10 @@ nav:
       - Overview: runtime/overview.md
       - Prompt Scanning: runtime/scanning.md
       - Configuration Management: runtime/config-management.md
-      - Guardrail Generation:
+      - Guardrail Optimization:
           - How It Works: runtime/guardrails/overview.md
           - Metrics & Evaluation: runtime/guardrails/metrics.md
           - Topic Constraints: runtime/guardrails/topic-constraints.md
-          - Memory System: runtime/guardrails/memory-system.md
-          - Resumable Runs: runtime/guardrails/resumable-runs.md
       - Profile Audits: runtime/profile-audits.md
   - AI Red Teaming:
       - Overview: redteam/overview.md
@@ -99,7 +97,7 @@ nav:
   - Reference:
       - Architecture:
           - Overview: architecture/overview.md
-          - Core Loop: architecture/core-loop.md
+          - Guardrail Optimization: architecture/core-loop.md
           - Design Decisions: architecture/design-decisions.md
       - LLM Providers:
           - Overview: providers/overview.md

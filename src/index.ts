@@ -89,8 +89,6 @@ export {
   validateName,
   validateTopic,
 } from './core/constraints.js';
-export type { LlmService, LoopDependencies } from './core/loop.js';
-export { runLoop } from './core/loop.js';
 export { computeCategoryBreakdown, computeMetrics } from './core/metrics.js';
 export type {
   AnalysisReport,
@@ -98,32 +96,11 @@ export type {
   CustomTopic,
   EfficacyMetrics,
   IterationResult,
-  LoopEvent,
   RunState,
   TestCase,
   TestResult,
   UserInput,
 } from './core/types.js';
-// ---------------------------------------------------------------------------
-// LLM — provider factory and structured-output service for topic generation
-// ---------------------------------------------------------------------------
-export { createLlmProvider } from './llm/provider.js';
-export { LangChainLlmService } from './llm/service.js';
-// ---------------------------------------------------------------------------
-// Memory — cross-run learning persistence, extraction, and prompt injection
-// ---------------------------------------------------------------------------
-export { LearningExtractor } from './memory/extractor.js';
-export { MemoryInjector } from './memory/injector.js';
-export { MemoryStore, normalizeCategory } from './memory/store.js';
-export type {
-  IterationDiff,
-  Learning,
-  TopicMemory,
-} from './memory/types.js';
-// ---------------------------------------------------------------------------
-// Persistence — save/load/list run state as JSON for resume & reporting
-// ---------------------------------------------------------------------------
-export { JsonFileStore } from './persistence/store.js';
 
 // ---------------------------------------------------------------------------
 // Reports — structured evaluation report generation (JSON/HTML)

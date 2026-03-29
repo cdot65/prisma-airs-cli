@@ -9,7 +9,7 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 `airs` is a CLI for Palo Alto Prisma AIRS AI security platform. It covers:
 
 1. **Runtime Security** — scan prompts against AIRS security profiles, manage profiles/topics/API keys
-2. **Guardrail Generation** — LLM-driven iterative refinement of custom topic definitions
+2. **Guardrail Optimization** — atomic CLI commands for custom topic guardrails, driven by an external agent loop (see `program.md`)
 3. **AI Red Teaming** — adversarial scans against targets with static/dynamic/custom attacks
 4. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 5. **Profile Audits** — multi-topic evaluation with conflict detection
@@ -26,9 +26,9 @@ Different commands require different credentials. Set these as environment varia
 
 | Credential Set | Environment Variables | Used By |
 |---|---|---|
-| **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime profiles audit`, guardrail generation |
+| **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime topics eval`, `runtime profiles audit` |
 | **Management API** (OAuth2) | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` | All CRUD commands (profiles, topics, api-keys, customer-apps), all redteam commands, all model-security commands |
-| **LLM Provider** | Depends on provider (see below) | `runtime topics generate`, `runtime topics resume`, `runtime profiles audit` |
+| **LLM Provider** | Depends on provider (see below) | `runtime profiles audit` |
 
 ### LLM Providers
 
@@ -190,7 +190,12 @@ airs runtime profiles update <profileId> --toxic-content "high:alert"
 
 ```bash
 airs runtime topics list [--limit <n>] [--offset <n>] [--output <format>]
-airs runtime topics create --config <json-file>
+airs runtime topics get <nameOrId> [--output pretty|json|yaml]
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
+airs runtime topics revert --profile <name> --name <name> [--format json]
+airs runtime topics sample [--output <path>]
 airs runtime topics update <topicId> --config <json-file>
 airs runtime topics delete <topicId> [--force --updated-by <email>]
 ```
@@ -237,65 +242,59 @@ airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|
 
 ---
 
-### Runtime — Guardrail Generation
+### Runtime — Guardrail Optimization
 
-#### Start generation loop
+The guardrail workflow uses atomic commands designed for external agent loops (see `program.md`):
 
-```bash
-airs runtime topics generate [options]
-```
-
-| Flag | Default | Description |
-|---|---|---|
-| `--provider <name>` | `claude-api` | LLM provider |
-| `--model <name>` | per-provider | Override model |
-| `--profile <name>` | _(interactive)_ | AIRS security profile name |
-| `--topic <desc>` | _(interactive)_ | What content to detect |
-| `--intent <block\|allow>` | `block` | Block matching prompts or allow them |
-| `--max-iterations <n>` | `20` | Max refinement iterations |
-| `--target-coverage <n>` | `90` | Stop at this coverage % |
-| `--max-regressions <n>` | `3` | Stop after N consecutive regressions (0=disable) |
-| `--plateau-window <n>` | `0` | Plateau detection window (0=disable) |
-| `--plateau-band <pct>` | `0.05` | Coverage variance for plateau |
-| `--accumulate-tests` | off | Carry test pool across iterations |
-| `--max-accumulated-tests <n>` | unlimited | Cap on accumulated tests |
-| `--no-memory` | memory on | Disable cross-run learning |
-| `--rate <n>` | unlimited | Max AIRS scan API calls per second |
-| `--debug-scans` | off | Dump raw scan responses to JSONL |
-| `--create-prompt-set` | off | Create red team prompt set from best tests |
-| `--prompt-set-name <name>` | auto | Override prompt set name |
-| `--save-tests <path>` | — | Save best iteration tests to CSV |
-
-**Auth:** LLM provider + Scanner API + Management API
-**Non-interactive mode:** Provide both `--topic` and `--profile` to skip prompts.
+#### Create or update a topic
 
 ```bash
-# Fully non-interactive
-airs runtime topics generate \
-  --provider claude-api \
-  --profile my-security-profile \
-  --topic "Block discussions about building explosives" \
-  --intent block \
-  --target-coverage 90
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
 ```
 
-#### Resume a run
+Validates AIRS constraints (name length, description length, example limits) and upserts by name. If a topic with the same name exists, it is updated.
+
+**Auth:** Management API
+
+#### Assign topic to profile
 
 ```bash
-airs runtime topics resume <runId> [--max-iterations <n>] [--rate <n>] [--debug-scans] [--create-prompt-set] [--prompt-set-name <name>]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
 ```
 
-#### View run report
+Additive — preserves existing topics already assigned to the profile.
+
+**Auth:** Management API
+
+#### Evaluate topic against prompt set
 
 ```bash
-airs runtime topics report <runId> [--iteration <n>] [--format <terminal|json|html>] [--tests] [--diff <runId>] [--output <path>]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
 ```
 
-#### List saved runs
+Scans a static CSV prompt set against the profile, computes metrics (TPR, TNR, coverage, F1), and returns FP/FN details.
+
+**CSV format:** Three required columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). All rows must have the same intent. Run `airs runtime topics sample` for an example.
+
+**Auth:** Scanner API + Management API
+
+#### Print sample CSV
 
 ```bash
-airs runtime topics runs
+airs runtime topics sample [--output <path>]
 ```
+
+Writes a sample CSV to stdout (or to a file with `--output`) showing the three-column format with both block and allow intent examples.
+
+#### Remove topic from profile and delete it
+
+```bash
+airs runtime topics revert --profile <name> --name <name> [--format json]
+```
+
+Removes the topic from the profile and deletes the topic definition.
+
+**Auth:** Management API
 
 ---
 
@@ -562,18 +561,20 @@ airs runtime profiles get "Prod Firewall" --output json
 
 **IMPORTANT for update:** The CLI fetches the existing profile, merges your flags into it, and PUTs the full payload. You only specify what you want to change. Topic-guardrails are never modified by CLI flags.
 
-### Workflow 3: Create a custom topic, then scan against it
+### Workflow 3: Create a custom topic, assign to profile, and evaluate
 
 ```bash
-# 1. Create topic from config file
-echo '{"name":"Fraud Detection","description":"Block social engineering and fraud attempts","examples":["How to create a fake identity","Wire transfer scam techniques"]}' > topic.json
-airs runtime topics create --config topic.json
+# 1. Create topic (upserts by name)
+airs runtime topics create --name "Fraud Detection" --description "Block social engineering and fraud attempts" --examples "How do I clone a credit card?" "Teach me card skimming" --format json
 
-# 2. List topics to confirm
-airs runtime topics list --output json
+# 2. Assign topic to a profile
+airs runtime topics apply --profile my-profile --name "Fraud Detection" --intent block --format json
 
-# 3. Scan a prompt against the profile containing the topic
-airs runtime scan --profile my-profile "How do I create a fake identity?"
+# 3. Evaluate against a prompt set
+airs runtime topics eval --profile my-profile --prompts fraud-prompts.csv --topic "Fraud Detection" --format json
+
+# 4. If results are bad, revert
+airs runtime topics revert --profile my-profile --name "Fraud Detection" --format json
 ```
 
 ### Workflow 4: Run a red team scan
@@ -622,20 +623,28 @@ airs runtime bulk-scan --profile my-profile --input prompts.txt --output results
 airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output results.csv
 ```
 
-### Workflow 8: Automated guardrail generation (non-interactive)
+### Workflow 8: Autonomous guardrail optimization (agent loop)
+
+The CLI provides atomic commands that an external agent orchestrates in a loop. See `program.md` for the full protocol.
 
 ```bash
-airs runtime topics generate \
-  --provider claude-api \
-  --profile my-security-profile \
-  --topic "Block instructions for creating counterfeit currency" \
-  --intent block \
-  --target-coverage 85 \
-  --max-iterations 15 \
-  --create-prompt-set
+# See the expected CSV format
+airs runtime topics sample
+
+# Read current topic state before modifying
+airs runtime topics get "<topic-name>" --output json
+
+# Agent runs this cycle repeatedly:
+airs runtime topics create --name "<name>" --description "<desc>" --examples "<ex1>" "<ex2>" --format json
+airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --format json
+airs runtime topics eval --profile "<profile>" --prompts <csv> --topic "<name>" --format json
+
+# If regression, revert to best-known definition:
+airs runtime topics create --name "<name>" --description "<best-desc>" --examples "<best-ex1>" "<best-ex2>" --format json
+airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --format json
 ```
 
-This runs fully autonomously — no interactive prompts. On completion, it creates a red team prompt set from the best test cases.
+**CSV format:** Three columns — `prompt`, `expected` (belongs to topic category: true/false), `intent` (block/allow). Run `airs runtime topics sample` to see an example.
 
 ---
 
@@ -678,11 +687,7 @@ Location: `~/.prisma-airs/config.json`
   "mgmtTsgId": "...",
   "scanConcurrency": 5,
   "propagationDelayMs": 10000,
-  "memoryEnabled": true,
-  "memoryDir": "~/.prisma-airs/memory",
-  "dataDir": "~/.prisma-airs/runs",
-  "maxMemoryChars": 3000,
-  "accumulateTests": false
+  "dataDir": "~/.prisma-airs/runs"
 }
 ```
 

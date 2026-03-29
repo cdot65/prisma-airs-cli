@@ -32,7 +32,7 @@ function createFailingModel(error: Error, succeedAfter?: number): MockModel {
             return {
               name: 'Topic',
               description: 'A valid topic',
-              examples: ['example 1'],
+              examples: ['example 1', 'example 2'],
             };
           }
           throw error;
@@ -96,7 +96,7 @@ describe('LangChainLlmService', () => {
 
     it('clamps individual example exceeding max length', async () => {
       const longExample = 'C'.repeat(300);
-      const model = createMockModel({ ...validTopic, examples: [longExample] });
+      const model = createMockModel({ ...validTopic, examples: [longExample, 'second example'] });
       const service = new LangChainLlmService(model as BaseChatModel);
       const result = await service.generateTopic('weapons', 'block');
       expect(Buffer.byteLength(result.examples[0], 'utf8')).toBeLessThanOrEqual(250);
@@ -264,7 +264,11 @@ describe('LangChainLlmService', () => {
 
     it('returns clamped topic', async () => {
       const longDesc = 'X'.repeat(300);
-      const model = createMockModel({ name: 'Weapons', description: longDesc, examples: ['ex'] });
+      const model = createMockModel({
+        name: 'Weapons',
+        description: longDesc,
+        examples: ['ex1', 'ex2'],
+      });
       const service = new LangChainLlmService(model as BaseChatModel);
       const result = await service.improveTopic(validTopic, metrics, analysis, [], 2, 0.9, 'block');
       expect(result.description.length).toBeLessThanOrEqual(MAX_DESCRIPTION_LENGTH);
@@ -463,7 +467,7 @@ describe('LangChainLlmService', () => {
       const model = createMockModel({
         name: 'Allow: General',
         description: 'X'.repeat(300),
-        examples: ['ex1'],
+        examples: ['ex1', 'ex2'],
       });
       const service = new LangChainLlmService(model as BaseChatModel);
       const result = await service.generateCompanionTopic('Weapons', 'Block weapons');

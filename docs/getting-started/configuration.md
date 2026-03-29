@@ -23,9 +23,7 @@ For settings you use across every run, create `~/.prisma-airs/config.json`:
 ```json title="~/.prisma-airs/config.json"
 {
   "llmProvider": "claude-api",
-  "scanConcurrency": 5,
-  "maxMemoryChars": 3000,
-  "memoryEnabled": true
+  "scanConcurrency": 5
 }
 ```
 
@@ -47,17 +45,12 @@ For detailed provider setup, see [LLM Providers](../providers/overview.md).
 
 ## Tuning Parameters
 
-These settings control how Prisma AIRS CLI interacts with AIRS and the memory system.
+These settings control how Prisma AIRS CLI interacts with AIRS.
 
 | Env Var | Config Key | Default | What it does |
 |---------|-----------|---------|-------------|
 | `SCAN_CONCURRENCY` | `scanConcurrency` | `5` | Parallel scan requests per batch (1--20) |
-| `MAX_MEMORY_CHARS` | `maxMemoryChars` | `3000` | Character budget for memory injection (500--10000) |
-| `MEMORY_ENABLED` | `memoryEnabled` | `true` | Toggle cross-run learning on/off |
-| `ACCUMULATE_TESTS` | `accumulateTests` | `false` | Carry forward tests across iterations |
-| `MAX_ACCUMULATED_TESTS` | `maxAccumulatedTests` | unlimited | Cap on accumulated test count |
-| `DATA_DIR` | `dataDir` | `~/.prisma-airs/runs` | Where run states are saved |
-| `MEMORY_DIR` | `memoryDir` | `~/.prisma-airs/memory` | Where learnings are stored |
+| `DATA_DIR` | `dataDir` | `~/.prisma-airs/runs` | Data directory |
 
 !!! tip "Concurrency vs. rate limits"
     Keep `scanConcurrency` at 5 or lower to avoid AIRS rate limiting. Increase only if your tenant has elevated quotas.
@@ -67,5 +60,4 @@ These settings control how Prisma AIRS CLI interacts with AIRS and the memory sy
 | Path | Purpose |
 |------|---------|
 | `~/.prisma-airs/config.json` | Persistent configuration |
-| `~/.prisma-airs/runs/` | Saved run states (JSON per run) |
-| `~/.prisma-airs/memory/` | Cross-run learnings (JSON per category) |
+| `~/.prisma-airs/runs/` | Data directory |

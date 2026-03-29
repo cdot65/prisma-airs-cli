@@ -9,20 +9,11 @@ describe('ConfigSchema', () => {
     expect(config.awsRegion).toBe('us-east-1');
     expect(config.scanConcurrency).toBe(5);
     expect(config.dataDir).toBe('~/.prisma-airs/runs');
-    expect(config.memoryEnabled).toBe(true);
-    expect(config.memoryDir).toBe('~/.prisma-airs/memory');
-    expect(config.maxMemoryChars).toBe(3000);
   });
 
   it('coerces strings to numbers', () => {
     const config = ConfigSchema.parse({ scanConcurrency: '10' });
     expect(config.scanConcurrency).toBe(10);
-  });
-
-  it('coerces boolean values', () => {
-    // z.coerce.boolean() treats any non-empty string as true
-    expect(ConfigSchema.parse({ memoryEnabled: true }).memoryEnabled).toBe(true);
-    expect(ConfigSchema.parse({ memoryEnabled: false }).memoryEnabled).toBe(false);
   });
 
   it('rejects scanConcurrency below 1', () => {
@@ -31,14 +22,6 @@ describe('ConfigSchema', () => {
 
   it('rejects scanConcurrency above 20', () => {
     expect(() => ConfigSchema.parse({ scanConcurrency: 21 })).toThrow();
-  });
-
-  it('rejects maxMemoryChars below 500', () => {
-    expect(() => ConfigSchema.parse({ maxMemoryChars: 499 })).toThrow();
-  });
-
-  it('rejects maxMemoryChars above 10000', () => {
-    expect(() => ConfigSchema.parse({ maxMemoryChars: 10001 })).toThrow();
   });
 
   it('preserves optional string fields when provided', () => {

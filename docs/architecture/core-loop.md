@@ -1,125 +1,62 @@
-# Core Loop
+# Guardrail Optimization
 
-The heart of Prisma AIRS CLI. The core loop (`src/core/loop.ts`) is an async generator that yields typed events as it works. The CLI renders those events, but the loop itself has no knowledge of how its output is displayed — making it independently testable and reusable.
+The guardrail workflow was refactored from an embedded LLM-driven async generator loop to a set of atomic CLI commands. An external agent (Claude Code, Gemini CLI, etc.) orchestrates these commands in a loop following the protocol defined in `program.md`.
 
-## What Happens Each Iteration
+## Atomic Commands
 
-Each iteration follows a fixed sequence:
+The four commands form a create-apply-eval-revert cycle:
 
 ```mermaid
 flowchart TD
-    Start([Iteration Start]) --> GenOrImprove{Iteration 1?}
-    GenOrImprove -->|Yes| Generate[Generate Topic via LLM]
-    GenOrImprove -->|No| Improve[Improve Topic via LLM]
-    Generate --> Clamp[clampTopic - enforce AIRS limits]
-    Improve --> Clamp
-    Clamp --> Deploy[Deploy via Management API]
-    Deploy --> TestGen[Generate Test Cases via LLM]
-    TestGen --> Scan[Batch Scan via Scanner API]
-    Scan --> Metrics[Compute Metrics - TPR, TNR, Coverage, F1]
-    Metrics --> Analyze[Analyze FP/FN Patterns via LLM]
-    Analyze --> Check{Coverage >= Target?}
-    Check -->|Yes| Complete([Loop Complete])
-    Check -->|No| MaxCheck{Max Iterations?}
-    MaxCheck -->|Yes| Complete
-    MaxCheck -->|No| Start
+    Start([Agent starts]) --> Create[airs runtime topics create]
+    Create --> Apply[airs runtime topics apply]
+    Apply --> Eval[airs runtime topics eval]
+    Eval --> Check{Metrics improved?}
+    Check -->|Yes| Keep([Keep — advance])
+    Check -->|No| Revert[airs runtime topics revert]
+    Revert --> Create
+    Keep --> Create
 ```
 
-## Events
+| Command | What it does |
+|---------|-------------|
+| `topics create` | Create or update a custom topic definition (validates AIRS constraints, upserts by name) |
+| `topics apply` | Assign a topic to a security profile (additive, preserves existing topics) |
+| `topics eval` | Scan a static CSV prompt set against the profile, compute metrics (TPR, TNR, coverage, F1), return FP/FN details |
+| `topics revert` | Remove topic from profile and delete the topic definition |
 
-The generator yields events at each stage. Consumers (like the CLI renderer) iterate the generator and switch on the event `type`.
+## Agent Loop Protocol
 
-### Yielded by `runLoop()`
+The external agent follows `program.md`:
 
-| Event | Payload | When |
-|-------|---------|------|
-| `iteration:start` | iteration number | Start of each iteration |
-| `generate:complete` | `CustomTopic` | After LLM generates or improves topic |
-| `apply:complete` | topic ID | After topic deployed to AIRS (yielded but intentionally unhandled in CLI) |
-| `tests:composed` | generated, carried failures, regression tier, total | After test suite composed from generated + carried FP/FN + regression tier (iteration 2+) |
-| `tests:accumulated` | new count, total count, dropped count | After test accumulation merges new + old tests (only when `accumulateTests` enabled, iteration 2+) |
-| `test:progress` | completed count, total | Per-test scan completion |
-| `evaluate:complete` | `EfficacyMetrics` | After metrics computed |
-| `analyze:complete` | `AnalysisReport` | After FP/FN analysis |
-| `iteration:complete` | `IterationResult` | Full iteration summary |
-| `memory:extracted` | learning count | Learnings extracted post-loop (only if memory enabled) |
-| `loop:complete` | best iteration, run state | Terminal: target reached or max iterations |
+1. Establish baseline by running `eval` on the unmodified profile
+2. Create/update a topic definition
+3. Apply it to the profile
+4. Evaluate against the prompt set
+5. If metrics improve, keep the change; if they regress, revert
+6. Repeat indefinitely until interrupted
 
-### Defined but not yielded by `runLoop()`
+## Key Design Decisions
 
-| Event | Payload | Status |
-|-------|---------|--------|
-| `loop:paused` | current state | Reserved for future use — not currently yielded |
-| `memory:loaded` | learning count | Emitted by CLI command (`generate.ts`) before the loop starts, not by the generator itself |
-
-!!! tip "Terminal Events"
-    `loop:complete` is the terminal event. After it is yielded, the generator returns and no further events are produced. `loop:paused` is defined in the type union for future use but is not currently yielded.
+- **No embedded LLM** — the CLI is stateless; the agent provides all intelligence
+- **No cross-run memory** — the agent maintains its own context
+- **No run persistence** — no `RunState` JSON files; the agent tracks state externally
+- **Atomic operations** — each command succeeds or fails independently, making the workflow recoverable at any point
 
 ## Topic Name Locking
 
-The topic name is generated once during **iteration 1** and locked for all subsequent iterations. Only the description and examples are refined in later iterations.
+The topic name is used as the upsert key. The `create` command validates AIRS constraints:
 
-This prevents two problems:
+| Constraint | Limit |
+|-----------|-------|
+| Topic name | 100 characters |
+| Description | 250 characters |
+| Each example | 250 characters |
+| Max examples | 5 |
+| Combined (description + all examples) | 1000 characters |
 
-- **Identity thrashing** -- changing the topic name on each iteration would create new AIRS entities instead of updating the existing one.
-- **Entity inconsistency** -- downstream profile references depend on a stable topic identity.
+## Related
 
-!!! warning "Name Immutability"
-    The loop enforces name locking internally. Even if the LLM returns a different name in its improvement output, the original name from iteration 1 is preserved.
-
-## Stop Conditions
-
-The loop terminates when either condition is met:
-
-| Condition | Default | Description |
-|-----------|---------|-------------|
-| Coverage target reached | `0.9` (90%) | `coverage = min(TPR, TNR)` must meet or exceed `targetCoverage` |
-| Max iterations exceeded | `20` | Hard upper bound on refinement cycles |
-
-!!! info "Coverage Definition"
-    Coverage is defined as `min(TPR, TNR)`, not a simple average. This ensures both true-positive and true-negative performance must reach the target -- the system cannot pass by excelling at one while failing the other.
-
-## Four LLM Calls Per Iteration
-
-Each iteration makes up to four LLM calls, all using `withStructuredOutput(ZodSchema)`:
-
-1. **Generate / Improve Topic** -- produces a `CustomTopic` (name, description, examples)
-2. **Generate Test Cases** -- produces positive and negative test prompts
-3. **Analyze Results** -- examines false positives and false negatives for patterns (intent-aware: prioritizes FN reduction for block, FP reduction for allow)
-4. *(Post-loop)* **Extract Learnings** -- distills iteration history into reusable memory entries
-
-## Test Composition
-
-On iteration 2+, the test suite is automatically composed from three sources:
-
-1. **Carried failures** (always-on): FP and FN test cases from the previous iteration are re-tested to verify whether topic refinement resolved them. Tagged with `source: 'carried-fp'` or `'carried-fn'`.
-2. **Regression tier** (always-on): TP and TN (correct) test cases from the previous iteration are re-scanned. If they now fail, that's a regression. Tagged with `source: 'regression'`.
-3. **Fresh generated tests**: New tests from the LLM, informed by per-category error rates from the previous iteration (weighted generation). Tagged with `source: 'generated'`.
-
-All three pools are deduplicated case-insensitively by prompt text. Priority: carried failures > regression > generated.
-
-The `tests:composed` event reports the breakdown on each iteration 2+.
-
-### Weighted Category Generation
-
-On iteration 2+, `computeCategoryBreakdown()` computes per-category FP/FN error rates from the previous iteration's results. This breakdown is injected into the LLM test generation prompt, instructing it to generate proportionally more tests for weak categories.
-
-### Regression Tracking
-
-`EfficacyMetrics.regressionCount` counts regression-tier tests that failed (previously correct, now wrong after topic refinement). Regressions also count in the normal FP/FN tallies — the separate counter surfaces _how many_ failures were caused by topic changes vs. being new failures.
-
-## Test Accumulation (Legacy)
-
-The `accumulateTests` flag enables additional full-pool accumulation on top of the composition logic. When enabled, tests from all prior iterations are also merged (not just the previous iteration's failures and regressions):
-
-- **Deduplication**: case-insensitive by prompt text, new tests take priority over old
-- **Max cap**: optional `maxAccumulatedTests` limits total count, keeping newest first
-- **Event**: `tests:accumulated` is yielded on iterations 2+ with new/total/dropped counts
-
-```typescript
-const input: UserInput = {
-  // ...
-  accumulateTests: true,
-  maxAccumulatedTests: 50, // optional cap
-};
-```
+- [Metrics & Evaluation](../runtime/guardrails/metrics.md) — how TP/TN/FP/FN are classified
+- [Topic Constraints](../runtime/guardrails/topic-constraints.md) — AIRS limits on topic definitions
+- `program.md` — full agent loop protocol

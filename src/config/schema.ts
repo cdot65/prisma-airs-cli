@@ -42,16 +42,9 @@ export const ConfigSchema = z.object({
 
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),
-  accumulateTests: z.coerce.boolean().default(false),
-  maxAccumulatedTests: z.coerce.number().int().min(1).optional(),
 
   // Persistence
   dataDir: z.string().default('~/.prisma-airs/runs'),
-
-  // Memory
-  memoryEnabled: z.coerce.boolean().default(true),
-  memoryDir: z.string().default('~/.prisma-airs/memory'),
-  maxMemoryChars: z.coerce.number().int().min(500).max(10000).default(3000),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
