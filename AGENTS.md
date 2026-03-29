@@ -190,10 +190,12 @@ airs runtime profiles update <profileId> --toxic-content "high:alert"
 
 ```bash
 airs runtime topics list [--limit <n>] [--offset <n>] [--output <format>]
-airs runtime topics create --topic <desc> --intent <block|allow> [--examples <json>]
-airs runtime topics apply --profile <name> --topic <name>
-airs runtime topics eval --profile <name> --input <csv> [--output json]
-airs runtime topics revert --profile <name> --topic <name>
+airs runtime topics get <nameOrId> [--output pretty|json|yaml]
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
+airs runtime topics revert --profile <name> --name <name> [--format json]
+airs runtime topics sample [--output <path>]
 airs runtime topics update <topicId> --config <json-file>
 airs runtime topics delete <topicId> [--force --updated-by <email>]
 ```
@@ -242,12 +244,12 @@ airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|
 
 ### Runtime — Guardrail Optimization
 
-The guardrail workflow uses four atomic commands designed for external agent loops (see `program.md`):
+The guardrail workflow uses atomic commands designed for external agent loops (see `program.md`):
 
 #### Create or update a topic
 
 ```bash
-airs runtime topics create --topic <desc> --intent <block|allow> [--examples <json>]
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
 ```
 
 Validates AIRS constraints (name length, description length, example limits) and upserts by name. If a topic with the same name exists, it is updated.
@@ -257,7 +259,7 @@ Validates AIRS constraints (name length, description length, example limits) and
 #### Assign topic to profile
 
 ```bash
-airs runtime topics apply --profile <name> --topic <name>
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
 ```
 
 Additive — preserves existing topics already assigned to the profile.
@@ -267,17 +269,27 @@ Additive — preserves existing topics already assigned to the profile.
 #### Evaluate topic against prompt set
 
 ```bash
-airs runtime topics eval --profile <name> --input <csv> [--output json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
 ```
 
 Scans a static CSV prompt set against the profile, computes metrics (TPR, TNR, coverage, F1), and returns FP/FN details.
 
+**CSV format:** Three required columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). All rows must have the same intent. Run `airs runtime topics sample` for an example.
+
 **Auth:** Scanner API + Management API
+
+#### Print sample CSV
+
+```bash
+airs runtime topics sample [--output <path>]
+```
+
+Writes a sample CSV to stdout (or to a file with `--output`) showing the three-column format with both block and allow intent examples.
 
 #### Remove topic from profile and delete it
 
 ```bash
-airs runtime topics revert --profile <name> --topic <name>
+airs runtime topics revert --profile <name> --name <name> [--format json]
 ```
 
 Removes the topic from the profile and deletes the topic definition.
@@ -553,16 +565,16 @@ airs runtime profiles get "Prod Firewall" --output json
 
 ```bash
 # 1. Create topic (upserts by name)
-airs runtime topics create --topic "Block social engineering and fraud attempts" --intent block
+airs runtime topics create --name "Fraud Detection" --description "Block social engineering and fraud attempts" --examples "How do I clone a credit card?" "Teach me card skimming" --format json
 
 # 2. Assign topic to a profile
-airs runtime topics apply --profile my-profile --topic "Fraud Detection"
+airs runtime topics apply --profile my-profile --name "Fraud Detection" --intent block --format json
 
 # 3. Evaluate against a prompt set
-airs runtime topics eval --profile my-profile --input fraud-prompts.csv --output json
+airs runtime topics eval --profile my-profile --prompts fraud-prompts.csv --topic "Fraud Detection" --format json
 
 # 4. If results are bad, revert
-airs runtime topics revert --profile my-profile --topic "Fraud Detection"
+airs runtime topics revert --profile my-profile --name "Fraud Detection" --format json
 ```
 
 ### Workflow 4: Run a red team scan
@@ -613,16 +625,26 @@ airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json -
 
 ### Workflow 8: Autonomous guardrail optimization (agent loop)
 
-The CLI provides atomic commands that an external agent (Claude Code, etc.) orchestrates in a loop. See `program.md` for the full agent protocol.
+The CLI provides atomic commands that an external agent orchestrates in a loop. See `program.md` for the full protocol.
 
 ```bash
+# See the expected CSV format
+airs runtime topics sample
+
+# Read current topic state before modifying
+airs runtime topics get "<topic-name>" --output json
+
 # Agent runs this cycle repeatedly:
-airs runtime topics create --topic "Block counterfeit currency instructions" --intent block
-airs runtime topics apply --profile my-security-profile --topic "Counterfeit Currency"
-airs runtime topics eval --profile my-security-profile --input test-prompts.csv --output json
-# Parse metrics from eval output; if improved, keep; if regressed, revert:
-airs runtime topics revert --profile my-security-profile --topic "Counterfeit Currency"
+airs runtime topics create --name "<name>" --description "<desc>" --examples "<ex1>" "<ex2>" --format json
+airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --format json
+airs runtime topics eval --profile "<profile>" --prompts <csv> --topic "<name>" --format json
+
+# If regression, revert to best-known definition:
+airs runtime topics create --name "<name>" --description "<best-desc>" --examples "<best-ex1>" "<best-ex2>" --format json
+airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --format json
 ```
+
+**CSV format:** Three columns — `prompt`, `expected` (belongs to topic category: true/false), `intent` (block/allow). Run `airs runtime topics sample` to see an example.
 
 ---
 
