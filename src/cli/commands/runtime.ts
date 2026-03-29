@@ -35,6 +35,7 @@ import { registerApplyCommand } from './topics-apply.js';
 import { registerCreateCommand } from './topics-create.js';
 import { registerEvalCommand } from './topics-eval.js';
 import { registerRevertCommand } from './topics-revert.js';
+import { registerSampleCommand } from './topics-sample.js';
 
 function renderScanResult(result: RuntimeScanResult): void {
   const actionColor = result.action === 'block' ? chalk.red : chalk.green;
@@ -769,6 +770,76 @@ export function registerRuntimeCommand(program: Command): void {
     .command('topics')
     .description('Manage AIRS custom topics and guardrail generation');
 
+  // Register all topics subcommands in alphabetical order
+  registerApplyCommand(topics);
+  registerCreateCommand(topics);
+
+  topics
+    .command('delete <topicId>')
+    .description('Delete a custom topic')
+    .option('--force', 'Force delete (removes from all referencing profiles)')
+    .option('--updated-by <email>', 'Email of user performing force deletion')
+    .action(async (topicId: string, opts) => {
+      try {
+        renderRuntimeConfigHeader();
+        const service = await createMgmtService();
+        if (opts.force) {
+          const result = await service.forceDeleteTopic(topicId, opts.updatedBy);
+          console.log(`  ${result.message}\n`);
+        } else {
+          await service.deleteTopic(topicId);
+          console.log(`  Topic ${topicId} deleted.\n`);
+        }
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  registerEvalCommand(topics);
+
+  topics
+    .command('get <nameOrId>')
+    .description('Get a custom topic by name or UUID')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (nameOrId: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt !== 'pretty' && fmt !== 'json' && fmt !== 'yaml') {
+          renderError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
+          process.exit(1);
+        }
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
+        const service = await createMgmtService();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          nameOrId,
+        );
+        const topic = isUuid
+          ? await service.getTopic(nameOrId)
+          : await service.getTopicByName(nameOrId);
+        if (fmt === 'json') {
+          console.log(JSON.stringify(topic, null, 2));
+        } else if (fmt === 'yaml') {
+          const lines = [`topic_id: ${topic.topic_id}`, `topic_name: ${topic.topic_name}`];
+          if (topic.revision != null) lines.push(`revision: ${topic.revision}`);
+          if (topic.description) lines.push(`description: ${topic.description}`);
+          if (topic.examples?.length) {
+            lines.push('examples:');
+            for (const ex of topic.examples) lines.push(`  - ${ex}`);
+          }
+          if (topic.created_by) lines.push(`created_by: ${topic.created_by}`);
+          if (topic.updated_by) lines.push(`updated_by: ${topic.updated_by}`);
+          if (topic.last_modified_ts) lines.push(`last_modified_ts: ${topic.last_modified_ts}`);
+          console.log(lines.join('\n'));
+        } else {
+          renderTopicDetail(topic);
+        }
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
   topics
     .command('list')
     .description('List custom topics')
@@ -795,6 +866,9 @@ export function registerRuntimeCommand(program: Command): void {
       }
     });
 
+  registerRevertCommand(topics);
+  registerSampleCommand(topics);
+
   topics
     .command('update <topicId>')
     .description('Update a custom topic')
@@ -812,32 +886,4 @@ export function registerRuntimeCommand(program: Command): void {
         process.exit(1);
       }
     });
-
-  topics
-    .command('delete <topicId>')
-    .description('Delete a custom topic')
-    .option('--force', 'Force delete (removes from all referencing profiles)')
-    .option('--updated-by <email>', 'Email of user performing force deletion')
-    .action(async (topicId: string, opts) => {
-      try {
-        renderRuntimeConfigHeader();
-        const service = await createMgmtService();
-        if (opts.force) {
-          const result = await service.forceDeleteTopic(topicId, opts.updatedBy);
-          console.log(`  ${result.message}\n`);
-        } else {
-          await service.deleteTopic(topicId);
-          console.log(`  Topic ${topicId} deleted.\n`);
-        }
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // Register autoresearch-pattern commands under topics
-  registerCreateCommand(topics);
-  registerApplyCommand(topics);
-  registerEvalCommand(topics);
-  registerRevertCommand(topics);
 }
