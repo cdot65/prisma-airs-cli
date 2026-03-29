@@ -4,6 +4,7 @@ import type { EfficacyMetrics, TestResult } from '../../core/types.js';
 export interface EvalOutput {
   profile: string;
   topic: string;
+  intent: 'block' | 'allow';
   metrics: {
     tp: number;
     tn: number;
@@ -22,6 +23,7 @@ export interface EvalOutput {
 export function buildEvalOutput(
   profile: string,
   topic: string,
+  intent: 'block' | 'allow',
   metrics: EfficacyMetrics,
   results: TestResult[],
 ): EvalOutput {
@@ -36,6 +38,7 @@ export function buildEvalOutput(
   return {
     profile,
     topic,
+    intent,
     metrics: {
       tp: metrics.truePositives,
       tn: metrics.trueNegatives,
@@ -64,6 +67,7 @@ export function renderEvalTerminal(output: EvalOutput): void {
   console.log(chalk.dim('  ─────────────────────────'));
   console.log(`  Profile: ${chalk.white(output.profile)}`);
   console.log(`  Topic:   ${chalk.white(output.topic)}`);
+  console.log(`  Intent:  ${chalk.white(output.intent)}`);
 
   console.log(chalk.bold('\n  Metrics:'));
   console.log(`    Coverage:  ${coverageColor(`${(output.metrics.coverage * 100).toFixed(1)}%`)}`);

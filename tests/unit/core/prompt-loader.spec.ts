@@ -4,10 +4,10 @@ import { loadPrompts } from '../../../src/core/prompt-loader.js';
 describe('loadPrompts', () => {
   it('parses valid CSV with header row (quoted prompts, true/false)', () => {
     const csv = `prompt,expected,intent\n"Hello, world",true,block\n"Goodbye, world",false,block`;
-    const results = loadPrompts(csv);
-    expect(results).toHaveLength(2);
-    expect(results[0]).toEqual({ prompt: 'Hello, world', expectedTriggered: true, category: '' });
-    expect(results[1]).toEqual({
+    const { cases } = loadPrompts(csv);
+    expect(cases).toHaveLength(2);
+    expect(cases[0]).toEqual({ prompt: 'Hello, world', expectedTriggered: true, category: '' });
+    expect(cases[1]).toEqual({
       prompt: 'Goodbye, world',
       expectedTriggered: false,
       category: '',
@@ -16,10 +16,10 @@ describe('loadPrompts', () => {
 
   it('handles unquoted prompts', () => {
     const csv = `prompt,expected,intent\nhello,true,block\nworld,false,block`;
-    const results = loadPrompts(csv);
-    expect(results).toHaveLength(2);
-    expect(results[0]).toEqual({ prompt: 'hello', expectedTriggered: true, category: '' });
-    expect(results[1]).toEqual({ prompt: 'world', expectedTriggered: false, category: '' });
+    const { cases } = loadPrompts(csv);
+    expect(cases).toHaveLength(2);
+    expect(cases[0]).toEqual({ prompt: 'hello', expectedTriggered: true, category: '' });
+    expect(cases[1]).toEqual({ prompt: 'world', expectedTriggered: false, category: '' });
   });
 
   it('throws if prompt column is missing', () => {
@@ -53,8 +53,8 @@ describe('loadPrompts', () => {
 
   it('handles escaped quotes in CSV ("" → ")', () => {
     const csv = `prompt,expected,intent\n"She said ""hello""",true,block\nnormal,false,block`;
-    const results = loadPrompts(csv);
-    expect(results[0].prompt).toBe('She said "hello"');
+    const { cases } = loadPrompts(csv);
+    expect(cases[0].prompt).toBe('She said "hello"');
   });
 
   it('throws on empty CSV', () => {
@@ -63,17 +63,19 @@ describe('loadPrompts', () => {
 
   it('parses intent column and resolves shouldTrigger for block intent', () => {
     const csv = `prompt,expected,intent\n"weapon talk",true,block\n"cat talk",false,block`;
-    const results = loadPrompts(csv);
-    expect(results).toHaveLength(2);
-    expect(results[0]).toEqual({ prompt: 'weapon talk', expectedTriggered: true, category: '' });
-    expect(results[1]).toEqual({ prompt: 'cat talk', expectedTriggered: false, category: '' });
+    const { cases, intent } = loadPrompts(csv);
+    expect(intent).toBe('block');
+    expect(cases).toHaveLength(2);
+    expect(cases[0]).toEqual({ prompt: 'weapon talk', expectedTriggered: true, category: '' });
+    expect(cases[1]).toEqual({ prompt: 'cat talk', expectedTriggered: false, category: '' });
   });
 
   it('flips expectedTriggered for allow intent', () => {
     const csv = `prompt,expected,intent\n"astros roster",true,allow\n"weather forecast",false,allow`;
-    const results = loadPrompts(csv);
-    expect(results[0]).toEqual({ prompt: 'astros roster', expectedTriggered: false, category: '' });
-    expect(results[1]).toEqual({ prompt: 'weather forecast', expectedTriggered: true, category: '' });
+    const { cases, intent } = loadPrompts(csv);
+    expect(intent).toBe('allow');
+    expect(cases[0]).toEqual({ prompt: 'astros roster', expectedTriggered: false, category: '' });
+    expect(cases[1]).toEqual({ prompt: 'weather forecast', expectedTriggered: true, category: '' });
   });
 
   it('throws if intent column is missing', () => {
@@ -93,8 +95,9 @@ describe('loadPrompts', () => {
 
   it('handles case-insensitive intent values', () => {
     const csv = `prompt,expected,intent\nhello,true,ALLOW\nworld,false,ALLOW`;
-    const results = loadPrompts(csv);
-    expect(results[0].expectedTriggered).toBe(false);
-    expect(results[1].expectedTriggered).toBe(true);
+    const { cases, intent } = loadPrompts(csv);
+    expect(intent).toBe('allow');
+    expect(cases[0].expectedTriggered).toBe(false);
+    expect(cases[1].expectedTriggered).toBe(true);
   });
 });

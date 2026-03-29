@@ -58,7 +58,10 @@ function parseCsvLine(line: string): string[] {
  * Throws on missing columns, invalid/mixed intent, no true positives, or no true negatives.
  * Calls onWarning if >80% of cases are one class.
  */
-export function loadPrompts(csv: string, onWarning?: (msg: string) => void): TestCase[] {
+export function loadPrompts(
+  csv: string,
+  onWarning?: (msg: string) => void,
+): { cases: TestCase[]; intent: 'block' | 'allow' } {
   const lines = csv.split(/\r?\n/);
   const nonEmpty = lines.filter((l) => l.trim() !== '');
 
@@ -134,5 +137,5 @@ export function loadPrompts(csv: string, onWarning?: (msg: string) => void): Tes
     }
   }
 
-  return testCases;
+  return { cases: testCases, intent: intent as 'block' | 'allow' };
 }

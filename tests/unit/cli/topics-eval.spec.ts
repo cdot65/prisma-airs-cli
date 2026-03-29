@@ -12,8 +12,9 @@ describe('topics-eval', () => {
         { prompt: 'Tell me about cats', expectedTriggered: false, category: '' },
       ];
 
-      const result = await evalTopic(scanner, 'test-profile', 'Test Topic', cases);
+      const result = await evalTopic(scanner, 'test-profile', 'Test Topic', cases, 5, 'block');
 
+      expect(result.intent).toBe('block');
       expect(result.metrics.tp).toBe(1);
       expect(result.metrics.tn).toBe(1);
       expect(result.metrics.fp).toBe(0);
@@ -31,7 +32,7 @@ describe('topics-eval', () => {
         { prompt: 'Tell me about cats', expectedTriggered: false, category: '' },
       ];
 
-      const result = await evalTopic(scanner, 'test-profile', 'Test Topic', cases);
+      const result = await evalTopic(scanner, 'test-profile', 'Test Topic', cases, 5, 'block');
 
       expect(result.metrics.fn).toBe(1);
       expect(result.false_negatives).toHaveLength(1);
@@ -45,10 +46,11 @@ describe('topics-eval', () => {
         { prompt: 'cat', expectedTriggered: false, category: '' },
       ];
 
-      const result = await evalTopic(scanner, 'my-profile', 'My Topic', cases);
+      const result = await evalTopic(scanner, 'my-profile', 'My Topic', cases, 5, 'block');
 
       expect(result.profile).toBe('my-profile');
       expect(result.topic).toBe('My Topic');
+      expect(result.intent).toBe('block');
     });
 
     it('throws when scanBatch returns wrong length', async () => {
@@ -60,7 +62,7 @@ describe('topics-eval', () => {
         { prompt: 'p1', expectedTriggered: true, category: '' },
         { prompt: 'p2', expectedTriggered: false, category: '' },
       ];
-      await expect(evalTopic(scanner, 'profile', 'Topic', cases)).rejects.toThrow(
+      await expect(evalTopic(scanner, 'profile', 'Topic', cases, 5, 'block')).rejects.toThrow(
         /scanBatch returned 1 results for 2 prompts/,
       );
     });
@@ -77,7 +79,7 @@ describe('topics-eval', () => {
         { prompt: 'p2', expectedTriggered: false, category: '' },
       ];
 
-      await evalTopic(scanner, 'my-profile', 'Topic', cases);
+      await evalTopic(scanner, 'my-profile', 'Topic', cases, 5, 'block');
 
       expect(scanner.scanBatch).toHaveBeenCalledWith('my-profile', ['p1', 'p2'], 5);
     });

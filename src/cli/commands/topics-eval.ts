@@ -19,6 +19,7 @@ export async function evalTopic(
   topicName: string,
   cases: TestCase[],
   concurrency = 5,
+  intent: 'block' | 'allow' = 'block',
 ): Promise<EvalOutput> {
   const prompts = cases.map((c) => c.prompt);
   const scanResults = await scanner.scanBatch(profileName, prompts, concurrency);
@@ -40,7 +41,7 @@ export async function evalTopic(
   });
 
   const metrics = computeMetrics(testResults);
-  return buildEvalOutput(profileName, topicName, metrics, testResults);
+  return buildEvalOutput(profileName, topicName, intent, metrics, testResults);
 }
 
 export function registerEvalCommand(parent: Command): void {
@@ -48,7 +49,7 @@ export function registerEvalCommand(parent: Command): void {
     .command('eval')
     .description('Evaluate a topic against a static prompt set and compute metrics')
     .requiredOption('--profile <name>', 'Security profile name')
-    .requiredOption('--prompts <path>', 'Path to CSV file with prompt,expected columns')
+    .requiredOption('--prompts <path>', 'Path to CSV file with prompt,expected,intent columns')
     .option('--topic <name>', 'Topic name (for output labeling)', 'unknown')
     .option('--format <format>', 'Output format: json or terminal', 'terminal')
     .option('--rate <n>', 'Max AIRS scan API calls per second')
@@ -57,15 +58,19 @@ export function registerEvalCommand(parent: Command): void {
       try {
         const config = await loadConfig();
         const csvContent = await readFile(opts.prompts, 'utf-8');
-        const cases = loadPrompts(csvContent, (msg) => console.warn(`  Warning: ${msg}`));
+        const { cases, intent } = loadPrompts(csvContent, (msg) => console.warn(`  Warning: ${msg}`));
 
+        if (!config.airsApiKey) {
+          renderError('PANW_AI_SEC_API_KEY is required');
+          process.exit(1);
+        }
         let scanner: ScanService = new AirsScanService(config.airsApiKey);
         if (opts.rate) {
           scanner = new RateLimitedScanService(scanner, Number.parseInt(opts.rate, 10));
         }
 
         const concurrency = Number.parseInt(opts.concurrency, 10);
-        const result = await evalTopic(scanner, opts.profile, opts.topic, cases, concurrency);
+        const result = await evalTopic(scanner, opts.profile, opts.topic, cases, concurrency, intent);
 
         if (opts.format === 'json') {
           console.log(JSON.stringify(result, null, 2));
