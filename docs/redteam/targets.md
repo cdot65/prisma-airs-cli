@@ -112,6 +112,53 @@ airs redteam targets delete <uuid>
 !!! warning
     Deleting a target is permanent. Existing scan results are retained, but no new scans can be launched against a deleted target.
 
+## Validate Target Auth
+
+Test authentication credentials against a target without creating or modifying it:
+
+```bash
+airs redteam targets validate-auth --config auth.json
+```
+
+**Example `auth.json`:**
+
+```json
+{
+  "auth_type": "HEADERS",
+  "auth_config": {
+    "headers": {
+      "Authorization": "Bearer sk-your-api-key"
+    }
+  }
+}
+```
+
+Optionally pass `--target <uuid>` to validate against an existing target's endpoint.
+
+Supported auth types: `HEADERS`, `BASIC_AUTH`, `OAUTH2`.
+
+## Get Target Metadata
+
+Retrieve field metadata describing valid target configuration options:
+
+```bash
+airs redteam targets metadata
+```
+
+Returns JSON describing available target types, connection parameter fields, and their validation rules.
+
+## Get Target Templates
+
+Retrieve provider-specific target configuration templates:
+
+```bash
+airs redteam targets templates
+```
+
+Returns pre-built JSON templates for common AI providers (OpenAI, Azure OpenAI, AWS Bedrock, etc.) that can be used as starting points for `targets create --config`.
+
+---
+
 ## JSON Config Reference
 
 | Field | Required | Description |

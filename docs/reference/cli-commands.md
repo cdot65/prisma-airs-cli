@@ -469,6 +469,10 @@ Commands:
   report [options] <jobId>  View scan report
   list [options]            List recent scans
   targets                   Manage red team targets
+  eula                      Manage Red Team EULA
+  instances                 Manage Red Team instances
+  devices                   Manage Red Team devices
+  registry-credentials      Get container registry credentials
   categories                List available attack categories
   prompt-sets               Manage custom prompt sets
   prompts                   Manage prompts within prompt sets
@@ -594,6 +598,9 @@ airs redteam targets update-profile <uuid> --config p.json
 | `probe` | `--config <path>` (required) |
 | `profile <uuid>` | — |
 | `update-profile <uuid>` | `--config <path>` (required) |
+| `validate-auth` | `--config <path>` (required), `--target <uuid>` |
+| `metadata` | — |
+| `templates` | — |
 
 #### Example Output — `prompt-sets list`
 
@@ -708,6 +715,95 @@ Abort a running scan.
 
 ```bash
 airs redteam abort <jobId>
+```
+
+### redteam eula
+
+Manage the Red Team end-user license agreement.
+
+```bash
+airs redteam eula status       # Check acceptance status
+airs redteam eula content      # Display EULA text
+airs redteam eula accept       # Accept the EULA
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `status` | Check whether the EULA has been accepted |
+| `content` | Display the full EULA text |
+| `accept` | Fetch and accept the current EULA |
+
+### redteam instances
+
+Manage Red Team compute instances.
+
+```bash
+airs redteam instances create --tsg-id <id> --tenant-id <id> --app-id <id> --region <region>
+airs redteam instances get <tenantId>
+airs redteam instances update <tenantId> --tsg-id <id> --tenant-id <id> --app-id <id> --region <region>
+airs redteam instances delete <tenantId>
+```
+
+| Subcommand | Flags |
+|------------|-------|
+| `create` | `--tsg-id`, `--tenant-id`, `--app-id`, `--region` (all required) |
+| `get <tenantId>` | -- |
+| `update <tenantId>` | `--tsg-id`, `--tenant-id`, `--app-id`, `--region` (all required) |
+| `delete <tenantId>` | -- |
+
+### redteam devices
+
+Manage devices attached to Red Team instances.
+
+```bash
+airs redteam devices create <tenantId> --config devices.json
+airs redteam devices update <tenantId> --config devices.json
+airs redteam devices delete <tenantId> --serial-numbers <serials>
+```
+
+| Subcommand | Flags |
+|------------|-------|
+| `create <tenantId>` | `--config <path>` (required) |
+| `update <tenantId>` | `--config <path>` (required) |
+| `delete <tenantId>` | `--serial-numbers <serials>` (required) |
+
+### redteam registry-credentials
+
+Fetch time-limited container registry credentials.
+
+```bash
+airs redteam registry-credentials
+```
+
+Returns a token and expiry timestamp.
+
+### redteam targets validate-auth
+
+Validate target authentication credentials without creating or modifying a target.
+
+```bash
+airs redteam targets validate-auth --config auth.json [--target <uuid>]
+```
+
+| Flag | Required | Description |
+|------|:--------:|-------------|
+| `--config <path>` | Yes | JSON with `auth_type` and `auth_config` |
+| `--target <uuid>` | No | Existing target UUID to validate against |
+
+### redteam targets metadata
+
+Get target field metadata describing valid configuration options.
+
+```bash
+airs redteam targets metadata
+```
+
+### redteam targets templates
+
+Get provider-specific target configuration templates.
+
+```bash
+airs redteam targets templates
 ```
 
 ---

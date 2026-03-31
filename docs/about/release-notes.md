@@ -1,5 +1,27 @@
 # Release Notes
 
+## v2.2.0
+
+### New
+
+- **EULA management** -- `airs redteam eula {status,content,accept}` for checking, viewing, and accepting the Red Team end-user license agreement
+- **Instance management** -- `airs redteam instances {create,get,update,delete}` for managing Red Team compute instances
+- **Device management** -- `airs redteam devices {create,update,delete}` for managing devices attached to instances
+- **Registry credentials** -- `airs redteam registry-credentials` for fetching container registry tokens
+- **Target auth validation** -- `airs redteam targets validate-auth` to test auth credentials without modifying targets
+- **Target metadata** -- `airs redteam targets metadata` to retrieve field metadata and validation rules
+- **Target templates** -- `airs redteam targets templates` to get provider-specific configuration templates
+
+### Fixed
+
+- **Bulk scan polling hang** -- async query API returns lowercase `"complete"`/`"failed"` but polling checked for uppercase `"COMPLETED"`/`"FAILED"`, causing infinite loop. Status comparison is now case-insensitive.
+
+### Dependencies
+
+- `@cdot65/prisma-airs-sdk` bumped to `^0.7.0` (Red Team EULA, instances, target auth/metadata/templates, WebSocket support)
+
+---
+
 ## v2.1.0
 
 ### New

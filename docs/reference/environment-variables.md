@@ -43,6 +43,19 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 
 ---
 
+## AIRS Red Team API
+
+| Variable | Required | What it does |
+|----------|:--------:|-------------|
+| `PANW_RED_TEAM_DATA_ENDPOINT` | -- | Custom Red Team data-plane endpoint |
+| `PANW_RED_TEAM_MGMT_ENDPOINT` | -- | Custom Red Team management-plane endpoint |
+| `PANW_RED_TEAM_TOKEN_ENDPOINT` | -- | Custom Red Team OAuth2 token endpoint |
+
+!!! note
+    Red Team commands reuse `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from the Management API section. The variables above are optional overrides for dedicated Red Team endpoints.
+
+---
+
 ## Tuning
 
 | Variable | Default | Range | What it controls |
