@@ -164,9 +164,9 @@ export class SdkRuntimeService implements RuntimeService {
   ): void {
     for (const r of results as Array<Record<string, unknown>>) {
       const id = (r.scan_id as string) ?? '';
-      const status = (r.status as string) ?? '';
+      const status = ((r.status as string) ?? '').toLowerCase();
 
-      if (status === 'COMPLETED' && r.result) {
+      if ((status === 'complete' || status === 'completed') && r.result) {
         const result = r.result as Record<string, unknown>;
         completed.set(id, {
           prompt: '', // not available from async API
@@ -179,7 +179,7 @@ export class SdkRuntimeService implements RuntimeService {
           detections: {}, // not available from async API
         });
         pending.delete(id);
-      } else if (status === 'FAILED') {
+      } else if (status === 'failed') {
         completed.set(id, {
           prompt: '', // not available from async API
           response: undefined, // not available from async API
