@@ -326,6 +326,24 @@ export interface EulaStatus {
   acceptedByUserId?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Target auth validation types
+// ---------------------------------------------------------------------------
+
+/** Request to validate target auth credentials. */
+export interface TargetAuthValidationRequest {
+  authType: string;
+  authConfig: unknown;
+  targetId?: string;
+}
+
+/** Result of target auth validation. */
+export interface TargetAuthValidationResult {
+  validated: boolean;
+  tokenPreview?: string;
+  expiresIn?: number;
+}
+
 /** Contract for AI Red Team scan operations. */
 export interface RedTeamService {
   /** Get EULA content. */
@@ -334,6 +352,13 @@ export interface RedTeamService {
   getEulaStatus(): Promise<EulaStatus>;
   /** Accept the EULA. */
   acceptEula(eulaContent: string): Promise<EulaStatus>;
+
+  /** Validate target auth credentials. */
+  validateTargetAuth(request: TargetAuthValidationRequest): Promise<TargetAuthValidationResult>;
+  /** Get target field metadata. */
+  getTargetMetadata(): Promise<Record<string, unknown>>;
+  /** Get provider-specific target templates. */
+  getTargetTemplates(): Promise<Record<string, unknown>>;
 
   /** List configured red team targets. */
   listTargets(): Promise<RedTeamTarget[]>;
