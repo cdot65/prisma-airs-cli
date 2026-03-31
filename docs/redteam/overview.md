@@ -14,7 +14,11 @@ The `airs redteam` command group provides full access to Red Team operations:
 - **Status** -- monitor running scans
 - **Report** -- view results with severity breakdowns and attack details
 - **List** -- browse recent scans
-- **Targets** -- full CRUD on red team targets (create, get, update, delete, probe, profile)
+- **Targets** -- full CRUD on red team targets (create, get, update, delete, probe, profile, validate-auth, metadata, templates)
+- **EULA** -- check, view, and accept the Red Team end-user license agreement
+- **Instances** -- create, read, update, and delete Red Team compute instances
+- **Devices** -- create, update, and delete devices attached to instances
+- **Registry Credentials** -- fetch container registry tokens for Red Team infrastructure
 - **Prompt Sets** -- manage custom prompt sets (create, get, update, archive, upload CSV, download template)
 - **Prompts** -- manage individual prompts within sets (add, list, get, update, delete)
 - **Properties** -- manage custom attack property names and values
@@ -32,7 +36,8 @@ The `airs redteam` command group provides full access to Red Team operations:
 ## Sub-pages
 
 - [Running Scans](scanning.md) -- launch scans, monitor progress, view reports
-- [Managing Targets](targets.md) -- CRUD operations for red team targets
+- [Managing Targets](targets.md) -- CRUD operations for red team targets, auth validation, metadata, templates
+- [EULA & Infrastructure](infrastructure.md) -- EULA acceptance, instance management, devices, registry credentials
 - [Prompt Sets & Prompts](prompt-sets.md) -- manage custom prompt sets and individual prompts
 
 ## Authentication

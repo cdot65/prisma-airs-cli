@@ -86,6 +86,7 @@ nav:
       - Overview: redteam/overview.md
       - Running Scans: redteam/scanning.md
       - Managing Targets: redteam/targets.md
+      - EULA & Infrastructure: redteam/infrastructure.md
       - Prompt Sets & Prompts: redteam/prompt-sets.md
       - Guardrail to Red Team: redteam/guardrail-to-redteam.md
   - Model Security:
