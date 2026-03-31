@@ -1,5 +1,7 @@
 import { RedTeamClient, type RedTeamClientOptions } from '@cdot65/prisma-airs-sdk';
 import type {
+  EulaContent,
+  EulaStatus,
   RedTeamAttack,
   RedTeamCategory,
   RedTeamCustomAttack,
@@ -58,6 +60,32 @@ export class SdkRedTeamService implements RedTeamService {
 
   constructor(opts?: RedTeamClientOptions) {
     this.client = new RedTeamClient(opts);
+  }
+
+  async getEulaContent(): Promise<EulaContent> {
+    const response = (await this.client.eula.getContent()) as Record<string, unknown>;
+    return { content: response.content as string };
+  }
+
+  async getEulaStatus(): Promise<EulaStatus> {
+    const raw = (await this.client.eula.getStatus()) as Record<string, unknown>;
+    return {
+      isAccepted: raw.is_accepted as boolean,
+      acceptedAt: raw.accepted_at as string | undefined,
+      acceptedByUserId: raw.accepted_by_user_id as string | undefined,
+    };
+  }
+
+  async acceptEula(eulaContent: string): Promise<EulaStatus> {
+    const raw = (await this.client.eula.accept({
+      eula_content: eulaContent,
+      accepted_at: new Date().toISOString(),
+    })) as Record<string, unknown>;
+    return {
+      isAccepted: raw.is_accepted as boolean,
+      acceptedAt: raw.accepted_at as string | undefined,
+      acceptedByUserId: raw.accepted_by_user_id as string | undefined,
+    };
   }
 
   async listTargets(): Promise<RedTeamTarget[]> {

@@ -10,6 +10,8 @@ import {
   renderCustomAttackList,
   renderCustomReport,
   renderError,
+  renderEulaContent,
+  renderEulaStatus,
   renderPromptDetail,
   renderPromptList,
   renderPromptSetDetail,
@@ -82,6 +84,66 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const categories = await service.getCategories();
         renderCategories(categories);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam eula — EULA management subcommands
+  // -----------------------------------------------------------------------
+  const eula = redteam.command('eula').description('Manage Red Team EULA');
+
+  eula
+    .command('status')
+    .description('Check EULA acceptance status')
+    .action(async () => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const status = await service.getEulaStatus();
+        renderEulaStatus(status);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  eula
+    .command('content')
+    .description('Display EULA content')
+    .action(async () => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const content = await service.getEulaContent();
+        renderEulaContent(content);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  eula
+    .command('accept')
+    .description('Accept the EULA')
+    .option('--confirm', 'Skip confirmation prompt')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const content = await service.getEulaContent();
+
+        if (!opts.confirm) {
+          renderEulaContent(content);
+          console.log('  Pass --confirm to accept.\n');
+          return;
+        }
+
+        const result = await service.acceptEula(content.content);
+        renderEulaStatus(result);
+        console.log('  EULA accepted.\n');
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
