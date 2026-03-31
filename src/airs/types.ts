@@ -344,6 +344,40 @@ export interface TargetAuthValidationResult {
   expiresIn?: number;
 }
 
+// ---------------------------------------------------------------------------
+// Instance types — normalized shapes for instance/device management
+// ---------------------------------------------------------------------------
+
+/** Request to create/update an instance. */
+export interface InstanceRequest {
+  tsgId: string;
+  tenantId: string;
+  appId: string;
+  region: string;
+}
+
+/** Normalized instance response. */
+export interface InstanceResponse {
+  tsgId: string;
+  tenantId?: string;
+  appId?: string;
+  isSuccess?: boolean;
+}
+
+/** Normalized instance detail (from GET). */
+export interface InstanceDetail {
+  tsgId: string;
+  tenantId: string;
+  appId: string;
+  region: string;
+}
+
+/** Registry credentials. */
+export interface RegistryCredentials {
+  token: string;
+  expiry: string;
+}
+
 /** Contract for AI Red Team scan operations. */
 export interface RedTeamService {
   /** Get EULA content. */
@@ -352,6 +386,29 @@ export interface RedTeamService {
   getEulaStatus(): Promise<EulaStatus>;
   /** Accept the EULA. */
   acceptEula(eulaContent: string): Promise<EulaStatus>;
+
+  /** Create an instance. */
+  createInstance(request: InstanceRequest): Promise<InstanceResponse>;
+  /** Get instance details. */
+  getInstance(tenantId: string): Promise<InstanceDetail>;
+  /** Update an instance. */
+  updateInstance(tenantId: string, request: InstanceRequest): Promise<InstanceResponse>;
+  /** Delete an instance. */
+  deleteInstance(tenantId: string): Promise<InstanceResponse>;
+  /** Create devices for an instance. */
+  createDevices(
+    tenantId: string,
+    request: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
+  /** Update devices (PATCH). */
+  updateDevices(
+    tenantId: string,
+    request: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
+  /** Delete devices by serial numbers. */
+  deleteDevices(tenantId: string, serialNumbers: string): Promise<Record<string, unknown>>;
+  /** Get or create registry credentials. */
+  getRegistryCredentials(): Promise<RegistryCredentials>;
 
   /** Validate target auth credentials. */
   validateTargetAuth(request: TargetAuthValidationRequest): Promise<TargetAuthValidationResult>;
