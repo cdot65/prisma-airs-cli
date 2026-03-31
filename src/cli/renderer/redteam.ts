@@ -554,3 +554,43 @@ export function renderPropertyValues(values: Array<{ name: string; value: string
   }
   console.log();
 }
+
+/** Render instance response. */
+export function renderInstanceResponse(resp: {
+  tsgId: string;
+  tenantId?: string;
+  appId?: string;
+  isSuccess?: boolean;
+}): void {
+  console.log(chalk.bold('\n  Instance:\n'));
+  console.log(`    TSG ID:    ${resp.tsgId}`);
+  if (resp.tenantId) console.log(`    Tenant ID: ${resp.tenantId}`);
+  if (resp.appId) console.log(`    App ID:    ${resp.appId}`);
+  if (resp.isSuccess != null) {
+    console.log(`    Success:   ${resp.isSuccess ? chalk.green('yes') : chalk.red('no')}`);
+  }
+  console.log();
+}
+
+/** Render instance detail (from GET). */
+export function renderInstanceDetail(inst: {
+  tsgId: string;
+  tenantId: string;
+  appId: string;
+  region: string;
+}): void {
+  console.log(chalk.bold('\n  Instance Detail:\n'));
+  console.log(`    TSG ID:    ${inst.tsgId}`);
+  console.log(`    Tenant ID: ${inst.tenantId}`);
+  console.log(`    App ID:    ${inst.appId}`);
+  console.log(`    Region:    ${inst.region}`);
+  console.log();
+}
+
+/** Render registry credentials. */
+export function renderRegistryCredentials(creds: { token: string; expiry: string }): void {
+  console.log(chalk.bold('\n  Registry Credentials:\n'));
+  console.log(`    Token:  ${chalk.dim(creds.token.substring(0, 20))}...`);
+  console.log(`    Expiry: ${creds.expiry}`);
+  console.log();
+}

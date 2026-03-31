@@ -13,6 +13,8 @@ import {
   renderError,
   renderEulaContent,
   renderEulaStatus,
+  renderInstanceDetail,
+  renderInstanceResponse,
   renderPromptDetail,
   renderPromptList,
   renderPromptSetDetail,
@@ -20,6 +22,7 @@ import {
   renderPropertyNames,
   renderPropertyValues,
   renderRedteamHeader,
+  renderRegistryCredentials,
   renderScanList,
   renderScanProgress,
   renderScanStatus,
@@ -146,6 +149,165 @@ export function registerRedteamCommand(program: Command): void {
         const result = await service.acceptEula(content.content);
         renderEulaStatus(result);
         console.log('  EULA accepted.\n');
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam instances — instance CRUD subcommands
+  // -----------------------------------------------------------------------
+  const instances = redteam.command('instances').description('Manage Red Team instances');
+
+  instances
+    .command('create')
+    .description('Create an instance')
+    .requiredOption('--tsg-id <id>', 'TSG ID')
+    .requiredOption('--tenant-id <id>', 'Tenant ID')
+    .requiredOption('--app-id <id>', 'App ID')
+    .requiredOption('--region <region>', 'Region')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const result = await service.createInstance({
+          tsgId: opts.tsgId,
+          tenantId: opts.tenantId,
+          appId: opts.appId,
+          region: opts.region,
+        });
+        renderInstanceResponse(result);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  instances
+    .command('get <tenantId>')
+    .description('Get instance details')
+    .action(async (tenantId: string) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const result = await service.getInstance(tenantId);
+        renderInstanceDetail(result);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  instances
+    .command('update <tenantId>')
+    .description('Update an instance')
+    .requiredOption('--tsg-id <id>', 'TSG ID')
+    .requiredOption('--app-id <id>', 'App ID')
+    .requiredOption('--region <region>', 'Region')
+    .action(async (tenantId: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const result = await service.updateInstance(tenantId, {
+          tsgId: opts.tsgId,
+          tenantId,
+          appId: opts.appId,
+          region: opts.region,
+        });
+        renderInstanceResponse(result);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  instances
+    .command('delete <tenantId>')
+    .description('Delete an instance')
+    .action(async (tenantId: string) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const result = await service.deleteInstance(tenantId);
+        renderInstanceResponse(result);
+        console.log(`  Instance ${tenantId} deleted.\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam devices — device management subcommands
+  // -----------------------------------------------------------------------
+  const devices = redteam.command('devices').description('Manage Red Team devices');
+
+  devices
+    .command('create <tenantId>')
+    .description('Create devices for an instance')
+    .requiredOption('--config <path>', 'JSON file with device request')
+    .action(async (tenantId: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const result = await service.createDevices(tenantId, config);
+        console.log('  Devices created:');
+        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  devices
+    .command('update <tenantId>')
+    .description('Update devices for an instance (PATCH)')
+    .requiredOption('--config <path>', 'JSON file with device request')
+    .action(async (tenantId: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const result = await service.updateDevices(tenantId, config);
+        console.log('  Devices updated:');
+        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  devices
+    .command('delete <tenantId>')
+    .description('Delete devices by serial numbers')
+    .requiredOption('--serial-numbers <list>', 'Comma-separated serial numbers')
+    .action(async (tenantId: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const result = await service.deleteDevices(tenantId, opts.serialNumbers);
+        console.log('  Devices deleted:');
+        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // redteam registry-credentials — registry credentials
+  // -----------------------------------------------------------------------
+  redteam
+    .command('registry-credentials')
+    .description('Get or create registry credentials')
+    .action(async () => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const creds = await service.getRegistryCredentials();
+        renderRegistryCredentials(creds);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

@@ -2,6 +2,9 @@ import { RedTeamClient, type RedTeamClientOptions } from '@cdot65/prisma-airs-sd
 import type {
   EulaContent,
   EulaStatus,
+  InstanceDetail,
+  InstanceRequest,
+  InstanceResponse,
   RedTeamAttack,
   RedTeamCategory,
   RedTeamCustomAttack,
@@ -13,6 +16,7 @@ import type {
   RedTeamTargetCreateRequest,
   RedTeamTargetDetail,
   RedTeamTargetUpdateRequest,
+  RegistryCredentials,
   TargetAuthValidationRequest,
   TargetAuthValidationResult,
   TargetOperationOptions,
@@ -87,6 +91,91 @@ export class SdkRedTeamService implements RedTeamService {
       isAccepted: raw.is_accepted as boolean,
       acceptedAt: raw.accepted_at as string | undefined,
       acceptedByUserId: raw.accepted_by_user_id as string | undefined,
+    };
+  }
+
+  async createInstance(request: InstanceRequest): Promise<InstanceResponse> {
+    const raw = (await this.client.instances.createInstance({
+      tsg_id: request.tsgId,
+      tenant_id: request.tenantId,
+      app_id: request.appId,
+      region: request.region,
+    })) as Record<string, unknown>;
+    return {
+      tsgId: raw.tsg_id as string,
+      tenantId: raw.tenant_id as string | undefined,
+      appId: raw.app_id as string | undefined,
+      isSuccess: raw.is_success as boolean | undefined,
+    };
+  }
+
+  async getInstance(tenantId: string): Promise<InstanceDetail> {
+    const raw = (await this.client.instances.getInstance(tenantId)) as Record<string, unknown>;
+    return {
+      tsgId: raw.tsg_id as string,
+      tenantId: raw.tenant_id as string,
+      appId: raw.app_id as string,
+      region: raw.region as string,
+    };
+  }
+
+  async updateInstance(tenantId: string, request: InstanceRequest): Promise<InstanceResponse> {
+    const raw = (await this.client.instances.updateInstance(tenantId, {
+      tsg_id: request.tsgId,
+      tenant_id: request.tenantId,
+      app_id: request.appId,
+      region: request.region,
+    })) as Record<string, unknown>;
+    return {
+      tsgId: raw.tsg_id as string,
+      tenantId: raw.tenant_id as string | undefined,
+      appId: raw.app_id as string | undefined,
+      isSuccess: raw.is_success as boolean | undefined,
+    };
+  }
+
+  async deleteInstance(tenantId: string): Promise<InstanceResponse> {
+    const raw = (await this.client.instances.deleteInstance(tenantId)) as Record<string, unknown>;
+    return {
+      tsgId: raw.tsg_id as string,
+      tenantId: raw.tenant_id as string | undefined,
+      appId: raw.app_id as string | undefined,
+      isSuccess: raw.is_success as boolean | undefined,
+    };
+  }
+
+  async createDevices(
+    tenantId: string,
+    request: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return (await this.client.instances.createDevices(tenantId, request as never)) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  async updateDevices(
+    tenantId: string,
+    request: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return (await this.client.instances.updateDevices(tenantId, request as never)) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  async deleteDevices(tenantId: string, serialNumbers: string): Promise<Record<string, unknown>> {
+    return (await this.client.instances.deleteDevices(tenantId, serialNumbers)) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  async getRegistryCredentials(): Promise<RegistryCredentials> {
+    const raw = (await this.client.instances.getRegistryCredentials()) as Record<string, unknown>;
+    return {
+      token: raw.token as string,
+      expiry: raw.expiry as string,
     };
   }
 

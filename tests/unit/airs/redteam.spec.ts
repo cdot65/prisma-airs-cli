@@ -24,6 +24,14 @@ const mockEulaAccept = vi.fn();
 const mockTargetsValidateAuth = vi.fn();
 const mockTargetsGetTargetMetadata = vi.fn();
 const mockTargetsGetTargetTemplates = vi.fn();
+const mockInstancesCreateInstance = vi.fn();
+const mockInstancesGetInstance = vi.fn();
+const mockInstancesUpdateInstance = vi.fn();
+const mockInstancesDeleteInstance = vi.fn();
+const mockInstancesCreateDevices = vi.fn();
+const mockInstancesUpdateDevices = vi.fn();
+const mockInstancesDeleteDevices = vi.fn();
+const mockInstancesGetRegistryCredentials = vi.fn();
 
 function makeMockClient() {
   return {
@@ -59,6 +67,16 @@ function makeMockClient() {
       getContent: mockEulaGetContent,
       getStatus: mockEulaGetStatus,
       accept: mockEulaAccept,
+    },
+    instances: {
+      createInstance: mockInstancesCreateInstance,
+      getInstance: mockInstancesGetInstance,
+      updateInstance: mockInstancesUpdateInstance,
+      deleteInstance: mockInstancesDeleteInstance,
+      createDevices: mockInstancesCreateDevices,
+      updateDevices: mockInstancesUpdateDevices,
+      deleteDevices: mockInstancesDeleteDevices,
+      getRegistryCredentials: mockInstancesGetRegistryCredentials,
     },
   };
 }
@@ -953,6 +971,149 @@ describe('SdkRedTeamService', () => {
       mockTargetsGetTargetTemplates.mockResolvedValue(templates);
       const result = await service.getTargetTemplates();
       expect(result).toEqual(templates);
+    });
+  });
+
+  describe('createInstance', () => {
+    it('creates instance and returns response', async () => {
+      mockInstancesCreateInstance.mockResolvedValue({
+        tsg_id: 'tsg-1',
+        tenant_id: 'tenant-1',
+        app_id: 'app-1',
+        is_success: true,
+      });
+      const result = await service.createInstance({
+        tsgId: 'tsg-1',
+        tenantId: 'tenant-1',
+        appId: 'app-1',
+        region: 'us-east-1',
+      });
+      expect(result).toEqual({
+        tsgId: 'tsg-1',
+        tenantId: 'tenant-1',
+        appId: 'app-1',
+        isSuccess: true,
+      });
+      expect(mockInstancesCreateInstance).toHaveBeenCalledWith({
+        tsg_id: 'tsg-1',
+        tenant_id: 'tenant-1',
+        app_id: 'app-1',
+        region: 'us-east-1',
+      });
+    });
+  });
+
+  describe('getInstance', () => {
+    it('returns instance details', async () => {
+      mockInstancesGetInstance.mockResolvedValue({
+        tsg_id: 'tsg-1',
+        tenant_id: 'tenant-1',
+        app_id: 'app-1',
+        region: 'us-east-1',
+      });
+      const result = await service.getInstance('tenant-1');
+      expect(result).toEqual({
+        tsgId: 'tsg-1',
+        tenantId: 'tenant-1',
+        appId: 'app-1',
+        region: 'us-east-1',
+      });
+      expect(mockInstancesGetInstance).toHaveBeenCalledWith('tenant-1');
+    });
+  });
+
+  describe('updateInstance', () => {
+    it('updates instance', async () => {
+      mockInstancesUpdateInstance.mockResolvedValue({
+        tsg_id: 'tsg-1',
+        tenant_id: 'tenant-1',
+        is_success: true,
+      });
+      const result = await service.updateInstance('tenant-1', {
+        tsgId: 'tsg-1',
+        tenantId: 'tenant-1',
+        appId: 'app-1',
+        region: 'us-west-2',
+      });
+      expect(result).toEqual({ tsgId: 'tsg-1', tenantId: 'tenant-1', isSuccess: true });
+      expect(mockInstancesUpdateInstance).toHaveBeenCalledWith('tenant-1', {
+        tsg_id: 'tsg-1',
+        tenant_id: 'tenant-1',
+        app_id: 'app-1',
+        region: 'us-west-2',
+      });
+    });
+  });
+
+  describe('deleteInstance', () => {
+    it('deletes instance', async () => {
+      mockInstancesDeleteInstance.mockResolvedValue({
+        tsg_id: 'tsg-1',
+        is_success: true,
+      });
+      const result = await service.deleteInstance('tenant-1');
+      expect(result).toEqual({ tsgId: 'tsg-1', isSuccess: true });
+      expect(mockInstancesDeleteInstance).toHaveBeenCalledWith('tenant-1');
+    });
+  });
+
+  describe('createDevices', () => {
+    it('creates devices for an instance', async () => {
+      mockInstancesCreateDevices.mockResolvedValue({
+        devices: [{ serial_number: 'SN-001', status: 'ACTIVE' }],
+        status: 'SUCCESS',
+      });
+      const result = await service.createDevices('tenant-1', {
+        instance: { app_id: 'app-1', region: 'us-east-1', tenant_id: 'tenant-1', tsg_id: 'tsg-1' },
+        devices: [{ serial_number: 'SN-001' }],
+      });
+      expect(result).toEqual({
+        devices: [{ serial_number: 'SN-001', status: 'ACTIVE' }],
+        status: 'SUCCESS',
+      });
+      expect(mockInstancesCreateDevices).toHaveBeenCalledWith('tenant-1', {
+        instance: {
+          app_id: 'app-1',
+          region: 'us-east-1',
+          tenant_id: 'tenant-1',
+          tsg_id: 'tsg-1',
+        },
+        devices: [{ serial_number: 'SN-001' }],
+      });
+    });
+  });
+
+  describe('updateDevices', () => {
+    it('updates devices via PATCH', async () => {
+      mockInstancesUpdateDevices.mockResolvedValue({ status: 'SUCCESS' });
+      const result = await service.updateDevices('tenant-1', {
+        instance: { app_id: 'app-1', region: 'us-east-1', tenant_id: 'tenant-1', tsg_id: 'tsg-1' },
+        devices: [{ serial_number: 'SN-001', device_name: 'updated' }],
+      });
+      expect(result).toEqual({ status: 'SUCCESS' });
+    });
+  });
+
+  describe('deleteDevices', () => {
+    it('deletes devices by serial numbers', async () => {
+      mockInstancesDeleteDevices.mockResolvedValue({ status: 'SUCCESS' });
+      const result = await service.deleteDevices('tenant-1', 'SN-001,SN-002');
+      expect(result).toEqual({ status: 'SUCCESS' });
+      expect(mockInstancesDeleteDevices).toHaveBeenCalledWith('tenant-1', 'SN-001,SN-002');
+    });
+  });
+
+  describe('getRegistryCredentials', () => {
+    it('returns registry credentials', async () => {
+      mockInstancesGetRegistryCredentials.mockResolvedValue({
+        token: 'jwt-token-here',
+        expiry: '2026-04-01T00:00:00Z',
+      });
+      const result = await service.getRegistryCredentials();
+      expect(result).toEqual({
+        token: 'jwt-token-here',
+        expiry: '2026-04-01T00:00:00Z',
+      });
     });
   });
 });
