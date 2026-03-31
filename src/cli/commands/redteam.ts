@@ -6,6 +6,7 @@ import { loadConfig } from '../../config/loader.js';
 import {
   type OutputFormat,
   renderAttackList,
+  renderAuthValidation,
   renderCategories,
   renderCustomAttackList,
   renderCustomReport,
@@ -25,6 +26,7 @@ import {
   renderStaticReport,
   renderTargetDetail,
   renderTargetList,
+  renderTargetTemplates,
   renderVersionInfo,
 } from '../renderer/index.js';
 
@@ -729,6 +731,59 @@ export function registerRedteamCommand(program: Command): void {
         const result = await service.updateTargetProfile(uuid, config);
         console.log('  Profile updated:');
         console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('validate-auth')
+    .description('Validate target auth credentials')
+    .requiredOption('--auth-type <type>', 'Auth type: HEADERS, BASIC_AUTH, OAUTH2')
+    .requiredOption('--config <path>', 'JSON file with auth_config')
+    .option('--target-id <uuid>', 'Existing target UUID')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const authConfig = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
+        const result = await service.validateTargetAuth({
+          authType: opts.authType,
+          authConfig,
+          targetId: opts.targetId,
+        });
+        renderAuthValidation(result);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('metadata')
+    .description('Get target field metadata')
+    .action(async () => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const metadata = await service.getTargetMetadata();
+        console.log(JSON.stringify(metadata, null, 2));
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('templates')
+    .description('Get provider-specific target templates')
+    .action(async () => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const templates = await service.getTargetTemplates();
+        renderTargetTemplates(templates);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

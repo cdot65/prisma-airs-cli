@@ -21,6 +21,9 @@ const mockCustomAttackReportsListCustomAttacks = vi.fn();
 const mockEulaGetContent = vi.fn();
 const mockEulaGetStatus = vi.fn();
 const mockEulaAccept = vi.fn();
+const mockTargetsValidateAuth = vi.fn();
+const mockTargetsGetTargetMetadata = vi.fn();
+const mockTargetsGetTargetTemplates = vi.fn();
 
 function makeMockClient() {
   return {
@@ -33,6 +36,9 @@ function makeMockClient() {
       probe: mockTargetsProbe,
       getProfile: mockTargetsGetProfile,
       updateProfile: mockTargetsUpdateProfile,
+      validateAuth: mockTargetsValidateAuth,
+      getTargetMetadata: mockTargetsGetTargetMetadata,
+      getTargetTemplates: mockTargetsGetTargetTemplates,
     },
     scans: {
       create: mockScansCreate,
@@ -889,6 +895,64 @@ describe('SdkRedTeamService', () => {
         eula_content: 'EULA text here',
         accepted_at: expect.any(String),
       });
+    });
+  });
+
+  describe('validateTargetAuth', () => {
+    it('returns validation result', async () => {
+      mockTargetsValidateAuth.mockResolvedValue({
+        validated: true,
+        token_preview: 'Bearer ey...xyz',
+        expires_in: 3600,
+      });
+      const result = await service.validateTargetAuth({
+        authType: 'HEADERS',
+        authConfig: { auth_header: { Authorization: 'Bearer token' } },
+      });
+      expect(result).toEqual({
+        validated: true,
+        tokenPreview: 'Bearer ey...xyz',
+        expiresIn: 3600,
+      });
+      expect(mockTargetsValidateAuth).toHaveBeenCalledWith({
+        auth_type: 'HEADERS',
+        auth_config: { auth_header: { Authorization: 'Bearer token' } },
+      });
+    });
+
+    it('passes optional targetId', async () => {
+      mockTargetsValidateAuth.mockResolvedValue({ validated: false });
+      await service.validateTargetAuth({
+        authType: 'OAUTH2',
+        authConfig: {},
+        targetId: 'target-1',
+      });
+      expect(mockTargetsValidateAuth).toHaveBeenCalledWith({
+        auth_type: 'OAUTH2',
+        auth_config: {},
+        target_id: 'target-1',
+      });
+    });
+  });
+
+  describe('getTargetMetadata', () => {
+    it('returns metadata object', async () => {
+      const meta = { field1: { type: 'string' }, field2: { type: 'number' } };
+      mockTargetsGetTargetMetadata.mockResolvedValue(meta);
+      const result = await service.getTargetMetadata();
+      expect(result).toEqual(meta);
+    });
+  });
+
+  describe('getTargetTemplates', () => {
+    it('returns templates keyed by provider', async () => {
+      const templates = {
+        OPENAI: { name: 'OpenAI', connection_params: {} },
+        REST: { name: 'REST', connection_params: {} },
+      };
+      mockTargetsGetTargetTemplates.mockResolvedValue(templates);
+      const result = await service.getTargetTemplates();
+      expect(result).toEqual(templates);
     });
   });
 });

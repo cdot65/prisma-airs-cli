@@ -498,6 +498,29 @@ export function renderPropertyNames(
   console.log();
 }
 
+/** Render target auth validation result. */
+export function renderAuthValidation(result: {
+  validated: boolean;
+  tokenPreview?: string;
+  expiresIn?: number;
+}): void {
+  console.log(chalk.bold('\n  Auth Validation:\n'));
+  console.log(`    Validated: ${result.validated ? chalk.green('yes') : chalk.red('no')}`);
+  if (result.tokenPreview) console.log(`    Token:     ${chalk.dim(result.tokenPreview)}`);
+  if (result.expiresIn != null) console.log(`    Expires In: ${result.expiresIn}s`);
+  console.log();
+}
+
+/** Render target templates keyed by provider. */
+export function renderTargetTemplates(templates: Record<string, unknown>): void {
+  console.log(chalk.bold('\n  Target Templates:\n'));
+  for (const [provider, config] of Object.entries(templates)) {
+    console.log(`  ${chalk.bold(provider)}`);
+    console.log(`    ${chalk.dim(JSON.stringify(config, null, 2).replace(/\n/g, '\n    '))}`);
+    console.log();
+  }
+}
+
 /** Render EULA status. */
 export function renderEulaStatus(status: {
   isAccepted: boolean;

@@ -13,6 +13,8 @@ import type {
   RedTeamTargetCreateRequest,
   RedTeamTargetDetail,
   RedTeamTargetUpdateRequest,
+  TargetAuthValidationRequest,
+  TargetAuthValidationResult,
   TargetOperationOptions,
 } from './types.js';
 
@@ -86,6 +88,33 @@ export class SdkRedTeamService implements RedTeamService {
       acceptedAt: raw.accepted_at as string | undefined,
       acceptedByUserId: raw.accepted_by_user_id as string | undefined,
     };
+  }
+
+  async validateTargetAuth(
+    request: TargetAuthValidationRequest,
+  ): Promise<TargetAuthValidationResult> {
+    const sdkRequest: Record<string, unknown> = {
+      auth_type: request.authType,
+      auth_config: request.authConfig,
+    };
+    if (request.targetId) sdkRequest.target_id = request.targetId;
+    const raw = (await this.client.targets.validateAuth(sdkRequest as never)) as Record<
+      string,
+      unknown
+    >;
+    return {
+      validated: raw.validated as boolean,
+      tokenPreview: raw.token_preview as string | undefined,
+      expiresIn: raw.expires_in as number | undefined,
+    };
+  }
+
+  async getTargetMetadata(): Promise<Record<string, unknown>> {
+    return (await this.client.targets.getTargetMetadata()) as Record<string, unknown>;
+  }
+
+  async getTargetTemplates(): Promise<Record<string, unknown>> {
+    return (await this.client.targets.getTargetTemplates()) as Record<string, unknown>;
   }
 
   async listTargets(): Promise<RedTeamTarget[]> {
