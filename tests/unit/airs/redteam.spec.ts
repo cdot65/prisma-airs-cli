@@ -18,6 +18,9 @@ const mockReportsGetStaticReport = vi.fn();
 const mockReportsListAttacks = vi.fn();
 const mockCustomAttackReportsGetReport = vi.fn();
 const mockCustomAttackReportsListCustomAttacks = vi.fn();
+const mockEulaGetContent = vi.fn();
+const mockEulaGetStatus = vi.fn();
+const mockEulaAccept = vi.fn();
 
 function makeMockClient() {
   return {
@@ -45,6 +48,11 @@ function makeMockClient() {
     customAttackReports: {
       getReport: mockCustomAttackReportsGetReport,
       listCustomAttacks: mockCustomAttackReportsListCustomAttacks,
+    },
+    eula: {
+      getContent: mockEulaGetContent,
+      getStatus: mockEulaGetStatus,
+      accept: mockEulaAccept,
     },
   };
 }
@@ -822,6 +830,65 @@ describe('SdkRedTeamService', () => {
       expect(onProgress.mock.calls[0][0].status).toBe('QUEUED');
       expect(onProgress.mock.calls[1][0].status).toBe('RUNNING');
       expect(onProgress.mock.calls[2][0].status).toBe('COMPLETED');
+    });
+  });
+
+  describe('getEulaContent', () => {
+    it('returns EULA content', async () => {
+      mockEulaGetContent.mockResolvedValue({ content: 'EULA text here' });
+      const result = await service.getEulaContent();
+      expect(result).toEqual({ content: 'EULA text here' });
+      expect(mockEulaGetContent).toHaveBeenCalled();
+    });
+  });
+
+  describe('getEulaStatus', () => {
+    it('returns accepted status', async () => {
+      mockEulaGetStatus.mockResolvedValue({
+        uuid: 'eula-1',
+        is_accepted: true,
+        accepted_at: '2026-03-01T00:00:00Z',
+        accepted_by_user_id: 'user-1',
+      });
+      const result = await service.getEulaStatus();
+      expect(result).toEqual({
+        isAccepted: true,
+        acceptedAt: '2026-03-01T00:00:00Z',
+        acceptedByUserId: 'user-1',
+      });
+    });
+
+    it('returns not-accepted status', async () => {
+      mockEulaGetStatus.mockResolvedValue({
+        is_accepted: false,
+      });
+      const result = await service.getEulaStatus();
+      expect(result).toEqual({
+        isAccepted: false,
+        acceptedAt: undefined,
+        acceptedByUserId: undefined,
+      });
+    });
+  });
+
+  describe('acceptEula', () => {
+    it('accepts EULA and returns status', async () => {
+      mockEulaAccept.mockResolvedValue({
+        uuid: 'eula-1',
+        is_accepted: true,
+        accepted_at: '2026-03-31T00:00:00Z',
+        accepted_by_user_id: 'user-1',
+      });
+      const result = await service.acceptEula('EULA text here');
+      expect(result).toEqual({
+        isAccepted: true,
+        acceptedAt: '2026-03-31T00:00:00Z',
+        acceptedByUserId: 'user-1',
+      });
+      expect(mockEulaAccept).toHaveBeenCalledWith({
+        eula_content: 'EULA text here',
+        accepted_at: expect.any(String),
+      });
     });
   });
 });

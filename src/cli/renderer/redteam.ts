@@ -498,6 +498,27 @@ export function renderPropertyNames(
   console.log();
 }
 
+/** Render EULA status. */
+export function renderEulaStatus(status: {
+  isAccepted: boolean;
+  acceptedAt?: string;
+  acceptedByUserId?: string;
+}): void {
+  console.log(chalk.bold('\n  EULA Status:\n'));
+  console.log(`    Accepted: ${status.isAccepted ? chalk.green('yes') : chalk.red('no')}`);
+  if (status.acceptedAt) console.log(`    Accepted At: ${chalk.dim(status.acceptedAt)}`);
+  if (status.acceptedByUserId) {
+    console.log(`    Accepted By: ${chalk.dim(status.acceptedByUserId)}`);
+  }
+  console.log();
+}
+
+/** Render EULA content. */
+export function renderEulaContent(content: { content: string }): void {
+  console.log(chalk.bold('\n  EULA Content:\n'));
+  console.log(`    ${content.content}\n`);
+}
+
 /** Render property values. */
 export function renderPropertyValues(values: Array<{ name: string; value: string }>): void {
   if (values.length === 0) {

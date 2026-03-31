@@ -310,8 +310,31 @@ export interface RedTeamCustomAttack {
   promptSetName?: string;
 }
 
+// ---------------------------------------------------------------------------
+// EULA types — normalized shapes for EULA management
+// ---------------------------------------------------------------------------
+
+/** EULA content response. */
+export interface EulaContent {
+  content: string;
+}
+
+/** Normalized EULA acceptance status. */
+export interface EulaStatus {
+  isAccepted: boolean;
+  acceptedAt?: string;
+  acceptedByUserId?: string;
+}
+
 /** Contract for AI Red Team scan operations. */
 export interface RedTeamService {
+  /** Get EULA content. */
+  getEulaContent(): Promise<EulaContent>;
+  /** Get EULA acceptance status. */
+  getEulaStatus(): Promise<EulaStatus>;
+  /** Accept the EULA. */
+  acceptEula(eulaContent: string): Promise<EulaStatus>;
+
   /** List configured red team targets. */
   listTargets(): Promise<RedTeamTarget[]>;
 
