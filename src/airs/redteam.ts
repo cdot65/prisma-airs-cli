@@ -2,8 +2,6 @@ import { RedTeamClient, type RedTeamClientOptions } from '@cdot65/prisma-airs-sd
 import type {
   EulaContent,
   EulaStatus,
-  TargetAuthValidationRequest,
-  TargetAuthValidationResult,
   RedTeamAttack,
   RedTeamCategory,
   RedTeamCustomAttack,
@@ -15,6 +13,8 @@ import type {
   RedTeamTargetCreateRequest,
   RedTeamTargetDetail,
   RedTeamTargetUpdateRequest,
+  TargetAuthValidationRequest,
+  TargetAuthValidationResult,
   TargetOperationOptions,
 } from './types.js';
 
