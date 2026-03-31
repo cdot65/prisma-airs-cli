@@ -194,6 +194,67 @@ describe('SdkRuntimeService', () => {
     });
   });
 
+  describe('pollResults — lowercase API statuses', () => {
+    it('handles lowercase "complete" from API', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 's1',
+          status: 'complete',
+          result: { scan_id: 's1', report_id: 'r1', action: 'allow', category: 'benign' },
+        },
+      ]);
+
+      const results = await service.pollResults(['s1'], 10);
+      expect(results).toHaveLength(1);
+      expect(results[0].action).toBe('allow');
+      expect(results[0].category).toBe('benign');
+    });
+
+    it('handles lowercase "failed" from API', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        { scan_id: 's1', status: 'failed' },
+      ]);
+
+      const results = await service.pollResults(['s1'], 10);
+      expect(results).toHaveLength(1);
+      expect(results[0].action).toBe('allow');
+      expect(results[0].category).toBe('error');
+    });
+
+    it('handles mixed casing in single poll response', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 's1',
+          status: 'complete',
+          result: { scan_id: 's1', report_id: 'r1', action: 'block', category: 'malicious' },
+        },
+        { scan_id: 's2', status: 'failed' },
+      ]);
+
+      const results = await service.pollResults(['s1', 's2'], 10);
+      expect(results).toHaveLength(2);
+      expect(results[0].action).toBe('block');
+      expect(results[1].category).toBe('error');
+    });
+
+    it('treats lowercase "pending" as not-yet-complete and re-polls', async () => {
+      mockScannerInstance.queryByScanIds
+        .mockResolvedValueOnce([{ scan_id: 's1', status: 'pending' }])
+        .mockResolvedValueOnce([
+          {
+            scan_id: 's1',
+            status: 'complete',
+            result: { scan_id: 's1', report_id: 'r1', action: 'allow', category: 'benign' },
+          },
+        ]);
+
+      const results = await service.pollResults(['s1'], 10);
+      expect(results).toHaveLength(1);
+      expect(results[0].action).toBe('allow');
+      expect(mockScannerInstance.queryByScanIds).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('submitBulkScan — edge cases', () => {
     it('returns empty array for empty prompts', async () => {
       const scanIds = await service.submitBulkScan('p', []);
