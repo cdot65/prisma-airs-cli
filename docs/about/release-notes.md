@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.3.0
+
+### New
+
+- **Target init from templates** -- `airs redteam targets init <provider>` scaffolds a target config JSON from provider templates (OPENAI, HUGGING_FACE, DATABRICKS, BEDROCK, REST, STREAMING, WEBSOCKET). Supports `--output <file>` for custom paths.
+
+---
+
 ## v2.2.0
 
 ### New

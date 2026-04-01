@@ -19,6 +19,39 @@ airs redteam targets list
 
 Each target shows its UUID, name, status (`active`/`inactive`), and type (`APPLICATION`, `MODEL`, `AGENT`).
 
+## Initialize a Target from Template
+
+Instead of writing a JSON config from scratch, scaffold one from a provider template:
+
+```bash
+airs redteam targets init <provider>
+```
+
+Available providers: `OPENAI`, `HUGGING_FACE`, `DATABRICKS`, `BEDROCK`, `REST`, `STREAMING`, `WEBSOCKET`.
+
+This fetches the provider's template from AIRS and writes a ready-to-edit JSON file:
+
+```bash
+# Scaffold an OpenAI target config
+airs redteam targets init openai
+
+# Custom output path
+airs redteam targets init bedrock --output my-bedrock-target.json
+```
+
+The scaffolded file contains the provider's connection template with the correct request/response structure. Edit it to fill in your `name` and credentials, then create the target:
+
+```bash
+# Edit the scaffolded file
+vim openai-target.json
+
+# Create the target (with connection validation)
+airs redteam targets create --config openai-target.json --validate
+```
+
+!!! tip
+    The `init` command is the fastest way to get started — it gives you the correct JSON structure for your provider so you only need to fill in credentials.
+
 ## Create a Target
 
 Targets are created from a JSON configuration file with `name`, `target_type`, and `connection_params`:

@@ -1,4 +1,6 @@
 import * as fs from 'node:fs';
+import * as path from 'node:path';
+import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
@@ -53,6 +55,38 @@ async function createPromptSetService() {
     tsgId: config.mgmtTsgId,
     tokenEndpoint: config.mgmtTokenEndpoint,
   });
+}
+
+/** Valid provider names for target init templates. */
+export const VALID_TARGET_PROVIDERS = [
+  'OPENAI',
+  'HUGGING_FACE',
+  'DATABRICKS',
+  'BEDROCK',
+  'REST',
+  'STREAMING',
+  'WEBSOCKET',
+] as const;
+
+/** Build a target config scaffold from a provider template. */
+export function buildTargetScaffold(
+  provider: string,
+  templates: Record<string, unknown>,
+): Record<string, unknown> {
+  const key = provider.toUpperCase();
+  if (!VALID_TARGET_PROVIDERS.includes(key as (typeof VALID_TARGET_PROVIDERS)[number])) {
+    throw new Error(
+      `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
+    );
+  }
+  return {
+    name: '',
+    target_type: key,
+    connection_params: templates[key] ?? {},
+    background: {},
+    additional_context: {},
+    metadata: {},
+  };
 }
 
 /** Register the `redteam` command group. */
@@ -931,6 +965,40 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const metadata = await service.getTargetMetadata();
         console.log(JSON.stringify(metadata, null, 2));
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('init <provider>')
+    .description('Scaffold a target config JSON from a provider template')
+    .option('--output <file>', 'Output file path')
+    .action(async (provider: string, opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const templates = await service.getTargetTemplates();
+        const scaffold = buildTargetScaffold(provider, templates);
+        const filename = opts.output ?? `${provider.toLowerCase()}-target.json`;
+        const outputPath = path.resolve(filename);
+        if (fs.existsSync(outputPath)) {
+          renderError(
+            `File already exists: ${outputPath} (use --output to specify a different path)`,
+          );
+          process.exit(1);
+        }
+        fs.writeFileSync(outputPath, `${JSON.stringify(scaffold, null, 2)}\n`);
+        console.log(chalk.bold('\n  Target config scaffolded:\n'));
+        console.log(`    File: ${chalk.cyan(outputPath)}`);
+        console.log(`    Provider: ${chalk.dim(provider.toUpperCase())}`);
+        console.log(
+          `\n  ${chalk.yellow('Next steps:')} Edit the file to fill in ${chalk.bold('name')} and credentials, then run:`,
+        );
+        console.log(
+          `    ${chalk.cyan(`airs redteam targets create --config ${filename} --validate`)}\n`,
+        );
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
