@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  VALID_TARGET_PROVIDERS,
-  buildTargetScaffold,
-} from '../../../src/cli/commands/redteam.js';
+import { buildTargetScaffold } from '../../../src/cli/commands/redteam.js';
 
 describe('buildTargetScaffold', () => {
   const mockTemplates: Record<string, unknown> = {
