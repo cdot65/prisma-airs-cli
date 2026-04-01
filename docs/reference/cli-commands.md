@@ -578,6 +578,8 @@ Manage red team targets — full CRUD with connection validation.
 ```bash
 airs redteam targets list                          # List all targets
 airs redteam targets get <uuid>                    # Get target details
+airs redteam targets init openai                   # Scaffold config from template
+airs redteam targets init bedrock --output my.json # Custom output path
 airs redteam targets create --config target.json   # Create from JSON file
 airs redteam targets create --config t.json --validate  # Create + validate connection
 airs redteam targets update <uuid> --config u.json # Update target
@@ -592,6 +594,7 @@ airs redteam targets update-profile <uuid> --config p.json
 |------------|-------|
 | `list` | `--output <format>` |
 | `get <uuid>` | — |
+| `init <provider>` | `--output <file>` |
 | `create` | `--config <path>` (required), `--validate` |
 | `update <uuid>` | `--config <path>` (required), `--validate` |
 | `delete <uuid>` | — |
