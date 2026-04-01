@@ -55,6 +55,38 @@ async function createPromptSetService() {
   });
 }
 
+/** Valid provider names for target init templates. */
+export const VALID_TARGET_PROVIDERS = [
+  'OPENAI',
+  'HUGGING_FACE',
+  'DATABRICKS',
+  'BEDROCK',
+  'REST',
+  'STREAMING',
+  'WEBSOCKET',
+] as const;
+
+/** Build a target config scaffold from a provider template. */
+export function buildTargetScaffold(
+  provider: string,
+  templates: Record<string, unknown>,
+): Record<string, unknown> {
+  const key = provider.toUpperCase();
+  if (!VALID_TARGET_PROVIDERS.includes(key as (typeof VALID_TARGET_PROVIDERS)[number])) {
+    throw new Error(
+      `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
+    );
+  }
+  return {
+    name: '',
+    target_type: key,
+    connection_params: templates[key] ?? {},
+    background: {},
+    additional_context: {},
+    metadata: {},
+  };
+}
+
 /** Register the `redteam` command group. */
 export function registerRedteamCommand(program: Command): void {
   const redteam = program.command('redteam').description('AI Red Team scan operations');

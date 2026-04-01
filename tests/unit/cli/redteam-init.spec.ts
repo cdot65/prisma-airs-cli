@@ -1,39 +1,8 @@
 import { describe, expect, it } from 'vitest';
-
-/** Valid provider names for target templates. */
-const VALID_PROVIDERS = [
-  'OPENAI',
-  'HUGGING_FACE',
-  'DATABRICKS',
-  'BEDROCK',
-  'REST',
-  'STREAMING',
-  'WEBSOCKET',
-];
-
-/**
- * Build a target config scaffold from a provider template.
- * Extracted as a pure function so it can be tested without CLI/service wiring.
- */
-function buildTargetScaffold(
-  provider: string,
-  templates: Record<string, unknown>,
-): Record<string, unknown> {
-  const key = provider.toUpperCase();
-  if (!VALID_PROVIDERS.includes(key)) {
-    throw new Error(
-      `Unknown provider "${provider}". Valid providers: ${VALID_PROVIDERS.join(', ')}`,
-    );
-  }
-  return {
-    name: '',
-    target_type: key,
-    connection_params: templates[key] ?? {},
-    background: {},
-    additional_context: {},
-    metadata: {},
-  };
-}
+import {
+  VALID_TARGET_PROVIDERS,
+  buildTargetScaffold,
+} from '../../../src/cli/commands/redteam.js';
 
 describe('buildTargetScaffold', () => {
   const mockTemplates: Record<string, unknown> = {
