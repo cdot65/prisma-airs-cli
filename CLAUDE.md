@@ -62,6 +62,7 @@ src/
 │   │   ├── topics-apply.ts   # Assign topic to profile (additive, preserves existing topics)
 │   │   ├── topics-eval.ts    # Scan static prompt set, compute metrics, return FP/FN lists
 │   │   ├── topics-revert.ts  # Remove topic from profile and delete it
+│   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics + audit (profiles)
 │   │   ├── audit.ts       # Profile-level multi-topic evaluation (registered under runtime profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD, prompt-sets CRUD, prompts CRUD, properties)
@@ -161,11 +162,12 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
 - CLI: `airs runtime resume-poll <stateFile> [--output <file>]` — resume polling from saved scan IDs
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
-  - `airs runtime profiles {list,get,create,update,delete,audit}` — security profile CRUD + profile audit
+  - `airs runtime profiles {list,get,create,update,delete,audit,cleanup}` — security profile CRUD + profile audit + revision cleanup
     - `get` accepts name or UUID, supports `--output pretty|json|yaml`
     - `create` requires `--name`, plus optional protection flags: `--prompt-injection`, `--toxic-content`, `--contextual-grounding`, `--malicious-code`, `--url-action`, `--allow-url-categories`, `--block-url-categories`, `--alert-url-categories`, `--agent-security`, `--dlp-action`, `--dlp-profiles`, `--mask-data-inline`, `--db-security-{create,read,update,delete}`, `--inline-timeout-action`, `--max-inline-latency`, `--mask-data-in-storage`, `--no-active`. Hidden `--config <path>` legacy escape hatch.
     - `update` uses read-modify-write: fetches current profile → merges only specified flags → PUTs full payload. Same protection flags as create. Topic-guardrails never modified by CLI flags. Hidden `--config <path>` legacy escape hatch.
     - `delete` supports `--force --updated-by`
+    - `cleanup` deletes old profile revisions, keeps only latest per name. `--force` to proceed, `--updated-by` defaults to git email, `--output json` for structured output. Pure dedup logic in `src/cli/commands/profiles-cleanup.ts`.
     - Profile builder: `src/cli/builders/profile-builder.ts` — `buildProfileRequest()` (create), `buildProfileOverrides()` (update), `mergeProfilePolicy()` (deep merge). Arrays merge by `name` field; objects overlay specified fields.
   - `airs runtime topics {list,get,create,update,delete,apply,eval,revert}` — custom topic CRUD + agent-driven topic commands (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)

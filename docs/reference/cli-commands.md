@@ -210,6 +210,7 @@ airs runtime profiles update <nameOrId> --toxic-content "high:alert"
 airs runtime profiles delete <nameOrId>
 airs runtime profiles delete <nameOrId> --force --updated-by <email>
 airs runtime profiles audit <profileName> [options]
+airs runtime profiles cleanup [--force] [--updated-by <email>] [--output <format>]
 ```
 
 | Subcommand | Flags |
@@ -220,6 +221,7 @@ airs runtime profiles audit <profileName> [options]
 | `update <nameOrId>` | Protection flags (see below), `--name <name>`, `--config <path>` (legacy). Auto-detects UUID vs name. Uses read-modify-write (fetches existing, merges flags, sends full payload via PUT). |
 | `delete <nameOrId>` | `--force`, `--updated-by <email>`. Auto-detects UUID vs name. |
 | `audit <profileName>` | `--max-tests-per-topic <n>` (default 20), `--format <fmt>` (terminal/json/html), `--output <path>`, `--provider <name>`, `--model <name>` |
+| `cleanup` | `--force` (skip confirmation), `--updated-by <email>` (default: git user.email), `--output <format>` (pretty/json) |
 
 #### Profile Protection Flags
 
@@ -261,6 +263,25 @@ airs runtime profiles audit my-security-profile --format json
 
 # HTML report
 airs runtime profiles audit my-security-profile --format html --output audit-report.html
+```
+
+#### runtime profiles cleanup
+
+Delete old profile revisions, keeping only the latest revision per profile name. AIRS creates a new profile revision (with a new UUID) on every update — this command prunes the accumulated old revisions.
+
+```bash
+# Preview what would be deleted (dry run)
+airs runtime profiles cleanup
+
+# Delete old revisions
+airs runtime profiles cleanup --force
+
+# Specify email for audit trail (defaults to git user.email)
+airs runtime profiles cleanup --force --updated-by user@example.com
+
+# JSON output
+airs runtime profiles cleanup --output json
+airs runtime profiles cleanup --force --output json
 ```
 
 ### runtime topics

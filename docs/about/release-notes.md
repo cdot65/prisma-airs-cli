@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.4.0
+
+### New
+
+- **Profile cleanup** -- `airs runtime profiles cleanup` deletes old profile revisions, keeping only the latest revision per profile name. AIRS creates a new revision (with a new UUID) on every profile update; this command prunes the accumulated duplicates. Supports `--force` to skip confirmation, `--updated-by <email>` (defaults to `git config user.email`), and `--output json` for structured output.
+
+---
+
 ## v2.3.0
 
 ### New
