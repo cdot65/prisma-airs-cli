@@ -31,6 +31,7 @@ import {
   renderTopicList,
 } from '../renderer/index.js';
 import { registerAuditCommand } from './audit.js';
+import { registerCleanupCommand } from './profiles-cleanup.js';
 import { registerApplyCommand } from './topics-apply.js';
 import { registerCreateCommand } from './topics-create.js';
 import { registerEvalCommand } from './topics-eval.js';
@@ -642,6 +643,9 @@ export function registerRuntimeCommand(program: Command): void {
         process.exit(1);
       }
     });
+
+  // Register cleanup under profiles
+  registerCleanupCommand(profiles);
 
   // Register audit under profiles
   registerAuditCommand(profiles);
