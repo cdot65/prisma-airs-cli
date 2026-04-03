@@ -165,7 +165,7 @@ export function renderCleanupPreview(
         {
           duplicates: groups.map((g) => ({
             name: g.name,
-            revisions: g.keep.revision,
+            revisions: g.remove.length + 1,
             keeping: g.keep.revision,
             deleting: g.remove.length,
           })),
