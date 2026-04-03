@@ -150,6 +150,86 @@ export function renderProfileDetail(profile: {
   console.log();
 }
 
+/** Render cleanup preview showing duplicate groups. */
+export function renderCleanupPreview(
+  groups: Array<{
+    name: string;
+    keep: { id: string; revision: number };
+    remove: Array<{ id: string; revision: number }>;
+  }>,
+  format: 'pretty' | 'json' = 'pretty',
+): void {
+  if (format === 'json') {
+    console.log(
+      JSON.stringify(
+        {
+          duplicates: groups.map((g) => ({
+            name: g.name,
+            revisions: g.keep.revision,
+            keeping: g.keep.revision,
+            deleting: g.remove.length,
+          })),
+          total: groups.reduce((sum, g) => sum + g.remove.length, 0),
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  console.log(chalk.bold('\n  Duplicate Profiles:\n'));
+
+  const nameWidth = Math.max(7, ...groups.map((g) => g.name.length));
+  const header = `  ${'Profile'.padEnd(nameWidth)}  Revisions  Keeping   Deleting`;
+  console.log(chalk.dim(header));
+  console.log(
+    chalk.dim(`  ${'─'.repeat(nameWidth)}  ${'─'.repeat(9)}  ${'─'.repeat(8)}  ${'─'.repeat(8)}`),
+  );
+
+  for (const g of groups) {
+    const total = g.remove.length + 1;
+    console.log(
+      `  ${g.name.padEnd(nameWidth)}  ${String(total).padStart(9)}  ${(`rev ${g.keep.revision}`).padStart(8)}  ${String(g.remove.length).padStart(8)}`,
+    );
+  }
+
+  const totalRemove = groups.reduce((sum, g) => sum + g.remove.length, 0);
+  console.log(
+    `\n  Total: ${chalk.yellow(String(totalRemove))} old revisions to delete across ${groups.length} profiles\n`,
+  );
+}
+
+/** Render cleanup deletion results. */
+export function renderCleanupResult(
+  results: Array<{
+    id: string;
+    revision: number;
+    name: string;
+    status: 'ok' | 'failed';
+    error?: string;
+  }>,
+  format: 'pretty' | 'json' = 'pretty',
+): void {
+  const deleted = results.filter((r) => r.status === 'ok').length;
+  const failed = results.filter((r) => r.status === 'failed').length;
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ deleted, failed, details: results }, null, 2));
+    return;
+  }
+
+  if (failed > 0) {
+    console.log(chalk.bold.red('\n  Failures:\n'));
+    for (const r of results.filter((r) => r.status === 'failed')) {
+      console.log(`    ${chalk.red('✗')} ${r.name} rev ${r.revision}: ${r.error}`);
+    }
+  }
+
+  const color = failed > 0 ? chalk.yellow : chalk.green;
+  console.log(color(`\n  Cleanup complete: ${deleted} deleted, ${failed} failed\n`));
+}
+
 /** Render custom topic list. */
 export function renderTopicList(
   topics: Array<{
