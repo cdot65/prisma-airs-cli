@@ -1,14 +1,14 @@
 import { execSync } from 'node:child_process';
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { SdkManagementService } from '../../airs/management.js';
-import { loadConfig } from '../../config/loader.js';
+import type { SecurityProfileInfo } from '../../airs/types.js';
 import {
   renderCleanupPreview,
   renderCleanupResult,
   renderError,
   renderRuntimeConfigHeader,
 } from '../renderer/index.js';
+import { createMgmtService } from './runtime.js';
 
 export interface DuplicateGroup {
   name: string;
@@ -75,16 +75,20 @@ export function registerCleanupCommand(parent: Command): void {
         const fmt = opts.output as 'pretty' | 'json';
         if (fmt === 'pretty') renderRuntimeConfigHeader();
 
-        const config = await loadConfig();
-        const service = new SdkManagementService({
-          clientId: config.mgmtClientId,
-          clientSecret: config.mgmtClientSecret,
-          tsgId: config.mgmtTsgId,
-          tokenEndpoint: config.mgmtTokenEndpoint,
-        });
+        const service = await createMgmtService();
 
-        const result = await service.listProfiles({ limit: 10000 });
-        const groups = findDuplicateProfiles(result.profiles);
+        // Paginate to fetch all profiles
+        const allProfiles: SecurityProfileInfo[] = [];
+        let offset = 0;
+        const pageSize = 200;
+        while (true) {
+          const page = await service.listProfiles({ limit: pageSize, offset });
+          allProfiles.push(...page.profiles);
+          if (page.nextOffset == null) break;
+          offset = page.nextOffset;
+        }
+
+        const groups = findDuplicateProfiles(allProfiles);
 
         if (groups.length === 0) {
           if (fmt === 'json') {

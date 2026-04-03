@@ -59,7 +59,7 @@ function renderScanResult(result: RuntimeScanResult): void {
 }
 
 /** Create a management service from config. */
-async function createMgmtService() {
+export async function createMgmtService() {
   const config = await loadConfig();
   return new SdkManagementService({
     clientId: config.mgmtClientId,
