@@ -103,6 +103,24 @@ export type {
 } from './core/types.js';
 
 // ---------------------------------------------------------------------------
+// Backup — export/import AIRS configuration to/from local files
+// ---------------------------------------------------------------------------
+export {
+  readBackupDir,
+  readBackupFile,
+  resolveOutputDir,
+  sanitizeFilename,
+  writeBackupFile,
+} from './backup/io.js';
+export type {
+  BackupEnvelope,
+  BackupFormat,
+  BackupResult,
+  ResourceType,
+  RestoreResult,
+} from './backup/types.js';
+
+// ---------------------------------------------------------------------------
 // Reports — structured evaluation report generation (JSON/HTML)
 // ---------------------------------------------------------------------------
 export { buildReportHtml } from './report/html.js';
