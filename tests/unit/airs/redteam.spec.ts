@@ -576,13 +576,13 @@ describe('SdkRedTeamService', () => {
         target_type: 'REST',
         active: true,
         connection_params: { api_endpoint: 'https://example.com' },
-        background: { industry: 'finance', use_case: 'chatbot', competitors: ['acme'] },
+        target_background: { industry: 'finance', use_case: 'chatbot', competitors: ['acme'] },
         additional_context: {
           system_prompt: 'You are helpful',
           use_case_description: 'desc',
           documents: [],
         },
-        metadata: { multi_turn: false, rate_limit: 10, is_streaming_enabled: false },
+        target_metadata: { multi_turn: false, rate_limit: 10, is_streaming_enabled: false },
       });
 
       const result = await service.getTarget('t-1');

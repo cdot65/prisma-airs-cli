@@ -60,9 +60,9 @@ function normalizeTargetDetail(raw: Record<string, unknown>): RedTeamTargetDetai
     extraInfo: raw.extra_info as Record<string, unknown> | null | undefined,
     description: raw.description as string | null | undefined,
     connectionParams: raw.connection_params as Record<string, unknown> | undefined,
-    background: raw.background as RedTeamTargetDetail['background'],
+    background: raw.target_background as RedTeamTargetDetail['background'],
     additionalContext: raw.additional_context as RedTeamTargetDetail['additionalContext'],
-    metadata: raw.metadata as RedTeamTargetDetail['metadata'],
+    metadata: raw.target_metadata as RedTeamTargetDetail['metadata'],
   };
 }
 
