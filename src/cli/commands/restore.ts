@@ -1,20 +1,9 @@
 import type { Command } from 'commander';
-import { SdkRedTeamService } from '../../airs/redteam.js';
 import type { RedTeamTargetCreateRequest, RedTeamTargetUpdateRequest } from '../../airs/types.js';
 import { readBackupDir, readBackupFile } from '../../backup/io.js';
 import type { BackupEnvelope, RestoreResult } from '../../backup/types.js';
-import { loadConfig } from '../../config/loader.js';
 import { renderBackupHeader, renderError, renderRestoreSummary } from '../renderer/index.js';
-
-async function createRedTeamService(): Promise<SdkRedTeamService> {
-  const config = await loadConfig();
-  return new SdkRedTeamService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
-}
+import { createRedTeamService } from './backup.js';
 
 /** Core restore logic — exported for testability. */
 export async function restoreTargets(opts: {

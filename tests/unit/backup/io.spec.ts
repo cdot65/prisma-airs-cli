@@ -140,4 +140,14 @@ describe('readBackupDir', () => {
     expect(results[0].data.name).toBe('test-target');
     fs.rmSync(dir, { recursive: true });
   });
+
+  it('skips malformed files without crashing', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'backup-test-'));
+    writeBackupFile(dir, 'target-a', envelope, 'json');
+    fs.writeFileSync(path.join(dir, 'bad.json'), 'not valid json');
+    const results = readBackupDir<{ name: string }>(dir, 'redteam-target');
+    expect(results).toHaveLength(1);
+    expect(results[0].data.name).toBe('test-target');
+    fs.rmSync(dir, { recursive: true });
+  });
 });

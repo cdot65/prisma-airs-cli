@@ -62,9 +62,13 @@ export function readBackupDir<T>(dirPath: string, resourceType: ResourceType): B
     .map((f) => path.join(dirPath, f));
   const envelopes: BackupEnvelope<T>[] = [];
   for (const filePath of files) {
-    const envelope = readBackupFile<T>(filePath);
-    if (envelope.resourceType === resourceType) {
-      envelopes.push(envelope);
+    try {
+      const envelope = readBackupFile<T>(filePath);
+      if (envelope.resourceType === resourceType) {
+        envelopes.push(envelope);
+      }
+    } catch {
+      // Skip malformed or unrelated files
     }
   }
   return envelopes;

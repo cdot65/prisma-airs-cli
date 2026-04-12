@@ -6,7 +6,7 @@ import type { BackupEnvelope, BackupFormat, BackupResult } from '../../backup/ty
 import { loadConfig } from '../../config/loader.js';
 import { renderBackupHeader, renderBackupSummary, renderError } from '../renderer/index.js';
 
-async function createRedTeamService(): Promise<SdkRedTeamService> {
+export async function createRedTeamService(): Promise<SdkRedTeamService> {
   const config = await loadConfig();
   return new SdkRedTeamService({
     clientId: config.mgmtClientId,
@@ -47,7 +47,6 @@ export async function backupTargets(opts: {
     uuids = allTargets.map((t) => ({ uuid: t.uuid, name: t.name }));
   }
 
-  const dir = resolveOutputDir(opts.outputDir, 'targets');
   const results: BackupResult[] = [];
 
   for (const entry of uuids) {
@@ -60,7 +59,7 @@ export async function backupTargets(opts: {
         data: toBackupData(detail),
       };
       const filename = sanitizeFilename(entry.name);
-      writeBackupFile(dir, filename, envelope, opts.format);
+      writeBackupFile(opts.outputDir, filename, envelope, opts.format);
       results.push({
         name: entry.name,
         filename: `${filename}.${opts.format === 'yaml' ? 'yaml' : 'json'}`,
@@ -96,11 +95,7 @@ export function registerBackupCommand(program: Command): void {
           throw new Error(`Invalid format: ${format} (expected json or yaml)`);
         }
         const dir = resolveOutputDir(opts.outputDir, 'targets');
-        const results = await backupTargets({
-          outputDir: opts.outputDir,
-          format,
-          name: opts.name,
-        });
+        const results = await backupTargets({ outputDir: dir, format, name: opts.name });
         renderBackupSummary(results, dir);
         const failed = results.filter((r) => r.status === 'failed').length;
         if (failed > 0) process.exit(1);
