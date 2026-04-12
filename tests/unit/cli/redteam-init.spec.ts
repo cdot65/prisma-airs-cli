@@ -9,29 +9,28 @@ describe('buildTargetScaffold', () => {
     BEDROCK: { region: '', model_id: '' },
     REST: { url: '', method: 'POST' },
     STREAMING: { url: '', method: 'POST' },
-    WEBSOCKET: { url: '' },
   };
 
   it('builds correct scaffold for valid provider', () => {
     const result = buildTargetScaffold('openai', mockTemplates);
     expect(result).toEqual({
       name: '',
-      target_type: 'OPENAI',
+      target_type: 'APPLICATION',
       connection_params: mockTemplates.OPENAI,
-      background: {},
+      target_background: {},
       additional_context: {},
-      metadata: {},
+      target_metadata: {},
     });
   });
 
   it('handles case-insensitive provider input', () => {
     const result = buildTargetScaffold('Hugging_Face', mockTemplates);
-    expect(result.target_type).toBe('HUGGING_FACE');
+    expect(result.target_type).toBe('APPLICATION');
   });
 
   it('throws on invalid provider with list of valid providers', () => {
     expect(() => buildTargetScaffold('azure', mockTemplates)).toThrow(
-      'Unknown provider "azure". Valid providers: OPENAI, HUGGING_FACE, DATABRICKS, BEDROCK, REST, STREAMING, WEBSOCKET',
+      'Unknown provider "azure". Valid providers: OPENAI, HUGGING_FACE, DATABRICKS, BEDROCK, REST, STREAMING',
     );
   });
 });

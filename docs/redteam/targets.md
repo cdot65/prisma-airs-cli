@@ -27,7 +27,7 @@ Instead of writing a JSON config from scratch, scaffold one from a provider temp
 airs redteam targets init <provider>
 ```
 
-Available providers: `OPENAI`, `HUGGING_FACE`, `DATABRICKS`, `BEDROCK`, `REST`, `STREAMING`, `WEBSOCKET`.
+Available providers: `OPENAI`, `HUGGING_FACE`, `DATABRICKS`, `BEDROCK`, `REST`, `STREAMING`.
 
 This fetches the provider's template from AIRS and writes a ready-to-edit JSON file:
 

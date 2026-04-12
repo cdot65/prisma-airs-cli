@@ -1,10 +1,8 @@
-import type { Command } from 'commander';
 import { SdkRedTeamService } from '../../airs/redteam.js';
 import type { RedTeamTargetDetail } from '../../airs/types.js';
-import { resolveOutputDir, sanitizeFilename, writeBackupFile } from '../../backup/io.js';
+import { sanitizeFilename, writeBackupFile } from '../../backup/io.js';
 import type { BackupEnvelope, BackupFormat, BackupResult } from '../../backup/types.js';
 import { loadConfig } from '../../config/loader.js';
-import { renderBackupHeader, renderBackupSummary, renderError } from '../renderer/index.js';
 
 export async function createRedTeamService(): Promise<SdkRedTeamService> {
   const config = await loadConfig();
@@ -16,17 +14,39 @@ export async function createRedTeamService(): Promise<SdkRedTeamService> {
   });
 }
 
+/** Recursively strip keys whose value is null. */
+function stripNulls(obj: unknown): unknown {
+  if (Array.isArray(obj)) return obj.map(stripNulls);
+  if (obj !== null && typeof obj === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (v !== null) out[k] = stripNulls(v);
+    }
+    return out;
+  }
+  return obj;
+}
+
 /** Convert a RedTeamTargetDetail to the create-request shape (strip server fields, snake_case). */
 function toBackupData(target: RedTeamTargetDetail): Record<string, unknown> {
   const data: Record<string, unknown> = {
     name: target.name,
     target_type: target.targetType,
   };
+  if (target.connectionType) data.connection_type = target.connectionType;
+  if (target.apiEndpointType) data.api_endpoint_type = target.apiEndpointType;
+  if (target.responseMode) data.response_mode = target.responseMode;
+  if (target.authType) data.auth_type = target.authType;
+  if (target.authConfig) data.auth_config = target.authConfig;
+  if (target.networkBrokerChannelUuid)
+    data.network_broker_channel_uuid = target.networkBrokerChannelUuid;
+  if (target.sessionSupported != null) data.session_supported = target.sessionSupported;
+  if (target.extraInfo) data.extra_info = target.extraInfo;
   if (target.connectionParams) data.connection_params = target.connectionParams;
-  if (target.background) data.background = target.background;
+  if (target.background) data.target_background = target.background;
   if (target.additionalContext) data.additional_context = target.additionalContext;
-  if (target.metadata) data.metadata = target.metadata;
-  return data;
+  if (target.metadata) data.target_metadata = target.metadata;
+  return stripNulls(data) as Record<string, unknown>;
 }
 
 /** Core backup logic — exported for testability. */
@@ -76,32 +96,4 @@ export async function backupTargets(opts: {
   }
 
   return results;
-}
-
-export function registerBackupCommand(program: Command): void {
-  const backup = program.command('backup').description('Backup AIRS configuration to local files');
-
-  backup
-    .command('targets')
-    .description('Backup red team targets to local JSON/YAML files')
-    .option('--output-dir <path>', 'Output directory', undefined)
-    .option('--format <format>', 'Output format: json or yaml', 'json')
-    .option('--name <targetName>', 'Backup a single target by name')
-    .action(async (opts) => {
-      try {
-        renderBackupHeader();
-        const format = opts.format as BackupFormat;
-        if (format !== 'json' && format !== 'yaml') {
-          throw new Error(`Invalid format: ${format} (expected json or yaml)`);
-        }
-        const dir = resolveOutputDir(opts.outputDir, 'targets');
-        const results = await backupTargets({ outputDir: dir, format, name: opts.name });
-        renderBackupSummary(results, dir);
-        const failed = results.filter((r) => r.status === 'failed').length;
-        if (failed > 0) process.exit(1);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
 }

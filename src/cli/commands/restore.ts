@@ -1,9 +1,44 @@
-import type { Command } from 'commander';
 import type { RedTeamTargetCreateRequest, RedTeamTargetUpdateRequest } from '../../airs/types.js';
 import { readBackupDir, readBackupFile } from '../../backup/io.js';
 import type { BackupEnvelope, RestoreResult } from '../../backup/types.js';
-import { renderBackupHeader, renderError, renderRestoreSummary } from '../renderer/index.js';
 import { createRedTeamService } from './backup.js';
+
+/** Fields that are server-derived and must be stripped before create/update. */
+const SERVER_DERIVED_FIELDS = [
+  'uuid',
+  'tsg_id',
+  'status',
+  'active',
+  'validated',
+  'version',
+  'secret_version',
+  'created_at',
+  'updated_at',
+  'created_by_user_id',
+  'updated_by_user_id',
+] as const;
+
+/** Strip server-derived fields and normalize legacy field names for the create/update API. */
+export function prepareTargetPayload(data: Record<string, unknown>): Record<string, unknown> {
+  const clean = { ...data };
+  for (const field of SERVER_DERIVED_FIELDS) {
+    delete clean[field];
+  }
+  // Normalize legacy backup field names → current API names
+  if ('background' in clean) {
+    if (!('target_background' in clean)) {
+      clean.target_background = clean.background;
+    }
+    delete clean.background;
+  }
+  if ('metadata' in clean) {
+    if (!('target_metadata' in clean)) {
+      clean.target_metadata = clean.metadata;
+    }
+    delete clean.metadata;
+  }
+  return clean;
+}
 
 /** Core restore logic — exported for testability. */
 export async function restoreTargets(opts: {
@@ -45,14 +80,28 @@ export async function restoreTargets(opts: {
         continue;
       }
       if (existingUuid) {
+        const payload = prepareTargetPayload(env.data);
+        // Ensure routing fields are present — API requires the 4-tuple
+        // (target_type, connection_type, api_endpoint_type, response_mode).
+        // Merge from existing target first, then fall back to defaults.
+        const current = await service.getTarget(existingUuid);
+        if (!payload.target_type) payload.target_type = current.targetType;
+        if (!payload.connection_type) payload.connection_type = current.connectionType ?? 'CUSTOM';
+        if (!payload.api_endpoint_type)
+          payload.api_endpoint_type = current.apiEndpointType ?? 'PUBLIC';
+        if (!payload.response_mode) payload.response_mode = current.responseMode ?? 'REST';
         await service.updateTarget(
           existingUuid,
-          env.data as unknown as RedTeamTargetUpdateRequest,
+          payload as unknown as RedTeamTargetUpdateRequest,
           validateOpts,
         );
         results.push({ name, action: 'updated' });
       } else {
-        await service.createTarget(env.data as unknown as RedTeamTargetCreateRequest, validateOpts);
+        const payload = prepareTargetPayload(env.data);
+        if (!payload.connection_type) payload.connection_type = 'CUSTOM';
+        if (!payload.api_endpoint_type) payload.api_endpoint_type = 'PUBLIC';
+        if (!payload.response_mode) payload.response_mode = 'REST';
+        await service.createTarget(payload as unknown as RedTeamTargetCreateRequest, validateOpts);
         results.push({ name, action: 'created' });
       }
     } catch (err) {
@@ -65,38 +114,4 @@ export async function restoreTargets(opts: {
   }
 
   return results;
-}
-
-export function registerRestoreCommand(program: Command): void {
-  const restore = program
-    .command('restore')
-    .description('Restore AIRS configuration from local backup files');
-
-  restore
-    .command('targets')
-    .description('Restore red team targets from local JSON/YAML backup files')
-    .option('--input-dir <path>', 'Directory containing backup files')
-    .option('--file <path>', 'Single backup file to restore')
-    .option('--overwrite', 'Update existing targets with same name (default: skip)')
-    .option('--validate', 'Validate target connection before saving')
-    .action(async (opts) => {
-      try {
-        renderBackupHeader();
-        if (!opts.file && !opts.inputDir) {
-          throw new Error('Specify --file <path> or --input-dir <path>');
-        }
-        const results = await restoreTargets({
-          file: opts.file,
-          inputDir: opts.inputDir,
-          overwrite: opts.overwrite,
-          validate: opts.validate,
-        });
-        renderRestoreSummary(results);
-        const failed = results.filter((r) => r.action === 'failed').length;
-        if (failed > 0) process.exit(1);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
 }

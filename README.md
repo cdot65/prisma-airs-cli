@@ -69,6 +69,8 @@ airs model-security scans create --config scan-config.json
 | `model-security groups` | Security group CRUD |
 | `model-security rules` | Security rule management |
 | `model-security scans` | Model security scanning |
+| `backup targets` | Export red team targets to local JSON/YAML files |
+| `restore targets` | Import red team targets from backup files |
 
 ## Configuration
 

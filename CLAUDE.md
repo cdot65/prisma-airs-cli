@@ -52,8 +52,8 @@ Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `s
 
 ```
 src/
-├── cli/                   # CLI entry, 5 top-level command groups, prompts, renderer
-│   ├── index.ts           # Commander program — registers runtime/redteam/model-security/backup/restore, --debug global flag
+├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
+│   ├── index.ts           # Commander program — registers runtime/redteam/model-security, --debug global flag
 │   ├── debug-logger.ts    # Global fetch interceptor — logs AIRS/SCM API traffic to JSONL
 │   ├── builders/
 │   │   └── profile-builder.ts # CLI flags → CreateSecurityProfileRequest builder + merge utility
@@ -62,12 +62,12 @@ src/
 │   │   ├── topics-apply.ts   # Assign topic to profile (additive, preserves existing topics)
 │   │   ├── topics-eval.ts    # Scan static prompt set, compute metrics, return FP/FN lists
 │   │   ├── topics-revert.ts  # Remove topic from profile and delete it
-│   │   ├── backup.ts      # airs backup targets command handler
-│   │   ├── restore.ts     # airs restore targets command handler
+│   │   ├── backup.ts      # Backup core logic (backupTargets, createRedTeamService, toBackupData)
+│   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics + audit (profiles)
 │   │   ├── audit.ts       # Profile-level multi-topic evaluation (registered under runtime profiles)
-│   │   ├── redteam.ts     # Red team operations (scan, targets CRUD, prompt-sets CRUD, prompts CRUD, properties)
+│   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Save/load bulk scan IDs for resume after poll failure
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
@@ -142,12 +142,13 @@ tests/
 These four commands compose into an autoresearch-style optimization loop: an agent calls `create → apply → eval`, decides keep or `revert`, then iterates.
 
 ### Backup & Restore (`src/backup/`, `src/cli/commands/backup.ts`, `src/cli/commands/restore.ts`)
-- `airs backup targets` — export all or single target to local JSON/YAML files
-- `airs restore targets` — import targets from backup files, skip or overwrite existing
-- Backup envelope: `{ version, resourceType, exportedAt, data }` — server fields (uuid/status/active) stripped
+- `airs redteam targets backup` — export all or single target to local JSON/YAML files
+- `airs redteam targets restore` — import targets from backup files, skip or overwrite existing
+- Backup envelope: `{ version, resourceType, exportedAt, data }` — server fields (uuid/status/active/version) stripped on restore via `prepareTargetPayload()`
+- Backup data uses API field names: `target_background` (not `background`), `target_metadata` (not `metadata`); legacy names auto-normalized on restore
 - Shared I/O utilities in `src/backup/io.ts` — extensible to future resource types (profiles, topics, prompt-sets)
-- CLI: `airs backup targets [--output-dir <path>] [--format json|yaml] [--name <name>]`
-- CLI: `airs restore targets [--input-dir <path>] [--file <path>] [--overwrite] [--validate]`
+- CLI: `airs redteam targets backup [--output-dir <path>] [--format json|yaml] [--name <name>]`
+- CLI: `airs redteam targets restore [--input-dir <path>] [--file <path>] [--overwrite] [--validate]`
 
 ### AIRS Integration (`src/airs/`)
 - **Scanner**: `Scanner.syncScan()` via SDK, detection = `prompt_detected.topic_violation === true` (sole signal, no fallbacks)
@@ -202,7 +203,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `waitForCompletion()` polls with configurable interval, throws on FAILED
 - Target create/update accept `{ validate: true }` to validate connection before saving (SDK v0.6.0)
 - CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`
-- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`
+- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`
 
 ### Model Security (`src/airs/modelsecurity.ts`)
 - `SdkModelSecurityService` wraps `ModelSecurityClient` for security groups, rules, scans, labels, PyPI auth

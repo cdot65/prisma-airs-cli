@@ -53,6 +53,9 @@ describe('backupTargets', () => {
     expect(written.data.name).toBe('Target A');
     expect(written.data.target_type).toBe('OPENAI');
     expect(written.data.connection_params.api_key).toBe('sk-123');
+    // background mapped to target_background
+    expect(written.data.target_background).toEqual({ industry: 'tech' });
+    expect(written.data.background).toBeUndefined();
     // Server-only fields stripped
     expect(written.data.uuid).toBeUndefined();
     expect(written.data.status).toBeUndefined();

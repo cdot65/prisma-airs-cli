@@ -4,11 +4,15 @@ import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
+import { resolveOutputDir } from '../../backup/io.js';
+import type { BackupFormat } from '../../backup/types.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   type OutputFormat,
   renderAttackList,
   renderAuthValidation,
+  renderBackupHeader,
+  renderBackupSummary,
   renderCategories,
   renderCustomAttackList,
   renderCustomReport,
@@ -25,6 +29,7 @@ import {
   renderPropertyValues,
   renderRedteamHeader,
   renderRegistryCredentials,
+  renderRestoreSummary,
   renderScanList,
   renderScanProgress,
   renderScanStatus,
@@ -34,6 +39,8 @@ import {
   renderTargetTemplates,
   renderVersionInfo,
 } from '../renderer/index.js';
+import { backupTargets } from './backup.js';
+import { restoreTargets } from './restore.js';
 
 /** Create an SdkRedTeamService from config. */
 async function createService() {
@@ -65,7 +72,6 @@ export const VALID_TARGET_PROVIDERS = [
   'BEDROCK',
   'REST',
   'STREAMING',
-  'WEBSOCKET',
 ] as const;
 
 /** Build a target config scaffold from a provider template. */
@@ -81,11 +87,11 @@ export function buildTargetScaffold(
   }
   return {
     name: '',
-    target_type: key,
+    target_type: 'APPLICATION',
     connection_params: templates[key] ?? {},
-    background: {},
+    target_background: {},
     additional_context: {},
-    metadata: {},
+    target_metadata: {},
   };
 }
 
@@ -1014,6 +1020,58 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const templates = await service.getTargetTemplates();
         renderTargetTemplates(templates);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('backup')
+    .description('Backup red team targets to local JSON/YAML files')
+    .option('--output-dir <path>', 'Output directory')
+    .option('--format <format>', 'Output format: json or yaml', 'json')
+    .option('--name <targetName>', 'Backup a single target by name')
+    .action(async (opts) => {
+      try {
+        renderBackupHeader();
+        const outputDir = resolveOutputDir(opts.outputDir, 'targets');
+        const results = await backupTargets({
+          outputDir,
+          format: (opts.format ?? 'json') as BackupFormat,
+          name: opts.name,
+        });
+        renderBackupSummary(results, outputDir);
+        const failed = results.filter((r) => r.status === 'failed').length;
+        if (failed > 0) process.exit(1);
+      } catch (err) {
+        renderError(err instanceof Error ? err.message : String(err));
+        process.exit(1);
+      }
+    });
+
+  targets
+    .command('restore')
+    .description('Restore red team targets from local JSON/YAML backup files')
+    .option('--input-dir <path>', 'Directory containing backup files')
+    .option('--file <path>', 'Single backup file to restore')
+    .option('--overwrite', 'Update existing targets with same name (default: skip)')
+    .option('--validate', 'Validate target connection before saving')
+    .action(async (opts) => {
+      try {
+        renderBackupHeader();
+        if (!opts.file && !opts.inputDir) {
+          throw new Error('Specify --file <path> or --input-dir <path>');
+        }
+        const results = await restoreTargets({
+          file: opts.file,
+          inputDir: opts.inputDir,
+          overwrite: opts.overwrite,
+          validate: opts.validate,
+        });
+        renderRestoreSummary(results);
+        const failed = results.filter((r) => r.action === 'failed').length;
+        if (failed > 0) process.exit(1);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

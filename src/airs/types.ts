@@ -151,6 +151,15 @@ export interface RedTeamTarget {
 
 /** Detailed target info with connection params and metadata. */
 export interface RedTeamTargetDetail extends RedTeamTarget {
+  connectionType?: string | null;
+  apiEndpointType?: string | null;
+  responseMode?: string | null;
+  authType?: string | null;
+  authConfig?: Record<string, unknown> | null;
+  networkBrokerChannelUuid?: string | null;
+  sessionSupported?: boolean;
+  extraInfo?: Record<string, unknown> | null;
+  description?: string | null;
   connectionParams?: Record<string, unknown>;
   background?: {
     industry?: string | null;

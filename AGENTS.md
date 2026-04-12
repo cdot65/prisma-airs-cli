@@ -371,18 +371,18 @@ airs redteam targets update-profile <uuid> --config <json-file>
 ```json
 {
   "name": "My Chatbot",
-  "target_type": "REST",
+  "target_type": "APPLICATION",
   "connection_params": {
     "api_endpoint": "https://api.example.com/chat",
     "request_headers": { "Authorization": "Bearer token" },
     "request_json": { "message": "{prompt}" },
     "response_key": "response"
   },
-  "background": {
+  "target_background": {
     "industry": "finance",
     "use_case": "customer support"
   },
-  "metadata": {
+  "target_metadata": {
     "multi_turn": false,
     "rate_limit": 10
   }
@@ -522,16 +522,16 @@ All backup/restore commands require Management API credentials.
 
 ```bash
 # Backup all targets to JSON (default)
-airs backup targets
+airs redteam targets backup
 
 # Backup all targets to YAML
-airs backup targets --format yaml
+airs redteam targets backup --format yaml
 
 # Backup single target by name
-airs backup targets --name "my-target"
+airs redteam targets backup --name "my-target"
 
 # Custom output directory
-airs backup targets --output-dir ./my-backups/
+airs redteam targets backup --output-dir ./my-backups/
 ```
 
 **Default output:** `./airs-backup/targets/` — one file per target, named by sanitized target name.
@@ -544,20 +544,20 @@ airs backup targets --output-dir ./my-backups/
 | `--format <format>` | `json` | Output format: `json` or `yaml` |
 | `--name <targetName>` | _(all targets)_ | Backup a single target by name |
 
-**Backup file format:** Each file wraps the target config in a versioned envelope. Server-assigned fields (`uuid`, `status`, `active`) are stripped. Credentials are included as-is.
+**Backup file format:** Each file wraps the target config in a versioned envelope. Server-assigned fields (`uuid`, `status`, `active`, `auth_type`, etc.) are stripped on restore. Credentials are included as-is.
 
 ```json
 {
   "version": "1",
   "resourceType": "redteam-target",
-  "exportedAt": "2026-04-12T00:35:00.082Z",
+  "exportedAt": "2026-04-12T02:51:20.624Z",
   "data": {
     "name": "my-target",
-    "target_type": "OPENAI",
+    "target_type": "APPLICATION",
     "connection_params": { "..." },
-    "background": { "..." },
+    "target_background": { "..." },
     "additional_context": { "..." },
-    "metadata": { "..." }
+    "target_metadata": { "..." }
   }
 }
 ```
@@ -566,16 +566,16 @@ airs backup targets --output-dir ./my-backups/
 
 ```bash
 # Restore from a single file
-airs restore targets --file ./airs-backup/targets/my-target.json
+airs redteam targets restore --file ./airs-backup/targets/my-target.json
 
 # Restore all files from a directory
-airs restore targets --input-dir ./airs-backup/targets/
+airs redteam targets restore --input-dir ./airs-backup/targets/
 
 # Overwrite existing targets with same name (default: skip)
-airs restore targets --input-dir ./airs-backup/targets/ --overwrite
+airs redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
 
 # Validate connections before saving
-airs restore targets --file ./my-target.json --validate
+airs redteam targets restore --file ./my-target.json --validate
 ```
 
 **Auth:** Management API
@@ -705,16 +705,16 @@ airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json -
 
 ```bash
 # 1. Backup all targets before making changes
-airs backup targets --output-dir ./pre-change-backup/
+airs redteam targets backup --output-dir ./pre-change-backup/
 
 # 2. Make changes (create, update, delete targets)
 airs redteam targets delete <uuid>
 
 # 3. If something went wrong, restore from backup
-airs restore targets --input-dir ./pre-change-backup/ --overwrite
+airs redteam targets restore --input-dir ./pre-change-backup/ --overwrite
 
 # 4. Migrate targets to another tenant
-PANW_MGMT_TSG_ID=dest-tsg airs restore targets --input-dir ./pre-change-backup/
+PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./pre-change-backup/
 ```
 
 ### Workflow 9: Autonomous guardrail optimization (agent loop)

@@ -20,7 +20,7 @@ Export and import AIRS configuration to local JSON or YAML files. Currently supp
 Export every red team target to a directory, one file per target:
 
 ```bash
-airs backup targets
+airs redteam targets backup
 ```
 
 Default output directory is `./airs-backup/targets/`. Each file is named after the target (sanitized to filesystem-safe characters).
@@ -32,6 +32,7 @@ Default output directory is `./airs-backup/targets/`. Each file is named after t
 
   Backed up 10 target(s) to /Users/you/project/airs-backup/targets:
 
+    ✓ truffles - dev - chat → truffles-dev-chat.json
     ✓ truffles - dev - langgraph agent → truffles-dev-langgraph-agent.json
     ✓ e2e-tf-dbg3-target → e2e-tf-dbg3-target.json
     ✓ e2e-tf-dbg2-target → e2e-tf-dbg2-target.json
@@ -39,9 +40,7 @@ Default output directory is `./airs-backup/targets/`. Each file is named after t
     ✓ e2e-tf-19f9-target → e2e-tf-19f9-target.json
     ✓ e2e-tf-616f-target → e2e-tf-616f-target.json
     ✓ e2e-tf-target → e2e-tf-target.json
-    ✓ test-target-001 → test-target-001.json
-    ✓ test-target-002 → test-target-002.json
-    ✓ test-target-003 → test-target-003.json
+    ...
 ```
 
 ### Single Target Backup
@@ -49,7 +48,7 @@ Default output directory is `./airs-backup/targets/`. Each file is named after t
 Export a specific target by name:
 
 ```bash
-airs backup targets --name "truffles - dev - langgraph agent"
+airs redteam targets backup --name "truffles - dev - langgraph agent"
 ```
 
 ### Options
@@ -63,7 +62,7 @@ airs backup targets --name "truffles - dev - langgraph agent"
 ### YAML Format
 
 ```bash
-airs backup targets --format yaml --output-dir ./my-backups
+airs redteam targets backup --format yaml --output-dir ./my-backups
 ```
 
 ---
@@ -73,7 +72,7 @@ airs backup targets --format yaml --output-dir ./my-backups
 ### From a Single File
 
 ```bash
-airs restore targets --file ./airs-backup/targets/my-target.json
+airs redteam targets restore --file ./airs-backup/targets/my-target.json
 ```
 
 ### From a Directory
@@ -81,7 +80,7 @@ airs restore targets --file ./airs-backup/targets/my-target.json
 Restore all backup files in a directory:
 
 ```bash
-airs restore targets --input-dir ./airs-backup/targets/
+airs redteam targets restore --input-dir ./airs-backup/targets/
 ```
 
 ### Handling Collisions
@@ -89,7 +88,7 @@ airs restore targets --input-dir ./airs-backup/targets/
 By default, targets with matching names are **skipped** with a warning. Use `--overwrite` to update existing targets:
 
 ```bash
-airs restore targets --input-dir ./airs-backup/targets/ --overwrite
+airs redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
 ```
 
 **Example output:**
@@ -109,7 +108,7 @@ airs restore targets --input-dir ./airs-backup/targets/ --overwrite
 Test each target's connection before saving:
 
 ```bash
-airs restore targets --file ./my-target.json --validate
+airs redteam targets restore --file ./my-target.json --validate
 ```
 
 ### Options
@@ -134,20 +133,20 @@ Each backup file wraps the target configuration in a versioned envelope:
 {
   "version": "1",
   "resourceType": "redteam-target",
-  "exportedAt": "2026-04-11T12:00:00.000Z",
+  "exportedAt": "2026-04-12T02:51:20.624Z",
   "data": {
-    "name": "my-openai-target",
-    "target_type": "OPENAI",
+    "name": "my-chat-target",
+    "target_type": "APPLICATION",
     "connection_params": {
-      "api_endpoint": "https://api.openai.com/v1/chat/completions",
-      "request_headers": { "Authorization": "Bearer sk-..." },
-      "request_json": { "model": "gpt-4", "messages": [{"role": "user", "content": "{INPUT}"}] },
-      "response_json": { "choices": [{"message": {"content": "{RESPONSE}"}}] },
+      "api_endpoint": "https://example.com/api/v1/chat/completions",
+      "request_headers": { "Content-Type": "application/json", "Authorization": "Bearer ..." },
+      "request_json": { "messages": [{"role": "user", "content": "{INPUT}"}], "stream": false },
+      "response_json": { "choices": [{"index": 0, "message": {"role": "assistant", "content": "{RESPONSE}"}}] },
       "response_key": "content"
     },
-    "background": { "industry": "tech", "use_case": "customer support" },
+    "target_background": { "industry": "tech", "use_case": "customer support" },
     "additional_context": { "system_prompt": "You are a helpful assistant." },
-    "metadata": { "multi_turn": false, "rate_limit": 10 }
+    "target_metadata": { "multi_turn": false, "rate_limit": 10 }
   }
 }
 ```
@@ -169,10 +168,10 @@ Back up all targets before making changes:
 
 ```bash
 # Before changes
-airs backup targets --output-dir ./pre-change-backup/
+airs redteam targets backup --output-dir ./pre-change-backup/
 
 # After testing, if something went wrong
-airs restore targets --input-dir ./pre-change-backup/ --overwrite
+airs redteam targets restore --input-dir ./pre-change-backup/ --overwrite
 ```
 
 ### Environment Migration
@@ -181,10 +180,10 @@ Move targets between AIRS tenants:
 
 ```bash
 # Export from source tenant
-PANW_MGMT_TSG_ID=source-tsg airs backup targets
+PANW_MGMT_TSG_ID=source-tsg airs redteam targets backup
 
 # Import to destination tenant
-PANW_MGMT_TSG_ID=dest-tsg airs restore targets --input-dir ./airs-backup/targets/
+PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./airs-backup/targets/
 ```
 
 ### Version Control
@@ -192,7 +191,7 @@ PANW_MGMT_TSG_ID=dest-tsg airs restore targets --input-dir ./airs-backup/targets
 Store target configurations in git for audit trails:
 
 ```bash
-airs backup targets --output-dir ./infra/airs-targets/ --format yaml
+airs redteam targets backup --output-dir ./infra/airs-targets/ --format yaml
 git add infra/airs-targets/
 git commit -m "snapshot: AIRS red team targets"
 ```
