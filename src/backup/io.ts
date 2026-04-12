@@ -9,17 +9,11 @@ import type { BackupEnvelope, BackupFormat, ResourceType } from './types.js';
  */
 export function sanitizeFilename(name: string): string {
   if (!name) return 'unnamed';
-  let sanitized = name
+  const sanitized = name
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '-')
-    .replace(/-{2,}/g, '-');
-  // Only trim if originally started/ended with hyphens (before any replacement)
-  if (name.match(/^-+/)) {
-    sanitized = sanitized.replace(/^-+/, '');
-  }
-  if (name.match(/-+$/)) {
-    sanitized = sanitized.replace(/-+$/, '');
-  }
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
   return sanitized || 'unnamed';
 }
 

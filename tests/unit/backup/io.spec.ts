@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { BackupEnvelope } from '../../../src/backup/types.js';
+import { describe, expect, it } from 'vitest';
 import {
   readBackupDir,
   readBackupFile,
@@ -10,6 +9,7 @@ import {
   sanitizeFilename,
   writeBackupFile,
 } from '../../../src/backup/io.js';
+import type { BackupEnvelope } from '../../../src/backup/types.js';
 
 describe('sanitizeFilename', () => {
   it('lowercases and replaces spaces with hyphens', () => {
@@ -17,7 +17,7 @@ describe('sanitizeFilename', () => {
   });
 
   it('replaces non-alphanumeric chars with hyphens', () => {
-    expect(sanitizeFilename('test/target@v2!')).toBe('test-target-v2-');
+    expect(sanitizeFilename('test/target@v2!')).toBe('test-target-v2');
   });
 
   it('collapses consecutive hyphens', () => {
