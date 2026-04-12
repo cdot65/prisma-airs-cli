@@ -13,8 +13,9 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 3. **AI Red Teaming** — adversarial scans against targets with static/dynamic/custom attacks
 4. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 5. **Profile Audits** — multi-topic evaluation with conflict detection
+6. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files
 
-The binary is `airs`. Three top-level command groups: `runtime`, `redteam`, `model-security`. Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
+The binary is `airs`. Five top-level command groups: `runtime`, `redteam`, `model-security`, `backup`, `restore`. Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
 
 ---
 
@@ -27,7 +28,7 @@ Different commands require different credentials. Set these as environment varia
 | Credential Set | Environment Variables | Used By |
 |---|---|---|
 | **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime topics eval`, `runtime profiles audit` |
-| **Management API** (OAuth2) | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` | All CRUD commands (profiles, topics, api-keys, customer-apps), all redteam commands, all model-security commands |
+| **Management API** (OAuth2) | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` | All CRUD commands (profiles, topics, api-keys, customer-apps), all redteam commands, all model-security commands, `backup`, `restore` |
 | **LLM Provider** | Depends on provider (see below) | `runtime profiles audit` |
 
 ### LLM Providers
@@ -513,6 +514,83 @@ Auto-detects `uv` or falls back to `python3 -m venv` + `pip`. Requires Managemen
 
 ---
 
+### Backup & Restore
+
+All backup/restore commands require Management API credentials.
+
+#### Backup targets
+
+```bash
+# Backup all targets to JSON (default)
+airs backup targets
+
+# Backup all targets to YAML
+airs backup targets --format yaml
+
+# Backup single target by name
+airs backup targets --name "my-target"
+
+# Custom output directory
+airs backup targets --output-dir ./my-backups/
+```
+
+**Default output:** `./airs-backup/targets/` — one file per target, named by sanitized target name.
+
+**Auth:** Management API
+
+| Flag | Default | Description |
+|---|---|---|
+| `--output-dir <path>` | `./airs-backup/targets/` | Directory to write backup files |
+| `--format <format>` | `json` | Output format: `json` or `yaml` |
+| `--name <targetName>` | _(all targets)_ | Backup a single target by name |
+
+**Backup file format:** Each file wraps the target config in a versioned envelope. Server-assigned fields (`uuid`, `status`, `active`) are stripped. Credentials are included as-is.
+
+```json
+{
+  "version": "1",
+  "resourceType": "redteam-target",
+  "exportedAt": "2026-04-12T00:35:00.082Z",
+  "data": {
+    "name": "my-target",
+    "target_type": "OPENAI",
+    "connection_params": { "..." },
+    "background": { "..." },
+    "additional_context": { "..." },
+    "metadata": { "..." }
+  }
+}
+```
+
+#### Restore targets
+
+```bash
+# Restore from a single file
+airs restore targets --file ./airs-backup/targets/my-target.json
+
+# Restore all files from a directory
+airs restore targets --input-dir ./airs-backup/targets/
+
+# Overwrite existing targets with same name (default: skip)
+airs restore targets --input-dir ./airs-backup/targets/ --overwrite
+
+# Validate connections before saving
+airs restore targets --file ./my-target.json --validate
+```
+
+**Auth:** Management API
+
+| Flag | Default | Description |
+|---|---|---|
+| `--input-dir <path>` | _(required if no --file)_ | Directory containing backup files |
+| `--file <path>` | _(required if no --input-dir)_ | Single backup file to restore |
+| `--overwrite` | `false` | Update existing targets with same name |
+| `--validate` | `false` | Test connection before saving |
+
+**Collision handling:** Existing targets with the same name are skipped by default. Use `--overwrite` to update them. Individual failures don't abort the batch — errors are collected and reported at the end.
+
+---
+
 ## Common Workflows for AI Agents
 
 ### Workflow 1: Scan a prompt and check if it's blocked
@@ -623,7 +701,23 @@ airs runtime bulk-scan --profile my-profile --input prompts.txt --output results
 airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output results.csv
 ```
 
-### Workflow 8: Autonomous guardrail optimization (agent loop)
+### Workflow 8: Backup and restore targets
+
+```bash
+# 1. Backup all targets before making changes
+airs backup targets --output-dir ./pre-change-backup/
+
+# 2. Make changes (create, update, delete targets)
+airs redteam targets delete <uuid>
+
+# 3. If something went wrong, restore from backup
+airs restore targets --input-dir ./pre-change-backup/ --overwrite
+
+# 4. Migrate targets to another tenant
+PANW_MGMT_TSG_ID=dest-tsg airs restore targets --input-dir ./pre-change-backup/
+```
+
+### Workflow 9: Autonomous guardrail optimization (agent loop)
 
 The CLI provides atomic commands that an external agent orchestrates in a loop. See `program.md` for the full protocol.
 

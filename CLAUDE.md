@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Summary
 
-Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, ML model supply chain security, and multi-topic profile audits with conflict detection.
+Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, ML model supply chain security, multi-topic profile audits with conflict detection, and backup/restore of AIRS configuration to local files.
 
 ## Commands
 
