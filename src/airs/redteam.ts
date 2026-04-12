@@ -216,14 +216,31 @@ export class SdkRedTeamService implements RedTeamService {
   }
 
   async listTargets(): Promise<RedTeamTarget[]> {
-    const response = await this.client.targets.list();
-    return ((response as Record<string, unknown>).data as Record<string, unknown>[]).map((t) => ({
-      uuid: t.uuid as string,
-      name: t.name as string,
-      status: t.status as string,
-      targetType: t.target_type as string | undefined,
-      active: t.active as boolean,
-    }));
+    const all: RedTeamTarget[] = [];
+    let skip = 0;
+    const limit = 100;
+    for (;;) {
+      const response = this.client.targets.list({ skip, limit }) as Promise<
+        Record<string, unknown>
+      >;
+      const body = await response;
+      const data = body.data as Record<string, unknown>[];
+      for (const t of data) {
+        all.push({
+          uuid: t.uuid as string,
+          name: t.name as string,
+          status: t.status as string,
+          targetType: t.target_type as string | undefined,
+          active: t.active as boolean,
+        });
+      }
+      const pagination = body.pagination as { total?: number } | undefined;
+      if (!pagination || all.length >= (pagination.total ?? data.length) || data.length < limit) {
+        break;
+      }
+      skip += limit;
+    }
+    return all;
   }
 
   async getTarget(uuid: string): Promise<RedTeamTargetDetail> {
