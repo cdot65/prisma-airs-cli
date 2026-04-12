@@ -9,6 +9,7 @@ import { Command } from 'commander';
 import { registerBackupCommand } from './commands/backup.js';
 import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
+import { registerRestoreCommand } from './commands/restore.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
 import { installDebugLogger } from './debug-logger.js';
 
@@ -40,5 +41,6 @@ registerRuntimeCommand(program);
 registerRedteamCommand(program);
 registerModelSecurityCommand(program);
 registerBackupCommand(program);
+registerRestoreCommand(program);
 
 program.parse();
