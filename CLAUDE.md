@@ -52,8 +52,8 @@ Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `s
 
 ```
 src/
-├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
-│   ├── index.ts           # Commander program — registers runtime/redteam/model-security, --debug global flag
+├── cli/                   # CLI entry, 5 top-level command groups, prompts, renderer
+│   ├── index.ts           # Commander program — registers runtime/redteam/model-security/backup/restore, --debug global flag
 │   ├── debug-logger.ts    # Global fetch interceptor — logs AIRS/SCM API traffic to JSONL
 │   ├── builders/
 │   │   └── profile-builder.ts # CLI flags → CreateSecurityProfileRequest builder + merge utility
@@ -62,6 +62,8 @@ src/
 │   │   ├── topics-apply.ts   # Assign topic to profile (additive, preserves existing topics)
 │   │   ├── topics-eval.ts    # Scan static prompt set, compute metrics, return FP/FN lists
 │   │   ├── topics-revert.ts  # Remove topic from profile and delete it
+│   │   ├── backup.ts      # airs backup targets command handler
+│   │   ├── restore.ts     # airs restore targets command handler
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics + audit (profiles)
 │   │   ├── audit.ts       # Profile-level multi-topic evaluation (registered under runtime profiles)
@@ -72,6 +74,7 @@ src/
 │   ├── prompts.ts         # Inquirer interactive input collection
 │   └── renderer/          # Terminal output (chalk), split by command group
 │       ├── index.ts       # Barrel re-exports
+│       ├── backup.ts      # Backup/restore summary rendering
 │       ├── common.ts      # renderError
 │       ├── eval.ts        # Eval metrics, FP/FN list rendering
 │       ├── redteam.ts     # Red team scan/target/prompt-set rendering
@@ -104,6 +107,10 @@ src/
 │   ├── evaluator.ts       # groupResultsByTopic, computeTopicAuditResults, computeCompositeMetrics, detectConflicts
 │   ├── runner.ts          # runAudit() async generator — yields AuditEvent
 │   └── report.ts          # buildAuditReportJson(), buildAuditReportHtml()
+├── backup/
+│   ├── types.ts           # BackupEnvelope<T>, BackupFormat, ResourceType, result types
+│   ├── io.ts              # writeBackupFile, readBackupFile, readBackupDir, sanitizeFilename
+│   └── index.ts           # Barrel exports
 ├── report/
 │   ├── types.ts           # ReportOutput, TestDetail, RunDiff, MetricsDelta
 │   ├── json.ts            # buildReportJson() — RunState → structured ReportOutput
@@ -114,7 +121,8 @@ tests/
 ├── unit/                  # spec files
 │   ├── airs/              # scanner.spec.ts, management.spec.ts, modelsecurity.spec.ts, promptsets.spec.ts, redteam.spec.ts, runtime.spec.ts
 │   ├── audit/             # evaluator.spec.ts, runner.spec.ts, report.spec.ts
-│   ├── cli/               # parse-input.spec.ts, bulk-scan-state.spec.ts
+│   ├── backup/            # io.spec.ts
+│   ├── cli/               # parse-input.spec.ts, bulk-scan-state.spec.ts, backup.spec.ts, backup-renderer.spec.ts, restore.spec.ts
 │   ├── config/            # schema.spec.ts, loader.spec.ts
 │   ├── core/              # metrics.spec.ts, constraints.spec.ts
 │   ├── llm/               # provider.spec.ts, schemas.spec.ts, service.spec.ts, prompts.spec.ts
@@ -132,6 +140,14 @@ tests/
 - **`revert`** (`topics-revert.ts`): remove topic from profile topic-list and delete the topic; safe — checks profile reference before deleting
 
 These four commands compose into an autoresearch-style optimization loop: an agent calls `create → apply → eval`, decides keep or `revert`, then iterates.
+
+### Backup & Restore (`src/backup/`, `src/cli/commands/backup.ts`, `src/cli/commands/restore.ts`)
+- `airs backup targets` — export all or single target to local JSON/YAML files
+- `airs restore targets` — import targets from backup files, skip or overwrite existing
+- Backup envelope: `{ version, resourceType, exportedAt, data }` — server fields (uuid/status/active) stripped
+- Shared I/O utilities in `src/backup/io.ts` — extensible to future resource types (profiles, topics, prompt-sets)
+- CLI: `airs backup targets [--output-dir <path>] [--format json|yaml] [--name <name>]`
+- CLI: `airs restore targets [--input-dir <path>] [--file <path>] [--overwrite] [--validate]`
 
 ### AIRS Integration (`src/airs/`)
 - **Scanner**: `Scanner.syncScan()` via SDK, detection = `prompt_detected.topic_violation === true` (sole signal, no fallbacks)

@@ -76,6 +76,23 @@ export type {
   TopicAuditResult,
 } from './audit/types.js';
 // ---------------------------------------------------------------------------
+// Backup — export/import AIRS configuration to/from local files
+// ---------------------------------------------------------------------------
+export {
+  readBackupDir,
+  readBackupFile,
+  resolveOutputDir,
+  sanitizeFilename,
+  writeBackupFile,
+} from './backup/io.js';
+export type {
+  BackupEnvelope,
+  BackupFormat,
+  BackupResult,
+  ResourceType,
+  RestoreResult,
+} from './backup/types.js';
+// ---------------------------------------------------------------------------
 // Config — cascading config loader (CLI > env > file > Zod defaults)
 // ---------------------------------------------------------------------------
 export { loadConfig } from './config/loader.js';
@@ -101,24 +118,6 @@ export type {
   TestResult,
   UserInput,
 } from './core/types.js';
-
-// ---------------------------------------------------------------------------
-// Backup — export/import AIRS configuration to/from local files
-// ---------------------------------------------------------------------------
-export {
-  readBackupDir,
-  readBackupFile,
-  resolveOutputDir,
-  sanitizeFilename,
-  writeBackupFile,
-} from './backup/io.js';
-export type {
-  BackupEnvelope,
-  BackupFormat,
-  BackupResult,
-  ResourceType,
-  RestoreResult,
-} from './backup/types.js';
 
 // ---------------------------------------------------------------------------
 // Reports — structured evaluation report generation (JSON/HTML)
