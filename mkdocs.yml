@@ -89,6 +89,8 @@ nav:
       - EULA & Infrastructure: redteam/infrastructure.md
       - Prompt Sets & Prompts: redteam/prompt-sets.md
       - Guardrail to Red Team: redteam/guardrail-to-redteam.md
+  - Backup & Restore:
+      - Overview: backup/overview.md
   - Model Security:
       - Overview: model-security/overview.md
       - Security Groups: model-security/groups.md
