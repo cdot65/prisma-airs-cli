@@ -4,6 +4,6 @@ status: active
 type: APPLICATION
 
 scan:
-  id: 85f414fc-2529-4790-a8db-37f4be8daa5a
-  name: Socket Puppeting
-  status: active
+  type: CUSTOM
+  prompt_sets:
+    - 85f414fc-2529-4790-a8db-37f4be8daa5a  # Socket Puppeting

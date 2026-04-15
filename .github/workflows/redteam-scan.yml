@@ -63,16 +63,17 @@ jobs:
 
             # Read scan config if present, default to STATIC
             SCAN_TYPE=$(yq -r '.scan.type // "STATIC"' "$config")
-            SCAN_ID=$(yq -r '.scan.id // ""' "$config")
-            SCAN_LABEL=$(yq -r '.scan.name // ""' "$config")
+            PROMPT_SETS=$(yq -r '(.scan.prompt_sets // []) | join(",")' "$config")
             SCAN_NAME="ci-${TARGET_NAME// /-}-${GITHUB_SHA::8}"
 
-            echo "::group::Scanning ${TARGET_NAME} (${TARGET_UUID})"
-            echo "  Scan config: type=${SCAN_TYPE} scan_id=${SCAN_ID} label=${SCAN_LABEL}"
-            $AIRS redteam scan \
-              --target "$TARGET_UUID" \
-              --name "$SCAN_NAME" \
-              --type "$SCAN_TYPE" || EXIT_CODE=$?
+            echo "::group::Scanning ${TARGET_NAME} (${SCAN_TYPE})"
+
+            SCAN_ARGS="--target ${TARGET_UUID} --name ${SCAN_NAME} --type ${SCAN_TYPE}"
+            if [ -n "$PROMPT_SETS" ] && [ "$SCAN_TYPE" = "CUSTOM" ]; then
+              SCAN_ARGS="${SCAN_ARGS} --prompt-sets ${PROMPT_SETS}"
+            fi
+
+            eval $AIRS redteam scan ${SCAN_ARGS} || EXIT_CODE=$?
             echo "::endgroup::"
           done
           exit $EXIT_CODE
