@@ -1,0 +1,84 @@
+name: AI Red Team Scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'redteam/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'redteam/**'
+  workflow_dispatch:
+
+jobs:
+  redteam-scan:
+    name: Red Team Scan
+    runs-on: ubuntu-latest
+    env:
+      PANW_MGMT_CLIENT_ID: ${{ secrets.PANW_MGMT_CLIENT_ID }}
+      PANW_MGMT_CLIENT_SECRET: ${{ secrets.PANW_MGMT_CLIENT_SECRET }}
+      PANW_MGMT_TSG_ID: ${{ secrets.PANW_MGMT_TSG_ID }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm run build
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Run red team scans
+        run: |
+          AIRS="node dist/cli/index.js"
+          EXIT_CODE=0
+
+          for config in redteam/targets/*.yaml; do
+            [ -f "$config" ] || continue
+
+            TARGET_UUID=$(yq -r '.id' "$config")
+            TARGET_NAME=$(yq -r '.name' "$config")
+            TARGET_STATUS=$(yq -r '.status' "$config")
+
+            # Skip inactive targets
+            if [ "$TARGET_STATUS" != "active" ]; then
+              echo "::warning::Skipping inactive target: ${TARGET_NAME}"
+              continue
+            fi
+
+            SCAN_NAME="ci-${TARGET_NAME// /-}-${GITHUB_SHA::8}"
+
+            echo "::group::Scanning ${TARGET_NAME} (${TARGET_UUID})"
+            $AIRS redteam scan \
+              --target "$TARGET_UUID" \
+              --name "$SCAN_NAME" \
+              --type STATIC || EXIT_CODE=$?
+            echo "::endgroup::"
+          done
+          exit $EXIT_CODE
+
+      - name: Generate scan summary
+        if: always()
+        run: |
+          echo "## AI Red Team Scan Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Detail | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Triggered by** | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"
