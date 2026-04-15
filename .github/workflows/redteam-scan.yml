@@ -61,8 +61,14 @@ jobs:
               continue
             fi
 
-            # Read scan config if present, default to STATIC
-            SCAN_TYPE=$(yq -r '.scan.type // "STATIC"' "$config")
+            # Skip targets without scan config
+            HAS_SCAN=$(yq -r '.scan // ""' "$config")
+            if [ -z "$HAS_SCAN" ]; then
+              echo "::notice::Skipping ${TARGET_NAME} — no scan config defined"
+              continue
+            fi
+
+            SCAN_TYPE=$(yq -r '.scan.type' "$config")
             PROMPT_SETS=$(yq -r '(.scan.prompt_sets // []) | join(",")' "$config")
             SCAN_NAME="ci-${TARGET_NAME// /-}-${GITHUB_SHA::8}"
 
