@@ -2,3 +2,8 @@ id: 6f9dd184-bed5-4882-9547-df215edc6477
 name: LiteLLM - OpenAI - ChatGPT 5.4 Mini - AIRS
 status: active
 type: APPLICATION
+
+scan:
+  id: 85f414fc-2529-4790-a8db-37f4be8daa5a
+  name: Socket Puppeting
+  status: active

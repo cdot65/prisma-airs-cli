@@ -61,13 +61,18 @@ jobs:
               continue
             fi
 
+            # Read scan config if present, default to STATIC
+            SCAN_TYPE=$(yq -r '.scan.type // "STATIC"' "$config")
+            SCAN_ID=$(yq -r '.scan.id // ""' "$config")
+            SCAN_LABEL=$(yq -r '.scan.name // ""' "$config")
             SCAN_NAME="ci-${TARGET_NAME// /-}-${GITHUB_SHA::8}"
 
             echo "::group::Scanning ${TARGET_NAME} (${TARGET_UUID})"
+            echo "  Scan config: type=${SCAN_TYPE} scan_id=${SCAN_ID} label=${SCAN_LABEL}"
             $AIRS redteam scan \
               --target "$TARGET_UUID" \
               --name "$SCAN_NAME" \
-              --type STATIC || EXIT_CODE=$?
+              --type "$SCAN_TYPE" || EXIT_CODE=$?
             echo "::endgroup::"
           done
           exit $EXIT_CODE
