@@ -9,7 +9,7 @@ A copy-paste-runnable walkthrough of **every command** the CLI exposes, organize
 
 Same as [smoke-tests.md prerequisites](smoke-tests.md#prerequisites): `PANW_AI_SEC_API_KEY`, `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`. Plus, for Section E's `audit` flow, one LLM provider key (e.g. `ANTHROPIC_API_KEY`).
 
-Throughout this doc, placeholders look like `<profileName>`, `<topicId>`, `<targetUuid>`. Substitute values from your tenant — typically from the output of a list command earlier in the same section.
+Throughout this doc, placeholders look like `<profileName>`, `<topicId>`, `<targetUuid>`. Substitute values from your tenant — typically from the output of a list command earlier in the same section. Where a command takes a JSON config file, the file's expected shape is shown inline.
 
 ## Section A — Install and version verification
 
@@ -24,7 +24,7 @@ airs runtime profiles list
 
 ## Section B — Read-only sweep
 
-Every list/get/read endpoint. Safe to run in any order, no side effects. Replace `<…>` placeholders with values from the preceding command's output.
+Every list/get/read endpoint that takes no input beyond a UUID/name from a previous list. Safe to run in any order, no side effects. Substitute `<…>` placeholders with values from the preceding command's output.
 
 ### B.1 — Runtime (config management)
 
@@ -43,7 +43,7 @@ airs runtime api-keys list
 
 # Customer apps
 airs runtime customer-apps list
-airs runtime customer-apps get "<appName>"
+airs runtime customer-apps get "<appName>"   # 403 expected if your creds lack access to the app
 
 # Deployment profiles
 airs runtime deployment-profiles list
@@ -56,12 +56,16 @@ airs runtime dlp-profiles list
 airs runtime scan-logs query --interval 24 --unit hours
 ```
 
+!!! note "Known issues"
+    `runtime customer-apps get` returns `403` when your client credentials don't have access to the named app — that's a permission boundary, not a CLI bug. `runtime scan-logs query` may currently fail with `RESPONSE_VALIDATION` against tenants whose response shape doesn't match the SDK's schema; this is tracked as an SDK-side bug. See the troubleshooting note at the bottom of this page.
+
 ### B.2 — Red Team
 
 ```bash
 # Top-level reads
 airs redteam categories
 airs redteam list
+airs redteam registry-credentials      # top-level subcommand, NOT under devices
 
 # Targets
 airs redteam targets list
@@ -69,11 +73,10 @@ airs redteam targets get <targetUuid>
 airs redteam targets profile <targetUuid>
 airs redteam targets metadata
 airs redteam targets templates
-airs redteam targets validate-auth
 
 # Prompt sets
 airs redteam prompt-sets list
-airs redteam prompt-sets get <promptSetUuid>
+airs redteam prompt-sets get <promptSetUuid>   # known issue: triggers a follow-up version-info call that may 500
 
 # Prompts within a prompt set
 airs redteam prompts list <promptSetUuid>
@@ -86,12 +89,10 @@ airs redteam properties values <propertyName>
 # EULA
 airs redteam eula status
 airs redteam eula content
-
-# Instances and devices (multi-tenant ops)
-airs redteam instances list
-airs redteam devices list
-airs redteam devices registry-credentials
 ```
+
+!!! note "`redteam instances` and `redteam devices` have no `list` subcommand"
+    These two groups expose `create`, `get <tenantId>`, `update <tenantId>`, `delete <tenantId>` only — they're per-tenant CRUD, not a flat catalog. There's no read-only sweep entry for either.
 
 ### B.3 — Model Security
 
@@ -111,10 +112,10 @@ airs model-security rule-instances get <groupUuid> <instanceUuid>
 # Scans + sub-resources
 airs model-security scans list
 airs model-security scans get <scanUuid>
-airs model-security scans evaluations <scanUuid>
-airs model-security scans evaluation <evaluationUuid>
-airs model-security scans violations <scanUuid>
-airs model-security scans violation <violationUuid>
+airs model-security scans evaluations <scanUuid>          # list of evaluations for the scan
+airs model-security scans evaluation <evaluationUuid>     # single evaluation detail (one arg)
+airs model-security scans violations <scanUuid>           # list of violations for the scan
+airs model-security scans violation <violationUuid>       # single violation detail (one arg)
 airs model-security scans files <scanUuid>
 
 # Labels (keys + values across the tenant)
@@ -147,47 +148,50 @@ Each subsection creates state and shows the cleanup command at the end. Run the 
 ### D.1 — Custom topic CRUD + agent loop
 
 ```bash
-# Create a test topic
+# Create a test topic — name, description, and 2-5 examples are required
 airs runtime topics create \
-  --topic "smoke-test-topic" \
+  --name "smoke-test-topic" \
   --description "Anything related to smoke testing the CLI" \
-  --intent block
+  --examples "smoke testing the CLI" "running the full sweep doc" "validating endpoints"
 
 # Inspect it
+airs runtime topics get "smoke-test-topic"
 airs runtime topics get "smoke-test-topic" --output json
 
-# Update it
-airs runtime topics update <topicId> \
-  --description "Updated: anything related to smoke testing"
+# Update it (config-file based, not individual flags)
+cat > topic-update.json <<'EOF'
+{ "description": "Updated: anything related to smoke testing" }
+EOF
+airs runtime topics update <topicId> --config topic-update.json
 
-# Sample a few prompts that would trigger it (LLM-driven)
-airs runtime topics sample --topic "smoke-test-topic" --count 3
+# Print a sample CSV showing the eval prompt format (use as the input to `topics eval`)
+airs runtime topics sample --output sample-prompts.csv
 
-# Apply to a profile
-airs runtime topics apply --profile "<profileName>" --topic "smoke-test-topic"
+# Apply to a profile (note: --name and --intent, NOT --topic)
+airs runtime topics apply --profile "<profileName>" --name "smoke-test-topic" --intent block
 
-# Eval against a static prompt set
+# Eval against a static prompt set (note: --prompts, NOT --input)
 airs runtime topics eval \
   --profile "<profileName>" \
   --topic "smoke-test-topic" \
-  --input prompts.csv
+  --prompts sample-prompts.csv
 
-# Revert (removes from profile + deletes the topic)
-airs runtime topics revert --profile "<profileName>" --topic "smoke-test-topic"
+# Revert (removes from profile + deletes the topic; --name, NOT --topic)
+airs runtime topics revert --profile "<profileName>" --name "smoke-test-topic"
 ```
 
 ### D.2 — Profile CRUD + cleanup
 
 !!! danger "Profile cleanup is destructive"
-    `profiles cleanup` deletes old profile revisions across your tenant. Run with `--force` only if you're sure.
+    `profiles cleanup` deletes old profile revisions across your tenant. Run with `--force` only after the dry-run shows what it intends to delete.
 
 ```bash
-# Create a profile with several protections
+# Create a profile (each protection flag takes an action value: block/allow/alert, or "high:X, moderate:Y" for toxic-content)
 airs runtime profiles create \
   --name "smoke-test-profile" \
-  --prompt-injection \
-  --toxic-content \
-  --malicious-code \
+  --prompt-injection block \
+  --toxic-content "high:block, moderate:block" \
+  --malicious-code block \
   --url-action block
 
 # Inspect
@@ -196,10 +200,10 @@ airs runtime profiles get "smoke-test-profile" --output json
 # Update — toggle one flag (read-modify-write)
 airs runtime profiles update "smoke-test-profile" --no-active
 
-# Audit (multi-topic eval — see Section E for the full flow)
+# Audit (multi-topic eval — see Section E.2 for the full flow with knobs)
 airs runtime profiles audit "smoke-test-profile"
 
-# Delete (creates a new revision marker)
+# Delete (creates a new revision marker; does not hard-delete history)
 airs runtime profiles delete "smoke-test-profile" --force --updated-by "$(git config user.email)"
 
 # Cleanup old revisions (DESTRUCTIVE — preview without --force first)
@@ -209,31 +213,63 @@ airs runtime profiles cleanup --force --updated-by "$(git config user.email)"
 
 ### D.3 — API key CRUD
 
+API keys are configured via a JSON config file (not flag-by-flag).
+
 ```bash
-airs runtime api-keys create --name "smoke-test-key"
+cat > api-key.json <<'EOF'
+{
+  "name": "smoke-test-key",
+  "description": "Smoke test API key",
+  "interval": 30,
+  "unit": "days"
+}
+EOF
+airs runtime api-keys create --config api-key.json
 airs runtime api-keys list
-airs runtime api-keys regenerate "smoke-test-key" --interval 30 --unit days
+
+# Regenerate (takes the API key ID, NOT the name; --interval and --unit are required)
+airs runtime api-keys regenerate <apiKeyId> --interval 30 --unit days
+
+# Delete (takes the name)
 airs runtime api-keys delete "smoke-test-key"
 ```
 
 ### D.4 — Customer app CRUD
 
+Customer apps are typically created via the AIRS web UI; the CLI handles list/get/update/delete. Updates use a JSON config file.
+
 ```bash
-# Customer apps are typically created via the AIRS web UI; CLI handles updates and deletes.
 airs runtime customer-apps list
 airs runtime customer-apps get "<appName>"
-airs runtime customer-apps update <appId> --description "Updated by smoke test"
-# airs runtime customer-apps delete "<appName>"   # destructive — uncomment when you're done
+
+cat > app-update.json <<'EOF'
+{ "description": "Updated by smoke test" }
+EOF
+airs runtime customer-apps update <appId> --config app-update.json
+# airs runtime customer-apps delete "<appName>"   # destructive — uncomment when done
 ```
 
 ### D.5 — Red Team target CRUD + auth probe
 
-```bash
-# Scaffold a target config from a template (saves a JSON skeleton you fill in)
-airs redteam targets init openai     # or anthropic, vertex, bedrock, generic
-airs redteam targets templates       # list available templates
+Almost all target write commands take a JSON config file.
 
-# Create from the filled-in JSON
+```bash
+# Scaffold a target config JSON from a provider template
+airs redteam targets init openai --output target.json     # or anthropic, vertex, bedrock, generic
+airs redteam targets templates                            # list all available providers
+
+# Test the connection without saving (uses a JSON config)
+airs redteam targets probe --config target.json
+
+# Validate auth credentials separately (--auth-type and --config required)
+cat > auth-config.json <<'EOF'
+{ "headers": [{ "name": "x-api-key", "value": "..." }] }
+EOF
+airs redteam targets validate-auth --auth-type HEADERS --config auth-config.json
+# Optional: --target-id <uuid> to validate against an existing target
+# Other auth-types: BASIC_AUTH, OAUTH2
+
+# Create the target from the filled-in JSON
 airs redteam targets create --config target.json --validate
 
 # Inspect
@@ -241,12 +277,8 @@ airs redteam targets get <targetUuid>
 airs redteam targets profile <targetUuid>
 airs redteam targets metadata
 
-# Validate auth and connectivity
-airs redteam targets validate-auth --target <targetUuid>
-airs redteam targets probe --target <targetUuid>
-
-# Update target metadata or auth config
-airs redteam targets update <targetUuid> --config target-updated.json
+# Update (config file)
+airs redteam targets update <targetUuid> --config target-updated.json --validate
 airs redteam targets update-profile <targetUuid> --config target-profile.json
 
 # Delete
@@ -259,27 +291,27 @@ airs redteam targets delete <targetUuid> --force
 # Create a prompt set
 airs redteam prompt-sets create --name "smoke-test-set" --description "Smoke test prompt set"
 
+# Update prompt-set metadata (optional --name or --description)
+airs redteam prompt-sets update <promptSetUuid> --description "Updated description"
+
 # Upload prompts from a CSV (alternative to add one-by-one)
 airs redteam prompt-sets upload <promptSetUuid> ./prompts.csv
 
-# Or add prompts one at a time
-airs redteam prompts add <promptSetUuid> --content "Test prompt one" --category Security
+# Or add prompts one at a time (note: --prompt and optional --goal, NOT --content/--category)
+airs redteam prompts add <promptSetUuid> --prompt "Test prompt one" --goal "Smoke test goal"
 airs redteam prompts list <promptSetUuid>
 airs redteam prompts get <promptSetUuid> <promptUuid>
-airs redteam prompts update <promptSetUuid> <promptUuid> --content "Test prompt one (updated)"
+airs redteam prompts update <promptSetUuid> <promptUuid> --prompt "Test prompt one (updated)"
 airs redteam prompts delete <promptSetUuid> <promptUuid>
 
-# Properties (categorize prompts)
+# Properties (categorize prompts) — `properties create` takes only --name (no --description)
 airs redteam properties list
-airs redteam properties create --name "test-property" --description "Smoke test property"
+airs redteam properties create --name "test-property"
 airs redteam properties values "test-property"
 airs redteam properties add-value --name "test-property" --value "value-A"
 
-# Update prompt-set metadata
-airs redteam prompt-sets update <promptSetUuid> --description "Updated description"
-
 # Download as CSV for archival
-airs redteam prompt-sets download <promptSetUuid> --output ./prompt-set-backup.csv
+airs redteam prompt-sets download <promptSetUuid>
 
 # Archive (soft-delete; reversible from the AIRS UI)
 airs redteam prompt-sets archive <promptSetUuid>
@@ -287,9 +319,12 @@ airs redteam prompt-sets archive <promptSetUuid>
 
 ### D.7 — Model Security group + rule instances + scans
 
+All create/update commands take a JSON config file. Refer to the [reference page](../reference/cli-commands.md#model-security-groups) for full JSON schemas.
+
 ```bash
 # Create a security group
 airs model-security groups create --config group.json
+# group.json (example): { "name": "smoke-test-group", "source_type": "LOCAL", "config": { ... } }
 
 # Inspect
 airs model-security groups get <groupUuid>
@@ -300,11 +335,15 @@ airs model-security groups update <groupUuid> --config group-updated.json
 # Rule instances within the group
 airs model-security rule-instances list <groupUuid>
 airs model-security rule-instances get <groupUuid> <ruleInstanceUuid>
+cat > rule-instance.json <<'EOF'
+{ "state": "BLOCKING", "field_values": [] }
+EOF
 airs model-security rule-instances update <groupUuid> <ruleInstanceUuid> --config rule-instance.json
-# rule-instance.json: { "state": "BLOCKING", "field_values": [...] }
 
 # Trigger a scan
 airs model-security scans create --config scan.json
+# scan.json (example): { "source_type": "HUGGING_FACE", "model_uri": "https://huggingface.co/...", ... }
+
 airs model-security scans get <scanUuid>
 airs model-security scans evaluations <scanUuid>
 airs model-security scans evaluation <evaluationUuid>
@@ -328,7 +367,7 @@ These tie multiple commands together. Each subsection is one end-to-end flow.
 ### E.1 — Bulk scan + resume polling
 
 ```bash
-# Submit (returns immediately with state file path)
+# Submit (returns the state file path; polls inline by default)
 airs runtime bulk-scan --profile "<profileName>" --input prompts.csv --output results.csv
 
 # If polling crashes for any reason (rate limit etc.), resume:
@@ -338,10 +377,15 @@ airs runtime resume-poll ~/.prisma-airs/bulk-scans/<stateFile>.json --output res
 ### E.2 — Profile audit (multi-topic eval, LLM-driven)
 
 ```bash
-# Generates tests via LLM, scans them, computes per-topic + composite metrics
-airs runtime profiles audit "<profileName>" --output json
-airs runtime profiles audit "<profileName>" --output html > audit.html
-airs runtime profiles audit "<profileName>" --diff <runId>   # compare to a prior run
+# Default: terminal output
+airs runtime profiles audit "<profileName>"
+
+# Format selection (terminal | json | html). --output writes the formatted result to a file.
+airs runtime profiles audit "<profileName>" --format json
+airs runtime profiles audit "<profileName>" --format html --output audit.html
+
+# Knobs: --max-tests-per-topic <n>, --provider <name>, --model <name>
+airs runtime profiles audit "<profileName>" --max-tests-per-topic 10 --provider claude-api
 ```
 
 ### E.3 — Scan logs query
@@ -354,11 +398,18 @@ airs runtime scan-logs query --interval 7 --unit days --filter "action=block"
 ### E.4 — Red team scan (full flow)
 
 ```bash
-# Submit
+# Submit (note: --prompt-sets for CUSTOM type, NOT --custom-prompt-sets)
 airs redteam scan --target <targetUuid> --name "Smoke STATIC scan" --type STATIC
 airs redteam scan --target <targetUuid> --name "Smoke DYNAMIC scan" --type DYNAMIC
 airs redteam scan --target <targetUuid> --name "Smoke CUSTOM scan" --type CUSTOM \
-  --custom-prompt-sets <promptSetUuid>
+  --prompt-sets <promptSetUuid>
+
+# Submit without blocking on completion (returns the job ID immediately)
+airs redteam scan --target <targetUuid> --name "Async scan" --type STATIC --no-wait
+
+# STATIC scans can take a categories filter as JSON
+airs redteam scan --target <targetUuid> --name "Filtered STATIC" --type STATIC \
+  --categories '{"security":["jailbreak","prompt_injection"]}'
 
 # Poll status
 airs redteam status <jobId>
@@ -413,7 +464,7 @@ airs redteam prompt-sets archive <promptSetUuid>
 airs redteam targets delete <targetUuid> --force
 
 # 4. Runtime — topics last (they're referenced by profiles)
-airs runtime topics revert --profile "<profileName>" --topic "smoke-test-topic"
+airs runtime topics revert --profile "<profileName>" --name "smoke-test-topic"
 airs runtime profiles delete "smoke-test-profile" --force --updated-by "$(git config user.email)"
 airs runtime api-keys delete "smoke-test-key"
 ```
@@ -429,6 +480,12 @@ If anything errors with `AISEC_RESPONSE_VALIDATION` or `AISecSDKException: RESPO
 - Do **not** swallow `RESPONSE_VALIDATION` errors; they signal real schema drift worth fixing at the source
 
 If a CLI command errors with `error: missing required argument` or unknown flag, that's a CLI usage / doc bug — file against [`@cdot65/prisma-airs-cli`](https://github.com/cdot65/prisma-airs-cli/issues).
+
+### Known issues at the time of this writing
+
+- **`runtime scan-logs query`** may return `RESPONSE_VALIDATION: expected object, received undefined` on some tenants — the SDK's scan-logs response schema is too strict. SDK-side fix tracked.
+- **`redteam prompt-sets get`** prints the prompt-set detail successfully then errors with `Internal server error` because of a follow-up `getPromptSetVersionInfo` call. The primary data is correct — the second call is best-effort and currently 500s for some prompt sets. CLI-side soft-fail handling tracked.
+- **`runtime customer-apps get`** returns `403` when your client credentials don't have access to the app — that's a permission boundary, not a bug.
 
 ## When to run this
 
