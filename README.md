@@ -80,6 +80,10 @@ Credentials are configured via environment variables or `~/.prisma-airs/config.j
 **Required for management:** `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`
 **Required for profile audits:** one LLM provider key + scanning + management credentials
 
+## Live Smoke Testing
+
+The unit suite uses fully mocked services — zero tests in this repo hit a real Prisma AIRS tenant. After every CLI release, after upgrading the SDK, or after an AIRS backend rollout, run the [live smoke test reference](https://cdot65.github.io/prisma-airs-cli/development/smoke-tests/) ([source](docs/development/smoke-tests.md)). Sixteen read-only commands across runtime security, red team, and model security that exercise the SDK's runtime Zod validation against your tenant.
+
 ## License
 
 MIT

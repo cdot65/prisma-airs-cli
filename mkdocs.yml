@@ -117,6 +117,7 @@ nav:
   - Development:
       - Contributing: development/contributing.md
       - Testing: development/testing.md
+      - Live Smoke Tests: development/smoke-tests.md
       - Local Setup: development/local-setup.md
   - About:
       - Release Notes: about/release-notes.md
