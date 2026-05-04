@@ -1,0 +1,5 @@
+---
+"@cdot65/prisma-airs-cli": patch
+---
+
+Fix ~20 incorrect command signatures in `docs/development/full-cli-sweep.md`. The previous version listed nonexistent commands (`redteam instances list`, `redteam devices list`, `redteam devices registry-credentials`) and used wrong flags throughout the write/CRUD sections (`topics create --topic` should be `--name`/`--description`/`--examples`; `topics apply/revert --topic` should be `--name`; `topics eval --input` should be `--prompts`; `redteam scan --custom-prompt-sets` should be `--prompt-sets`; `api-keys create --name` should be `--config <path>`; profile-protection flags take action values not bare booleans; many `update` commands take `--config` rather than per-field flags; `validate-auth` requires `--auth-type` and `--config`). All commands now match `src/cli/commands/*.ts`. Adds a Known Issues section documenting the `scan-logs query` SDK schema bug, the `prompt-sets get` follow-up 500, and the `customer-apps get` permission boundary.
