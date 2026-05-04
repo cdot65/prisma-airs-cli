@@ -92,8 +92,10 @@ airs model-security groups list
 # 2. List rules — exercises rule shape (snake_case → camelCase normalization path)
 airs model-security rules list
 
-# 3. List rule instances — exercises state enum (BLOCKING | ALLOWING | DISABLED)
-airs model-security rule-instances list
+# 3. List rule instances for one of the groups from command 1 — exercises state enum
+#    (BLOCKING | ALLOWING | DISABLED). Replace <groupUuid> with the UUID of any
+#    group from the previous command's output.
+airs model-security rule-instances list <groupUuid>
 
 # 4. List recent scans — exercises scan summary shape (evaluations/violations/files counts)
 airs model-security scans list
