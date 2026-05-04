@@ -9,6 +9,9 @@ That means every AIRS API endpoint group can drift in production without CI noti
 !!! warning "Run after every release"
     These commands are read-only and side-effect free. Run them after publishing a new CLI release, after upgrading the `@cdot65/prisma-airs-sdk` dependency, or any time the AIRS backend rolls out a change.
 
+!!! tip "Need deeper coverage?"
+    For an end-to-end audit covering every command (including write paths and long-running workflows), see the [Full CLI Command Sweep](full-cli-sweep.md).
+
 ## Prerequisites
 
 Set the following environment variables (or have them in `~/.prisma-airs/config.json`):
