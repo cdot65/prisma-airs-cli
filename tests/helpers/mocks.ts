@@ -46,8 +46,9 @@ export function createMockManagementService(): ManagementService {
     createTopic: async (request: CreateCustomTopicRequest): Promise<SdkCustomTopic> => ({
       topic_id: `topic-${++topicCounter}`,
       topic_name: request.topic_name,
-      description: request.description,
-      examples: request.examples,
+      revision: 1,
+      description: request.description ?? '',
+      examples: request.examples ?? [],
       active: true,
     }),
     updateTopic: async (
@@ -56,8 +57,9 @@ export function createMockManagementService(): ManagementService {
     ): Promise<SdkCustomTopic> => ({
       topic_id: id,
       topic_name: request.topic_name,
-      description: request.description,
-      examples: request.examples,
+      revision: (request.revision ?? 1) + 1,
+      description: request.description ?? '',
+      examples: request.examples ?? [],
       active: true,
     }),
     deleteTopic: async () => {},
