@@ -198,6 +198,63 @@ airs runtime resume-poll <stateFile> [--output <file>]
 | `<stateFile>` | Yes | Path to saved `.bulk-scan.json` state file |
 | `--output <file>` | No | Output CSV path |
 
+### runtime dlp-gen
+
+Generate DLP test files — clean carriers plus "dirty" copies with synthetic sensitive data
+embedded via multiple techniques across PDF/PNG/JPEG/SVG/DOCX. Local only; no AIRS API calls.
+
+```bash
+airs runtime dlp-gen [--types <list>] [--count <n>] [--out <dir>] [--techniques <list>] [--seed <n>] [--output <fmt>]
+```
+
+#### Options
+
+| Flag | Required | Description |
+|------|:--------:|-------------|
+| `--types <list>` | No | Comma list of `pdf,png,jpeg,svg,docx` or `all` (default: `all`) |
+| `--count <n>` | No | Clean files per type (default: `1`) |
+| `--out <dir>` | No | Output base directory (default: `./temp`) |
+| `--techniques <list>` | No | `all` or comma list of technique ids (default: `all`) |
+| `--seed <n>` | No | Seed the synthetic-payload RNG for reproducible runs |
+| `--output <fmt>` | No | Summary format: `pretty` (default) or `json` |
+
+Technique ids: PDF `meta`, `hidden-text`, `trailer`; PNG `text-chunks`, `trailer`, `stego-lsb`;
+JPEG `exif`, `com`, `trailer`; SVG `meta`, `hidden-text`, `comment`; DOCX `core-props`,
+`hidden-run`, `visible`.
+
+#### Examples
+
+```bash
+# Full corpus into ./temp, reproducible
+airs runtime dlp-gen --types all --seed 1
+
+# Images only, 3 each
+airs runtime dlp-gen --types png,jpeg,svg --count 3
+
+# Just PNG LSB steganography, JSON summary
+airs runtime dlp-gen --types png --techniques stego-lsb --output json
+```
+
+#### Example Output
+
+```
+  DLP Test-File Generation
+  Output:   ./temp
+  Seed:     1
+  Clean:    5    Dirty: 15
+  Manifest: ./temp/manifest.json
+
+    svg   clean=1 dirty=3
+    png   clean=1 dirty=3
+    pdf   clean=1 dirty=3
+    jpeg  clean=1 dirty=3
+    docx  clean=1 dirty=3
+```
+
+Output layout: `<out>/clean/<type>/`, `<out>/dirty/<type>/<base>__<technique>.<ext>`, and
+`<out>/manifest.json` (dirty file → technique + embedded synthetic values, for scanner
+scoring). All values are synthetic / reserved-for-testing.
+
 ### runtime profiles
 
 Security profile CRUD and profile-level audit.

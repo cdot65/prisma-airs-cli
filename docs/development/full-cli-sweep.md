@@ -126,6 +126,42 @@ airs model-security labels values <labelKey>
 airs model-security pypi-auth
 ```
 
+### B.4 — Runtime DLP test-file generation (local, no API)
+
+Generates clean carrier files plus "dirty" copies with synthetic sensitive data embedded via
+multiple techniques. Local only — no AIRS API calls, safe to run anywhere.
+
+```bash
+# Full corpus (all formats + techniques) into ./temp, reproducible with a seed
+airs runtime dlp-gen --types all --count 1 --out ./temp --seed 1
+
+# Images only, JSON summary
+airs runtime dlp-gen --types png,jpeg,svg --techniques all --output json
+
+# Just the PNG steganography variant
+airs runtime dlp-gen --types png --techniques stego-lsb --out ./temp
+```
+
+Expected output (pretty):
+
+```
+  DLP Test-File Generation
+  Output:   ./temp
+  Seed:     1
+  Clean:    5    Dirty: 15
+  Manifest: ./temp/manifest.json
+
+    svg   clean=1 dirty=3
+    png   clean=1 dirty=3
+    pdf   clean=1 dirty=3
+    jpeg  clean=1 dirty=3
+    docx  clean=1 dirty=3
+```
+
+Produces `temp/clean/<type>/`, `temp/dirty/<type>/<base>__<technique>.<ext>`, and
+`temp/manifest.json` (each dirty file → technique + embedded synthetic values). All values are
+synthetic / reserved-for-testing.
+
 ## Section C — Synchronous scan
 
 Smallest possible write — single sync scan returns immediately, no state to clean up.
