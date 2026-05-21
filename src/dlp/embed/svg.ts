@@ -10,6 +10,13 @@ function inject(clean: Buffer, snippet: string): Buffer {
   return Buffer.from(s.slice(0, idx) + snippet + s.slice(idx), 'utf8');
 }
 
+/** Insert a snippet just before `</svg>` so it paints on top (visible). */
+function appendBeforeClose(clean: Buffer, snippet: string): Buffer {
+  const s = clean.toString('utf8');
+  const idx = s.lastIndexOf('</svg>');
+  return Buffer.from(s.slice(0, idx) + snippet + s.slice(idx), 'utf8');
+}
+
 export const svgTechniques: Record<string, Technique> = {
   meta: {
     id: 'meta',
@@ -32,5 +39,21 @@ export const svgTechniques: Record<string, Technique> = {
     format: 'svg',
     label: 'XML comment',
     embed: (c, p) => inject(c, `<!-- ${line(p)} -->`),
+  },
+  visible: {
+    id: 'visible',
+    format: 'svg',
+    label: 'visible on-canvas text (dark on light)',
+    embed: (c, p) =>
+      appendBeforeClose(
+        c,
+        `<rect x="6" y="6" width="228" height="${Math.min(148, 12 + p.length * 15)}" fill="#fafafa"/>` +
+          p
+            .map(
+              (v, i) =>
+                `<text x="10" y="${20 + i * 15}" font-size="10" fill="#111111">${v.category}: ${v.value}</text>`,
+            )
+            .join(''),
+      ),
   },
 };

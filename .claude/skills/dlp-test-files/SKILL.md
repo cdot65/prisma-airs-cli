@@ -62,11 +62,14 @@ values embedded — use it to score scanner hits/misses.
 
 | Format | Technique ids |
 |--------|---------------|
-| PDF | `meta`, `hidden-text`, `trailer` |
-| PNG | `text-chunks`, `trailer`, `stego-lsb` |
-| JPEG | `exif`, `com`, `trailer` |
-| SVG | `meta`, `hidden-text`, `comment` |
-| DOCX | `core-props`, `hidden-run`, `visible` |
+| PDF | `meta`, `hidden-text`, `trailer`, `visible`, `visible-samecolor` |
+| PNG | `text-chunks`, `trailer`, `stego-lsb`, `visible` |
+| JPEG | `exif`, `com`, `trailer`, `visible` |
+| SVG | `meta`, `hidden-text`, `comment`, `visible` |
+| DOCX | `core-props`, `hidden-run`, `visible`, `visible-samecolor` |
+
+`visible` renders text with foreground ≠ background (OCR-able). `visible-samecolor` (PDF & DOCX)
+draws body text in the **same color as its background** — extractable but camouflaged.
 
 ## Scoring against a scanner
 

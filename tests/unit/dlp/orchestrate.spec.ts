@@ -16,13 +16,13 @@ describe('generateCorpus', () => {
       seed: 9,
     });
     expect(summary.clean).toBe(5);
-    expect(summary.dirty).toBe(15); // 3 techniques x 5 formats
+    expect(summary.dirty).toBe(21); // svg4 + png4 + jpeg4 + pdf5 + docx4
     expect(existsSync(summary.manifestPath)).toBe(true);
 
     const manifest = JSON.parse(await readFile(summary.manifestPath, 'utf8'));
-    expect(manifest.entries).toHaveLength(15);
+    expect(manifest.entries).toHaveLength(21);
     expect(manifest.entries.every((e: { values: unknown[] }) => e.values.length > 0)).toBe(true);
-    expect((await readdir(join(out, 'dirty', 'svg'))).length).toBe(3);
+    expect((await readdir(join(out, 'dirty', 'svg'))).length).toBe(4);
     expect((await readdir(join(out, 'clean', 'png'))).length).toBe(1);
   });
 

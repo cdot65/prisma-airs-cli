@@ -218,9 +218,11 @@ airs runtime dlp-gen [--types <list>] [--count <n>] [--out <dir>] [--techniques 
 | `--seed <n>` | No | Seed the synthetic-payload RNG for reproducible runs |
 | `--output <fmt>` | No | Summary format: `pretty` (default) or `json` |
 
-Technique ids: PDF `meta`, `hidden-text`, `trailer`; PNG `text-chunks`, `trailer`, `stego-lsb`;
-JPEG `exif`, `com`, `trailer`; SVG `meta`, `hidden-text`, `comment`; DOCX `core-props`,
-`hidden-run`, `visible`.
+Technique ids: PDF `meta`, `hidden-text`, `trailer`, `visible`, `visible-samecolor`; PNG
+`text-chunks`, `trailer`, `stego-lsb`, `visible`; JPEG `exif`, `com`, `trailer`, `visible`;
+SVG `meta`, `hidden-text`, `comment`, `visible`; DOCX `core-props`, `hidden-run`, `visible`,
+`visible-samecolor`. (`visible` = foreground ≠ background; `visible-samecolor` = foreground ==
+background, camouflaged but extractable.)
 
 #### Examples
 
@@ -241,14 +243,14 @@ airs runtime dlp-gen --types png --techniques stego-lsb --output json
   DLP Test-File Generation
   Output:   ./temp
   Seed:     1
-  Clean:    5    Dirty: 15
+  Clean:    5    Dirty: 21
   Manifest: ./temp/manifest.json
 
-    svg   clean=1 dirty=3
-    png   clean=1 dirty=3
-    pdf   clean=1 dirty=3
-    jpeg  clean=1 dirty=3
-    docx  clean=1 dirty=3
+    pdf   clean=1 dirty=5
+    png   clean=1 dirty=4
+    jpeg  clean=1 dirty=4
+    svg   clean=1 dirty=4
+    docx  clean=1 dirty=4
 ```
 
 Output layout: `<out>/clean/<type>/`, `<out>/dirty/<type>/<base>__<technique>.<ext>`, and

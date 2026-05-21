@@ -1,4 +1,4 @@
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx';
+import { Document, HeadingLevel, Packer, Paragraph, ShadingType, TextRun } from 'docx';
 import { lorem } from '../lorem.js';
 import { makeRng } from '../rng.js';
 import type { PayloadValue, Technique } from '../types.js';
@@ -52,7 +52,24 @@ export const docxTechniques: Record<string, Technique> = {
   visible: {
     id: 'visible',
     format: 'docx',
-    label: 'visible body line',
+    label: 'visible body text (foreground != background)',
     embed: (_clean, p) => build([new Paragraph({ children: [new TextRun(join(p))] })]),
+  },
+  'visible-samecolor': {
+    id: 'visible-samecolor',
+    format: 'docx',
+    label: 'visible run, same color as background (camouflaged)',
+    embed: (_clean, p) =>
+      build([
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: join(p),
+              color: 'D9D9D9',
+              shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'D9D9D9' },
+            }),
+          ],
+        }),
+      ]),
   },
 };

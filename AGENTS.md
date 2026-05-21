@@ -137,9 +137,11 @@ airs runtime dlp-gen [--types pdf,png,jpeg,svg,docx] [--count <n>] [--out <dir>]
 Generates clean carrier files and "dirty" copies with **synthetic** sensitive data embedded
 via multiple techniques (per format). Writes `<out>/clean/`, `<out>/dirty/`, and
 `<out>/manifest.json` (dirty file → technique + embedded values, for scoring). No auth required
-(local file generation). Technique ids: PDF `meta|hidden-text|trailer`; PNG
-`text-chunks|trailer|stego-lsb`; JPEG `exif|com|trailer`; SVG `meta|hidden-text|comment`; DOCX
-`core-props|hidden-run|visible`. All values are synthetic / reserved-for-testing.
+(local file generation). Technique ids: PDF `meta|hidden-text|trailer|visible|visible-samecolor`;
+PNG `text-chunks|trailer|stego-lsb|visible`; JPEG `exif|com|trailer|visible`; SVG
+`meta|hidden-text|comment|visible`; DOCX `core-props|hidden-run|visible|visible-samecolor`.
+`visible` = foreground ≠ background; `visible-samecolor` (PDF & DOCX) = foreground == background
+(camouflaged but extractable). All values are synthetic / reserved-for-testing.
 
 ---
 

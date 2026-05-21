@@ -1,5 +1,6 @@
 import piexif from 'piexifjs';
 import type { PayloadValue, Technique } from '../types.js';
+import { renderVisibleText } from './overlay.js';
 
 const join = (p: PayloadValue[]): string => p.map((v) => `${v.category}: ${v.value}`).join(' | ');
 
@@ -61,5 +62,11 @@ export const jpegTechniques: Record<string, Technique> = {
     format: 'jpeg',
     label: 'bytes after EOI',
     embed: (c, p) => Buffer.concat([c, Buffer.from(`\nDLP ${join(p)}\n`, 'utf8')]),
+  },
+  visible: {
+    id: 'visible',
+    format: 'jpeg',
+    label: 'visible rendered text (dark on light)',
+    embed: (c, p) => renderVisibleText(c, p, 'jpeg'),
   },
 };
