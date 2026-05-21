@@ -128,6 +128,19 @@ airs runtime resume-poll <stateFile> [--output <csv>]
 
 Resumes polling from saved bulk scan state file after a crash or rate limit failure.
 
+#### Generate DLP test files
+
+```bash
+airs runtime dlp-gen [--types pdf,png,jpeg,svg,docx] [--count <n>] [--out <dir>] [--techniques all|<ids>] [--seed <n>] [--output pretty|json]
+```
+
+Generates clean carrier files and "dirty" copies with **synthetic** sensitive data embedded
+via multiple techniques (per format). Writes `<out>/clean/`, `<out>/dirty/`, and
+`<out>/manifest.json` (dirty file → technique + embedded values, for scoring). No auth required
+(local file generation). Technique ids: PDF `meta|hidden-text|trailer`; PNG
+`text-chunks|trailer|stego-lsb`; JPEG `exif|com|trailer`; SVG `meta|hidden-text|comment`; DOCX
+`core-props|hidden-run|visible`. All values are synthetic / reserved-for-testing.
+
 ---
 
 ### Runtime — Configuration Management

@@ -75,6 +75,7 @@ nav:
   - Runtime Security:
       - Overview: runtime/overview.md
       - Prompt Scanning: runtime/scanning.md
+      - DLP Test-File Generation: runtime/dlp-gen.md
       - Configuration Management: runtime/config-management.md
       - Guardrail Optimization:
           - How It Works: runtime/guardrails/overview.md
