@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # pnpm/action-setup has no Node 24 major yet; force it (and any JS action) onto Node 24.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
