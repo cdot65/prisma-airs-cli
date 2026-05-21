@@ -92,6 +92,7 @@ nav:
   - DLP Detection Testing:
       - Overview: dlp-detection/index.md
       - Test File Catalog: dlp-detection/catalog.md
+      - "Finding: SVG DLP Bypass": dlp-detection/svg-dlp-bypass.md
   - Backup & Restore:
       - Overview: backup/overview.md
   - Model Security:

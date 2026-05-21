@@ -47,12 +47,12 @@ Legend: :material-check: detected · :material-close: not detected · :material-
 | DOCX — body + hidden white text + core props | `dlp_doc_sensitive.docx` | Partly | — | Office modality |
 | ZIP — payload.txt inside archive | `dlp_archive.zip` | No | — | archive recursion |
 | Plaintext baseline | `samples/payload.txt` | Yes | — | sanity baseline |
-| SVG — benign controls | `samples/svg/svg_benign_*.svg` | Yes | — | must **not** flag |
-| SVG — DLP (sensitive data) | `samples/svg/svg_mal_1_dlp.svg` | No | — | markers in metadata/desc/hidden text |
-| SVG — prompt injection | `samples/svg/svg_mal_2_prompt_injection.svg` | No | — | instruction override |
-| SVG — system-prompt extraction | `samples/svg/svg_mal_3_system_prompt.svg` | No | — | jailbreak / leak |
-| SVG — indirect injection + exfil | `samples/svg/svg_mal_4_exfil_injection.svg` | No | — | example.com exfil URL |
-| SVG — active content / script (XSS) | `samples/svg/svg_mal_5_script_xss.svg` | No | — | `<script>` + `javascript:` |
+| SVG — benign controls | `samples/svg/svg_benign_*.svg` | Yes | n/a | correctly **allowed** (true negatives) |
+| SVG — DLP (sensitive data) | `samples/svg/svg_mal_1_dlp.svg` | No | :material-close: | **DLP bypass** — see [SVG DLP bypass finding](svg-dlp-bypass.md) |
+| SVG — prompt injection | `samples/svg/svg_mal_2_prompt_injection.svg` | No | :material-check: | blocked (`injection`) |
+| SVG — system-prompt extraction | `samples/svg/svg_mal_3_system_prompt.svg` | No | :material-check: | blocked (`injection`) |
+| SVG — indirect injection + exfil | `samples/svg/svg_mal_4_exfil_injection.svg` | No | :material-check: | blocked (`injection`, `toxic_content`) |
+| SVG — active content / script (XSS) | `samples/svg/svg_mal_5_script_xss.svg` | No | :material-check: | blocked (`injection`, `toxic_content`) — not `malicious_code` |
 
 !!! warning "Open question — the stego PNG result"
     The plaintext PII in files #1–#3 was **missed**, but the *steganographic* PNG (#4) was
