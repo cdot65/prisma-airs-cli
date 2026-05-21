@@ -67,6 +67,14 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     [:octicons-arrow-right-24: Profile Audits](runtime/profile-audits.md)
 
+-   :material-magnify-scan:{ .lg .middle } **DLP Detection Testing**
+
+    ---
+
+    A synthetic, multi-modality corpus (PDF, JPEG, PNG, DOCX, ZIP) for evaluating how well a scanner detects sensitive data hidden via invisible text layers, metadata, container padding, OCR-only pixels, and steganography.
+
+    [:octicons-arrow-right-24: DLP Detection Testing](dlp-detection/index.md)
+
 </div>
 
 ---
