@@ -31,6 +31,7 @@ import {
   renderTopicList,
 } from '../renderer/index.js';
 import { registerAuditCommand } from './audit.js';
+import { registerDlpGenCommand } from './dlp-gen.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
 import { registerApplyCommand } from './topics-apply.js';
 import { registerCreateCommand } from './topics-create.js';
@@ -890,4 +891,9 @@ export function registerRuntimeCommand(program: Command): void {
         process.exit(1);
       }
     });
+
+  // -----------------------------------------------------------------------
+  // runtime dlp-gen — generate clean + dirty DLP test files
+  // -----------------------------------------------------------------------
+  registerDlpGenCommand(runtime);
 }
