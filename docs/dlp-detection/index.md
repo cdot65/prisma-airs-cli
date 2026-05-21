@@ -47,6 +47,12 @@ Legend: :material-check: detected · :material-close: not detected · :material-
 | DOCX — body + hidden white text + core props | `dlp_doc_sensitive.docx` | Partly | — | Office modality |
 | ZIP — payload.txt inside archive | `dlp_archive.zip` | No | — | archive recursion |
 | Plaintext baseline | `samples/payload.txt` | Yes | — | sanity baseline |
+| SVG — benign controls | `samples/svg/svg_benign_*.svg` | Yes | — | must **not** flag |
+| SVG — DLP (sensitive data) | `samples/svg/svg_mal_1_dlp.svg` | No | — | markers in metadata/desc/hidden text |
+| SVG — prompt injection | `samples/svg/svg_mal_2_prompt_injection.svg` | No | — | instruction override |
+| SVG — system-prompt extraction | `samples/svg/svg_mal_3_system_prompt.svg` | No | — | jailbreak / leak |
+| SVG — indirect injection + exfil | `samples/svg/svg_mal_4_exfil_injection.svg` | No | — | example.com exfil URL |
+| SVG — active content / script (XSS) | `samples/svg/svg_mal_5_script_xss.svg` | No | — | `<script>` + `javascript:` |
 
 !!! warning "Open question — the stego PNG result"
     The plaintext PII in files #1–#3 was **missed**, but the *steganographic* PNG (#4) was
@@ -67,8 +73,8 @@ Legend: :material-check: detected · :material-close: not detected · :material-
 docs/dlp-detection/
 ├── index.md            # this page
 ├── catalog.md          # per-file detail: what is what, what is within what
-├── samples/            # the raw carrier files
-├── encoded/            # base64 encodings (inline-JSON API representation)
+├── samples/            # the raw carrier files (+ samples/svg/ for the SVG set)
+├── encoded/            # base64 encodings (+ encoded/svg/)
 └── scripts/            # generators + verifier (provenance / regenerate)
 ```
 
@@ -82,6 +88,7 @@ python3 embed_dlp.py        # the PDF invisible-text-layer set
 python3 build_image_dlp.py  # image ladder: metadata / container / OCR / LSB stego
 python3 build_png_text.py   # PNG text-chunk metadata variant
 python3 build_more_dlp.py   # controls + DOCX + ZIP
+python3 build_svg_corpus.py # SVG set: 2 benign + 5 malicious (DLP + AI-prompt attacks)
 python3 verify_image_dlp.py # confirms each image still carries its payload
 ```
 
