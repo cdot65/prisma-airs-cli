@@ -39,6 +39,7 @@ export const ConfigSchema = z.object({
   mgmtTsgId: z.string().optional(),
   mgmtEndpoint: z.string().optional(),
   mgmtTokenEndpoint: z.string().optional(),
+  dlpEndpoint: z.string().optional(),
 
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),

@@ -25,6 +25,7 @@ function fromEnv(): Record<string, unknown> {
     mgmtTsgId: env.PANW_MGMT_TSG_ID,
     mgmtEndpoint: env.PANW_MGMT_ENDPOINT,
     mgmtTokenEndpoint: env.PANW_MGMT_TOKEN_ENDPOINT,
+    dlpEndpoint: env.PANW_DLP_ENDPOINT,
     scanConcurrency: env.SCAN_CONCURRENCY,
     dataDir: env.DATA_DIR,
   };
