@@ -94,7 +94,7 @@ export function register(dlp: Command): void {
     .description(
       'JSON Merge Patch. Use --body-file for nested fields. ' +
         '--set/--clear coerce values: numbers/booleans/JSON literals. ' +
-        'To force a string, quote: --set count=\'\\"5\\"\'.',
+        'To force a string, quote: --set count=\'"5"\'.',
     )
     .option('--body-file <path>', 'JSON merge-patch body file')
     .option('--set <k=v...>', 'Set scalar field (repeatable)', (v, p: string[] = []) => [...p, v])
