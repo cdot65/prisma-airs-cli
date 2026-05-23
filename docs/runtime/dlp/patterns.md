@@ -26,7 +26,75 @@ airs runtime dlp patterns list
 airs runtime dlp patterns list --page 0 --size 50 --sort name,asc --output json
 ```
 
-**Output** — paginated list of pattern objects.
+**Output** — Spring `Page<>` envelope; example showing both `custom` and `predefined` entries (`totalElements`/`totalPages` are emitted as `null` by this endpoint):
+
+```json
+{
+  "content": [
+    {
+      "id": "6990...",
+      "name": "IPv4",
+      "description": "Just a simple test",
+      "tenant_id": "<TENANT_ID>",
+      "type": "custom",
+      "status": "active",
+      "license_type": "standard",
+      "is_parent_managed": false,
+      "version": 1,
+      "detection_config": {
+        "technique": "regex",
+        "supported_confidence_levels": ["high", "low"]
+      },
+      "matching_rules": {
+        "delimiter": ";",
+        "proximity_distance": 200,
+        "proximity_keywords": null,
+        "regexes": [
+          {
+            "regex": "\\b(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)(?:\\.(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)){3}\\b",
+            "weight": 1
+          }
+        ],
+        "metadata_criteria": null
+      },
+      "tags": { "classification": ["pab"] },
+      "audit_metadata": {
+        "created_at": 1771088671081,
+        "created_by": "Strata Cloud Manager",
+        "updated_at": 1771088671081,
+        "updated_by": "Strata Cloud Manager"
+      }
+    },
+    {
+      "id": "6900...",
+      "name": "Passport - Australia",
+      "type": "predefined",
+      "status": "disabled",
+      "license_type": "standard",
+      "version": 1,
+      "detection_config": { "technique": "regex", "supported_confidence_levels": ["high"] },
+      "matching_rules": {
+        "delimiter": null,
+        "proximity_keywords": ["passport", "passport no"],
+        "regexes": [{ "regex": "...", "weight": 1 }],
+        "metadata_criteria": null
+      }
+    }
+  ],
+  "pageable": { "page_number": 0, "page_size": 25, "offset": 0, "paged": true, "unpaged": false },
+  "first": true,
+  "last": false,
+  "size": 25,
+  "number": 0,
+  "number_of_elements": 25,
+  "empty": false,
+  "totalElements": null,
+  "totalPages": null
+}
+```
+
+!!! note "Nullable fields"
+    Real responses include several `null` values on `matching_rules` nested fields — `delimiter`, `proximity_keywords`, `regexes`, `metadata_criteria` are each independently nullable depending on the detection technique. CLI requires `@cdot65/prisma-airs-sdk@^0.9.2` or newer to parse this surface; older SDK pins fail Zod validation.
 
 ## create
 
@@ -73,11 +141,14 @@ airs runtime dlp patterns create --body-file pattern.json --output json
 Retrieve a single pattern by ID.
 
 ```bash
-airs runtime dlp patterns get pat-7c4a91
-airs runtime dlp patterns get pat-7c4a91 --output json
+airs runtime dlp patterns get 6990...
+airs runtime dlp patterns get 6990... --output json
 ```
 
-**Output** — full pattern object including matching rules and tags.
+**Output** — same shape as a single `content[]` entry from `list`.
+
+!!! warning "Known issue (2026-05-23)"
+    The DLP API currently returns HTTP 400 for `GET /v2/api/data-patterns/{id}` against live tenants, even with valid IDs from the `list` response. This is a server-side issue, not a CLI or SDK bug — reproducible via `curl` with the same credentials. Use `list` and filter client-side until the upstream is fixed.
 
 ## replace
 
@@ -113,8 +184,8 @@ Create a file `pattern-update.json` with all required fields plus any changes:
 Then invoke replace:
 
 ```bash
-airs runtime dlp patterns replace pat-7c4a91 --body-file pattern-update.json
-airs runtime dlp patterns replace pat-7c4a91 --body-file pattern-update.json --output json
+airs runtime dlp patterns replace 6990... --body-file pattern-update.json
+airs runtime dlp patterns replace 6990... --body-file pattern-update.json --output json
 ```
 
 **Output** — updated pattern with incremented version and refreshed `audit_metadata`.
@@ -149,8 +220,8 @@ Create a file `pattern-patch.json`:
 Then invoke patch:
 
 ```bash
-airs runtime dlp patterns patch pat-7c4a91 --body-file pattern-patch.json
-airs runtime dlp patterns patch pat-7c4a91 --body-file pattern-patch.json --output json
+airs runtime dlp patterns patch 6990... --body-file pattern-patch.json
+airs runtime dlp patterns patch 6990... --body-file pattern-patch.json --output json
 ```
 
 **Output** — patched pattern with `description` cleared (omitted from response) and the third regex persisted.
@@ -160,7 +231,7 @@ airs runtime dlp patterns patch pat-7c4a91 --body-file pattern-patch.json --outp
 Soft-delete a pattern. The pattern becomes invisible to `list` but remains resolvable via `get` with `status: 'deleted'`.
 
 ```bash
-airs runtime dlp patterns delete pat-7c4a91
+airs runtime dlp patterns delete 6990...
 ```
 
 **Exit code** — 0 on success, 1 on error.

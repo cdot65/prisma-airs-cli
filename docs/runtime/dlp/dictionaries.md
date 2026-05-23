@@ -27,7 +27,52 @@ airs runtime dlp dictionaries list --page 0 --size 50 --output json
 airs runtime dlp dictionaries list --keywords  # Include keyword array in output
 ```
 
-**Output** — paginated list of dictionary objects; `keywords` array populated only if requested.
+**Output** — Spring `Page<>` envelope (`totalElements`/`totalPages` are emitted as `null` by this endpoint); example with one predefined entry:
+
+```json
+{
+  "content": [
+    {
+      "id": "6901...",
+      "name": "Bank Names",
+      "description": "List of large international banks",
+      "category": "Finance",
+      "region_name": "GLOBAL",
+      "type": "predefined",
+      "is_case_sensitive": false,
+      "is_parent_managed": false,
+      "detection_technique": "dictionary",
+      "detection_sub_technique": null,
+      "dictionary_metadata": {
+        "number_of_keywords": 0,
+        "original_file_name": "",
+        "original_file_size_in_byte": 0
+      },
+      "keywords": null,
+      "tags": { "classification": ["pab"] },
+      "attributes": null,
+      "audit_metadata": {
+        "created_at": 1761657319491,
+        "created_by": "System",
+        "updated_at": 1761657319491,
+        "updated_by": "System"
+      }
+    }
+  ],
+  "pageable": { "page_number": 0, "page_size": 25, "offset": 0, "paged": true, "unpaged": false },
+  "first": true,
+  "last": false,
+  "size": 25,
+  "number": 0,
+  "number_of_elements": 25,
+  "empty": false,
+  "totalElements": null,
+  "totalPages": null
+}
+```
+
+!!! note
+    `keywords` is `null` unless `--keywords` is passed. `detection_sub_technique`, `attributes`, and the `audit_metadata.created_by`/`updated_by` slots are commonly `null` on predefined entries.
 
 ## create
 
@@ -71,12 +116,43 @@ airs runtime dlp dictionaries create --metadata-file dict-meta.json --file-path 
 Retrieve a single dictionary by ID.
 
 ```bash
-airs runtime dlp dictionaries get dict-7f30c2
-airs runtime dlp dictionaries get dict-7f30c2 --output json
-airs runtime dlp dictionaries get dict-7f30c2 --keywords  # Include keyword array
+airs runtime dlp dictionaries get 6901...
+airs runtime dlp dictionaries get 6901... --output json
+airs runtime dlp dictionaries get 6901... --keywords  # Include keyword array
 ```
 
-**Output** — full dictionary object with metadata, keyword count, and optionally the keyword array.
+**Output** — full dictionary object:
+
+```json
+{
+  "id": "6901...",
+  "name": "Bank Names",
+  "description": "List of large international banks",
+  "category": "Finance",
+  "region_name": "GLOBAL",
+  "type": "predefined",
+  "is_case_sensitive": false,
+  "is_parent_managed": false,
+  "detection_technique": "dictionary",
+  "detection_sub_technique": null,
+  "dictionary_metadata": {
+    "number_of_keywords": 200,
+    "original_file_name": "",
+    "original_file_size_in_byte": 0
+  },
+  "keywords": null,
+  "tags": { "classification": ["pab"] },
+  "attributes": null,
+  "audit_metadata": {
+    "created_at": 1761657319491,
+    "created_by": null,
+    "updated_at": 1761657319491,
+    "updated_by": null
+  }
+}
+```
+
+Note `dictionary_metadata.number_of_keywords` reflects the canonical server-side count even when `keywords` is `null`. Pass `--keywords` to populate the array.
 
 ## replace
 
@@ -109,8 +185,8 @@ foxtrot
 Then invoke replace:
 
 ```bash
-airs runtime dlp dictionaries replace dict-7f30c2 --metadata-file dict-meta-v2.json --file-path codenames-v2.txt
-airs runtime dlp dictionaries replace dict-7f30c2 --metadata-file dict-meta-v2.json --file-path codenames-v2.txt --output json
+airs runtime dlp dictionaries replace 6901... --metadata-file dict-meta-v2.json --file-path codenames-v2.txt
+airs runtime dlp dictionaries replace 6901... --metadata-file dict-meta-v2.json --file-path codenames-v2.txt --output json
 ```
 
 **Output** — updated dictionary with incremented keyword count and refreshed `audit_metadata`. If the API returns 204, the output is empty; always re-fetch with `get --keywords` to canonically observe state.
@@ -133,8 +209,8 @@ Create a patch file `dict-patch.json`:
 Then invoke patch:
 
 ```bash
-airs runtime dlp dictionaries patch dict-7f30c2 --body-file dict-patch.json
-airs runtime dlp dictionaries patch dict-7f30c2 --body-file dict-patch.json --output json
+airs runtime dlp dictionaries patch 6901... --body-file dict-patch.json
+airs runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output json
 ```
 
 **Output** — patched dictionary with `description` cleared (omitted from response) and the new name persisted. Keywords are not affected by PATCH — use REPLACE to change the keyword file.
@@ -144,7 +220,7 @@ airs runtime dlp dictionaries patch dict-7f30c2 --body-file dict-patch.json --ou
 Delete a dictionary.
 
 ```bash
-airs runtime dlp dictionaries delete dict-7f30c2
+airs runtime dlp dictionaries delete 6901...
 ```
 
 **Exit code** — 0 on success, 1 on error.

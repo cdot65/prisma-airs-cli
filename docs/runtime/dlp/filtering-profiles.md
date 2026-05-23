@@ -16,51 +16,119 @@ Manage Data Filtering Profiles on the DLP service. Filtering profiles define sca
 
 ## list
 
-List all filtering profiles. Supports pagination, sorting, and status filters.
+List all filtering profiles. Supports pagination and sorting.
 
 ```bash
 airs runtime dlp filtering-profiles list
-airs runtime dlp filtering-profiles list --status enabled --page 0 --size 20
+airs runtime dlp filtering-profiles list --page 0 --size 20
 airs runtime dlp filtering-profiles list --sort name,asc --output json
 ```
 
-**Output** — paginated list with total count:
+**Output** — Spring `Page<>` envelope, sample with one entry (`file_type` truncated; `totalElements`/`totalPages` are emitted as `null` by this endpoint):
 
 ```json
 {
   "content": [
     {
-      "id": "dfp-001",
-      "name": "Outbound-HR",
-      "direction": "UPLOAD",
-      "log_severity": "HIGH",
+      "id": "6a10...",
+      "name": "asdfafdsadsa",
+      "description": null,
+      "tenant_id": "<TENANT_ID>",
+      "type": "custom",
+      "data_profile_id": 1234567890,
+      "direction": "c2s",
       "file_based": true,
-      "non_file_based": true,
-      "data_profile_id": 1001,
+      "non_file_based": false,
+      "log_severity": "low",
+      "scan_type": "include",
+      "is_end_user_coaching_enabled": null,
+      "is_granular_profile": false,
+      "is_parent_managed": false,
+      "euc_template_id": null,
+      "version": 1,
+      "file_type": ["csv", "doc", "docx", "pdf", "txt-upload", "xlsx", "7z"],
       "audit_metadata": {
-        "created_by": "ops@example.com",
-        "created_at": "2026-04-12T09:15:00Z",
-        "updated_at": "2026-05-01T14:22:00Z"
-      }
+        "created_at": 1779473698140,
+        "created_by": null,
+        "updated_at": 1779473698140,
+        "updated_by": "Strata Cloud Manager"
+      },
+      "criteria_details": [],
+      "exception_rules": [],
+      "exclusions": {
+        "app_exclusion_list": [],
+        "url_exclusion_list": [],
+        "exclusion_list": {}
+      },
+      "rule1": {
+        "action": "alert",
+        "response_page": "This file has dlp issues",
+        "show_rsp_page": "no"
+      },
+      "rule2": null
     }
   ],
-  "totalElements": 5,
-  "totalPages": 1,
+  "pageable": { "page_number": 0, "page_size": 25, "offset": 0, "paged": true, "unpaged": false },
+  "first": true,
+  "last": false,
+  "size": 25,
   "number": 0,
-  "size": 20
+  "number_of_elements": 25,
+  "empty": false,
+  "totalElements": null,
+  "totalPages": null
 }
 ```
+
+!!! note "Nullable fields"
+    The DLP API returns `null` for several fields on real tenants — including `description`, `rule2`, `audit_metadata.created_by`, and `is_end_user_coaching_enabled`. Make sure your downstream parsing accepts these. (CLI requires `@cdot65/prisma-airs-sdk@^0.9.2` or newer for full nullable coverage.)
 
 ## get
 
 Retrieve a single filtering profile by ID.
 
 ```bash
-airs runtime dlp filtering-profiles get dfp-001
-airs runtime dlp filtering-profiles get dfp-001 --output json
+airs runtime dlp filtering-profiles get 6a10...
+airs runtime dlp filtering-profiles get 6a10... --output json
 ```
 
-**Output** — full profile object with exception rules and exclusions.
+**Output** — same shape as a single `content[]` entry from `list`:
+
+```json
+{
+  "id": "6a10...",
+  "name": "asdfafdsadsa",
+  "description": null,
+  "tenant_id": "<TENANT_ID>",
+  "type": "custom",
+  "data_profile_id": 1234567890,
+  "direction": "c2s",
+  "file_based": true,
+  "non_file_based": false,
+  "log_severity": "low",
+  "scan_type": "include",
+  "version": 1,
+  "audit_metadata": {
+    "created_at": 1779473698140,
+    "created_by": null,
+    "updated_at": 1779473698140,
+    "updated_by": "Strata Cloud Manager"
+  },
+  "criteria_details": [],
+  "exception_rules": [],
+  "exclusions": {
+    "app_exclusion_list": [],
+    "url_exclusion_list": [],
+    "exclusion_list": {}
+  },
+  "rule1": {
+    "action": "alert",
+    "response_page": "This file has dlp issues",
+    "show_rsp_page": "no"
+  },
+  "rule2": null
+}
+```
 
 ## replace
 
@@ -75,12 +143,12 @@ Create a file `dfp-update.json`:
   "description": "Updated HR data filtering",
   "direction": "UPLOAD",
   "log_severity": "CRITICAL",
-  "data_profile_id": 1001,
+  "data_profile_id": 1234567890,
   "exception_rules": [
     {
       "action": "BLOCK",
       "log_severity": "CRITICAL",
-      "data_profile_ids": [1001],
+      "data_profile_ids": [1234567890],
       "source_attributes": {
         "match_any": false,
         "user_group_ids": ["legal-review"]
@@ -93,8 +161,8 @@ Create a file `dfp-update.json`:
 Then invoke replace:
 
 ```bash
-airs runtime dlp filtering-profiles replace dfp-001 --body-file dfp-update.json
-airs runtime dlp filtering-profiles replace dfp-001 --body-file dfp-update.json --output json
+airs runtime dlp filtering-profiles replace 6a10... --body-file dfp-update.json
+airs runtime dlp filtering-profiles replace 6a10... --body-file dfp-update.json --output json
 ```
 
 **Output** — updated profile with incremented version and refreshed audit metadata.

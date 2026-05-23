@@ -25,7 +25,92 @@ airs runtime dlp profiles list
 airs runtime dlp profiles list --page 0 --size 50 --sort name,asc --output json
 ```
 
-**Output** — paginated list of profile objects with detection rules.
+**Output** — Spring `Page<>` envelope; example showing a `multi_profile` entry (server returns the composed pattern set echoed in `advance_data_patterns_rule_request`):
+
+```json
+{
+  "content": [
+    {
+      "id": "1234567890",
+      "name": "EU-Regulated (umbrella)",
+      "description": null,
+      "tenant_id": "<TENANT_ID>",
+      "type": "custom",
+      "profile_status": "active",
+      "profile_type": "advanced",
+      "is_granular_data_profile": false,
+      "is_parent_managed": false,
+      "version": 1,
+      "advance_data_patterns_rule_request": [
+        "(... server-rendered detection expression, truncated ...)"
+      ],
+      "detection_rules": [
+        {
+          "rule_type": "multi_profile",
+          "multi_profile": {
+            "data_profile_ids": [1234567891, 1234567892, 1234567893],
+            "operator_type": "or"
+          }
+        }
+      ],
+      "audit_metadata": {
+        "created_at": 1779473698140,
+        "created_by": "Strata Cloud Manager",
+        "updated_at": 1779473698140,
+        "updated_by": "Strata Cloud Manager"
+      }
+    }
+  ],
+  "pageable": { "page_number": 0, "page_size": 25, "offset": 0, "paged": true, "unpaged": false },
+  "first": true,
+  "last": false,
+  "size": 25,
+  "number": 0,
+  "number_of_elements": 25,
+  "empty": false,
+  "totalElements": null,
+  "totalPages": null
+}
+```
+
+Example `expression_tree` entry (truncated to one leaf for brevity — real responses nest several layers of `sub_expressions`):
+
+```json
+{
+  "id": "1234567890",
+  "name": "InfoSec - Code Assistant - Strict",
+  "profile_type": "advanced",
+  "version": 5,
+  "detection_rules": [
+    {
+      "rule_type": "expression_tree",
+      "expression_tree": {
+        "operator_type": "or",
+        "rule_item": null,
+        "sub_expressions": [
+          {
+            "operator_type": null,
+            "rule_item": {
+              "detection_technique": "regex",
+              "id": "6900...",
+              "name": "Bank - ABA Routing Number",
+              "version": 1,
+              "by_unique_count": false,
+              "confidence_level": "low",
+              "supported_confidence_levels": ["high", "low"],
+              "occurrence_operator_type": "any"
+            },
+            "sub_expressions": []
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+!!! note "Nullable fields"
+    The `expression_tree` is recursive and many nodes legitimately carry `null` values — particularly `operator_type`, `rule_item`, and (at intermediate nodes) `sub_expressions` slots. CLI requires `@cdot65/prisma-airs-sdk@^0.9.2` or newer to parse this surface; older SDK pins fail Zod validation on real responses.
 
 ## create
 
@@ -90,7 +175,7 @@ Create a file `profile-multi.json`:
       "rule_type": "multi_profile",
       "multi_profile": {
         "operator_type": "or",
-        "data_profile_ids": [1001, 1002]
+        "data_profile_ids": [1234567891, 1234567892]
       }
     }
   ]
@@ -103,18 +188,21 @@ Then invoke create:
 airs runtime dlp profiles create --body-file profile-multi.json --output json
 ```
 
-**Output** — created profile with server-assigned `id`, `status: 'active'`, `version: 1`, and `audit_metadata`. Multi-profile compositions auto-promote `profile_type` to `'advanced'`.
+**Output** — created profile with server-assigned `id`, `profile_status: 'active'`, `version: 1`, and `audit_metadata`. Multi-profile compositions auto-promote `profile_type` to `'advanced'`.
 
 ## get
 
 Retrieve a single profile by ID.
 
 ```bash
-airs runtime dlp profiles get prof-3a91
-airs runtime dlp profiles get prof-3a91 --output json
+airs runtime dlp profiles get 1234567890
+airs runtime dlp profiles get 1234567890 --output json
 ```
 
-**Output** — full profile object with detection rules fully expanded.
+**Output** — same shape as a single `content[]` entry from `list`.
+
+!!! warning "Known issue (2026-05-23)"
+    The DLP API currently returns HTTP 400 for `GET /v2/api/data-profiles/{id}` against live tenants, even with valid IDs from the `list` response. This is a server-side issue, not a CLI or SDK bug — reproducible via `curl` with the same credentials. Use `list` and filter client-side until the upstream is fixed.
 
 ## replace
 
@@ -160,8 +248,8 @@ Create a file `profile-update.json` with all required fields:
 Then invoke replace:
 
 ```bash
-airs runtime dlp profiles replace prof-3a91 --body-file profile-update.json
-airs runtime dlp profiles replace prof-3a91 --body-file profile-update.json --output json
+airs runtime dlp profiles replace 1234567890 --body-file profile-update.json
+airs runtime dlp profiles replace 1234567890 --body-file profile-update.json --output json
 ```
 
 **Output** — updated profile with incremented version and refreshed `audit_metadata`.
@@ -183,8 +271,8 @@ Create a file `profile-patch.json`:
 Then invoke patch:
 
 ```bash
-airs runtime dlp profiles patch prof-3a91 --body-file profile-patch.json
-airs runtime dlp profiles patch prof-3a91 --body-file profile-patch.json --output json
+airs runtime dlp profiles patch 1234567890 --body-file profile-patch.json
+airs runtime dlp profiles patch 1234567890 --body-file profile-patch.json --output json
 ```
 
 **Output** — patched profile with only the specified fields updated; detection rules preserved as-is.
