@@ -1,5 +1,15 @@
 # Migration: daystrom → prisma-airs-cli
 
+## SDK 0.9.0 (2026-05-23)
+
+The CLI now exposes `airs runtime dlp` (filtering-profiles, patterns, profiles,
+dictionaries) backed by the SDK's new `client.dlp.*` namespace. Existing
+`airs runtime dlp-profiles list` (read-only DLP profile references) is unchanged.
+
+New optional env: `PANW_DLP_ENDPOINT` (defaults to api.dlp.paloaltonetworks.com).
+
+## daystrom → prisma-airs-cli Rename
+
 This project was renamed from `daystrom` to `prisma-airs-cli` in March 2026.
 
 ## What Changed

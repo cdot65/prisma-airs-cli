@@ -65,6 +65,7 @@ src/
 │   │   ├── backup.ts      # Backup core logic (backupTargets, createRedTeamService, toBackupData)
 │   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
+│   │   ├── dlp/           # DLP CLI commands (4 subgroups + aggregator + shared patch/parseBody utils)
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics + audit (profiles)
 │   │   ├── audit.ts       # Profile-level multi-topic evaluation (registered under runtime profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
@@ -99,6 +100,7 @@ src/
 │   ├── runtime.ts         # SdkRuntimeService — sync scan, async bulk scan, poll results, CSV export
 │   ├── management.ts      # SdkManagementService — topic CRUD, profile CRUD, API keys, customer apps, deployment/DLP profiles, scan logs
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
+│   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
@@ -192,6 +194,10 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
   - `airs runtime dlp-profiles {list}` — DLP profile listing
   - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`)
+  - `airs runtime dlp filtering-profiles {list, get, replace}` — read + full-replace
+  - `airs runtime dlp patterns {list, create, get, replace, patch, delete}` — full CRUD + soft-delete
+  - `airs runtime dlp profiles {list, create, get, replace, patch, delete*}` — no real delete; patch profile_status
+  - `airs runtime dlp dictionaries {list, create, get, replace, patch, delete}` — multipart upload, 200/204 fallback
 
 ### Red Team (`src/airs/redteam.ts`, `src/airs/promptsets.ts`)
 - `SdkRedTeamService` wraps `RedTeamClient` for scan CRUD, polling, reports, **target CRUD**
@@ -204,6 +210,13 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - Target create/update accept `{ validate: true }` to validate connection before saving (SDK v0.6.0)
 - CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`
 - CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`
+
+### DLP (`src/airs/dlp/`)
+- **Shape**: thin SDK wrappers; one class per resource (filtering-profiles, patterns, profiles, dictionaries); all instantiate via `getOrCreateManagementClient()` for shared OAuth token cache
+- **Merge-patch semantics**: JSON Merge Patch (RFC 7396) — `null` clears, omit means leave alone. CLI `patch` exposes `--set k=v` (with coercion of `"true"/"false"/numbers/JSON literals`; quote `'"5"'` to force string) and `--clear key` (sets `null`). `--body-file` for nested fields; mutually exclusive with `--set/--clear`.
+- **Multipart upload (dictionaries only)**: `create`/`replace` send `json` (metadata) + `file` parts. `--file` required; metadata via flags OR `--metadata-file`.
+- **200/204 replace fallback (dictionaries only)**: PUT can return 200 with body or 204 No Content (region-dependent). On 204 the SDK re-GETs; if that fails, the service returns `{ kind: 'fallback', id }` sentinel and the CLI prints `(state not echoed by region)`.
+- **No-DELETE for filtering-profiles and profiles**: API doesn't expose DELETE for either. `profiles delete <id>` is a stub that prints the patch idiom and exits 2. `filtering-profiles` has no `delete` subcommand at all.
 
 ### Model Security (`src/airs/modelsecurity.ts`)
 - `SdkModelSecurityService` wraps `ModelSecurityClient` for security groups, rules, scans, labels, PyPI auth
