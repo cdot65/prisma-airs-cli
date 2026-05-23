@@ -10,9 +10,11 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
   }),
 }));
 
-beforeEach(() => {
+beforeEach(async () => {
   mockMgmtCtor.mockReset();
   delete process.env.PANW_DLP_ENDPOINT;
+  const { _resetManagementClient } = await import('../../../../src/airs/management.js');
+  _resetManagementClient();
 });
 
 describe('PANW_DLP_ENDPOINT wiring', () => {

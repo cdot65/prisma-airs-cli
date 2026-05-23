@@ -30,7 +30,7 @@ export class SdkManagementService implements ManagementService {
   private client: ManagementClient;
 
   constructor(opts?: ManagementClientOptions) {
-    this.client = new ManagementClient(opts);
+    this.client = getOrCreateManagementClient(opts);
   }
 
   async createTopic(request: CreateCustomTopicRequest): Promise<SdkCustomTopic> {
@@ -414,4 +414,22 @@ export class SdkManagementService implements ManagementService {
       raw,
     };
   }
+}
+
+let _sharedClient: ManagementClient | undefined;
+
+/**
+ * Get or lazily construct the shared ManagementClient.
+ * Opts are only used on the first call; subsequent calls return the cached client.
+ */
+export function getOrCreateManagementClient(opts?: ManagementClientOptions): ManagementClient {
+  if (!_sharedClient) {
+    _sharedClient = new ManagementClient(opts);
+  }
+  return _sharedClient;
+}
+
+/** Test-only: reset the cached client. */
+export function _resetManagementClient(): void {
+  _sharedClient = undefined;
 }

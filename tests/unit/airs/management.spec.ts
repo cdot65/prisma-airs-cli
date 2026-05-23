@@ -1200,3 +1200,23 @@ describe('SdkManagementService', () => {
     });
   });
 });
+
+describe('getOrCreateManagementClient', () => {
+  it('returns the same client across calls', async () => {
+    const { getOrCreateManagementClient, _resetManagementClient } = await import(
+      '../../../src/airs/management.js'
+    );
+    _resetManagementClient();
+    const a = getOrCreateManagementClient({
+      clientId: 'a',
+      clientSecret: 'b',
+      tsgId: 'c',
+    });
+    const b = getOrCreateManagementClient({
+      clientId: 'a',
+      clientSecret: 'b',
+      tsgId: 'c',
+    });
+    expect(a).toBe(b);
+  });
+});
