@@ -6,9 +6,10 @@ const AIRS_DOMAINS = [
   'api.sase.paloaltonetworks.com',
   'service.api.aisecurity.paloaltonetworks.com',
   'auth.apps.paloaltonetworks.com',
+  'api.dlp.paloaltonetworks.com',
 ];
 
-function isAirsUrl(url: string): boolean {
+export function isAirsUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     return AIRS_DOMAINS.some((d) => parsed.hostname === d || parsed.hostname.endsWith(`.${d}`));
