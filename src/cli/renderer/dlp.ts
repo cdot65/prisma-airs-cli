@@ -56,3 +56,55 @@ export const dlpPatterns = {
     console.log(`  archived ${id}`);
   },
 };
+
+export const dlpProfiles = {
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderList(page: any, fmt: OutputFormat) {
+    emit(page, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderCreated(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderGet(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderReplaced(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderPatched(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+};
+
+export const dlpDictionaries = {
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderList(page: any, fmt: OutputFormat) {
+    emit(page, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderCreated(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderGet(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderReplaced(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
+  renderPatched(item: any, fmt: OutputFormat) {
+    emit(item, fmt);
+  },
+  renderReplaced204Fallback(id: string) {
+    console.log(`  replaced ${id} (state not echoed by region)`);
+  },
+  renderDeleted(id: string) {
+    console.log(`  deleted ${id}`);
+  },
+};
