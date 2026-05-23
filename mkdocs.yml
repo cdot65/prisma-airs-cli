@@ -83,6 +83,11 @@ nav:
           - Metrics & Evaluation: runtime/guardrails/metrics.md
           - Topic Constraints: runtime/guardrails/topic-constraints.md
       - Profile Audits: runtime/profile-audits.md
+      - DLP:
+          - Filtering Profiles: runtime/dlp/filtering-profiles.md
+          - Patterns: runtime/dlp/patterns.md
+          - Profiles: runtime/dlp/profiles.md
+          - Dictionaries: runtime/dlp/dictionaries.md
   - AI Red Teaming:
       - Overview: redteam/overview.md
       - Running Scans: redteam/scanning.md
