@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import type { Readable } from 'node:stream';
+
 export interface BuildMergePatchOpts {
   set?: string[];
   clear?: string[];
@@ -45,4 +48,32 @@ function coerceValue(raw: string): unknown {
     }
   }
   return raw;
+}
+
+export interface ParseBodyOpts {
+  body?: string;
+  bodyFile?: string;
+  stdin?: Readable;
+}
+
+/** Read --body or --body-file and JSON.parse. Returns undefined if neither supplied. */
+export async function parseBody(opts: ParseBodyOpts): Promise<unknown | undefined> {
+  let raw: string | undefined;
+  if (opts.bodyFile) {
+    raw = await readFile(opts.bodyFile, 'utf-8');
+  } else if (opts.body === '-') {
+    const chunks: Buffer[] = [];
+    for await (const chunk of opts.stdin ?? process.stdin) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    raw = Buffer.concat(chunks).toString('utf-8');
+  } else if (opts.body !== undefined) {
+    raw = opts.body;
+  }
+  if (raw === undefined) return undefined;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`invalid JSON in body: ${(e as Error).message}`);
+  }
 }

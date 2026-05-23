@@ -1,5 +1,9 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { Readable } from 'node:stream';
 import { describe, expect, it } from 'vitest';
-import { buildMergePatch } from '../../../src/cli/commands/dlp/patch.js';
+import { buildMergePatch, parseBody } from '../../../src/cli/commands/dlp/patch.js';
 
 describe('buildMergePatch', () => {
   it('sets string scalars', () => {
@@ -41,5 +45,30 @@ describe('buildMergePatch', () => {
   });
   it('returns empty object when no inputs', () => {
     expect(buildMergePatch({})).toEqual({});
+  });
+});
+
+describe('parseBody', () => {
+  it('reads JSON from a file path', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'dlp-'));
+    const file = join(dir, 'body.json');
+    await writeFile(file, '{"name":"foo"}');
+    expect(await parseBody({ bodyFile: file })).toEqual({ name: 'foo' });
+    await rm(dir, { recursive: true });
+  });
+
+  it('reads JSON from stdin when body === "-"', async () => {
+    const stdin = Readable.from(['{"x":1}']);
+    expect(await parseBody({ body: '-', stdin })).toEqual({ x: 1 });
+  });
+
+  it('throws on malformed JSON', async () => {
+    await expect(parseBody({ body: '-', stdin: Readable.from(['not json']) })).rejects.toThrow(
+      /invalid JSON/i,
+    );
+  });
+
+  it('returns undefined when neither flag set', async () => {
+    expect(await parseBody({})).toBeUndefined();
   });
 });
