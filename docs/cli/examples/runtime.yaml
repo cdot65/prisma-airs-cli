@@ -123,3 +123,88 @@
       input: airs runtime profiles cleanup --force --updated-by user@example.com
     - note: JSON output
       input: airs runtime profiles cleanup --force --output json
+
+"runtime dlp patterns list":
+  examples:
+    - note: Pretty output (default)
+      input: airs runtime dlp patterns list --size 2 --sort name,asc
+      output: |
+          Data Patterns:
+
+          000000000000000000000001
+            API Credentials Client ID - Amazon Web Services AWS  predefined  disabled regex v1
+          000000000000000000000002
+            API Credentials Client ID - Bitly  predefined  disabled regex v1
+
+          page=0 size=2 returned=2 total=1126
+    - note: JSON output
+      input: airs runtime dlp patterns list --size 2 --sort name,asc --output json
+      output: |
+        {
+          "items": [
+            {
+              "id": "000000000000000000000001",
+              "name": "API Credentials Client ID - Amazon Web Services AWS",
+              "type": "predefined",
+              "status": "disabled",
+              "technique": "regex",
+              "version": 1
+            },
+            {
+              "id": "000000000000000000000002",
+              "name": "API Credentials Client ID - Bitly",
+              "type": "predefined",
+              "status": "disabled",
+              "technique": "regex",
+              "version": 1
+            }
+          ],
+          "page": {
+            "number": 0,
+            "size": 2,
+            "total": 1126,
+            "returned": 2
+          }
+        }
+    - note: YAML output
+      input: airs runtime dlp patterns list --size 2 --sort name,asc --output yaml
+      output: |
+        items:
+          - id: 000000000000000000000001
+            name: API Credentials Client ID - Amazon Web Services AWS
+            type: predefined
+            status: disabled
+            technique: regex
+            version: 1
+          - id: 000000000000000000000002
+            name: API Credentials Client ID - Bitly
+            type: predefined
+            status: disabled
+            technique: regex
+            version: 1
+        page:
+          number: 0
+          size: 2
+          total: 1126
+          returned: 2
+
+"runtime dlp patterns create":
+  examples:
+    - note: Create a custom regex pattern with --name + --regex flags
+      input: airs runtime dlp patterns create --name docs-example-pattern --regex '\bACME-\d{6}\b' --output json
+      output: |
+        {
+          "action": "created",
+          "id": "000000000000000000000003",
+          "name": "docs-example-pattern",
+          "type": "custom",
+          "status": "active",
+          "version": 1
+        }
+
+"runtime dlp patterns delete":
+  examples:
+    - note: Soft-delete (archive) a data pattern by id
+      input: airs runtime dlp patterns delete 000000000000000000000003
+      output: |
+        archived 000000000000000000000003

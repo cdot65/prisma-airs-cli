@@ -24,12 +24,12 @@ runtime topics update
 runtime dlp filtering-profiles list
 runtime dlp filtering-profiles get
 runtime dlp filtering-profiles replace
-runtime dlp patterns list
-runtime dlp patterns create
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
 runtime dlp patterns get
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
 runtime dlp patterns replace
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
 runtime dlp patterns patch
-runtime dlp patterns delete
 runtime dlp profiles list
 runtime dlp profiles create
 runtime dlp profiles get
