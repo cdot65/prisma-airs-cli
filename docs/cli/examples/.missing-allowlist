@@ -30,12 +30,14 @@ runtime dlp patterns get
 runtime dlp patterns replace
 # Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
 runtime dlp patterns patch
-runtime dlp profiles list
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles create
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
 runtime dlp profiles get
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles replace
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles patch
-runtime dlp profiles delete
 # Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries create
 # Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99

@@ -19,8 +19,193 @@ airs runtime dlp profiles list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default — DLP profiles list has no custom renderer, so pretty == JSON)*
+
+```bash
+airs runtime dlp profiles list --size 2 --sort id,asc
+```
+
+```text
+{
+  "content": [
+    {
+      "id": "00000001",
+      "name": "Bulk CCN",
+      "description": "Default profile for Bulk CCN",
+      "tenant_id": "<tenant-id>",
+      "type": "predefined",
+      "profile_status": "active",
+      "profile_type": "basic",
+      "is_granular_data_profile": false,
+      "is_parent_managed": false,
+      "version": 1,
+      "advance_data_patterns_rule_request": null,
+      "detection_rules": null,
+      "audit_metadata": {
+        "created_at": 1761657319421,
+        "created_by": "System",
+        "updated_at": 1761657319421,
+        "updated_by": "System"
+      }
+    },
+    {
+      "id": "00000002",
+      "name": "CCPA",
+      "description": "Default profile for CCPA",
+      "tenant_id": "<tenant-id>",
+      "type": "predefined",
+      "profile_status": "active",
+      "profile_type": "advanced",
+      "is_granular_data_profile": false,
+      "is_parent_managed": false,
+      "version": 1,
+      "advance_data_patterns_rule_request": [
+        "(Tax Id - US - TIN high more_than_equal_to 1) or (Credit Card Number high more_than_equal_to 1 and Magnetic Stripe Information high more_than_equal_to 1) or (National Id - US Social Security Number - SSN high more_than_equal_to 1)"
+      ],
+      "detection_rules": null,
+      "audit_metadata": {
+        "created_at": 1761657319427,
+        "created_by": "System",
+        "updated_at": 1761657319427,
+        "updated_by": "System"
+      }
+    }
+  ],
+  "page": {
+    "number": 0,
+    "size": 2,
+    "total_pages": 15,
+    "total_elements": 30,
+    "number_of_elements": 2,
+    "first": true,
+    "last": false,
+    "empty": false
+  }
+}
+```
+
+*JSON output*
+
+```bash
+airs runtime dlp profiles list --size 2 --sort id,asc --output json
+```
+
+```text
+{
+  "content": [
+    {
+      "id": "00000001",
+      "name": "Bulk CCN",
+      "description": "Default profile for Bulk CCN",
+      "tenant_id": "<tenant-id>",
+      "type": "predefined",
+      "profile_status": "active",
+      "profile_type": "basic",
+      "is_granular_data_profile": false,
+      "is_parent_managed": false,
+      "version": 1,
+      "advance_data_patterns_rule_request": null,
+      "detection_rules": null,
+      "audit_metadata": {
+        "created_at": 1761657319421,
+        "created_by": "System",
+        "updated_at": 1761657319421,
+        "updated_by": "System"
+      }
+    },
+    {
+      "id": "00000002",
+      "name": "CCPA",
+      "description": "Default profile for CCPA",
+      "tenant_id": "<tenant-id>",
+      "type": "predefined",
+      "profile_status": "active",
+      "profile_type": "advanced",
+      "is_granular_data_profile": false,
+      "is_parent_managed": false,
+      "version": 1,
+      "advance_data_patterns_rule_request": [
+        "(Tax Id - US - TIN high more_than_equal_to 1) or (Credit Card Number high more_than_equal_to 1 and Magnetic Stripe Information high more_than_equal_to 1) or (National Id - US Social Security Number - SSN high more_than_equal_to 1)"
+      ],
+      "detection_rules": null,
+      "audit_metadata": {
+        "created_at": 1761657319427,
+        "created_by": "System",
+        "updated_at": 1761657319427,
+        "updated_by": "System"
+      }
+    }
+  ],
+  "page": {
+    "number": 0,
+    "size": 2,
+    "total_pages": 15,
+    "total_elements": 30,
+    "number_of_elements": 2,
+    "first": true,
+    "last": false,
+    "empty": false
+  }
+}
+```
+
+*YAML output*
+
+```bash
+airs runtime dlp profiles list --size 2 --sort id,asc --output yaml
+```
+
+```text
+content:
+  - id: '00000001'
+    name: Bulk CCN
+    description: Default profile for Bulk CCN
+    tenant_id: <tenant-id>
+    type: predefined
+    profile_status: active
+    profile_type: basic
+    is_granular_data_profile: false
+    is_parent_managed: false
+    version: 1
+    advance_data_patterns_rule_request: null
+    detection_rules: null
+    audit_metadata:
+      created_at: 1761657319421
+      created_by: System
+      updated_at: 1761657319421
+      updated_by: System
+  - id: '00000002'
+    name: CCPA
+    description: Default profile for CCPA
+    tenant_id: <tenant-id>
+    type: predefined
+    profile_status: active
+    profile_type: advanced
+    is_granular_data_profile: false
+    is_parent_managed: false
+    version: 1
+    advance_data_patterns_rule_request:
+      - >-
+        (Tax Id - US - TIN high more_than_equal_to 1) or (Credit Card
+        Number high more_than_equal_to 1 and Magnetic Stripe Information
+        high more_than_equal_to 1) or (National Id - US Social Security
+        Number - SSN high more_than_equal_to 1)
+    detection_rules: null
+    audit_metadata:
+      created_at: 1761657319427
+      created_by: System
+      updated_at: 1761657319427
+      updated_by: System
+page:
+  number: 0
+  size: 2
+  total_pages: 15
+  total_elements: 30
+  number_of_elements: 2
+  first: true
+  last: false
+  empty: false
+```
 
 ---
 
@@ -155,5 +340,17 @@ airs runtime dlp profiles delete [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Stub — DLP data profiles have no DELETE endpoint; soft-delete via patch*
+
+```bash
+airs runtime dlp profiles delete 00000001
+```
+
+```text
+This DLP API has no DELETE for data profiles.
+To soft-delete, fetch the profile to get its name + profile_type, then patch:
+
+  airs runtime dlp profiles get 00000001 --output json
+  airs runtime dlp profiles patch 00000001 --set profile_status='"deleted"' \
+    --set name='"<existing-name>"' --set profile_type='"<existing-type>"'
+```
