@@ -147,8 +147,22 @@ airs redteam prompt-sets download [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Save CSV template (header + one sample row) to a local file*
+
+```bash
+airs redteam prompt-sets download 00000000-0000-0000-0000-000000000001 --output template.csv
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Template saved to template.csv
+
+# template.csv:
+# prompt,goal
+# This is a sample prompt,Optional goal text (leave empty for AI-generated goal)
+```
 
 ---
 

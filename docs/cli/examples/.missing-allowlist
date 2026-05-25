@@ -53,16 +53,21 @@ redteam devices create
 redteam devices update
 redteam devices delete
 redteam registry-credentials
+# Blocked by upstream API 500 on /version-info — see https://github.com/cdot65/prisma-airs-cli/issues/117
 redteam prompt-sets get
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompt-sets create
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompt-sets update
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompt-sets archive
-redteam prompt-sets download
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompt-sets upload
-redteam prompts list
-redteam prompts get
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompts add
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompts update
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompts delete
 redteam properties list
 redteam properties create
