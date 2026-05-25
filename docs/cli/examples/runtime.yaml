@@ -1258,3 +1258,67 @@
                           }
                         ]
                       }
+
+"runtime dlp filtering-profiles list":
+  examples:
+    - note: Pretty output (default)
+      input: airs runtime dlp filtering-profiles list --size 2 --sort name,asc
+      output: |
+        Data Filtering Profiles:
+
+        000000000000000000000001
+          Bulk CCN  predefined dir:c2s sev:low v1
+        000000000000000000000002
+          CCPA  predefined dir:c2s sev:low v1
+
+        page=0 size=2 returned=2 total=29
+    - note: JSON output
+      input: airs runtime dlp filtering-profiles list --size 2 --sort name,asc --output json
+      output: |
+        {
+          "items": [
+            {
+              "id": "000000000000000000000001",
+              "name": "Bulk CCN",
+              "type": "predefined",
+              "direction": "c2s",
+              "severity": "low",
+              "version": 1
+            },
+            {
+              "id": "000000000000000000000002",
+              "name": "CCPA",
+              "type": "predefined",
+              "direction": "c2s",
+              "severity": "low",
+              "version": 1
+            }
+          ],
+          "page": {
+            "number": 0,
+            "size": 2,
+            "total": 29,
+            "returned": 2
+          }
+        }
+    - note: YAML output
+      input: airs runtime dlp filtering-profiles list --size 2 --sort name,asc --output yaml
+      output: |
+        items:
+          - id: '000000000000000000000001'
+            name: Bulk CCN
+            type: predefined
+            direction: c2s
+            severity: low
+            version: 1
+          - id: '000000000000000000000002'
+            name: CCPA
+            type: predefined
+            direction: c2s
+            severity: low
+            version: 1
+        page:
+          number: 0
+          size: 2
+          total: 29
+          returned: 2

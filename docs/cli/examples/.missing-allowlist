@@ -16,8 +16,9 @@ runtime resume-poll
 runtime scan-logs query
 # Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/165
 runtime topics delete
-runtime dlp filtering-profiles list
+# Blocked by CLI bug — see https://github.com/cdot65/prisma-airs-cli/issues/105
 runtime dlp filtering-profiles get
+# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/107
 runtime dlp filtering-profiles replace
 # Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
 runtime dlp patterns get

@@ -19,8 +19,84 @@ airs runtime dlp filtering-profiles list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default)*
+
+```bash
+airs runtime dlp filtering-profiles list --size 2 --sort name,asc
+```
+
+```text
+Data Filtering Profiles:
+
+000000000000000000000001
+  Bulk CCN  predefined dir:c2s sev:low v1
+000000000000000000000002
+  CCPA  predefined dir:c2s sev:low v1
+
+page=0 size=2 returned=2 total=29
+```
+
+*JSON output*
+
+```bash
+airs runtime dlp filtering-profiles list --size 2 --sort name,asc --output json
+```
+
+```text
+{
+  "items": [
+    {
+      "id": "000000000000000000000001",
+      "name": "Bulk CCN",
+      "type": "predefined",
+      "direction": "c2s",
+      "severity": "low",
+      "version": 1
+    },
+    {
+      "id": "000000000000000000000002",
+      "name": "CCPA",
+      "type": "predefined",
+      "direction": "c2s",
+      "severity": "low",
+      "version": 1
+    }
+  ],
+  "page": {
+    "number": 0,
+    "size": 2,
+    "total": 29,
+    "returned": 2
+  }
+}
+```
+
+*YAML output*
+
+```bash
+airs runtime dlp filtering-profiles list --size 2 --sort name,asc --output yaml
+```
+
+```text
+items:
+  - id: '000000000000000000000001'
+    name: Bulk CCN
+    type: predefined
+    direction: c2s
+    severity: low
+    version: 1
+  - id: '000000000000000000000002'
+    name: CCPA
+    type: predefined
+    direction: c2s
+    severity: low
+    version: 1
+page:
+  number: 0
+  size: 2
+  total: 29
+  returned: 2
+```
 
 ---
 
