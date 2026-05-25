@@ -8,12 +8,8 @@ runtime customer-apps list
 runtime customer-apps get
 runtime customer-apps update
 runtime customer-apps delete
-runtime deployment-profiles list
-runtime dlp-profiles list
 # Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/164
 runtime profiles delete
-runtime resume-poll
-runtime scan-logs query
 # Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/165
 runtime topics delete
 # Blocked by CLI bug — see https://github.com/cdot65/prisma-airs-cli/issues/105

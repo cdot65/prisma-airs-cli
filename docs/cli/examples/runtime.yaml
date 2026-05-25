@@ -1322,3 +1322,145 @@
           size: 2
           total: 29
           returned: 2
+
+"runtime deployment-profiles list":
+  examples:
+    - note: Pretty output (default)
+      input: airs runtime deployment-profiles list
+      output: |
+        Prisma AIRS — Runtime Configuration
+        Security profile and topic management
+
+
+        Deployment Profiles:
+
+          example-deployment-profile-1  init  D0000001
+          example-deployment-profile-2  activated  D0000002
+          example-deployment-profile-3  activated  D0000003
+    - note: JSON output
+      input: airs runtime deployment-profiles list --output json
+      output: |
+        [
+          {
+            "name": "example-deployment-profile-1",
+            "status": "init",
+            "authCode": "D0000001"
+          },
+          {
+            "name": "example-deployment-profile-2",
+            "status": "activated",
+            "authCode": "D0000002"
+          },
+          {
+            "name": "example-deployment-profile-3",
+            "status": "activated",
+            "authCode": "D0000003"
+          }
+        ]
+    - note: YAML output
+      input: airs runtime deployment-profiles list --output yaml
+      output: |
+        name: example-deployment-profile-1
+        status: init
+        authCode: D0000001
+        ---
+        name: example-deployment-profile-2
+        status: activated
+        authCode: D0000002
+        ---
+        name: example-deployment-profile-3
+        status: activated
+        authCode: D0000003
+
+"runtime dlp-profiles list":
+  examples:
+    - note: Pretty output (default). Truncated — your tenant returns every predefined + custom DLP profile name.
+      input: airs runtime dlp-profiles list
+      output: |
+        Prisma AIRS — Runtime Configuration
+        Security profile and topic management
+
+
+        DLP Profiles:
+
+          Bulk CCN
+          CCPA
+          CommonwealthAustralia-PrivAct88
+          Corporate Financial Docs
+          Financial Information
+          GDPR
+          GLBA
+          HIPAA
+          ... (more predefined + any custom profiles)
+    - note: JSON output (truncated — `id` is currently empty for every entry from this endpoint)
+      input: airs runtime dlp-profiles list --output json
+      output: |
+        [
+          {
+            "id": "",
+            "name": "Bulk CCN"
+          },
+          {
+            "id": "",
+            "name": "CCPA"
+          },
+          {
+            "id": "",
+            "name": "CommonwealthAustralia-PrivAct88"
+          },
+          {
+            "id": "",
+            "name": "Corporate Financial Docs"
+          }
+        ]
+    - note: YAML output (truncated)
+      input: airs runtime dlp-profiles list --output yaml
+      output: |
+        id: ''
+        name: Bulk CCN
+        ---
+        id: ''
+        name: CCPA
+        ---
+        id: ''
+        name: CommonwealthAustralia-PrivAct88
+        ---
+        id: ''
+        name: Corporate Financial Docs
+
+"runtime scan-logs query":
+  examples:
+    - note: Empty result for a 24-hour window. The upstream `/v1/mgmt/scanlogs` endpoint only accepts a fixed set of (interval, unit) pairs — `(1, hours)`, `(24, hours)`, `(7, days)`, `(30, days)`. Anything else returns API 400.
+      input: airs runtime scan-logs query --interval 24 --unit hours --page-size 5
+      output: |
+        Prisma AIRS — Runtime Configuration
+        Security profile and topic management
+
+        No scan logs found.
+    - note: JSON output (the renderer short-circuits the empty case across all formats, so JSON returns the same status line, not `[]`)
+      input: airs runtime scan-logs query --interval 24 --unit hours --page-size 5 --output json
+      output: |
+        No scan logs found.
+    - note: YAML output (same empty-state shape as JSON)
+      input: airs runtime scan-logs query --interval 24 --unit hours --page-size 5 --output yaml
+      output: |
+        No scan logs found.
+
+"runtime resume-poll":
+  examples:
+    - note: Resume polling from a state file written by a prior `runtime bulk-scan` invocation. Output is text-only — there is no JSON/YAML mode. The CSV output path is controlled by `--output`.
+      input: airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-05-25T13-55-11-105Z.bulk-scan.json --output resume-out.csv
+      output: |
+        Prisma AIRS Resume Poll
+        Profile:  docs-example-profile
+        Scan IDs: 1
+        Prompts:  3
+
+        Polling for results...
+
+        Resume Poll Complete
+        ─────────────────────────
+        Total:   1
+        Blocked: 0
+        Allowed: 1
+        Output:  resume-out.csv
