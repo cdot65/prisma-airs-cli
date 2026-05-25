@@ -14,8 +14,6 @@ runtime profiles delete
 runtime topics delete
 # Blocked by CLI bug — see https://github.com/cdot65/prisma-airs-cli/issues/105
 runtime dlp filtering-profiles get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/107
-runtime dlp filtering-profiles replace
 # Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
 runtime dlp patterns get
 # Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98

@@ -1323,6 +1323,19 @@
           total: 29
           returned: 2
 
+"runtime dlp filtering-profiles replace":
+  examples:
+    - note: Replace a filtering profile from a body fixture (see docs/cli/examples/dlp/filtering-profiles/replace.json). The API returns the new version on success.
+      input: airs runtime dlp filtering-profiles replace 000000000000000000000001 --body-file docs/cli/examples/dlp/filtering-profiles/replace.json --output json
+      output: |
+        {
+          "action": "replaced",
+          "id": "000000000000000000000001",
+          "name": "example-filtering-profile",
+          "type": "predefined",
+          "version": 2
+        }
+
 "runtime deployment-profiles list":
   examples:
     - note: Pretty output (default)

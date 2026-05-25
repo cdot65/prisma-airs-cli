@@ -158,5 +158,18 @@ airs runtime dlp filtering-profiles replace [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Replace a filtering profile from a body fixture (see docs/cli/examples/dlp/filtering-profiles/replace.json). The API returns the new version on success.*
+
+```bash
+airs runtime dlp filtering-profiles replace 000000000000000000000001 --body-file docs/cli/examples/dlp/filtering-profiles/replace.json --output json
+```
+
+```text
+{
+  "action": "replaced",
+  "id": "000000000000000000000001",
+  "name": "example-filtering-profile",
+  "type": "predefined",
+  "version": 2
+}
+```

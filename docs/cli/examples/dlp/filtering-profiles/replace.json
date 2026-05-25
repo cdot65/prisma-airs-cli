@@ -1,0 +1,10 @@
+{
+  "name": "example-filtering-profile",
+  "data_profile_id": 1,
+  "direction": "c2s",
+  "file_based": true,
+  "non_file_based": false,
+  "log_severity": "low",
+  "scan_type": "include",
+  "file_type": ["pdf", "doc", "docx"]
+}
