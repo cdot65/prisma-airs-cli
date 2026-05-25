@@ -99,8 +99,25 @@ airs runtime api-keys create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create a new API key from a config fixture (no JSON output flag — pretty only). The full secret is echoed exactly once; subsequent `list` only shows `last8`.*
+
+```bash
+airs runtime api-keys create --config docs/cli/examples/runtime/api-keys-create.json
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+API key created: 00000000-0000-0000-0000-000000000001
+
+
+API Key Detail:
+
+  ID:      00000000-0000-0000-0000-000000000001
+  Name:    docs-example-key
+  Key:     EXAMPLEKEYREDACTEDFORDOCSDONOTUSEEXAMPLEKEYREDA
+```
 
 ---
 
@@ -126,8 +143,25 @@ airs runtime api-keys regenerate [options] <apiKeyId>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Regenerate by api-key UUID. Returns a NEW UUID and a NEW secret — the old key is invalidated. No JSON output flag — pretty only.*
+
+```bash
+airs runtime api-keys regenerate 00000000-0000-0000-0000-000000000001 --interval 90 --unit days --updated-by user@example.com
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+API key regenerated: 00000000-0000-0000-0000-000000000002
+
+
+API Key Detail:
+
+  ID:      00000000-0000-0000-0000-000000000002
+  Name:    docs-example-key
+  Key:     EXAMPLEROTATEDKEYREDACTEDFORDOCSDONOTUSEEXAMPLE
+```
 
 ---
 

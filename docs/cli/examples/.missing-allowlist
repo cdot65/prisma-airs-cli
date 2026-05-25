@@ -1,12 +1,12 @@
 # Commands awaiting curated input/output examples. Burn this list down to zero,
 # then flip docs:check to hard-fail in CI (remove the allowlist read).
-# Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/116
-runtime api-keys create
-runtime api-keys regenerate
+# Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/166
 runtime api-keys delete
 # Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/115
 runtime customer-apps get
+# Blocked by upstream API 503 — see https://github.com/cdot65/prisma-airs-cli/issues/193
 runtime customer-apps update
+# Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/167
 runtime customer-apps delete
 # Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/164
 runtime profiles delete

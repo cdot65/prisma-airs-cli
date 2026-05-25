@@ -1,0 +1,9 @@
+{
+  "api_key_name": "docs-example-key",
+  "auth_code": "D5901742",
+  "cust_app": "CLI",
+  "created_by": "user@example.com",
+  "revoked": false,
+  "rotation_time_interval": 90,
+  "rotation_time_unit": "days"
+}

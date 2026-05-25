@@ -1552,3 +1552,38 @@
         id:
         name: example-other-app
         description:
+
+"runtime api-keys create":
+  examples:
+    - note: Create a new API key from a config fixture (no JSON output flag — pretty only). The full secret is echoed exactly once; subsequent `list` only shows `last8`.
+      input: airs runtime api-keys create --config docs/cli/examples/runtime/api-keys-create.json
+      output: |
+          Prisma AIRS — Runtime Configuration
+          Security profile and topic management
+
+          API key created: 00000000-0000-0000-0000-000000000001
+
+
+          API Key Detail:
+
+            ID:      00000000-0000-0000-0000-000000000001
+            Name:    docs-example-key
+            Key:     EXAMPLEKEYREDACTEDFORDOCSDONOTUSEEXAMPLEKEYREDA
+
+"runtime api-keys regenerate":
+  examples:
+    - note: Regenerate by api-key UUID. Returns a NEW UUID and a NEW secret — the old key is invalidated. No JSON output flag — pretty only.
+      input: airs runtime api-keys regenerate 00000000-0000-0000-0000-000000000001 --interval 90 --unit days --updated-by user@example.com
+      output: |
+          Prisma AIRS — Runtime Configuration
+          Security profile and topic management
+
+          API key regenerated: 00000000-0000-0000-0000-000000000002
+
+
+          API Key Detail:
+
+            ID:      00000000-0000-0000-0000-000000000002
+            Name:    docs-example-key
+            Key:     EXAMPLEROTATEDKEYREDACTEDFORDOCSDONOTUSEEXAMPLE
+
