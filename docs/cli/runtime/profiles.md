@@ -18,8 +18,67 @@ airs runtime profiles list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default)*
+
+```bash
+airs runtime profiles list --limit 2
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+
+Security Profiles:
+
+00000000-0000-0000-0000-000000000001
+  docs-example-profile  active rev:1
+00000000-0000-0000-0000-000000000002
+  example-other-profile  active rev:6
+
+Next offset: 2
+```
+
+*JSON output*
+
+```bash
+airs runtime profiles list --limit 2 --output json
+```
+
+```text
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "name": "docs-example-profile",
+    "status": "active",
+    "revision": 1
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "name": "example-other-profile",
+    "status": "active",
+    "revision": 6
+  }
+]
+```
+
+*YAML output (multi-doc stream — one document per profile)*
+
+```bash
+airs runtime profiles list --limit 2 --output yaml
+```
+
+```text
+id: 00000000-0000-0000-0000-000000000001
+name: docs-example-profile
+status: active
+revision: 1
+---
+id: 00000000-0000-0000-0000-000000000002
+name: example-other-profile
+status: active
+revision: 6
+```
 
 ---
 
@@ -43,8 +102,205 @@ airs runtime profiles get [options] <nameOrId>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default)*
+
+```bash
+airs runtime profiles get docs-example-profile
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+
+Profile Detail:
+
+  ID:       00000000-0000-0000-0000-000000000001
+  Name:     docs-example-profile
+  Status:   active
+  Revision: 1
+  Created:  user@example.com
+  Updated:  user@example.com
+  Modified: 2026-05-25T13:38:21Z
+  Policy:   {
+              "ai-security-profiles": [
+                {
+                  "model-type": "default",
+                  "model-configuration": {
+                    "mask-data-in-storage": false,
+                    "latency": {
+                      "inline-timeout-action": "block",
+                      "max-inline-latency": 5
+                    },
+                    "data-protection": {
+                      "data-leak-detection": {
+                        "member": null,
+                        "action": "",
+                        "mask-data-inline": false
+                      },
+                      "database-security": null
+                    },
+                    "app-protection": {
+                      "default-url-category": {
+                        "member": null
+                      },
+                      "url-detected-action": "block",
+                      "malicious-code-protection": {
+                        "name": "malicious-code-detection",
+                        "action": "block"
+                      }
+                    },
+                    "model-protection": [
+                      {
+                        "name": "prompt-injection",
+                        "action": "block"
+                      },
+                      {
+                        "name": "toxic-content",
+                        "action": "high:block, moderate:alert"
+                      }
+                    ],
+                    "agent-protection": [
+                      {
+                        "name": "agent-security",
+                        "action": "block"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+```
+
+*JSON output (flattens management response — `profileId` / `profileName` keys)*
+
+```bash
+airs runtime profiles get docs-example-profile --output json
+```
+
+```text
+{
+  "profileId": "00000000-0000-0000-0000-000000000001",
+  "profileName": "docs-example-profile",
+  "revision": 1,
+  "active": true,
+  "createdBy": "user@example.com",
+  "updatedBy": "user@example.com",
+  "lastModifiedTs": "2026-05-25T13:38:21Z",
+  "policy": {
+    "ai-security-profiles": [
+      {
+        "model-type": "default",
+        "model-configuration": {
+          "mask-data-in-storage": false,
+          "latency": {
+            "inline-timeout-action": "block",
+            "max-inline-latency": 5
+          },
+          "data-protection": {
+            "data-leak-detection": {
+              "member": null,
+              "action": "",
+              "mask-data-inline": false
+            },
+            "database-security": null
+          },
+          "app-protection": {
+            "default-url-category": {
+              "member": null
+            },
+            "url-detected-action": "block",
+            "malicious-code-protection": {
+              "name": "malicious-code-detection",
+              "action": "block"
+            }
+          },
+          "model-protection": [
+            {
+              "name": "prompt-injection",
+              "action": "block"
+            },
+            {
+              "name": "toxic-content",
+              "action": "high:block, moderate:alert"
+            }
+          ],
+          "agent-protection": [
+            {
+              "name": "agent-security",
+              "action": "block"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+*YAML output (the nested `policy` is emitted as inline JSON, not converted to YAML)*
+
+```bash
+airs runtime profiles get docs-example-profile --output yaml
+```
+
+```text
+profileId: 00000000-0000-0000-0000-000000000001
+profileName: docs-example-profile
+revision: 1
+active: true
+createdBy: user@example.com
+updatedBy: user@example.com
+lastModifiedTs: 2026-05-25T13:38:21Z
+policy: {
+  "ai-security-profiles": [
+    {
+      "model-type": "default",
+      "model-configuration": {
+        "mask-data-in-storage": false,
+        "latency": {
+          "inline-timeout-action": "block",
+          "max-inline-latency": 5
+        },
+        "data-protection": {
+          "data-leak-detection": {
+            "member": null,
+            "action": "",
+            "mask-data-inline": false
+          },
+          "database-security": null
+        },
+        "app-protection": {
+          "default-url-category": {
+            "member": null
+          },
+          "url-detected-action": "block",
+          "malicious-code-protection": {
+            "name": "malicious-code-detection",
+            "action": "block"
+          }
+        },
+        "model-protection": [
+          {
+            "name": "prompt-injection",
+            "action": "block"
+          },
+          {
+            "name": "toxic-content",
+            "action": "high:block, moderate:alert"
+          }
+        ],
+        "agent-protection": [
+          {
+            "name": "agent-security",
+            "action": "block"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
 
 ---
 
@@ -85,8 +341,83 @@ airs runtime profiles create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create with protection flags (no JSON output flag — pretty only)*
+
+```bash
+airs runtime profiles create \
+  --name docs-example-profile \
+  --prompt-injection block \
+  --toxic-content "high:block, moderate:alert" \
+  --malicious-code block \
+  --agent-security block \
+  --url-action block
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+Profile created: 00000000-0000-0000-0000-000000000001
+
+
+Profile Detail:
+
+  ID:       00000000-0000-0000-0000-000000000001
+  Name:     docs-example-profile
+  Status:   active
+  Revision: 1
+  Created:  user@example.com
+  Updated:  user@example.com
+  Modified: 2026-05-25T13:38:21Z
+  Policy:   {
+              "ai-security-profiles": [
+                {
+                  "model-type": "default",
+                  "model-configuration": {
+                    "mask-data-in-storage": false,
+                    "latency": {
+                      "inline-timeout-action": "block",
+                      "max-inline-latency": 5
+                    },
+                    "data-protection": {
+                      "data-leak-detection": {
+                        "member": null,
+                        "action": "",
+                        "mask-data-inline": false
+                      },
+                      "database-security": null
+                    },
+                    "app-protection": {
+                      "default-url-category": {
+                        "member": null
+                      },
+                      "url-detected-action": "block",
+                      "malicious-code-protection": {
+                        "name": "malicious-code-detection",
+                        "action": "block"
+                      }
+                    },
+                    "model-protection": [
+                      {
+                        "name": "prompt-injection",
+                        "action": "block"
+                      },
+                      {
+                        "name": "toxic-content",
+                        "action": "high:block, moderate:alert"
+                      }
+                    ],
+                    "agent-protection": [
+                      {
+                        "name": "agent-security",
+                        "action": "block"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+```
 
 ---
 
@@ -132,8 +463,78 @@ airs runtime profiles update [options] <nameOrId>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Read-modify-write — only the flags you pass change; existing protections are preserved. New revision id returned.*
+
+```bash
+airs runtime profiles update docs-example-profile \
+  --prompt-injection alert
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+Profile updated: 00000000-0000-0000-0000-000000000002
+
+
+Profile Detail:
+
+  ID:       00000000-0000-0000-0000-000000000002
+  Name:     docs-example-profile
+  Status:   active
+  Revision: 2
+  Created:  user@example.com
+  Updated:  none
+  Modified: 2026-05-25T13:39:05Z
+  Policy:   {
+              "ai-security-profiles": [
+                {
+                  "model-type": "default",
+                  "model-configuration": {
+                    "mask-data-in-storage": false,
+                    "latency": {
+                      "inline-timeout-action": "block",
+                      "max-inline-latency": 5
+                    },
+                    "data-protection": {
+                      "data-leak-detection": {
+                        "member": null,
+                        "action": "",
+                        "mask-data-inline": false
+                      },
+                      "database-security": null
+                    },
+                    "app-protection": {
+                      "default-url-category": {
+                        "member": null
+                      },
+                      "url-detected-action": "block",
+                      "malicious-code-protection": {
+                        "name": "malicious-code-detection",
+                        "action": "block"
+                      }
+                    },
+                    "model-protection": [
+                      {
+                        "name": "prompt-injection",
+                        "action": "alert"
+                      },
+                      {
+                        "name": "toxic-content",
+                        "action": "high:block, moderate:alert"
+                      }
+                    ],
+                    "agent-protection": [
+                      {
+                        "name": "agent-security",
+                        "action": "block"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+```
 
 ---
 
