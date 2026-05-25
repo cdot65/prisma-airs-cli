@@ -19,8 +19,80 @@ airs runtime dlp patterns list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+**Input**
+```bash
+airs runtime dlp patterns list --size 2 --sort name,asc
+```
+
+**Output (pretty / default)**
+```text
+  Data Patterns:
+
+  000000000000000000000001
+    API Credentials Client ID - Amazon Web Services AWS  predefined  disabled regex v1
+  000000000000000000000002
+    API Credentials Client ID - Bitly  predefined  disabled regex v1
+
+  page=0 size=2 returned=2 total=1125
+```
+
+**JSON**
+```bash
+airs runtime dlp patterns list --size 2 --sort name,asc --output json
+```
+```json
+{
+  "items": [
+    {
+      "id": "000000000000000000000001",
+      "name": "API Credentials Client ID - Amazon Web Services AWS",
+      "type": "predefined",
+      "status": "disabled",
+      "technique": "regex",
+      "version": 1
+    },
+    {
+      "id": "000000000000000000000002",
+      "name": "API Credentials Client ID - Bitly",
+      "type": "predefined",
+      "status": "disabled",
+      "technique": "regex",
+      "version": 1
+    }
+  ],
+  "page": {
+    "number": 0,
+    "size": 2,
+    "total": 1125,
+    "returned": 2
+  }
+}
+```
+
+**YAML**
+```bash
+airs runtime dlp patterns list --size 2 --sort name,asc --output yaml
+```
+```yaml
+items:
+  - id: 000000000000000000000001
+    name: API Credentials Client ID - Amazon Web Services AWS
+    type: predefined
+    status: disabled
+    technique: regex
+    version: 1
+  - id: 000000000000000000000002
+    name: API Credentials Client ID - Bitly
+    type: predefined
+    status: disabled
+    technique: regex
+    version: 1
+page:
+  number: 0
+  size: 2
+  total: 1125
+  returned: 2
+```
 
 ---
 
@@ -53,8 +125,25 @@ airs runtime dlp patterns create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+**Input**
+```bash
+airs runtime dlp patterns create \
+  --name docs-example-pattern \
+  --regex '\bACME-\d{6}\b' \
+  --output json
+```
+
+**Output (JSON)**
+```json
+{
+  "action": "created",
+  "id": "000000000000000000000003",
+  "name": "docs-example-pattern",
+  "type": "custom",
+  "status": "active",
+  "version": 1
+}
+```
 
 ---
 
@@ -78,8 +167,20 @@ airs runtime dlp patterns get [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+**Input**
+```bash
+airs runtime dlp patterns get 000000000000000000000001
+```
+
+!!! bug "Upstream API returns 400"
+    The DLP `/v2/api/data-patterns/{id}` GET endpoint currently returns HTTP 400 for all
+    pattern IDs. Tracking: [cdot65/prisma-airs-cli#80](https://github.com/cdot65/prisma-airs-cli/issues/80).
+    Example will be backfilled once the upstream API is fixed.
+
+**Workaround**
+```bash
+airs runtime dlp patterns list --output json | jq '.items[] | select(.id == "000000000000000000000001")'
+```
 
 ---
 
@@ -116,8 +217,45 @@ airs runtime dlp patterns replace [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+**Input**
+```bash
+airs runtime dlp patterns replace 000000000000000000000003 \
+  --body-file docs/cli/examples/dlp/patterns/replace.json \
+  --output json
+```
+
+**Body** (`docs/cli/examples/dlp/patterns/replace.json`)
+```json
+{
+  "name": "docs-example-pattern",
+  "type": "custom",
+  "description": "minimal replace body for docs",
+  "detection_config": {
+    "technique": "regex"
+  },
+  "matching_rules": {
+    "regexes": [
+      { "regex": "\\bACME-\\d{6}\\b", "weight": 1 }
+    ]
+  },
+  "tags": {
+    "classification": ["endpoint"]
+  }
+}
+```
+
+!!! bug "Upstream API returns 400"
+    The DLP `/v2/api/data-patterns/{id}` PUT endpoint currently returns HTTP 400 for all
+    bodies tried (minimal and full). Tracking:
+    [cdot65/prisma-airs-cli#98](https://github.com/cdot65/prisma-airs-cli/issues/98).
+    Example output will be backfilled once the upstream API is fixed.
+
+**Workaround**
+```bash
+# delete + create (loses id continuity)
+airs runtime dlp patterns delete 000000000000000000000003
+airs runtime dlp patterns create --name docs-example-pattern --regex '\bACME-\d{6}\b' --output json
+```
 
 ---
 
@@ -144,8 +282,24 @@ airs runtime dlp patterns patch [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+**Input**
+```bash
+airs runtime dlp patterns patch 000000000000000000000003 \
+  --body-file docs/cli/examples/dlp/patterns/patch.json \
+  --output json
+```
+
+**Body** (`docs/cli/examples/dlp/patterns/patch.json`)
+```json
+{
+  "description": "patched via merge-patch"
+}
+```
+
+!!! bug "Upstream API returns 400"
+    The DLP `/v2/api/data-patterns/{id}` PATCH endpoint currently returns HTTP 400. Tracking:
+    [cdot65/prisma-airs-cli#98](https://github.com/cdot65/prisma-airs-cli/issues/98).
+    Example output will be backfilled once the upstream API is fixed.
 
 ---
 
@@ -163,5 +317,12 @@ airs runtime dlp patterns delete [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+**Input**
+```bash
+airs runtime dlp patterns delete 000000000000000000000003
+```
+
+**Output**
+```text
+  archived 000000000000000000000003
+```

@@ -1,0 +1,16 @@
+{
+  "name": "docs-example-pattern",
+  "type": "custom",
+  "description": "minimal replace body for docs",
+  "detection_config": {
+    "technique": "regex"
+  },
+  "matching_rules": {
+    "regexes": [
+      { "regex": "\\bACME-\\d{6}\\b", "weight": 1 }
+    ]
+  },
+  "tags": {
+    "classification": ["endpoint"]
+  }
+}
