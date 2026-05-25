@@ -38,9 +38,9 @@ runtime dlp dictionaries replace
 runtime dlp dictionaries patch
 # Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/111
 redteam abort
-redteam eula status
-redteam eula content
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
 redteam eula accept
+# Blocked by API 403 on instances/devices CRUD — see https://github.com/cdot65/prisma-airs-cli/issues/124
 redteam instances create
 redteam instances get
 redteam instances update
@@ -48,6 +48,7 @@ redteam instances delete
 redteam devices create
 redteam devices update
 redteam devices delete
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
 redteam registry-credentials
 # Blocked by upstream API 500 on /version-info — see https://github.com/cdot65/prisma-airs-cli/issues/117
 redteam prompt-sets get
@@ -65,23 +66,17 @@ redteam prompts add
 redteam prompts update
 # Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
 redteam prompts delete
-redteam properties list
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
 redteam properties create
 redteam properties values
 redteam properties add-value
-redteam targets get
+# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
 redteam targets create
 redteam targets update
 redteam targets delete
 redteam targets probe
-redteam targets profile
 redteam targets update-profile
 redteam targets validate-auth
-redteam targets metadata
-redteam targets init
-redteam targets templates
-redteam targets backup
-redteam targets restore
 model-security groups create
 model-security groups update
 model-security groups delete

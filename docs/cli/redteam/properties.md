@@ -16,8 +16,18 @@ airs redteam properties list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*List configured property names (empty state — no properties defined on this tenant)*
+
+```bash
+airs redteam properties list
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+  No property names found.
+```
 
 ---
 

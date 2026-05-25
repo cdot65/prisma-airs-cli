@@ -10,8 +10,23 @@ airs redteam eula status [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Check whether the EULA has been accepted on this tenant*
+
+```bash
+airs redteam eula status
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+EULA Status:
+
+  Accepted: yes
+  Accepted At: 2025-11-03T15:22:02.528000Z
+  Accepted By: 00000000-0000-0000-0000-000000000002
+```
 
 ---
 
@@ -25,8 +40,33 @@ airs redteam eula content [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Display the EULA text (output truncated — actual document is ~500 lines)*
+
+```bash
+airs redteam eula content
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+EULA Content:
+
+  ## END USER LICENSE AGREEMENT
+
+---
+
+**THIS END USER LICENSE AGREEMENT ("Agreement") GOVERNS THE USE OF PALO ALTO
+NETWORKS PRODUCTS (as that term "Product" is defined below).**
+
+THIS IS A LEGAL AGREEMENT BETWEEN YOU (REFERRED TO HEREIN AS "CUSTOMER" or
+"END USER") AND PALO ALTO NETWORKS, INC. ...
+
+...
+(full EULA text — definitions, use rights, restrictions, warranty, etc.)
+...
+```
 
 ---
 
