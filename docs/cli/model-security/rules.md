@@ -58,5 +58,30 @@ airs model-security rules get [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default; no --output flag on this command)*
+
+```bash
+airs model-security rules get 550e8400-e29b-41d4-a716-44665544000b
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+
+Security Rule Detail:
+
+  UUID:          550e8400-e29b-41d4-a716-44665544000b
+  Name:          Known Framework Operators Check
+  Description:   Model artifacts should only contain known safe TensorFlow operators
+  Rule Type:     ARTIFACT
+  Default State: BLOCKING
+  Sources:       ALL
+
+  Remediation:
+    Ensure that the model does not contain any custom TensorFlow operators that can execute arbitrary code
+    • Review the violation details to understand which operators were flagged.
+    • This rule cannot allowlist individual operators - it either blocks or allows all unknown operators. If your environment regularly uses trusted custom operators, set this rule to Allowing mode in the security group that scanned this model.
+    • If the operators are unknown or untrusted, do not use the model and source an alternative that uses only standard framework operators.
+    https://docs.paloaltonetworks.com/ai-runtime-security/ai-model-security/model-security-to-secure-your-ai-models/understanding-ai-model-security-rules#concept-rrb_bqp_xgc
+```

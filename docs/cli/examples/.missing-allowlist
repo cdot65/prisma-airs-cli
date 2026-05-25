@@ -77,23 +77,23 @@ redteam targets init
 redteam targets templates
 redteam targets backup
 redteam targets restore
-model-security groups get
 model-security groups create
 model-security groups update
 model-security groups delete
 model-security labels add
 model-security labels set
 model-security labels delete
-model-security labels keys
-model-security labels values
-model-security pypi-auth
-model-security rule-instances get
 model-security rule-instances update
-model-security rules get
-model-security scans get
 model-security scans create
+# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
+model-security scans get
+# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
 model-security scans evaluations
+# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
 model-security scans evaluation
+# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
 model-security scans violations
+# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
 model-security scans violation
+# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
 model-security scans files

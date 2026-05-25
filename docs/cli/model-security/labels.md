@@ -91,8 +91,18 @@ airs model-security labels keys [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Empty result — no scan labels have been created yet*
+
+```bash
+airs model-security labels keys
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+No label keys found.
+```
 
 ---
 
@@ -116,5 +126,15 @@ airs model-security labels values [options] <key>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Empty result — no values for an unknown key*
+
+```bash
+airs model-security labels values example-key
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+No values for key "example-key".
+```

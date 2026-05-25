@@ -68,6 +68,106 @@
           /Users/cdot/models/qwen3-0.6b-saffron-merged
           Rules: 6 passed  0 failed  / 6 total
 
+"model-security groups get":
+  examples:
+    - note: Pretty output (default; no --output flag on this command)
+      input: airs model-security groups get 00000000-0000-0000-0000-000000000001
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Security Group Detail:
+
+            UUID:        00000000-0000-0000-0000-000000000001
+            Name:        Default HUGGING_FACE
+            Description: Auto-created default security group for HUGGING_FACE models
+            Source Type: HUGGING_FACE
+            State:       ACTIVE
+            Created:     2025-11-24T15:44:39.596957Z
+            Updated:     2025-11-24T15:44:48.852089Z
+
+"model-security rules get":
+  examples:
+    - note: Pretty output (default; no --output flag on this command)
+      input: airs model-security rules get 550e8400-e29b-41d4-a716-44665544000b
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Security Rule Detail:
+
+            UUID:          550e8400-e29b-41d4-a716-44665544000b
+            Name:          Known Framework Operators Check
+            Description:   Model artifacts should only contain known safe TensorFlow operators
+            Rule Type:     ARTIFACT
+            Default State: BLOCKING
+            Sources:       ALL
+
+            Remediation:
+              Ensure that the model does not contain any custom TensorFlow operators that can execute arbitrary code
+              • Review the violation details to understand which operators were flagged.
+              • This rule cannot allowlist individual operators - it either blocks or allows all unknown operators. If your environment regularly uses trusted custom operators, set this rule to Allowing mode in the security group that scanned this model.
+              • If the operators are unknown or untrusted, do not use the model and source an alternative that uses only standard framework operators.
+              https://docs.paloaltonetworks.com/ai-runtime-security/ai-model-security/model-security-to-secure-your-ai-models/understanding-ai-model-security-rules#concept-rrb_bqp_xgc
+
+"model-security rule-instances get":
+  examples:
+    - note: Pretty output (default; no --output flag on this command)
+      input: airs model-security rule-instances get 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Rule Instance Detail:
+
+            UUID:         00000000-0000-0000-0000-000000000002
+            Group UUID:   00000000-0000-0000-0000-000000000001
+            Rule UUID:    550e8400-e29b-41d4-a716-44665544000b
+            State:        BLOCKING
+            Rule Name:    Known Framework Operators Check
+            Created:      2025-11-24T15:44:39.596957Z
+            Updated:      2025-11-24T15:44:39.596957Z
+
+"model-security labels keys":
+  examples:
+    - note: Empty result — no scan labels have been created yet
+      input: airs model-security labels keys
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          No label keys found.
+
+"model-security labels values":
+  examples:
+    - note: Empty result — no values for an unknown key
+      input: airs model-security labels values example-key
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          No values for key "example-key".
+
+"model-security pypi-auth":
+  examples:
+    - note: |
+        Fetches a short-lived OAuth-based PyPI index URL for the AIRS Model
+        Security private registry. The token in the URL is redacted here; in
+        real output it is a Google OAuth access token valid until `Expires`.
+      input: airs model-security pypi-auth
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          PyPI Authentication:
+
+            URL:     https://oauth2accesstoken:ya29.<redacted-oauth-token>@us-west1-python.pkg.dev/pairs-modelsec-prd-l9mu/ms-prod-usw1-mp-main-pypi/simple/
+            Expires: 2026-05-25T15:06:25
+
 "model-security install":
   examples:
     - note: Install with all extras (auto-detects uv or pip)

@@ -59,8 +59,27 @@ airs model-security groups get [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default; no --output flag on this command)*
+
+```bash
+airs model-security groups get 00000000-0000-0000-0000-000000000001
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+
+Security Group Detail:
+
+  UUID:        00000000-0000-0000-0000-000000000001
+  Name:        Default HUGGING_FACE
+  Description: Auto-created default security group for HUGGING_FACE models
+  Source Type: HUGGING_FACE
+  State:       ACTIVE
+  Created:     2025-11-24T15:44:39.596957Z
+  Updated:     2025-11-24T15:44:48.852089Z
+```
 
 ---
 

@@ -58,8 +58,27 @@ airs model-security rule-instances get [options] <groupUuid> <instanceUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default; no --output flag on this command)*
+
+```bash
+airs model-security rule-instances get 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+
+Rule Instance Detail:
+
+  UUID:         00000000-0000-0000-0000-000000000002
+  Group UUID:   00000000-0000-0000-0000-000000000001
+  Rule UUID:    550e8400-e29b-41d4-a716-44665544000b
+  State:        BLOCKING
+  Rule Name:    Known Framework Operators Check
+  Created:      2025-11-24T15:44:39.596957Z
+  Updated:      2025-11-24T15:44:39.596957Z
+```
 
 ---
 
