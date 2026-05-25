@@ -36,12 +36,12 @@ runtime dlp profiles get
 runtime dlp profiles replace
 runtime dlp profiles patch
 runtime dlp profiles delete
-runtime dlp dictionaries list
+# Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries create
-runtime dlp dictionaries get
+# Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries replace
+# Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries patch
-runtime dlp dictionaries delete
 redteam abort
 redteam eula status
 redteam eula content

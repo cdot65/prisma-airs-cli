@@ -208,3 +208,367 @@
       input: airs runtime dlp patterns delete 000000000000000000000003
       output: |
         archived 000000000000000000000003
+
+"runtime dlp dictionaries list":
+  examples:
+    - note: Pretty output (default — JSON envelope)
+      input: airs runtime dlp dictionaries list --size 2 --sort name,asc
+      output: |
+        {
+          "content": [
+            {
+              "id": "000000000000000000000001",
+              "name": "Allergy",
+              "description": "Most common allergies",
+              "category": "Medical",
+              "region_name": "GLOBAL",
+              "type": "predefined",
+              "is_case_sensitive": false,
+              "is_parent_managed": false,
+              "detection_technique": "dictionary",
+              "detection_sub_technique": null,
+              "dictionary_metadata": {
+                "number_of_keywords": 0,
+                "original_file_name": "",
+                "original_file_size_in_byte": 0
+              },
+              "keywords": null,
+              "tags": {
+                "classification": [
+                  "pab"
+                ]
+              },
+              "attributes": null,
+              "audit_metadata": {
+                "created_at": 1761657319488,
+                "created_by": "System",
+                "updated_at": 1761657319488,
+                "updated_by": "System"
+              }
+            },
+            {
+              "id": "000000000000000000000002",
+              "name": "Auto Insurance Providers",
+              "description": "List of most used auto insurance providers",
+              "category": "Insurance Providers",
+              "region_name": "GLOBAL",
+              "type": "predefined",
+              "is_case_sensitive": false,
+              "is_parent_managed": false,
+              "detection_technique": "dictionary",
+              "detection_sub_technique": null,
+              "dictionary_metadata": {
+                "number_of_keywords": 0,
+                "original_file_name": "",
+                "original_file_size_in_byte": 0
+              },
+              "keywords": null,
+              "tags": {
+                "classification": [
+                  "pab"
+                ]
+              },
+              "attributes": null,
+              "audit_metadata": {
+                "created_at": 1761657319489,
+                "created_by": "System",
+                "updated_at": 1761657319489,
+                "updated_by": "System"
+              }
+            }
+          ],
+          "empty": false,
+          "first": true,
+          "last": false,
+          "number": 0,
+          "pageable": {
+            "offset": 0,
+            "paged": true,
+            "unpaged": false,
+            "sort": {
+              "empty": true,
+              "sorted": false,
+              "unsorted": true
+            },
+            "page_number": 0,
+            "page_size": 2
+          },
+          "size": 2,
+          "sort": {
+            "empty": true,
+            "sorted": false,
+            "unsorted": true
+          },
+          "total_pages": 16,
+          "number_of_elements": 2,
+          "total_elements": 31
+        }
+    - note: JSON output (explicit)
+      input: airs runtime dlp dictionaries list --size 2 --sort name,asc --output json
+      output: |
+        {
+          "content": [
+            {
+              "id": "000000000000000000000001",
+              "name": "Allergy",
+              "description": "Most common allergies",
+              "category": "Medical",
+              "region_name": "GLOBAL",
+              "type": "predefined",
+              "is_case_sensitive": false,
+              "is_parent_managed": false,
+              "detection_technique": "dictionary",
+              "detection_sub_technique": null,
+              "dictionary_metadata": {
+                "number_of_keywords": 0,
+                "original_file_name": "",
+                "original_file_size_in_byte": 0
+              },
+              "keywords": null,
+              "tags": {
+                "classification": [
+                  "pab"
+                ]
+              },
+              "attributes": null,
+              "audit_metadata": {
+                "created_at": 1761657319488,
+                "created_by": "System",
+                "updated_at": 1761657319488,
+                "updated_by": "System"
+              }
+            },
+            {
+              "id": "000000000000000000000002",
+              "name": "Auto Insurance Providers",
+              "description": "List of most used auto insurance providers",
+              "category": "Insurance Providers",
+              "region_name": "GLOBAL",
+              "type": "predefined",
+              "is_case_sensitive": false,
+              "is_parent_managed": false,
+              "detection_technique": "dictionary",
+              "detection_sub_technique": null,
+              "dictionary_metadata": {
+                "number_of_keywords": 0,
+                "original_file_name": "",
+                "original_file_size_in_byte": 0
+              },
+              "keywords": null,
+              "tags": {
+                "classification": [
+                  "pab"
+                ]
+              },
+              "attributes": null,
+              "audit_metadata": {
+                "created_at": 1761657319489,
+                "created_by": "System",
+                "updated_at": 1761657319489,
+                "updated_by": "System"
+              }
+            }
+          ],
+          "empty": false,
+          "first": true,
+          "last": false,
+          "number": 0,
+          "pageable": {
+            "offset": 0,
+            "paged": true,
+            "unpaged": false,
+            "sort": {
+              "empty": true,
+              "sorted": false,
+              "unsorted": true
+            },
+            "page_number": 0,
+            "page_size": 2
+          },
+          "size": 2,
+          "sort": {
+            "empty": true,
+            "sorted": false,
+            "unsorted": true
+          },
+          "total_pages": 16,
+          "number_of_elements": 2,
+          "total_elements": 31
+        }
+    - note: YAML output
+      input: airs runtime dlp dictionaries list --size 2 --sort name,asc --output yaml
+      output: |
+        content:
+          - id: 000000000000000000000001
+            name: Allergy
+            description: Most common allergies
+            category: Medical
+            region_name: GLOBAL
+            type: predefined
+            is_case_sensitive: false
+            is_parent_managed: false
+            detection_technique: dictionary
+            detection_sub_technique: null
+            dictionary_metadata:
+              number_of_keywords: 0
+              original_file_name: ''
+              original_file_size_in_byte: 0
+            keywords: null
+            tags:
+              classification:
+                - pab
+            attributes: null
+            audit_metadata:
+              created_at: 1761657319488
+              created_by: System
+              updated_at: 1761657319488
+              updated_by: System
+          - id: 000000000000000000000002
+            name: Auto Insurance Providers
+            description: List of most used auto insurance providers
+            category: Insurance Providers
+            region_name: GLOBAL
+            type: predefined
+            is_case_sensitive: false
+            is_parent_managed: false
+            detection_technique: dictionary
+            detection_sub_technique: null
+            dictionary_metadata:
+              number_of_keywords: 0
+              original_file_name: ''
+              original_file_size_in_byte: 0
+            keywords: null
+            tags:
+              classification:
+                - pab
+            attributes: null
+            audit_metadata:
+              created_at: 1761657319489
+              created_by: System
+              updated_at: 1761657319489
+              updated_by: System
+        empty: false
+        first: true
+        last: false
+        number: 0
+        pageable:
+          offset: 0
+          paged: true
+          unpaged: false
+          sort:
+            empty: true
+            sorted: false
+            unsorted: true
+          page_number: 0
+          page_size: 2
+        size: 2
+        sort:
+          empty: true
+          sorted: false
+          unsorted: true
+        total_pages: 16
+        number_of_elements: 2
+        total_elements: 31
+
+"runtime dlp dictionaries get":
+  examples:
+    - note: Pretty output (default — JSON object)
+      input: airs runtime dlp dictionaries get 000000000000000000000001
+      output: |
+        {
+          "id": "000000000000000000000001",
+          "name": "Allergy",
+          "description": "Most common allergies",
+          "category": "Medical",
+          "region_name": "GLOBAL",
+          "type": "predefined",
+          "is_case_sensitive": false,
+          "is_parent_managed": false,
+          "detection_technique": "dictionary",
+          "detection_sub_technique": null,
+          "dictionary_metadata": {
+            "number_of_keywords": 85,
+            "original_file_name": "",
+            "original_file_size_in_byte": 0
+          },
+          "keywords": null,
+          "tags": {
+            "classification": [
+              "pab"
+            ]
+          },
+          "attributes": null,
+          "audit_metadata": {
+            "created_at": 1761657319488,
+            "created_by": null,
+            "updated_at": 1761657319488,
+            "updated_by": null
+          }
+        }
+    - note: JSON output (explicit)
+      input: airs runtime dlp dictionaries get 000000000000000000000001 --output json
+      output: |
+        {
+          "id": "000000000000000000000001",
+          "name": "Allergy",
+          "description": "Most common allergies",
+          "category": "Medical",
+          "region_name": "GLOBAL",
+          "type": "predefined",
+          "is_case_sensitive": false,
+          "is_parent_managed": false,
+          "detection_technique": "dictionary",
+          "detection_sub_technique": null,
+          "dictionary_metadata": {
+            "number_of_keywords": 85,
+            "original_file_name": "",
+            "original_file_size_in_byte": 0
+          },
+          "keywords": null,
+          "tags": {
+            "classification": [
+              "pab"
+            ]
+          },
+          "attributes": null,
+          "audit_metadata": {
+            "created_at": 1761657319488,
+            "created_by": null,
+            "updated_at": 1761657319488,
+            "updated_by": null
+          }
+        }
+    - note: YAML output
+      input: airs runtime dlp dictionaries get 000000000000000000000001 --output yaml
+      output: |
+        id: 000000000000000000000001
+        name: Allergy
+        description: Most common allergies
+        category: Medical
+        region_name: GLOBAL
+        type: predefined
+        is_case_sensitive: false
+        is_parent_managed: false
+        detection_technique: dictionary
+        detection_sub_technique: null
+        dictionary_metadata:
+          number_of_keywords: 85
+          original_file_name: ''
+          original_file_size_in_byte: 0
+        keywords: null
+        tags:
+          classification:
+            - pab
+        attributes: null
+        audit_metadata:
+          created_at: 1761657319488
+          created_by: null
+          updated_at: 1761657319488
+          updated_by: null
+
+"runtime dlp dictionaries delete":
+  examples:
+    - note: Soft-delete a dictionary by id (API returns 204; CLI prints confirmation)
+      input: airs runtime dlp dictionaries delete 000000000000000000000001
+      output: |
+        deleted 000000000000000000000001
