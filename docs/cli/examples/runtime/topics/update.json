@@ -1,0 +1,9 @@
+{
+  "topic_name": "docs-example-topic",
+  "description": "Updated description for documentation example",
+  "examples": [
+    "first updated example prompt",
+    "second updated example prompt",
+    "third updated example prompt"
+  ]
+}

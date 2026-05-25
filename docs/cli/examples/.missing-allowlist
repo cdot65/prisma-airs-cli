@@ -17,10 +17,8 @@ runtime profiles update
 runtime profiles delete
 runtime resume-poll
 runtime scan-logs query
+# Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/165
 runtime topics delete
-runtime topics get
-runtime topics list
-runtime topics update
 runtime dlp filtering-profiles list
 runtime dlp filtering-profiles get
 runtime dlp filtering-profiles replace

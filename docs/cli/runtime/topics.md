@@ -135,8 +135,58 @@ airs runtime topics get [options] <nameOrId>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default) — accepts topic name or UUID*
+
+```bash
+airs runtime topics get "Professional authority"
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+
+Topic Detail:
+
+  ID:          00000000-0000-0000-0000-000000000001
+  Name:        Professional authority
+  Revision:    1
+  Description: Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals.
+  Modified:    2026-05-21T21:23:53Z
+```
+
+*JSON output*
+
+```bash
+airs runtime topics get "Professional authority" --output json
+```
+
+```text
+{
+  "topic_id": "00000000-0000-0000-0000-000000000001",
+  "topic_name": "Professional authority",
+  "revision": 1,
+  "description": "Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals.",
+  "examples": [],
+  "last_modified_ts": "2026-05-21T21:23:53Z",
+  "csp_id": "<csp-id>",
+  "tsg_id": "<tenant-id>"
+}
+```
+
+*YAML output*
+
+```bash
+airs runtime topics get "Professional authority" --output yaml
+```
+
+```text
+topic_id: 00000000-0000-0000-0000-000000000001
+topic_name: Professional authority
+revision: 1
+description: Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals.
+last_modified_ts: 2026-05-21T21:23:53Z
+```
 
 ---
 
@@ -158,8 +208,80 @@ airs runtime topics list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default)*
+
+```bash
+airs runtime topics list --limit 3
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+
+Custom Topics:
+
+00000000-0000-0000-0000-000000000001
+  Professional authority rev:1 — Prompts where the user asks the AI to adopt the persona of a licensed expert (e.
+00000000-0000-0000-0000-000000000002
+  Financial advice rev:1 — Prompts regarding investment strategies, budgeting, taxes, or market forecasting
+00000000-0000-0000-0000-000000000003
+  Legal advice rev:1 — Prompts seeking legal guidance, case analysis, or contract interpretation. Respo
+
+Showing 3 of 100 topics
+```
+
+*JSON output*
+
+```bash
+airs runtime topics list --limit 3 --output json
+```
+
+```text
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "name": "Professional authority",
+    "revision": 1,
+    "description": "Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals."
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "name": "Financial advice",
+    "revision": 1,
+    "description": "Prompts regarding investment strategies, budgeting, taxes, or market forecasting. Content must focus on financial literacy and education, explicitly stating it is not professional financial planning or investment advice"
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000003",
+    "name": "Legal advice",
+    "revision": 1,
+    "description": "Prompts seeking legal guidance, case analysis, or contract interpretation. Responses must provide general information only, never formal legal counsel, and always include a clear disclaimer to consult a qualified attorney"
+  }
+]
+```
+
+*YAML output*
+
+```bash
+airs runtime topics list --limit 3 --output yaml
+```
+
+```text
+id: 00000000-0000-0000-0000-000000000001
+name: Professional authority
+revision: 1
+description: Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals.
+---
+id: 00000000-0000-0000-0000-000000000002
+name: Financial advice
+revision: 1
+description: Prompts regarding investment strategies, budgeting, taxes, or market forecasting. Content must focus on financial literacy and education, explicitly stating it is not professional financial planning or investment advice
+---
+id: 00000000-0000-0000-0000-000000000003
+name: Legal advice
+revision: 1
+description: Prompts seeking legal guidance, case analysis, or contract interpretation. Responses must provide general information only, never formal legal counsel, and always include a clear disclaimer to consult a qualified attorney
+```
 
 ---
 
@@ -239,5 +361,29 @@ airs runtime topics update [options] <topicId>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Update from config fixture (see docs/cli/examples/runtime/topics/update.json)*
+
+```bash
+airs runtime topics update 00000000-0000-0000-0000-000000000001 --config docs/cli/examples/runtime/topics/update.json
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+Topic updated: 00000000-0000-0000-0000-000000000001
+
+
+Topic Detail:
+
+  ID:          00000000-0000-0000-0000-000000000001
+  Name:        docs-example-topic
+  Revision:    2
+  Description: Updated description for documentation example
+  Examples:
+    • first updated example prompt
+    • second updated example prompt
+    • third updated example prompt
+  Created:     user@example.com
+  Updated:     none
+```
