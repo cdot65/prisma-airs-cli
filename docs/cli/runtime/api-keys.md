@@ -17,8 +17,69 @@ airs runtime api-keys list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default) — `last8` is the trailing 8 chars of the secret; full key is only echoed on create / regenerate*
+
+```bash
+airs runtime api-keys list --limit 2
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+
+API Keys:
+
+00000000-0000-0000-0000-000000000001
+  docs-example-key key: …ABCD1234
+00000000-0000-0000-0000-000000000002
+  docs-other-example-key key: …EFGH5678
+```
+
+*JSON output*
+
+```bash
+airs runtime api-keys list --limit 2 --output json
+```
+
+```text
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "name": "docs-example-key",
+    "last8": "ABCD1234",
+    "createdAt": "",
+    "expiresAt": ""
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "name": "docs-other-example-key",
+    "last8": "EFGH5678",
+    "createdAt": "",
+    "expiresAt": ""
+  }
+]
+```
+
+*YAML output (multi-doc stream — one document per key)*
+
+```bash
+airs runtime api-keys list --limit 2 --output yaml
+```
+
+```text
+id: 00000000-0000-0000-0000-000000000001
+name: docs-example-key
+last8: ABCD1234
+createdAt:
+expiresAt:
+---
+id: 00000000-0000-0000-0000-000000000002
+name: docs-other-example-key
+last8: EFGH5678
+createdAt:
+expiresAt:
+```
 
 ---
 

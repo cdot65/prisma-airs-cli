@@ -1464,3 +1464,91 @@
         Blocked: 0
         Allowed: 1
         Output:  resume-out.csv
+
+"runtime api-keys list":
+  examples:
+    - note: Pretty output (default) — `last8` is the trailing 8 chars of the secret; full key is only echoed on create / regenerate
+      input: airs runtime api-keys list --limit 2
+      output: |
+          Prisma AIRS — Runtime Configuration
+          Security profile and topic management
+
+
+          API Keys:
+
+          00000000-0000-0000-0000-000000000001
+            docs-example-key key: …ABCD1234
+          00000000-0000-0000-0000-000000000002
+            docs-other-example-key key: …EFGH5678
+    - note: JSON output
+      input: airs runtime api-keys list --limit 2 --output json
+      output: |
+        [
+          {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "name": "docs-example-key",
+            "last8": "ABCD1234",
+            "createdAt": "",
+            "expiresAt": ""
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000002",
+            "name": "docs-other-example-key",
+            "last8": "EFGH5678",
+            "createdAt": "",
+            "expiresAt": ""
+          }
+        ]
+    - note: YAML output (multi-doc stream — one document per key)
+      input: airs runtime api-keys list --limit 2 --output yaml
+      output: |
+        id: 00000000-0000-0000-0000-000000000001
+        name: docs-example-key
+        last8: ABCD1234
+        createdAt:
+        expiresAt:
+        ---
+        id: 00000000-0000-0000-0000-000000000002
+        name: docs-other-example-key
+        last8: EFGH5678
+        createdAt:
+        expiresAt:
+
+"runtime customer-apps list":
+  examples:
+    - note: Pretty output (default) — only `name` is rendered; richer detail requires `customer-apps get` (currently blocked, see cdot65/prisma-airs-cli#115)
+      input: airs runtime customer-apps list --limit 2
+      output: |
+          Prisma AIRS — Runtime Configuration
+          Security profile and topic management
+
+
+          Customer Apps:
+
+            example-app
+            example-other-app
+    - note: JSON output — `id` and `description` are empty in the list response (the list endpoint only returns names)
+      input: airs runtime customer-apps list --limit 2 --output json
+      output: |
+        [
+          {
+            "id": "",
+            "name": "example-app",
+            "description": ""
+          },
+          {
+            "id": "",
+            "name": "example-other-app",
+            "description": ""
+          }
+        ]
+    - note: YAML output (multi-doc stream — one document per app)
+      input: airs runtime customer-apps list --limit 2 --output yaml
+      output: |
+        id:
+        name: example-app
+        description:
+        ---
+        id:
+        name: example-other-app
+        description:

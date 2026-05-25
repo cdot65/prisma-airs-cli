@@ -17,8 +17,59 @@ airs runtime customer-apps list [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default) — only `name` is rendered; richer detail requires `customer-apps get` (currently blocked, see cdot65/prisma-airs-cli#115)*
+
+```bash
+airs runtime customer-apps list --limit 2
+```
+
+```text
+Prisma AIRS — Runtime Configuration
+Security profile and topic management
+
+
+Customer Apps:
+
+  example-app
+  example-other-app
+```
+
+*JSON output — `id` and `description` are empty in the list response (the list endpoint only returns names)*
+
+```bash
+airs runtime customer-apps list --limit 2 --output json
+```
+
+```text
+[
+  {
+    "id": "",
+    "name": "example-app",
+    "description": ""
+  },
+  {
+    "id": "",
+    "name": "example-other-app",
+    "description": ""
+  }
+]
+```
+
+*YAML output (multi-doc stream — one document per app)*
+
+```bash
+airs runtime customer-apps list --limit 2 --output yaml
+```
+
+```text
+id:
+name: example-app
+description:
+---
+id:
+name: example-other-app
+description:
+```
 
 ---
 
