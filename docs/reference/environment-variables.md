@@ -40,6 +40,7 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 | `PANW_MGMT_TSG_ID` | Yes | Tenant Service Group ID |
 | `PANW_MGMT_ENDPOINT` | -- | Custom management endpoint |
 | `PANW_MGMT_TOKEN_ENDPOINT` | -- | Custom token endpoint |
+| `PANW_DLP_ENDPOINT` | -- | Custom DLP API base URL (default: `api.dlp.paloaltonetworks.com`) — used by `airs runtime dlp` |
 
 ---
 

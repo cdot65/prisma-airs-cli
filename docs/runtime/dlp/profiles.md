@@ -15,6 +15,7 @@ Manage Data Profiles on the DLP service. Profiles define detection rules using t
 | `get` | Fetch a single profile by ID | 1 on error |
 | `replace` | Full PUT: update all fields of a profile | 1 on error |
 | `patch` | JSON Merge Patch: update only specified fields | 1 on error |
+| `delete` | **Stub** — API has no DELETE; prints the patch idiom and exits 2 | always 2 |
 
 ## list
 
@@ -190,6 +191,33 @@ airs runtime dlp profiles patch 1234567890 \
 `--body-file` is mutually exclusive with `--set/--clear`. Values are coerced (numbers, booleans, `null`, JSON literals). Quote to force strings: `--set count='"5"'`.
 
 **Output (`--output json`)** — curated ack `{action: "patched", id, name, type, status, version}`.
+
+## delete
+
+Stub command — the DLP API does **not** expose DELETE for data profiles. Invoking it prints the soft-delete patch idiom on stderr and exits with code **2**, so scripts can distinguish it from a real success or a transient error (exit 1):
+
+```bash
+airs runtime dlp profiles delete 1234567890
+# exit code: 2
+```
+
+To actually archive a profile, fetch its current `name + profile_type` first, then patch:
+
+```bash
+airs runtime dlp profiles get 1234567890 --output json
+airs runtime dlp profiles patch 1234567890 \
+  --set name='"<existing-name>"' \
+  --set profile_type='"<existing-type>"' \
+  --set profile_status='"deleted"'
+```
+
+The `--body-file` shorthand if you prefer heredoc:
+
+```bash
+airs runtime dlp profiles patch 1234567890 --body-file - <<'EOF'
+{ "name": "my-profile", "profile_type": "advanced", "profile_status": "deleted" }
+EOF
+```
 
 ## Tips
 

@@ -42,6 +42,14 @@ Runtime Security is the core module of Prisma AIRS CLI for real-time prompt scan
 
     [:octicons-arrow-right-24: Profile Audits](profile-audits.md)
 
+-   :material-shield-lock:{ .lg .middle } **DLP**
+
+    ---
+
+    Full CRUD over the DLP service — filtering profiles, patterns, profiles, dictionaries. Twenty commands, shared OAuth token cache.
+
+    [:octicons-arrow-right-24: DLP Overview](dlp/overview.md)
+
 </div>
 
 ## Authentication

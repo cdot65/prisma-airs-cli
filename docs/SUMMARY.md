@@ -17,6 +17,7 @@
             * [Metrics & Evaluation](runtime/guardrails/metrics.md)
             * [Topic Constraints](runtime/guardrails/topic-constraints.md)
         * DLP
+            * [Overview](runtime/dlp/overview.md)
             * [Filtering Profiles](runtime/dlp/filtering-profiles.md)
             * [Patterns](runtime/dlp/patterns.md)
             * [Profiles](runtime/dlp/profiles.md)
