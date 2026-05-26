@@ -35,6 +35,7 @@ The `airs redteam` command group provides full access to Red Team operations:
 
 ## Sub-pages
 
+- **[End-to-End Walkthrough](end-to-end-walkthrough.md)** -- tutorial: onboard a target, run a STATIC scan, pull the report, with every command + response
 - [Running Scans](scanning.md) -- launch scans, monitor progress, view reports
 - [Managing Targets](targets.md) -- CRUD operations for red team targets, auth validation, metadata, templates
 - [EULA & Infrastructure](infrastructure.md) -- EULA acceptance, instance management, devices, registry credentials

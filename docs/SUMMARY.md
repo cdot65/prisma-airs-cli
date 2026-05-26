@@ -23,6 +23,7 @@
             * [Dictionaries](runtime/dlp/dictionaries.md)
     * AI Red Teaming
         * [Overview](redteam/overview.md)
+        * [End-to-End Walkthrough](redteam/end-to-end-walkthrough.md)
         * [Running Scans](redteam/scanning.md)
         * [Managing Targets](redteam/targets.md)
         * [EULA & Infrastructure](redteam/infrastructure.md)
