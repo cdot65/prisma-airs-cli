@@ -178,3 +178,292 @@
       input: airs model-security install --dry-run
     - note: Install into a custom directory
       input: airs model-security install --dir my-scanner
+
+"model-security groups create":
+  examples:
+    - note: Create from body fixture (see docs/cli/examples/model-security/group-create.json)
+      input: airs model-security groups create --config docs/cli/examples/model-security/group-create.json
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Group created: 00000000-0000-0000-0000-000000000001
+
+
+          Security Group Detail:
+
+            UUID:        00000000-0000-0000-0000-000000000001
+            Name:        group-docs-test
+            Description: Throwaway group for docs capture — safe to delete
+            Source Type: HUGGING_FACE
+            State:       PENDING
+            Created:     2026-05-26T10:20:10.809882Z
+            Updated:     2026-05-26T10:20:10.809882Z
+
+"model-security groups update":
+  examples:
+    - note: Update the description (use --name to rename)
+      input: airs model-security groups update 00000000-0000-0000-0000-000000000001 --description "Throwaway group — updated description for docs capture"
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Group updated: 00000000-0000-0000-0000-000000000001
+
+
+          Security Group Detail:
+
+            UUID:        00000000-0000-0000-0000-000000000001
+            Name:        group-docs-test
+            Description: Throwaway group — updated description for docs capture
+            Source Type: HUGGING_FACE
+            State:       PENDING
+            Created:     2026-05-26T10:20:10.809882Z
+            Updated:     2026-05-26T10:20:45.684391Z
+
+"model-security groups delete":
+  examples:
+    - note: Delete a security group by UUID
+      input: airs model-security groups delete 00000000-0000-0000-0000-000000000001
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Group 00000000-0000-0000-0000-000000000001 deleted.
+
+"model-security rule-instances update":
+  examples:
+    - note: Flip a rule instance from BLOCKING to ALLOWING (see docs/cli/examples/model-security/rule-instance-update.json)
+      input: airs model-security rule-instances update 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000003 --config docs/cli/examples/model-security/rule-instance-update.json
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Rule instance updated: 00000000-0000-0000-0000-000000000003
+
+
+          Rule Instance Detail:
+
+            UUID:         00000000-0000-0000-0000-000000000003
+            Group UUID:   00000000-0000-0000-0000-000000000001
+            Rule UUID:    550e8400-e29b-41d4-a716-44665544000b
+            State:        ALLOWING
+            Rule Name:    Known Framework Operators Check
+            Created:      2026-05-26T10:20:10.809882Z
+            Updated:      2026-05-26T10:20:38.433422Z
+
+"model-security scans create":
+  examples:
+    - note: |
+        Submit a Hugging Face model URI to be scanned by the AIRS backend.
+        For HF URIs you provide model_uri + security_group_uuid + scan_origin only;
+        the backend fetches and scans the model and the resulting outcome is
+        available via `scans get` shortly after. See
+        docs/cli/examples/model-security/scan-create.json.
+      input: airs model-security scans create --config docs/cli/examples/model-security/scan-create.json
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Scan created: 00000000-0000-0000-0000-000000000002
+
+
+          Scan Detail:
+
+            UUID:       00000000-0000-0000-0000-000000000002
+            Outcome:    PENDING
+            Model URI:  https://huggingface.co/hf-internal-testing/tiny-random-bert
+            Origin:     MODEL_SECURITY_SDK
+            Source:     HUGGING_FACE
+            Group:      group-docs-test
+            Created:    2026-05-26T10:22:18.284287Z
+            Updated:    2026-05-26T10:22:18.284287Z
+
+"model-security scans get":
+  examples:
+    - note: Pretty output (default; no --output flag on this command). Re-run after scan completes to see final Outcome + rule counts.
+      input: airs model-security scans get 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Scan Detail:
+
+            UUID:       00000000-0000-0000-0000-000000000002
+            Outcome:    BLOCKED
+            Model URI:  https://huggingface.co/hf-internal-testing/tiny-random-bert
+            Origin:     MODEL_SECURITY_SDK
+            Source:     HUGGING_FACE
+            Group:      group-docs-test
+            Created:    2026-05-26T10:22:18.284287Z
+            Updated:    2026-05-26T10:22:18.346345Z
+            Rules:      7 passed  4 failed  / 11 total
+
+"model-security scans evaluations":
+  examples:
+    - note: List rule evaluations for a scan (one row per rule the scan was checked against)
+      input: airs model-security scans evaluations 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Rule Evaluations:
+
+          00000000-0000-0000-0000-000000000004
+            License Exists  FAILED  BLOCKING
+          00000000-0000-0000-0000-000000000005
+            License Is Valid For Use  FAILED  BLOCKING
+          00000000-0000-0000-0000-000000000006
+            Model Is Blocked  PASSED  BLOCKING
+          00000000-0000-0000-0000-000000000007
+            Organization Is Blocked  PASSED  BLOCKING
+          00000000-0000-0000-0000-000000000008
+            Organization Verified By Hugging Face  FAILED  BLOCKING
+          00000000-0000-0000-0000-000000000009
+            Stored In Approved File Format  FAILED  BLOCKING
+          00000000-0000-0000-0000-00000000000a
+            Known Framework Operators Check  PASSED  ALLOWING
+          00000000-0000-0000-0000-00000000000b
+            Load Time Code Execution Check  PASSED  BLOCKING
+          00000000-0000-0000-0000-00000000000c
+            Model Architecture Backdoor Check  PASSED  BLOCKING
+          00000000-0000-0000-0000-00000000000d
+            Runtime Code Execution Check  PASSED  BLOCKING
+          00000000-0000-0000-0000-00000000000e
+            Suspicious Model Components Check  PASSED  BLOCKING
+
+"model-security scans evaluation":
+  examples:
+    - note: Get details for a single rule evaluation (UUID from `scans evaluations`)
+      input: airs model-security scans evaluation 00000000-0000-0000-0000-000000000004
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Evaluation Detail:
+
+            UUID:           00000000-0000-0000-0000-000000000004
+            Rule:           License Exists
+            Description:    Models should have a license
+            Instance UUID:  00000000-0000-0000-0000-00000000000f
+            Instance State: BLOCKING
+            Result:         FAILED
+            Violations:     1
+
+"model-security scans violations":
+  examples:
+    - note: List violations for a scan
+      input: airs model-security scans violations 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Violations:
+
+          00000000-0000-0000-0000-000000000010
+            Organization Verified By Hugging Face  
+            The org/model pair (**hf-internal-testing/tiny-random-bert**) is denied since it has not been explicitly approved
+            Threat: 
+          00000000-0000-0000-0000-000000000011
+            License Exists  
+            input data has a null license
+            Threat: 
+          00000000-0000-0000-0000-000000000012
+            Stored In Approved File Format  pytorch_model.bin
+            Model file `pytorch_model.bin` is stored in an unapproved format: **pytorch_v1_13**
+            Threat: UNAPPROVED_FORMATS
+          00000000-0000-0000-0000-000000000013
+            Stored In Approved File Format  pytorch_model.bin
+            Model file `pytorch_model.bin` is stored in an unapproved format: **zip**
+            Threat: UNAPPROVED_FORMATS
+          00000000-0000-0000-0000-000000000014
+            Stored In Approved File Format  tf_model.h5
+            Model file `tf_model.h5` is stored in an unapproved format: **keras_weights**
+            Threat: UNAPPROVED_FORMATS
+          00000000-0000-0000-0000-000000000015
+            Stored In Approved File Format  vocab.txt
+            Model file `vocab.txt` is stored in an unapproved format: **openvino_bin**
+            Threat: UNAPPROVED_FORMATS
+          00000000-0000-0000-0000-000000000016
+            Stored In Approved File Format  onnx/model.onnx
+            Model file `onnx/model.onnx` is stored in an unapproved format: **onnx**
+            Threat: UNAPPROVED_FORMATS
+          00000000-0000-0000-0000-000000000017
+            License Is Valid For Use  
+            Invalid license: **null**
+            Threat: 
+
+"model-security scans violation":
+  examples:
+    - note: Get details for a single violation (UUID from `scans violations`)
+      input: airs model-security scans violation 00000000-0000-0000-0000-000000000010
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Violation Detail:
+
+            UUID:        00000000-0000-0000-0000-000000000010
+            Rule:        Organization Verified By Hugging Face
+            Description: Organization that produced the model should be verified by Hugging Face
+            State:       BLOCKING
+            File:        
+            Threat:      
+            Detail:      The org/model pair (**hf-internal-testing/tiny-random-bert**) is denied since it has not been explicitly approved
+
+"model-security scans files":
+  examples:
+    - note: List files the scanner processed (FAILED rows are the ones with violations)
+      input: airs model-security scans files 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+
+          Scanned Files:
+
+            SUCCESS  FILE  config.json [json]
+            SKIPPED  FILE  .gitattributes
+            SUCCESS  FILE  model.safetensors [safetensors]
+            SUCCESS  DIRECTORY  onnx
+            FAILED  FILE  pytorch_model.bin [zip, pytorch_v1_13]
+            SUCCESS  FILE  special_tokens_map.json [json]
+            FAILED  FILE  tf_model.h5 [keras_weights]
+            SUCCESS  FILE  tokenizer_config.json [json]
+            SUCCESS  FILE  tokenizer.json [json]
+            FAILED  FILE  vocab.txt [openvino_bin]
+
+"model-security labels add":
+  examples:
+    - note: Append labels to a scan (preserves existing keys)
+      input: airs model-security labels add 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"docs-test"},{"key":"capture","value":"true"}]'
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Labels added.
+
+"model-security labels set":
+  examples:
+    - note: Replace all labels on a scan (drops keys not in the request)
+      input: airs model-security labels set 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"updated"}]'
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Labels set.
+
+"model-security labels delete":
+  examples:
+    - note: Delete one or more labels by comma-separated key list
+      input: airs model-security labels delete 00000000-0000-0000-0000-000000000002 --keys env
+      output: |
+          Prisma AIRS — Model Security
+          ML model supply chain security
+
+          Labels deleted.

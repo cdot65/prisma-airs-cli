@@ -103,5 +103,26 @@ airs model-security rule-instances update [options] <groupUuid> <instanceUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Flip a rule instance from BLOCKING to ALLOWING (see docs/cli/examples/model-security/rule-instance-update.json)*
+
+```bash
+airs model-security rule-instances update 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000003 --config docs/cli/examples/model-security/rule-instance-update.json
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Rule instance updated: 00000000-0000-0000-0000-000000000003
+
+
+Rule Instance Detail:
+
+  UUID:         00000000-0000-0000-0000-000000000003
+  Group UUID:   00000000-0000-0000-0000-000000000001
+  Rule UUID:    550e8400-e29b-41d4-a716-44665544000b
+  State:        ALLOWING
+  Rule Name:    Known Framework Operators Check
+  Created:      2026-05-26T10:20:10.809882Z
+  Updated:      2026-05-26T10:20:38.433422Z
+```

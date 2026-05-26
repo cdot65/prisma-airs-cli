@@ -75,23 +75,3 @@ redteam targets delete
 redteam targets probe
 redteam targets update-profile
 redteam targets validate-auth
-model-security groups create
-model-security groups update
-model-security groups delete
-model-security labels add
-model-security labels set
-model-security labels delete
-model-security rule-instances update
-model-security scans create
-# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
-model-security scans get
-# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
-model-security scans evaluations
-# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
-model-security scans evaluation
-# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
-model-security scans violations
-# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
-model-security scans violation
-# Blocked by missing scan fixtures — see https://github.com/cdot65/prisma-airs-cli/issues/121
-model-security scans files

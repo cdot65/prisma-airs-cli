@@ -1,0 +1,8 @@
+{
+  "model_uri": "https://huggingface.co/hf-internal-testing/tiny-random-bert",
+  "security_group_uuid": "00000000-0000-0000-0000-000000000001",
+  "scan_origin": "MODEL_SECURITY_SDK",
+  "model_author": "hf-internal-testing",
+  "model_name": "tiny-random-bert",
+  "model_version": "main"
+}

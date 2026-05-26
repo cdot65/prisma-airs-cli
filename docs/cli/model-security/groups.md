@@ -99,8 +99,29 @@ airs model-security groups create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create from body fixture (see docs/cli/examples/model-security/group-create.json)*
+
+```bash
+airs model-security groups create --config docs/cli/examples/model-security/group-create.json
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Group created: 00000000-0000-0000-0000-000000000001
+
+
+Security Group Detail:
+
+  UUID:        00000000-0000-0000-0000-000000000001
+  Name:        group-docs-test
+  Description: Throwaway group for docs capture — safe to delete
+  Source Type: HUGGING_FACE
+  State:       PENDING
+  Created:     2026-05-26T10:20:10.809882Z
+  Updated:     2026-05-26T10:20:10.809882Z
+```
 
 ---
 
@@ -125,8 +146,29 @@ airs model-security groups update [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Update the description (use --name to rename)*
+
+```bash
+airs model-security groups update 00000000-0000-0000-0000-000000000001 --description "Throwaway group — updated description for docs capture"
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Group updated: 00000000-0000-0000-0000-000000000001
+
+
+Security Group Detail:
+
+  UUID:        00000000-0000-0000-0000-000000000001
+  Name:        group-docs-test
+  Description: Throwaway group — updated description for docs capture
+  Source Type: HUGGING_FACE
+  State:       PENDING
+  Created:     2026-05-26T10:20:10.809882Z
+  Updated:     2026-05-26T10:20:45.684391Z
+```
 
 ---
 
@@ -144,5 +186,15 @@ airs model-security groups delete [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Delete a security group by UUID*
+
+```bash
+airs model-security groups delete 00000000-0000-0000-0000-000000000001
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Group 00000000-0000-0000-0000-000000000001 deleted.
+```

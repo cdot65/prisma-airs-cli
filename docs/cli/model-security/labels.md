@@ -20,8 +20,18 @@ airs model-security labels add [options] <scanUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Append labels to a scan (preserves existing keys)*
+
+```bash
+airs model-security labels add 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"docs-test"},{"key":"capture","value":"true"}]'
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Labels added.
+```
 
 ---
 
@@ -45,8 +55,18 @@ airs model-security labels set [options] <scanUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Replace all labels on a scan (drops keys not in the request)*
+
+```bash
+airs model-security labels set 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"updated"}]'
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Labels set.
+```
 
 ---
 
@@ -70,8 +90,18 @@ airs model-security labels delete [options] <scanUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Delete one or more labels by comma-separated key list*
+
+```bash
+airs model-security labels delete 00000000-0000-0000-0000-000000000002 --keys env
+```
+
+```text
+Prisma AIRS — Model Security
+ML model supply chain security
+
+Labels deleted.
+```
 
 ---
 
