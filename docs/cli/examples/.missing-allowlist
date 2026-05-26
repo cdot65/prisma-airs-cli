@@ -34,10 +34,6 @@ runtime dlp dictionaries create
 runtime dlp dictionaries replace
 # Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries patch
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/111
-redteam abort
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
-redteam eula accept
 # Blocked by API 403 on instances/devices CRUD — see https://github.com/cdot65/prisma-airs-cli/issues/124
 redteam instances create
 redteam instances get
@@ -46,32 +42,16 @@ redteam instances delete
 redteam devices create
 redteam devices update
 redteam devices delete
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
-redteam registry-credentials
 # Blocked by upstream API 500 on /version-info — see https://github.com/cdot65/prisma-airs-cli/issues/117
+# (single-prompt 'pretty' output works but trails with the 500; JSON/YAML formats blocked by CLI #198)
 redteam prompt-sets get
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
-redteam prompt-sets create
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
-redteam prompt-sets update
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
-redteam prompt-sets archive
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
-redteam prompt-sets upload
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
-redteam prompts add
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
-redteam prompts update
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/118
+# Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
 redteam prompts delete
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
+# Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
 redteam properties create
+# Blocked by SDK schema mismatch + CLI --output gap — see https://github.com/cdot65/prisma-airs-sdk/issues/169 and https://github.com/cdot65/prisma-airs-cli/issues/198
 redteam properties values
+# Blocked by CLI request-shape bug (wrong field names) — see https://github.com/cdot65/prisma-airs-cli/issues/197
 redteam properties add-value
-# Blocked by tenant license (read-only) — see https://github.com/cdot65/prisma-airs-cli/issues/123
-redteam targets create
-redteam targets update
+# Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
 redteam targets delete
-redteam targets probe
-redteam targets update-profile
-redteam targets validate-auth

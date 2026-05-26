@@ -14,5 +14,15 @@ airs redteam abort [options] <jobId>
 
 ### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Abort a running scan (kicked above), then confirm via `status` that it moved to ABORTED*
+
+```bash
+airs redteam abort 00000000-0000-0000-0000-000000000004
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Scan 00000000-0000-0000-0000-000000000004 aborted.
+```

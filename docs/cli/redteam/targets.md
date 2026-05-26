@@ -116,8 +116,18 @@ airs redteam targets create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create a REST application target from a config file (httpbin.org echo for docs capture)*
+
+```bash
+airs redteam targets create --config target-create.json
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Target created: 00000000-0000-0000-0000-000000000001
+```
 
 ---
 
@@ -142,8 +152,18 @@ airs redteam targets update [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Update an existing target (raise rate limit, tweak description)*
+
+```bash
+airs redteam targets update 00000000-0000-0000-0000-000000000001 --config target-update.json
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Target updated: 00000000-0000-0000-0000-000000000001
+```
 
 ---
 
@@ -182,8 +202,37 @@ airs redteam targets probe [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Probe a target config without persisting (returns a draft Target object with profiling prompts inlined)*
+
+```bash
+airs redteam targets probe --config target-create.json
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Probe result:
+  {
+  "uuid": "00000000-0000-0000-0000-000000000007",
+  "tsg_id": "<tenant-id>",
+  "name": "example-target",
+  "status": "DRAFT",
+  "active": false,
+  "validated": false,
+  "target_type": "APPLICATION",
+  "connection_type": "CUSTOM",
+  "api_endpoint_type": "PUBLIC",
+  "response_mode": "REST",
+  "target_metadata": {
+    "rate_limit": 50,
+    "rate_limit_enabled": true,
+    "rate_limit_error_code": 429,
+    "probe_message": "Hello, are you there?",
+    "request_timeout": 60
+  }
+}
+```
 
 ---
 
@@ -268,8 +317,36 @@ airs redteam targets update-profile [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Patch a target's background/additional_context (use_case + core_architecture). Other fields preserved.*
+
+```bash
+airs redteam targets update-profile 00000000-0000-0000-0000-000000000001 --config target-profile.json
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Profile updated:
+  {
+  "uuid": "00000000-0000-0000-0000-000000000001",
+  "tsg_id": "<tenant-id>",
+  "name": "example-target",
+  "status": "VALIDATED",
+  "target_background": {
+    "industry": "Technology",
+    "use_case": "Echo test endpoint for docs capture",
+    "competitors": ["Anthropic", "Google", "Cohere"]
+  },
+  "additional_context": {
+    "base_model": "Others",
+    "core_architecture": "Test echo via httpbin",
+    "languages_supported": ["English"],
+    "banned_keywords": [],
+    "tools_accessible": []
+  }
+}
+```
 
 ---
 
@@ -291,8 +368,21 @@ airs redteam targets validate-auth [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Validate an auth header against a target's endpoint (server proxies the call and returns yes/no)*
+
+```bash
+airs redteam targets validate-auth 00000000-0000-0000-0000-000000000001 --config target-auth.json
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+Auth Validation:
+
+  Validated: yes
+```
 
 ---
 

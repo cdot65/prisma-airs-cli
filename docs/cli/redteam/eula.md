@@ -86,5 +86,22 @@ airs redteam eula accept [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Accept the EULA on this tenant (idempotent — re-running just re-confirms the existing acceptance)*
+
+```bash
+airs redteam eula accept
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+EULA Status:
+
+  Accepted: yes
+  Accepted At: 2026-01-01T00:00:00.000000Z
+  Accepted By: 00000000-0000-0000-0000-000000000005
+
+EULA accepted.
+```

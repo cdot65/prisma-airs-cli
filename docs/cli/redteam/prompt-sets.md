@@ -71,8 +71,20 @@ airs redteam prompt-sets create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create an empty prompt set (populate later with `upload` or `prompts add`)*
+
+```bash
+airs redteam prompt-sets create --name "example-promptset" --description "Example prompt set for docs"
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Prompt set created: 00000000-0000-0000-0000-000000000002
+
+  Name: example-promptset
+```
 
 ---
 
@@ -97,8 +109,27 @@ airs redteam prompt-sets update [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Update a prompt set's description (name + description are the only mutable fields)*
+
+```bash
+airs redteam prompt-sets update 00000000-0000-0000-0000-000000000002 --description "Example prompt set for docs (updated)"
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+Prompt Set Detail:
+
+  UUID:        00000000-0000-0000-0000-000000000002
+  Name:        example-promptset
+  Status:      inactive
+  Archived:    no
+  Description: Example prompt set for docs (updated)
+  Created:     2026-01-01T00:00:00.000000Z
+  Updated:     2026-01-01T00:00:00.000000Z
+```
 
 ---
 
@@ -122,8 +153,18 @@ airs redteam prompt-sets archive [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Archive a prompt set (soft-delete; `--no-archive` re-activates). There is no hard `delete` subcommand.*
+
+```bash
+airs redteam prompt-sets archive 00000000-0000-0000-0000-000000000002
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Prompt set 00000000-0000-0000-0000-000000000002 archived.
+```
 
 ---
 
@@ -181,5 +222,15 @@ airs redteam prompt-sets upload [options] <uuid> <file>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Bulk-upload prompts from a CSV (header `prompt,goal` — goal optional, AI-generated if blank)*
+
+```bash
+airs redteam prompt-sets upload 00000000-0000-0000-0000-000000000002 prompts-upload.csv
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Successfully uploaded 2 prompts
+```

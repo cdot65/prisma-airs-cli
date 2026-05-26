@@ -1,0 +1,14 @@
+{
+  "target_background": {
+    "industry": "Technology",
+    "use_case": "Echo test endpoint for docs capture",
+    "competitors": ["Anthropic", "Google", "Cohere"]
+  },
+  "additional_context": {
+    "base_model": "Others",
+    "core_architecture": "Test echo via httpbin",
+    "languages_supported": ["English"],
+    "banned_keywords": [],
+    "tools_accessible": []
+  }
+}

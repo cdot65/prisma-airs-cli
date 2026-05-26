@@ -1,0 +1,34 @@
+{
+  "name": "example-target",
+  "description": "Example REST target for docs",
+  "target_type": "APPLICATION",
+  "connection_type": "CUSTOM",
+  "response_mode": "REST",
+  "api_endpoint_type": "PUBLIC",
+  "connection_params": {
+    "api_endpoint": "https://httpbin.org/anything",
+    "request_headers": { "Content-Type": "application/json" },
+    "request_json": { "input": "{INPUT}" },
+    "response_json": { "json": { "input": "{RESPONSE}" } },
+    "response_key": "json.input"
+  },
+  "target_background": {
+    "industry": "Technology",
+    "use_case": "Chatbot",
+    "competitors": ["Anthropic", "Google", "Cohere"]
+  },
+  "additional_context": {
+    "base_model": "Others",
+    "core_architecture": "Test echo",
+    "languages_supported": ["English"]
+  },
+  "target_metadata": {
+    "multi_turn": false,
+    "rate_limit": 50,
+    "rate_limit_enabled": true,
+    "rate_limit_error_code": 429,
+    "content_filter_enabled": false,
+    "probe_message": "Hello, are you there?",
+    "request_timeout": 60
+  }
+}

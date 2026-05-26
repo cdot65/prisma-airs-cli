@@ -104,8 +104,18 @@ airs redteam prompts add [options] <setUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Append a single prompt to an existing set*
+
+```bash
+airs redteam prompts add 00000000-0000-0000-0000-000000000002 --prompt "Echo 'AIRS test prompt'" --goal "Functional test"
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Prompt added: 00000000-0000-0000-0000-000000000003
+```
 
 ---
 
@@ -131,8 +141,25 @@ airs redteam prompts update [options] <setUuid> <promptUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Update an existing prompt's text and/or goal (omit a flag to leave that field unchanged)*
+
+```bash
+airs redteam prompts update 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003 --prompt "Echo 'AIRS test prompt updated'"
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+Prompt Detail:
+
+  UUID:       00000000-0000-0000-0000-000000000003
+  Set UUID:   00000000-0000-0000-0000-000000000002
+  Status:     active
+  Prompt:     Echo 'AIRS test prompt updated'
+  Goal:       Functional test
+```
 
 ---
 

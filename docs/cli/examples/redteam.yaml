@@ -520,3 +520,212 @@
           Total: 1 skipped
     - note: Restore a single file and overwrite an existing target
       input: airs redteam targets restore --file ./backups/example-target.json --overwrite
+
+"redteam abort":
+  examples:
+    - note: Abort a running scan (kicked above), then confirm via `status` that it moved to ABORTED
+      input: airs redteam abort 00000000-0000-0000-0000-000000000004
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Scan 00000000-0000-0000-0000-000000000004 aborted.
+
+"redteam eula accept":
+  examples:
+    - note: Accept the EULA on this tenant (idempotent — re-running just re-confirms the existing acceptance)
+      input: airs redteam eula accept
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          EULA Status:
+
+            Accepted: yes
+            Accepted At: 2026-01-01T00:00:00.000000Z
+            Accepted By: 00000000-0000-0000-0000-000000000005
+
+          EULA accepted.
+
+"redteam registry-credentials":
+  examples:
+    - note: Fetch container-registry credentials for pulling red-team scanner images
+      input: airs redteam registry-credentials
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          Registry Credentials:
+
+            Token:  <registry-token-truncated>...
+            Expiry: 2027-01-01T00:00:00.000000Z
+
+"redteam targets create":
+  examples:
+    - note: Create a REST application target from a config file (httpbin.org echo for docs capture)
+      input: airs redteam targets create --config target-create.json
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Target created: 00000000-0000-0000-0000-000000000001
+
+"redteam targets update":
+  examples:
+    - note: Update an existing target (raise rate limit, tweak description)
+      input: airs redteam targets update 00000000-0000-0000-0000-000000000001 --config target-update.json
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Target updated: 00000000-0000-0000-0000-000000000001
+
+"redteam targets probe":
+  examples:
+    - note: Probe a target config without persisting (returns a draft Target object with profiling prompts inlined)
+      input: airs redteam targets probe --config target-create.json
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Probe result:
+            {
+            "uuid": "00000000-0000-0000-0000-000000000007",
+            "tsg_id": "<tenant-id>",
+            "name": "example-target",
+            "status": "DRAFT",
+            "active": false,
+            "validated": false,
+            "target_type": "APPLICATION",
+            "connection_type": "CUSTOM",
+            "api_endpoint_type": "PUBLIC",
+            "response_mode": "REST",
+            "target_metadata": {
+              "rate_limit": 50,
+              "rate_limit_enabled": true,
+              "rate_limit_error_code": 429,
+              "probe_message": "Hello, are you there?",
+              "request_timeout": 60
+            }
+          }
+
+"redteam targets update-profile":
+  examples:
+    - note: Patch a target's background/additional_context (use_case + core_architecture). Other fields preserved.
+      input: airs redteam targets update-profile 00000000-0000-0000-0000-000000000001 --config target-profile.json
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Profile updated:
+            {
+            "uuid": "00000000-0000-0000-0000-000000000001",
+            "tsg_id": "<tenant-id>",
+            "name": "example-target",
+            "status": "VALIDATED",
+            "target_background": {
+              "industry": "Technology",
+              "use_case": "Echo test endpoint for docs capture",
+              "competitors": ["Anthropic", "Google", "Cohere"]
+            },
+            "additional_context": {
+              "base_model": "Others",
+              "core_architecture": "Test echo via httpbin",
+              "languages_supported": ["English"],
+              "banned_keywords": [],
+              "tools_accessible": []
+            }
+          }
+
+"redteam targets validate-auth":
+  examples:
+    - note: Validate an auth header against a target's endpoint (server proxies the call and returns yes/no)
+      input: airs redteam targets validate-auth 00000000-0000-0000-0000-000000000001 --config target-auth.json
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          Auth Validation:
+
+            Validated: yes
+
+"redteam prompt-sets create":
+  examples:
+    - note: Create an empty prompt set (populate later with `upload` or `prompts add`)
+      input: airs redteam prompt-sets create --name "example-promptset" --description "Example prompt set for docs"
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Prompt set created: 00000000-0000-0000-0000-000000000002
+
+            Name: example-promptset
+
+"redteam prompt-sets update":
+  examples:
+    - note: Update a prompt set's description (name + description are the only mutable fields)
+      input: airs redteam prompt-sets update 00000000-0000-0000-0000-000000000002 --description "Example prompt set for docs (updated)"
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          Prompt Set Detail:
+
+            UUID:        00000000-0000-0000-0000-000000000002
+            Name:        example-promptset
+            Status:      inactive
+            Archived:    no
+            Description: Example prompt set for docs (updated)
+            Created:     2026-01-01T00:00:00.000000Z
+            Updated:     2026-01-01T00:00:00.000000Z
+
+"redteam prompt-sets archive":
+  examples:
+    - note: Archive a prompt set (soft-delete; `--no-archive` re-activates). There is no hard `delete` subcommand.
+      input: airs redteam prompt-sets archive 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Prompt set 00000000-0000-0000-0000-000000000002 archived.
+
+"redteam prompt-sets upload":
+  examples:
+    - note: Bulk-upload prompts from a CSV (header `prompt,goal` — goal optional, AI-generated if blank)
+      input: airs redteam prompt-sets upload 00000000-0000-0000-0000-000000000002 prompts-upload.csv
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Successfully uploaded 2 prompts
+
+"redteam prompts add":
+  examples:
+    - note: Append a single prompt to an existing set
+      input: airs redteam prompts add 00000000-0000-0000-0000-000000000002 --prompt "Echo 'AIRS test prompt'" --goal "Functional test"
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Prompt added: 00000000-0000-0000-0000-000000000003
+
+"redteam prompts update":
+  examples:
+    - note: Update an existing prompt's text and/or goal (omit a flag to leave that field unchanged)
+      input: airs redteam prompts update 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003 --prompt "Echo 'AIRS test prompt updated'"
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          Prompt Detail:
+
+            UUID:       00000000-0000-0000-0000-000000000003
+            Set UUID:   00000000-0000-0000-0000-000000000002
+            Status:     active
+            Prompt:     Echo 'AIRS test prompt updated'
+            Goal:       Functional test
