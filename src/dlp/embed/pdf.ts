@@ -30,6 +30,27 @@ async function hiddenText(clean: Buffer, p: PayloadValue[]): Promise<Buffer> {
 const trailer = (clean: Buffer, p: PayloadValue[]): Buffer =>
   Buffer.concat([clean, Buffer.from(`\n% DLP ${join(p)}\n`, 'utf8')]);
 
+// Visible text painted onto the page over a filled background band.
+//   sameColor=false -> dark text on a light band (genuinely visible)
+//   sameColor=true  -> text drawn in the band's own color (camouflaged, same fg/bg)
+async function visibleText(clean: Buffer, p: PayloadValue[], sameColor: boolean): Promise<Buffer> {
+  const doc = await PDFDocument.load(clean);
+  const page = doc.getPage(0);
+  const bg = rgb(0.93, 0.93, 0.85);
+  page.drawRectangle({ x: 36, y: 592, width: 524, height: 136, color: bg });
+  let y = 712;
+  for (const v of p) {
+    page.drawText(`${v.category}: ${v.value}`, {
+      x: 44,
+      y,
+      size: 9,
+      color: sameColor ? bg : rgb(0, 0, 0),
+    });
+    y -= 14;
+  }
+  return Buffer.from(await doc.save());
+}
+
 /** Recover text from all PDF streams (inflating FlateDecode streams; falling back to raw). */
 export function pdfStreamText(pdf: Buffer): string {
   const parts: string[] = [];
@@ -95,5 +116,17 @@ export const pdfTechniques: Record<string, Technique> = {
     format: 'pdf',
     label: 'bytes after %%EOF',
     embed: (c, p) => trailer(c, p),
+  },
+  visible: {
+    id: 'visible',
+    format: 'pdf',
+    label: 'visible page text (dark on light band)',
+    embed: (c, p) => visibleText(c, p, false),
+  },
+  'visible-samecolor': {
+    id: 'visible-samecolor',
+    format: 'pdf',
+    label: 'visible page text, same color as background (camouflaged)',
+    embed: (c, p) => visibleText(c, p, true),
   },
 };

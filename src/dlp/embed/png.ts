@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import type { PayloadValue, Technique } from '../types.js';
+import { renderVisibleText } from './overlay.js';
 import { insertBeforeIEND, iTXt, tEXt, zTXt } from './png-chunks.js';
 
 const join = (p: PayloadValue[]): string => p.map((v) => `${v.category}: ${v.value}`).join(' | ');
@@ -72,5 +73,11 @@ export const pngTechniques: Record<string, Technique> = {
     format: 'png',
     label: 'LSB steganography',
     embed: (c, p) => lsbEmbed(c, join(p)),
+  },
+  visible: {
+    id: 'visible',
+    format: 'png',
+    label: 'visible rendered text (dark on light)',
+    embed: (c, p) => renderVisibleText(c, p, 'png'),
   },
 };
