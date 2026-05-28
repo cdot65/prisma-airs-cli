@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { dump as yamlDump } from 'js-yaml';
 import { formatOutput, type OutputFormat } from './common.js';
 
 /** Render the red team banner. */
@@ -400,15 +401,32 @@ export function renderTargetDetail(target: {
 }
 
 /** Render prompt set detail. */
-export function renderPromptSetDetail(ps: {
-  uuid: string;
-  name: string;
-  active: boolean;
-  archive: boolean;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}): void {
+export function renderPromptSetDetail(
+  ps: {
+    uuid: string;
+    name: string;
+    active: boolean;
+    archive: boolean;
+    description?: string;
+    createdAt?: string;
+    updatedAt?: string;
+  },
+  format: OutputFormat = 'pretty',
+  info?: {
+    uuid: string;
+    version: number;
+    stats: { total: number; active: number; inactive: number };
+  },
+): void {
+  if (format !== 'pretty') {
+    const payload = info ? { ...ps, versionInfo: info } : { ...ps };
+    if (format === 'json') {
+      console.log(JSON.stringify(payload, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(payload));
+    }
+    return;
+  }
   console.log(chalk.bold('\n  Prompt Set Detail:\n'));
   console.log(`    UUID:        ${chalk.dim(ps.uuid)}`);
   console.log(`    Name:        ${ps.name}`);
@@ -543,7 +561,18 @@ export function renderEulaContent(content: { content: string }): void {
 }
 
 /** Render property values. */
-export function renderPropertyValues(values: Array<{ name: string; value: string }>): void {
+export function renderPropertyValues(
+  values: Array<{ name: string; value: string }>,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(values, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(values));
+    }
+    return;
+  }
   if (values.length === 0) {
     console.log(chalk.dim('  No property values found.\n'));
     return;

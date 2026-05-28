@@ -433,14 +433,20 @@ export function registerRedteamCommand(program: Command): void {
   promptSets
     .command('get <uuid>')
     .description('Get prompt set details')
-    .action(async (uuid: string) => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (uuid: string, opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const ps = await service.getPromptSet(uuid);
-        renderPromptSetDetail(ps);
         const info = await service.getPromptSetVersionInfo(uuid);
-        renderVersionInfo(info);
+        if (fmt === 'pretty') {
+          renderPromptSetDetail(ps);
+          renderVersionInfo(info);
+        } else {
+          renderPromptSetDetail(ps, fmt, info);
+        }
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -669,12 +675,14 @@ export function registerRedteamCommand(program: Command): void {
   properties
     .command('values <name>')
     .description('List values for a property')
-    .action(async (name: string) => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (name: string, opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const values = await service.getPropertyValues(name);
-        renderPropertyValues(values);
+        renderPropertyValues(values, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

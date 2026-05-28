@@ -64,6 +64,12 @@ airs redteam properties values [options] <name>
 
 - `name` (required) —
 
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+
 #### Examples
 
 !!! warning "Example needed"

@@ -47,6 +47,12 @@ airs redteam prompt-sets get [options] <uuid>
 
 - `uuid` (required) —
 
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+
 #### Examples
 
 !!! warning "Example needed"
