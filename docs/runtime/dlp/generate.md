@@ -1,6 +1,6 @@
 # DLP Test-File Generation
 
-`airs runtime dlp-gen` generates **DLP test corpora** — clean carrier files plus "dirty"
+`airs runtime dlp generate` generates **DLP test corpora** — clean carrier files plus "dirty"
 copies with **synthetic** sensitive data embedded via multiple hiding techniques. Use it to
 measure how well a content scanner detects sensitive data across file formats and channels.
 
@@ -12,7 +12,7 @@ measure how well a content scanner detects sensitive data across file formats an
 ## Usage
 
 ```bash
-airs runtime dlp-gen [options]
+airs runtime dlp generate [options]
 ```
 
 | Option | Default | Meaning |
@@ -52,11 +52,11 @@ the exact synthetic values embedded.
 
 ```bash
 # Full corpus into ./temp
-airs runtime dlp-gen
+airs runtime dlp generate
 
 # Images only, 3 each, reproducible
-airs runtime dlp-gen --types png,jpeg,svg --count 3 --seed 42
+airs runtime dlp generate --types png,jpeg,svg --count 3 --seed 42
 
 # Just PNG LSB steganography, JSON summary
-airs runtime dlp-gen --types png --techniques stego-lsb --output json
+airs runtime dlp generate --types png --techniques stego-lsb --output json
 ```

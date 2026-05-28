@@ -8,7 +8,6 @@
     * Runtime Security
         * [Overview](runtime/overview.md)
         * [Prompt Scanning](runtime/scanning.md)
-        * [DLP Test-File Generation](runtime/dlp-gen.md)
         * [Configuration Management](runtime/config-management.md)
         * [Profile Audits](runtime/profile-audits.md)
         * Guardrail Optimization
@@ -22,6 +21,7 @@
             * [Patterns](runtime/dlp/patterns.md)
             * [Profiles](runtime/dlp/profiles.md)
             * [Dictionaries](runtime/dlp/dictionaries.md)
+            * [Test-File Generation](runtime/dlp/generate.md)
     * AI Red Teaming
         * [Overview](redteam/overview.md)
         * [End-to-End Walkthrough](redteam/end-to-end-walkthrough.md)

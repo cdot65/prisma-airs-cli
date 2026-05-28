@@ -202,13 +202,13 @@ multiple techniques. Local only — no AIRS API calls, safe to run anywhere.
 
 ```bash
 # Full corpus (all formats + techniques) into ./temp, reproducible with a seed
-airs runtime dlp-gen --types all --count 1 --out ./temp --seed 1
+airs runtime dlp generate --types all --count 1 --out ./temp --seed 1
 
 # Images only, JSON summary
-airs runtime dlp-gen --types png,jpeg,svg --techniques all --output json
+airs runtime dlp generate --types png,jpeg,svg --techniques all --output json
 
 # Just the PNG steganography variant
-airs runtime dlp-gen --types png --techniques stego-lsb --out ./temp
+airs runtime dlp generate --types png --techniques stego-lsb --out ./temp
 ```
 
 Expected output (pretty):
