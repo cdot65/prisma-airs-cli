@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SdkRedTeamService } from '../../../src/airs/redteam.js';
+import { interpolateReportSummary, SdkRedTeamService } from '../../../src/airs/redteam.js';
 
 const mockTargetsList = vi.fn();
 const mockTargetsGet = vi.fn();
@@ -408,6 +408,59 @@ describe('SdkRedTeamService', () => {
       const result = await service.getStaticReport('job-1');
       expect(result.categories).toEqual([]);
       expect(result.severityBreakdown).toEqual([]);
+    });
+
+    it('interpolates {{HIGH_RISK}} in reportSummary', async () => {
+      mockReportsGetStaticReport.mockResolvedValue({
+        score: 83.63,
+        asr: 0.823,
+        severity_report: { stats: [] },
+        report_summary:
+          'The application has {{HIGH_RISK}} with an overall Risk Score of 83.63/100.',
+      });
+
+      const result = await service.getStaticReport('job-1');
+      expect(result.reportSummary).toBe(
+        'The application has high risk with an overall Risk Score of 83.63/100.',
+      );
+      expect(result.reportSummary).not.toContain('{{HIGH_RISK}}');
+    });
+  });
+
+  describe('interpolateReportSummary', () => {
+    it.each([
+      ['{{CRITICAL_RISK}}', 'critical risk'],
+      ['{{HIGH_RISK}}', 'high risk'],
+      ['{{MEDIUM_RISK}}', 'medium risk'],
+      ['{{LOW_RISK}}', 'low risk'],
+      ['{{INFORMATIONAL_RISK}}', 'informational risk'],
+    ])('maps %s to "%s"', (token, replacement) => {
+      const input = `The application has ${token} overall.`;
+      expect(interpolateReportSummary(input)).toBe(`The application has ${replacement} overall.`);
+    });
+
+    it('replaces every occurrence, not just the first', () => {
+      const input = '{{HIGH_RISK}} and {{HIGH_RISK}} again and {{LOW_RISK}}.';
+      expect(interpolateReportSummary(input)).toBe('high risk and high risk again and low risk.');
+    });
+
+    it('leaves unknown placeholders intact so future leaks remain visible', () => {
+      const input = 'has {{FUTURE_THING}} and {{HIGH_RISK}}';
+      expect(interpolateReportSummary(input)).toBe('has {{FUTURE_THING}} and high risk');
+    });
+
+    it('returns input unchanged when no placeholders are present', () => {
+      const input = 'plain summary with no tokens at all.';
+      expect(interpolateReportSummary(input)).toBe(input);
+    });
+
+    it('passes through null and undefined safely', () => {
+      expect(interpolateReportSummary(null)).toBeNull();
+      expect(interpolateReportSummary(undefined)).toBeUndefined();
+    });
+
+    it('handles empty string', () => {
+      expect(interpolateReportSummary('')).toBe('');
     });
   });
 

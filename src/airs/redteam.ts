@@ -46,6 +46,30 @@ function normalizeJob(raw: Record<string, unknown>): RedTeamJob {
 }
 
 /**
+ * Map known Mustache-style severity tokens in static-report summaries to
+ * readable strings. Upstream's report renderer occasionally ships placeholders
+ * like `{{HIGH_RISK}}` un-interpolated. Unknown `{{...}}` tokens are left
+ * intact so future upstream additions remain visible instead of silently
+ * stripped.
+ */
+const REPORT_SUMMARY_TOKENS: Record<string, string> = {
+  '{{CRITICAL_RISK}}': 'critical risk',
+  '{{HIGH_RISK}}': 'high risk',
+  '{{MEDIUM_RISK}}': 'medium risk',
+  '{{LOW_RISK}}': 'low risk',
+  '{{INFORMATIONAL_RISK}}': 'informational risk',
+};
+
+export function interpolateReportSummary<T extends string | null | undefined>(summary: T): T {
+  if (summary == null || summary === '') return summary;
+  let out = summary as string;
+  for (const [token, replacement] of Object.entries(REPORT_SUMMARY_TOKENS)) {
+    if (out.includes(token)) out = out.split(token).join(replacement);
+  }
+  return out as T;
+}
+
+/**
  * Drop noisy "you didn't opt in" fields from `target_metadata` when the
  * corresponding feature is disabled. `multi_turn_error_message` always comes
  * back populated, but it's only a real error when `multi_turn === true`.
@@ -388,7 +412,7 @@ export class SdkRedTeamService implements RedTeamService {
         successful: (s.successful ?? 0) as number,
         failed: (s.failed ?? 0) as number,
       })),
-      reportSummary: raw.report_summary as string | null | undefined,
+      reportSummary: interpolateReportSummary(raw.report_summary as string | null | undefined),
       categories: subCategories.map((sc) => {
         const successful = (sc.successful ?? 0) as number;
         const failed = (sc.failed ?? 0) as number;
