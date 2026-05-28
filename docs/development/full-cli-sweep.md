@@ -217,14 +217,14 @@ Expected output (pretty):
   DLP Test-File Generation
   Output:   ./temp
   Seed:     1
-  Clean:    5    Dirty: 15
+  Clean:    5    Dirty: 21
   Manifest: ./temp/manifest.json
 
-    svg   clean=1 dirty=3
-    png   clean=1 dirty=3
-    pdf   clean=1 dirty=3
-    jpeg  clean=1 dirty=3
-    docx  clean=1 dirty=3
+    pdf   clean=1 dirty=5
+    png   clean=1 dirty=4
+    jpeg  clean=1 dirty=4
+    svg   clean=1 dirty=4
+    docx  clean=1 dirty=4
 ```
 
 Produces `temp/clean/<type>/`, `temp/dirty/<type>/<base>__<technique>.<ext>`, and

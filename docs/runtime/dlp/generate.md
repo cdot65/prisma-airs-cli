@@ -42,11 +42,15 @@ the exact synthetic values embedded.
 
 | Format | Technique ids |
 |--------|---------------|
-| PDF | `meta`, `hidden-text`, `trailer` |
-| PNG | `text-chunks`, `trailer`, `stego-lsb` |
-| JPEG | `exif`, `com`, `trailer` |
-| SVG | `meta`, `hidden-text`, `comment` |
-| DOCX | `core-props`, `hidden-run`, `visible` |
+| PDF | `meta`, `hidden-text`, `trailer`, `visible`, `visible-samecolor` |
+| PNG | `text-chunks`, `trailer`, `stego-lsb`, `visible` |
+| JPEG | `exif`, `com`, `trailer`, `visible` |
+| SVG | `meta`, `hidden-text`, `comment`, `visible` |
+| DOCX | `core-props`, `hidden-run`, `visible`, `visible-samecolor` |
+
+`visible` = rendered text with foreground ≠ background (genuinely visible / OCR-able).
+`visible-samecolor` (PDF & DOCX) = rendered body text drawn in the **same color as its
+background** — present and extractable, but camouflaged from the eye.
 
 ## Examples
 
