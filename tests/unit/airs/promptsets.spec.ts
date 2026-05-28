@@ -410,13 +410,13 @@ describe('SdkPromptSetService', () => {
   });
 
   describe('createPropertyValue', () => {
-    it('creates and returns property value', async () => {
+    it('sends property_name/property_value matching SDK schema', async () => {
       mockCreatePropertyValue.mockResolvedValue({ name: 'category', value: 'compliance' });
       const result = await service.createPropertyValue('category', 'compliance');
       expect(result).toEqual({ name: 'category', value: 'compliance' });
       expect(mockCreatePropertyValue).toHaveBeenCalledWith({
-        name: 'category',
-        value: 'compliance',
+        property_name: 'category',
+        property_value: 'compliance',
       });
     });
   });

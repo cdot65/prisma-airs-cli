@@ -162,7 +162,10 @@ export class SdkPromptSetService implements PromptSetService {
   }
 
   async createPropertyValue(name: string, value: string): Promise<PropertyValue> {
-    const response = await this.client.customAttacks.createPropertyValue({ name, value } as never);
+    const response = await this.client.customAttacks.createPropertyValue({
+      property_name: name,
+      property_value: value,
+    });
     return response as unknown as PropertyValue;
   }
 }
