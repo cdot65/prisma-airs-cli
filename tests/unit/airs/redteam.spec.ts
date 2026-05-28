@@ -478,9 +478,7 @@ describe('SdkRedTeamService', () => {
       });
 
       const result = await service.getDynamicReport('job-dyn-2');
-      expect(result.reportSummary).toBe(
-        'The application has high risk for dynamic exploits.',
-      );
+      expect(result.reportSummary).toBe('The application has high risk for dynamic exploits.');
     });
 
     it('handles missing optional fields', async () => {
