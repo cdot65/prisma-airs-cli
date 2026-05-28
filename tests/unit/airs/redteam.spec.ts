@@ -519,7 +519,7 @@ describe('SdkRedTeamService', () => {
             severity: 'HIGH',
             category: 'Security',
             sub_category: 'Prompt Injection',
-            successful: true,
+            threat: true,
           },
           {
             uuid: 'atk-2',
@@ -527,7 +527,7 @@ describe('SdkRedTeamService', () => {
             severity: 'MEDIUM',
             category: 'Safety',
             sub_category: 'Toxicity',
-            successful: false,
+            threat: false,
           },
         ],
       });
@@ -542,6 +542,7 @@ describe('SdkRedTeamService', () => {
         subCategory: 'Prompt Injection',
         successful: true,
       });
+      expect(result[1].successful).toBe(false);
       expect(mockReportsListAttacks).toHaveBeenCalledWith('job-1', { severity: 'HIGH', limit: 10 });
     });
 
@@ -568,6 +569,22 @@ describe('SdkRedTeamService', () => {
       const result = await service.listAttacks('job-1');
       expect(result[0].subCategoryDisplayName).toBe('Jailbreak');
       expect(result[0].subCategory).toBe('JAILBREAK');
+    });
+
+    it('treats missing threat as not successful (BLOCKED default)', async () => {
+      mockReportsListAttacks.mockResolvedValue({
+        data: [
+          {
+            uuid: 'atk-1',
+            severity: 'CRITICAL',
+            category: 'SECURITY',
+            sub_category: 'JAILBREAK',
+            status: 'INIT',
+          },
+        ],
+      });
+      const result = await service.listAttacks('job-1');
+      expect(result[0].successful).toBe(false);
     });
 
     it('leaves subCategoryDisplayName undefined when API omits it', async () => {
