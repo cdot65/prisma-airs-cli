@@ -38,4 +38,17 @@ describe('pdf embedders', () => {
     }
     await expect(PDFDocument.load(out)).resolves.toBeDefined();
   });
+
+  for (const id of ['visible', 'visible-samecolor']) {
+    it(`${id}: text present in page content; pdf reloads`, async () => {
+      const clean = await pdf(makeRng(2));
+      const out = Buffer.from(await pdfTechniques[id].embed(clean, payload));
+      const text = pdfStreamText(out);
+      for (const v of payload) {
+        expect(text).toContain(v.value);
+      }
+      expect(out.subarray(0, 4).toString()).toBe('%PDF');
+      await expect(PDFDocument.load(out)).resolves.toBeDefined();
+    });
+  }
 });

@@ -36,4 +36,15 @@ describe('jpeg embedders', () => {
       expect(tail).toContain(v.value);
     }
   });
+
+  it('visible: renders an overlay; stays a valid jpeg of the same size', async () => {
+    const clean = await jpeg(makeRng(2));
+    const out = Buffer.from(await jpegTechniques.visible.embed(clean, payload));
+    const cm = await sharp(clean).metadata();
+    const om = await sharp(out).metadata();
+    expect(om.format).toBe('jpeg');
+    expect(om.width).toBe(cm.width);
+    expect(om.height).toBe(cm.height);
+    expect(out.equals(clean)).toBe(false);
+  });
 });

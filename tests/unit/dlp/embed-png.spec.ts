@@ -37,4 +37,15 @@ describe('png embedders', () => {
     }
     expect((await sharp(out).metadata()).format).toBe('png');
   });
+
+  it('visible: renders an overlay; stays a valid png of the same size', async () => {
+    const clean = await png(makeRng(2));
+    const out = Buffer.from(await pngTechniques.visible.embed(clean, payload));
+    const cm = await sharp(clean).metadata();
+    const om = await sharp(out).metadata();
+    expect(om.format).toBe('png');
+    expect(om.width).toBe(cm.width);
+    expect(om.height).toBe(cm.height);
+    expect(out.equals(clean)).toBe(false); // overlay was painted on
+  });
 });
