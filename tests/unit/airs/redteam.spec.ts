@@ -550,6 +550,42 @@ describe('SdkRedTeamService', () => {
       const result = await service.listAttacks('job-1');
       expect(result).toEqual([]);
     });
+
+    it('lifts sub_category_display_name into subCategoryDisplayName', async () => {
+      mockReportsListAttacks.mockResolvedValue({
+        data: [
+          {
+            uuid: 'atk-1',
+            severity: 'CRITICAL',
+            category: 'SECURITY',
+            category_display_name: 'Security',
+            sub_category: 'JAILBREAK',
+            sub_category_display_name: 'Jailbreak',
+            successful: true,
+          },
+        ],
+      });
+      const result = await service.listAttacks('job-1');
+      expect(result[0].subCategoryDisplayName).toBe('Jailbreak');
+      expect(result[0].subCategory).toBe('JAILBREAK');
+    });
+
+    it('leaves subCategoryDisplayName undefined when API omits it', async () => {
+      mockReportsListAttacks.mockResolvedValue({
+        data: [
+          {
+            uuid: 'atk-1',
+            severity: 'HIGH',
+            category: 'SECURITY',
+            sub_category: 'JAILBREAK',
+            successful: false,
+          },
+        ],
+      });
+      const result = await service.listAttacks('job-1');
+      expect(result[0].subCategoryDisplayName).toBeUndefined();
+      expect(result[0].subCategory).toBe('JAILBREAK');
+    });
   });
 
   describe('listCustomAttacks', () => {

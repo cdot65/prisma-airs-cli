@@ -463,6 +463,7 @@ export class SdkRedTeamService implements RedTeamService {
         severity: a.severity as string | undefined,
         category: a.category as string | undefined,
         subCategory: a.sub_category as string | undefined,
+        subCategoryDisplayName: a.sub_category_display_name as string | undefined,
         successful: a.successful as boolean,
       }),
     );

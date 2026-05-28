@@ -202,9 +202,11 @@ export function renderCustomReport(report: {
 /** Render attack list with severity coloring. */
 export function renderAttackList(
   attacks: Array<{
-    name: string;
+    name?: string;
     severity?: string;
     category?: string;
+    subCategory?: string;
+    subCategoryDisplayName?: string;
     successful: boolean;
   }>,
 ): void {
@@ -218,9 +220,8 @@ export function renderAttackList(
       ? severityColor(a.severity)(a.severity.padEnd(10))
       : chalk.dim('N/A'.padEnd(10));
     const result = a.successful ? chalk.red('BYPASSED') : chalk.green('BLOCKED');
-    console.log(
-      `    ${sev} ${result}  ${a.name}${a.category ? chalk.dim(` [${a.category}]`) : ''}`,
-    );
+    const label = a.subCategoryDisplayName ?? a.subCategory ?? '—';
+    console.log(`    ${sev} ${result}  ${label}${a.category ? chalk.dim(` [${a.category}]`) : ''}`);
   }
   console.log();
 }

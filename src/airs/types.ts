@@ -306,6 +306,7 @@ export interface RedTeamAttack {
   severity?: string;
   category?: string;
   subCategory?: string;
+  subCategoryDisplayName?: string;
   successful: boolean;
 }
 
