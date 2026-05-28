@@ -463,42 +463,6 @@ export function renderDeploymentProfileList(
   console.log();
 }
 
-/** Render DLP profile list. */
-export function renderDlpProfileList(
-  profiles: Array<{ raw: Record<string, unknown> }>,
-  format: OutputFormat = 'pretty',
-): void {
-  if (profiles.length === 0) {
-    console.log(chalk.dim('  No DLP profiles found.\n'));
-    return;
-  }
-  if (format !== 'pretty') {
-    const rows = profiles.map((p) => ({
-      id: (p.raw.uuid ?? '') as string,
-      name: (p.raw.name ?? p.raw.profile_name ?? '') as string,
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name' },
-        ],
-        format,
-      ),
-    );
-    return;
-  }
-  console.log(chalk.bold('\n  DLP Profiles:\n'));
-  for (const p of profiles) {
-    const name = (p.raw.name ?? p.raw.profile_name ?? 'unknown') as string;
-    const uuid = (p.raw.uuid ?? '') as string;
-    if (uuid) console.log(`  ${chalk.dim(uuid)}`);
-    console.log(`    ${name}`);
-  }
-  console.log();
-}
-
 /** Render scan log results. */
 export function renderScanLogList(
   results: Record<string, unknown>[],

@@ -46,8 +46,16 @@ Defined in: [src/airs/types.ts:308](https://github.com/cdot65/prisma-airs-cli/bl
 
 ***
 
+### subCategoryDisplayName?
+
+> `optional` **subCategoryDisplayName?**: `string`
+
+Defined in: [src/airs/types.ts:309](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L309)
+
+***
+
 ### successful
 
 > **successful**: `boolean`
 
-Defined in: [src/airs/types.ts:309](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L309)
+Defined in: [src/airs/types.ts:310](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L310)

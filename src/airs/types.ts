@@ -846,15 +846,6 @@ export interface DeploymentProfileInfo {
 }
 
 // ---------------------------------------------------------------------------
-// DLP profile types
-// ---------------------------------------------------------------------------
-
-/** Normalized DLP profile. */
-export interface DlpProfileInfo {
-  raw: Record<string, unknown>;
-}
-
-// ---------------------------------------------------------------------------
 // Scan log types
 // ---------------------------------------------------------------------------
 
@@ -943,9 +934,6 @@ export interface ManagementService {
 
   // Deployment profiles
   listDeploymentProfiles(opts?: { unactivated?: boolean }): Promise<DeploymentProfileInfo[]>;
-
-  // DLP profiles
-  listDlpProfiles(): Promise<DlpProfileInfo[]>;
 
   // Scan logs
   queryScanLogs(opts: ScanLogQueryOptions): Promise<ScanLogQueryResult>;

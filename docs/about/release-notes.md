@@ -1,5 +1,24 @@
 # Release Notes
 
+## Unreleased
+
+### Removed (breaking)
+
+- **`airs runtime dlp-profiles list` removed.** Use `airs runtime dlp profiles list` (DLP namespace) instead — it is now the canonical listing and returns populated profile IDs plus `type`, `profile_type`, `status`, and `version` fields, paginated as `{items, page:{number,size,total,returned}}`.
+
+#### Migration note
+
+The two endpoints overlap heavily but are **not identical** on the same tenant. Before switching scripts that consumed the legacy command, verify the profiles you rely on are present in the new output:
+
+- The legacy Management endpoint may have surfaced profiles the new DLP namespace endpoint does not (observed on at least one tenant: `PII Basic Block All Data` was legacy-only).
+- The new DLP namespace endpoint may surface profiles the legacy endpoint did not (observed: `Malware` was new-only).
+- The new endpoint is paginated — pass `--page` / `--size` to walk past the first page.
+- Field shape changes: legacy returned `[{id,name}]` with empty IDs; new returns `{items:[{id,name,type,profile_type,status,version}], page:{...}}`.
+
+See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the divergence analysis.
+
+---
+
 ## v2.10.0
 
 ### Changed

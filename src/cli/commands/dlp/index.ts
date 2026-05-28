@@ -7,10 +7,7 @@ import { register as registerProfiles } from './profiles.js';
 export function registerDlpCommands(runtime: Command): void {
   const dlp = runtime
     .command('dlp')
-    .description(
-      'DLP management (filtering-profiles, patterns, profiles, dictionaries). ' +
-        'For the read-only DLP profile list used in Security Profiles, see `runtime dlp-profiles list`.',
-    );
+    .description('DLP management (filtering-profiles, patterns, profiles, dictionaries)');
   registerFilteringProfiles(dlp);
   registerPatterns(dlp);
   registerProfiles(dlp);

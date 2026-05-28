@@ -21,7 +21,6 @@ import {
   renderCustomerAppDetail,
   renderCustomerAppList,
   renderDeploymentProfileList,
-  renderDlpProfileList,
   renderError,
   renderProfileDetail,
   renderProfileList,
@@ -337,28 +336,6 @@ export function registerRuntimeCommand(program: Command): void {
           unactivated: opts.unactivated,
         });
         renderDeploymentProfileList(profiles, fmt);
-      } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
-      }
-    });
-
-  // -----------------------------------------------------------------------
-  // runtime dlp-profiles — read-only listing
-  // -----------------------------------------------------------------------
-  const dlpProfiles = runtime.command('dlp-profiles').description('List AIRS DLP profiles');
-
-  dlpProfiles
-    .command('list')
-    .description('List DLP profiles')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
-    .action(async (opts) => {
-      try {
-        const fmt = opts.output as OutputFormat;
-        if (fmt === 'pretty') renderRuntimeConfigHeader();
-        const service = await createMgmtService();
-        const profiles = await service.listDlpProfiles();
-        renderDlpProfileList(profiles, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

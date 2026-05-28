@@ -13,7 +13,6 @@ import type {
   CustomerAppListResult,
   DeleteResponse,
   DeploymentProfileInfo,
-  DlpProfileInfo,
   ManagementService,
   PaginationOptions,
   ScanLogQueryOptions,
@@ -375,17 +374,6 @@ export class SdkManagementService implements ManagementService {
     const response = await this.client.deploymentProfiles.list(opts);
     const raw = response as unknown as Record<string, unknown>;
     const profiles = (raw.deployment_profiles ?? []) as Record<string, unknown>[];
-    return profiles.map((p) => ({ raw: p }));
-  }
-
-  // -------------------------------------------------------------------------
-  // DLP Profiles (read-only)
-  // -------------------------------------------------------------------------
-
-  async listDlpProfiles(): Promise<DlpProfileInfo[]> {
-    const response = await this.client.dlpProfiles.list();
-    const raw = response as unknown as Record<string, unknown>;
-    const profiles = (raw.dlp_profiles ?? []) as Record<string, unknown>[];
     return profiles.map((p) => ({ raw: p }));
   }
 

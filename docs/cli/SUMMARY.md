@@ -9,7 +9,6 @@
     * [airs runtime dlp patterns](runtime/dlp/patterns.md)
     * [airs runtime dlp profiles](runtime/dlp/profiles.md)
     * [airs runtime dlp-gen](runtime/dlp-gen.md)
-    * [airs runtime dlp-profiles](runtime/dlp-profiles.md)
     * [airs runtime profiles](runtime/profiles.md)
     * [airs runtime resume-poll](runtime/resume-poll.md)
     * [airs runtime scan](runtime/scan.md)

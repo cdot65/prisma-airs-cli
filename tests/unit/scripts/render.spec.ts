@@ -99,12 +99,6 @@ describe('renderSummary', () => {
       groupPath: 'runtime dlp-gen',
       commands: [scan],
     },
-    {
-      slug: 'runtime/dlp-profiles',
-      title: 'runtime dlp-profiles',
-      groupPath: 'runtime dlp-profiles',
-      commands: [scan],
-    },
     { slug: 'runtime/scan', title: 'runtime scan', groupPath: 'runtime scan', commands: [scan] },
     { slug: 'redteam/scan', title: 'redteam scan', groupPath: 'redteam scan', commands: [scan] },
     {
@@ -138,10 +132,14 @@ describe('renderSummary', () => {
     expect(out).not.toMatch(/^\s*\*\s+Dlp\s*$/m);
   });
 
-  it('preserves existing flat pages (dlp-gen, dlp-profiles) without duplication', () => {
+  it('preserves existing flat pages (dlp-gen) without duplication', () => {
     const out = renderSummary(pages);
     expect(out.match(/runtime\/dlp-gen\.md/g)?.length).toBe(1);
-    expect(out.match(/runtime\/dlp-profiles\.md/g)?.length).toBe(1);
+  });
+
+  it('no longer emits a runtime/dlp-profiles entry', () => {
+    const out = renderSummary(pages);
+    expect(out).not.toMatch(/runtime\/dlp-profiles\.md/);
   });
 
   it('sorts entries within a group by title alphabetically', () => {

@@ -28,7 +28,6 @@ Auto-generated from the `airs` command tree. Every command below lists its synop
 - [`airs runtime customer-apps`](runtime/customer-apps.md)
 - [`airs runtime deployment-profiles`](runtime/deployment-profiles.md)
 - [`airs runtime dlp-gen`](runtime/dlp-gen.md)
-- [`airs runtime dlp-profiles`](runtime/dlp-profiles.md)
 - [`airs runtime dlp dictionaries`](runtime/dlp/dictionaries.md)
 - [`airs runtime dlp filtering-profiles`](runtime/dlp/filtering-profiles.md)
 - [`airs runtime dlp patterns`](runtime/dlp/patterns.md)

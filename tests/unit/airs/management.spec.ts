@@ -46,7 +46,6 @@ const mockCustomerAppsGet = vi.fn();
 const mockCustomerAppsUpdate = vi.fn();
 const mockCustomerAppsDelete = vi.fn();
 const mockDeploymentProfilesList = vi.fn();
-const mockDlpProfilesList = vi.fn();
 const mockScanLogsQuery = vi.fn();
 
 vi.mock('@cdot65/prisma-airs-sdk', () => ({
@@ -81,9 +80,6 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
     },
     deploymentProfiles: {
       list: mockDeploymentProfilesList,
-    },
-    dlpProfiles: {
-      list: mockDlpProfilesList,
     },
     scanLogs: {
       query: mockScanLogsQuery,
@@ -1148,22 +1144,6 @@ describe('SdkManagementService', () => {
 
       await service.listDeploymentProfiles({ unactivated: true });
       expect(mockDeploymentProfilesList).toHaveBeenCalledWith({ unactivated: true });
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // DLP Profiles
-  // -------------------------------------------------------------------------
-
-  describe('listDlpProfiles', () => {
-    it('lists DLP profiles', async () => {
-      mockDlpProfilesList.mockResolvedValue({
-        dlp_profiles: [{ profile_name: 'dlp-default', profile_id: 'dlp-1' }],
-      });
-
-      const result = await service.listDlpProfiles();
-      expect(result).toHaveLength(1);
-      expect(result[0].raw.profile_name).toBe('dlp-default');
     });
   });
 

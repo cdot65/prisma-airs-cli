@@ -1,6 +1,6 @@
 # Interface: ModelSecurityPyPIAuth
 
-Defined in: [src/airs/types.ts:692](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L692)
+Defined in: [src/airs/types.ts:693](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L693)
 
 PyPI authentication response.
 
@@ -10,7 +10,7 @@ PyPI authentication response.
 
 > **expiresAt**: `string`
 
-Defined in: [src/airs/types.ts:694](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L694)
+Defined in: [src/airs/types.ts:695](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L695)
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: [src/airs/types.ts:694](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **url**: `string`
 
-Defined in: [src/airs/types.ts:693](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L693)
+Defined in: [src/airs/types.ts:694](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L694)
