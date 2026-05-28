@@ -52,11 +52,33 @@ Use `get <id>` for the full nested fields (`file_type`, `criteria_details`, `exc
 Retrieve a single filtering profile by ID.
 
 ```bash
-airs runtime dlp filtering-profiles get 6a10...
-airs runtime dlp filtering-profiles get 6a10... --output json
+airs runtime dlp filtering-profiles get 6a146fe17e175b786523c03a
+airs runtime dlp filtering-profiles get 6a146fe17e175b786523c03a --output json
 ```
 
-**Output** — same shape as a single `content[]` entry from `list`:
+**Pretty output:**
+
+```
+  Data Filtering Profile:
+
+    ID              6a146fe17e175b786523c03a
+    Name            SOX
+    Type            predefined
+    Data Profile    11995027
+    Direction       c2s
+    Severity        low
+    Scan Type       include
+    File Based      yes
+    Non-File Based  no
+    Version         3
+    File Types      35
+    Updated         2026-05-25T17:06:36.032Z
+```
+
+!!! warning "Snake-case mangling on JSON/YAML (issue #105)"
+    The JSON shape below is the **intended** SDK contract. The current CLI snake_case transformer drops the character after each camelCase boundary, so the actual live output renders `datarofile` / `scanype` / `fileased` / `nonileased` / `fileypes` instead of `data_profile` / `scan_type` / `file_based` / `non_file_based` / `file_types`. Use `pretty` until [#105](https://github.com/cdot65/prisma-airs-cli/issues/105) lands.
+
+**JSON output (target shape):**
 
 ```json
 {

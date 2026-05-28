@@ -140,17 +140,45 @@ Multi-profile compositions auto-promote `profile_type` to `advanced`.
 
 ## get
 
-Retrieve a single profile by ID.
+Retrieve a single profile by ID. Requires `@cdot65/prisma-airs-sdk@^0.10.0` or newer (earlier versions hit a 400 against the upstream).
 
 ```bash
-airs runtime dlp profiles get 1234567890
-airs runtime dlp profiles get 1234567890 --output json
+airs runtime dlp profiles get 11995028
+airs runtime dlp profiles get 11995028 --output json
 ```
 
-**Output** — same shape as a single `content[]` entry from `list`.
+**Pretty output:**
 
-!!! warning "Known issue (2026-05-23)"
-    The DLP API currently returns HTTP 400 for `GET /v2/api/data-profiles/{id}` against live tenants, even with valid IDs from the `list` response. This is a server-side issue, not a CLI or SDK bug — reproducible via `curl` with the same credentials. Use `list` and filter client-side until the upstream is fixed.
+```
+  Data Profile:
+
+    ID            11995028
+    Name          U.K. PIOCP
+    Description   Default profile for U.K. PIOCP
+    Type          predefined
+    Profile Type  basic
+    Status        active
+    Version       1
+    Updated       2026-05-15T08:05:35.633Z
+```
+
+**JSON output:**
+
+```json
+{
+  "id": "11995028",
+  "name": "U.K. PIOCP",
+  "description": "Default profile for U.K. PIOCP",
+  "type": "predefined",
+  "profileype": "basic",
+  "status": "active",
+  "version": 1,
+  "updated": "2026-05-15T08:05:35.633Z"
+}
+```
+
+!!! warning "Snake-case mangling on JSON/YAML (issue #105)"
+    The JSON output above shows `profileype` instead of `profile_type` — the CLI's camelCase→snake_case transformer drops the character after each boundary. Use `pretty` until [#105](https://github.com/cdot65/prisma-airs-cli/issues/105) lands.
 
 ## replace
 

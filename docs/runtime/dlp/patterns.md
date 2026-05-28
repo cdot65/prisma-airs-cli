@@ -119,17 +119,44 @@ Body shape matches the API request — `{ name, type, detection_config, matching
 
 ## get
 
-Retrieve a single pattern by ID.
+Retrieve a single pattern by ID. Requires `@cdot65/prisma-airs-sdk@^0.10.0` or newer (earlier versions hit a 400 against the upstream).
 
 ```bash
-airs runtime dlp patterns get 6990...
-airs runtime dlp patterns get 6990... --output json
+airs runtime dlp patterns get 6a06d3cf7e175b786523b8e5
+airs runtime dlp patterns get 6a06d3cf7e175b786523b8e5 --output json
 ```
 
-**Output** — same shape as a single `content[]` entry from `list`.
+**Pretty output:**
 
-!!! warning "Known issue (2026-05-23)"
-    The DLP API currently returns HTTP 400 for `GET /v2/api/data-patterns/{id}` against live tenants, even with valid IDs from the `list` response. This is a server-side issue, not a CLI or SDK bug — reproducible via `curl` with the same credentials. Use `list` and filter client-side until the upstream is fixed.
+```
+  Data Pattern:
+
+    ID           6a06d3cf7e175b786523b8e5
+    Name         Driver License - Cyprus
+    Description  This data pattern identifies a driver license issued by Cyprus.
+    Type         predefined
+    Status       active
+    Technique    regex
+    Confidence   high, low
+    Version      1
+    Updated      2026-05-25T15:50:58.037Z
+```
+
+**JSON output:**
+
+```json
+{
+  "id": "6a06d3cf7e175b786523b8e5",
+  "name": "Driver License - Cyprus",
+  "description": "This data pattern identifies a driver license issued by Cyprus.",
+  "type": "predefined",
+  "status": "active",
+  "technique": "regex",
+  "confidence": "high, low",
+  "version": 1,
+  "updated": "2026-05-25T15:50:58.037Z"
+}
+```
 
 ## replace
 
