@@ -1,11 +1,11 @@
-# runtime dlp-gen
+# runtime dlp generate
 
-## runtime dlp-gen
+## runtime dlp generate
 
 Generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX
 
 ```text
-airs runtime dlp-gen [options]
+airs runtime dlp generate [options]
 ```
 
 ### Options
@@ -24,7 +24,7 @@ airs runtime dlp-gen [options]
 *Full corpus, reproducible seed*
 
 ```bash
-airs runtime dlp-gen --types all --seed 1
+airs runtime dlp generate --types all --seed 1
 ```
 
 ```text
@@ -44,11 +44,11 @@ Manifest: ./temp/manifest.json
 *Images only, 3 of each*
 
 ```bash
-airs runtime dlp-gen --types png,jpeg,svg --count 3
+airs runtime dlp generate --types png,jpeg,svg --count 3
 ```
 
 *PNG LSB steganography only, JSON summary*
 
 ```bash
-airs runtime dlp-gen --types png --techniques stego-lsb --output json
+airs runtime dlp generate --types png --techniques stego-lsb --output json
 ```

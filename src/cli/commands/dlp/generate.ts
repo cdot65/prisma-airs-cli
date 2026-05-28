@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { generateCorpus } from '../../dlp/index.js';
-import type { Format } from '../../dlp/types.js';
+import { generateCorpus } from '../../../dlp/index.js';
+import type { Format } from '../../../dlp/types.js';
 
 const ALL_FORMATS: Format[] = ['pdf', 'png', 'jpeg', 'svg', 'docx'];
 
@@ -17,9 +17,9 @@ function parseTypes(value: string): Format[] {
   return types as Format[];
 }
 
-export function registerDlpGenCommand(parent: Command): void {
+export function register(parent: Command): void {
   parent
-    .command('dlp-gen')
+    .command('generate')
     .description(
       'Generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX',
     )

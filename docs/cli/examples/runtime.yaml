@@ -54,10 +54,10 @@
     - note: Custom output path
       input: airs runtime bulk-scan --profile my-profile --input prompts.txt --output results.csv
 
-"runtime dlp-gen":
+"runtime dlp generate":
   examples:
     - note: Full corpus, reproducible seed
-      input: airs runtime dlp-gen --types all --seed 1
+      input: airs runtime dlp generate --types all --seed 1
       output: |
         DLP Test-File Generation
         Output:   ./temp
@@ -71,9 +71,9 @@
           jpeg  clean=1 dirty=3
           docx  clean=1 dirty=3
     - note: Images only, 3 of each
-      input: airs runtime dlp-gen --types png,jpeg,svg --count 3
+      input: airs runtime dlp generate --types png,jpeg,svg --count 3
     - note: PNG LSB steganography only, JSON summary
-      input: airs runtime dlp-gen --types png --techniques stego-lsb --output json
+      input: airs runtime dlp generate --types png --techniques stego-lsb --output json
 
 "runtime topics create":
   examples:

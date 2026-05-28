@@ -23,4 +23,18 @@ describe('runtime command tree', () => {
     expect(dlp).toBeDefined();
     expect(find(dlp!, 'profiles')).toBeDefined();
   });
+
+  it('no longer exposes the top-level `dlp-gen` command', () => {
+    expect(find(runtime!, 'dlp-gen')).toBeUndefined();
+  });
+
+  it('exposes the relocated `dlp generate` command with original flags preserved', () => {
+    const dlp = find(runtime!, 'dlp');
+    const generate = find(dlp!, 'generate');
+    expect(generate).toBeDefined();
+    const flags = generate!.options.map((o) => o.long);
+    for (const f of ['--types', '--count', '--out', '--techniques', '--seed', '--output']) {
+      expect(flags).toContain(f);
+    }
+  });
 });

@@ -31,7 +31,6 @@ import {
 } from '../renderer/index.js';
 import { registerAuditCommand } from './audit.js';
 import { registerDlpCommands } from './dlp/index.js';
-import { registerDlpGenCommand } from './dlp-gen.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
 import { registerApplyCommand } from './topics-apply.js';
 import { registerCreateCommand } from './topics-create.js';
@@ -871,12 +870,7 @@ export function registerRuntimeCommand(program: Command): void {
     });
 
   // -----------------------------------------------------------------------
-  // runtime dlp — DLP management subcommands
+  // runtime dlp — DLP management subcommands (incl. `generate`)
   // -----------------------------------------------------------------------
   registerDlpCommands(runtime);
-
-  // -----------------------------------------------------------------------
-  // runtime dlp-gen — generate clean + dirty DLP test files
-  // -----------------------------------------------------------------------
-  registerDlpGenCommand(runtime);
 }

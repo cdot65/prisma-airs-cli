@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed (breaking)
+
+- **`airs runtime dlp-gen` moved to `airs runtime dlp generate`.** The DLP test-file generator now lives under the `dlp` namespace alongside `dictionaries`, `filtering-profiles`, `patterns`, and `profiles`. Flags and behavior are unchanged — `--types`, `--count`, `--out`, `--techniques`, `--seed`, `--output` work identically. Update any scripts or aliases that called `airs runtime dlp-gen`.
+
 ### Removed (breaking)
 
 - **`airs runtime dlp-profiles list` removed.** Use `airs runtime dlp profiles list` (DLP namespace) instead — it is now the canonical listing and returns populated profile IDs plus `type`, `profile_type`, `status`, and `version` fields, paginated as `{items, page:{number,size,total,returned}}`.

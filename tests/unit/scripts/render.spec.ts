@@ -94,9 +94,9 @@ describe('renderSummary', () => {
       commands: [scan],
     },
     {
-      slug: 'runtime/dlp-gen',
-      title: 'runtime dlp-gen',
-      groupPath: 'runtime dlp-gen',
+      slug: 'runtime/dlp/generate',
+      title: 'runtime dlp generate',
+      groupPath: 'runtime dlp generate',
       commands: [scan],
     },
     { slug: 'runtime/scan', title: 'runtime scan', groupPath: 'runtime scan', commands: [scan] },
@@ -112,8 +112,8 @@ describe('renderSummary', () => {
   it('groups pages by top-level command with DLP entries flat under Runtime', () => {
     const out = renderSummary(pages);
     const lines = out.split('\n');
-    const runtimeIdx = lines.findIndex((l) => l === '* Runtime');
-    const redteamIdx = lines.findIndex((l) => l === '* Redteam');
+    const runtimeIdx = lines.indexOf('* Runtime');
+    const redteamIdx = lines.indexOf('* Redteam');
     expect(runtimeIdx).toBeGreaterThanOrEqual(0);
     expect(redteamIdx).toBeGreaterThan(runtimeIdx);
     const runtimeBlock = lines
@@ -128,17 +128,14 @@ describe('renderSummary', () => {
     );
     expect(runtimeBlock).toContain('    * [airs runtime dlp patterns](runtime/dlp/patterns.md)');
     expect(runtimeBlock).toContain('    * [airs runtime dlp profiles](runtime/dlp/profiles.md)');
+    expect(runtimeBlock).toContain('    * [airs runtime dlp generate](runtime/dlp/generate.md)');
     // No nested "Dlp" group label
     expect(out).not.toMatch(/^\s*\*\s+Dlp\s*$/m);
   });
 
-  it('preserves existing flat pages (dlp-gen) without duplication', () => {
+  it('no longer emits the legacy runtime/dlp-gen or runtime/dlp-profiles entries', () => {
     const out = renderSummary(pages);
-    expect(out.match(/runtime\/dlp-gen\.md/g)?.length).toBe(1);
-  });
-
-  it('no longer emits a runtime/dlp-profiles entry', () => {
-    const out = renderSummary(pages);
+    expect(out).not.toMatch(/runtime\/dlp-gen\.md/);
     expect(out).not.toMatch(/runtime\/dlp-profiles\.md/);
   });
 
