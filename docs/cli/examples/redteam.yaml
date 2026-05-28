@@ -266,13 +266,78 @@
 
 "redteam properties list":
   examples:
-    - note: List configured property names (empty state — no properties defined on this tenant)
+    - note: Pretty output (default)
       input: airs redteam properties list
       output: |
           Prisma AIRS — AI Red Team
           Adversarial scan operations
 
-            No property names found.
+
+          Property Names:
+
+            • severity
+            • persona
+
+    - note: JSON output (raw string array from SDK 0.10.0)
+      input: airs redteam properties list --output json
+      output: |
+          [
+            "severity",
+            "persona"
+          ]
+
+    - note: YAML output
+      input: airs redteam properties list --output yaml
+      output: |
+          - severity
+          - persona
+
+"redteam properties values":
+  examples:
+    - note: List values for a property name (pretty)
+      input: airs redteam properties values severity
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          Property Values:
+
+            Property: severity
+              • low
+              • medium
+              • high
+
+    - note: JSON output (single {name, values[]} object — SDK 0.10.0 shape)
+      input: airs redteam properties values severity --output json
+      output: |
+          {
+            "name": "severity",
+            "values": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+
+    - note: YAML output
+      input: airs redteam properties values severity --output yaml
+      output: |
+          name: severity
+          values:
+            - low
+            - medium
+            - high
+
+"redteam properties add-value":
+  examples:
+    - note: Create a new value for an existing property name
+      input: airs redteam properties add-value --name severity --value critical
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Property value 'critical' created successfully
 
 "redteam targets get":
   examples:

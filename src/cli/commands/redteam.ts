@@ -667,7 +667,7 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         const result = await service.createPropertyName(opts.name);
-        console.log(`  Property created: ${result.name}\n`);
+        console.log(`  ${result.message}\n`);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
@@ -701,7 +701,7 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         const result = await service.createPropertyValue(opts.name, opts.value);
-        console.log(`  Value created: ${result.name}=${result.value}\n`);
+        console.log(`  ${result.message}\n`);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

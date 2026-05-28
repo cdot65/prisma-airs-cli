@@ -84,7 +84,7 @@ Create a new custom prompt set.
 
 ### createPropertyName()
 
-> **createPropertyName**(`name`): `Promise`\<[`PropertyName`](PropertyName.md)\>
+> **createPropertyName**(`name`): `Promise`\<[`MutationResponse`](MutationResponse.md)\>
 
 Defined in: [src/airs/types.ts:117](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L117)
 
@@ -98,13 +98,13 @@ Create a property name.
 
 #### Returns
 
-`Promise`\<[`PropertyName`](PropertyName.md)\>
+`Promise`\<[`MutationResponse`](MutationResponse.md)\>
 
 ***
 
 ### createPropertyValue()
 
-> **createPropertyValue**(`name`, `value`): `Promise`\<[`PropertyValue`](PropertyValue.md)\>
+> **createPropertyValue**(`name`, `value`): `Promise`\<[`MutationResponse`](MutationResponse.md)\>
 
 Defined in: [src/airs/types.ts:121](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L121)
 
@@ -122,7 +122,7 @@ Create a property value.
 
 #### Returns
 
-`Promise`\<[`PropertyValue`](PropertyValue.md)\>
+`Promise`\<[`MutationResponse`](MutationResponse.md)\>
 
 ***
 
@@ -236,7 +236,7 @@ Get prompt set version info with stats.
 
 ### getPropertyNames()
 
-> **getPropertyNames**(): `Promise`\<[`PropertyName`](PropertyName.md)[]\>
+> **getPropertyNames**(): `Promise`\<`string`[]\>
 
 Defined in: [src/airs/types.ts:115](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L115)
 
@@ -244,13 +244,13 @@ List property names.
 
 #### Returns
 
-`Promise`\<[`PropertyName`](PropertyName.md)[]\>
+`Promise`\<`string`[]\>
 
 ***
 
 ### getPropertyValues()
 
-> **getPropertyValues**(`name`): `Promise`\<[`PropertyValue`](PropertyValue.md)[]\>
+> **getPropertyValues**(`name`): `Promise`\<[`PropertyValueList`](PropertyValueList.md)\>
 
 Defined in: [src/airs/types.ts:119](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L119)
 
@@ -264,7 +264,7 @@ Get values for a property.
 
 #### Returns
 
-`Promise`\<[`PropertyValue`](PropertyValue.md)[]\>
+`Promise`\<[`PropertyValueList`](PropertyValueList.md)\>
 
 ***
 

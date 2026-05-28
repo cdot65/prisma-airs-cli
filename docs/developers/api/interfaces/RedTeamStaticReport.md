@@ -1,6 +1,6 @@
 # Interface: RedTeamStaticReport
 
-Defined in: [src/airs/types.ts:265](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L265)
+Defined in: [src/airs/types.ts:266](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L266)
 
 Normalized static report summary.
 
@@ -10,7 +10,7 @@ Normalized static report summary.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:267](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L267)
+Defined in: [src/airs/types.ts:268](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L268)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:267](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **categories**: `object`[]
 
-Defined in: [src/airs/types.ts:274](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L274)
+Defined in: [src/airs/types.ts:275](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L275)
 
 #### asr
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:274](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **reportSummary?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:273](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L273)
+Defined in: [src/airs/types.ts:274](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L274)
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [src/airs/types.ts:273](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:266](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L266)
+Defined in: [src/airs/types.ts:267](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L267)
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/airs/types.ts:266](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **severityBreakdown**: `object`[]
 
-Defined in: [src/airs/types.ts:268](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L268)
+Defined in: [src/airs/types.ts:269](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L269)
 
 #### failed
 

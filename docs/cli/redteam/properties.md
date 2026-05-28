@@ -16,7 +16,7 @@ airs redteam properties list [options]
 
 #### Examples
 
-*List configured property names (empty state — no properties defined on this tenant)*
+*Pretty output (default)*
 
 ```bash
 airs redteam properties list
@@ -26,7 +26,35 @@ airs redteam properties list
 Prisma AIRS — AI Red Team
 Adversarial scan operations
 
-  No property names found.
+
+Property Names:
+
+  • severity
+  • persona
+```
+
+*JSON output (raw string array from SDK 0.10.0)*
+
+```bash
+airs redteam properties list --output json
+```
+
+```text
+[
+  "severity",
+  "persona"
+]
+```
+
+*YAML output*
+
+```bash
+airs redteam properties list --output yaml
+```
+
+```text
+- severity
+- persona
 ```
 
 ---
@@ -72,8 +100,55 @@ airs redteam properties values [options] <name>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*List values for a property name (pretty)*
+
+```bash
+airs redteam properties values severity
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+Property Values:
+
+  Property: severity
+    • low
+    • medium
+    • high
+```
+
+*JSON output (single {name, values[]} object — SDK 0.10.0 shape)*
+
+```bash
+airs redteam properties values severity --output json
+```
+
+```text
+{
+  "name": "severity",
+  "values": [
+    "low",
+    "medium",
+    "high"
+  ]
+}
+```
+
+*YAML output*
+
+```bash
+airs redteam properties values severity --output yaml
+```
+
+```text
+name: severity
+values:
+  - low
+  - medium
+  - high
+```
 
 ---
 
@@ -94,5 +169,15 @@ airs redteam properties add-value [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create a new value for an existing property name*
+
+```bash
+airs redteam properties add-value --name severity --value critical
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Property value 'critical' created successfully
+```

@@ -12,21 +12,9 @@ runtime customer-apps delete
 runtime profiles delete
 # Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/165
 runtime topics delete
-# Blocked by CLI bug — see https://github.com/cdot65/prisma-airs-cli/issues/105
-runtime dlp filtering-profiles get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
-runtime dlp patterns get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
-runtime dlp patterns replace
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
-runtime dlp patterns patch
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
-runtime dlp profiles create
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
-runtime dlp profiles get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
+# Blocked by upstream API 500 (was 400; create now works) — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles replace
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
+# Blocked by upstream API 500 (was 400; create now works) — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles patch
 # Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries create
@@ -43,15 +31,13 @@ redteam devices create
 redteam devices update
 redteam devices delete
 # Blocked by upstream API 500 on /version-info — see https://github.com/cdot65/prisma-airs-cli/issues/117
-# (single-prompt 'pretty' output works but trails with the 500; JSON/YAML formats blocked by CLI #198)
+# (CLI calls version-info unconditionally after detail fetch, so all three formats fail until either
+# upstream is fixed or CLI gains graceful degradation — see sub-issue #164 retry 2026-05-28)
 redteam prompt-sets get
 # Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
 redteam prompts delete
-# Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
+# Blocked by SDK wrong-schema-on-write — POST property-names returns 201 with {data: string[]} but SDK
+# declares BaseResponseSchema — see sub-issue #172 retry 2026-05-28
 redteam properties create
-# Blocked by SDK schema mismatch + CLI --output gap — see https://github.com/cdot65/prisma-airs-sdk/issues/169 and https://github.com/cdot65/prisma-airs-cli/issues/198
-redteam properties values
-# Blocked by CLI request-shape bug (wrong field names) — see https://github.com/cdot65/prisma-airs-cli/issues/197
-redteam properties add-value
 # Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
 redteam targets delete

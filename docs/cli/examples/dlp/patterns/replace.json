@@ -1,0 +1,13 @@
+{
+  "name": "docs-example-pattern",
+  "description": "Docs example pattern (replaced)",
+  "type": "custom",
+  "detection_config": {
+    "technique": "regex",
+    "supported_confidence_levels": ["high"]
+  },
+  "matching_rules": {
+    "regexes": [{ "regex": "\\bACME-V2-\\d{6}\\b", "weight": 1 }],
+    "proximity_distance": 200
+  }
+}

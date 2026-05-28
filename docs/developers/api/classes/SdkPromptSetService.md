@@ -119,7 +119,7 @@ Create a new custom prompt set.
 
 ### createPropertyName()
 
-> **createPropertyName**(`name`): `Promise`\<[`PropertyName`](../interfaces/PropertyName.md)\>
+> **createPropertyName**(`name`): `Promise`\<[`MutationResponse`](../interfaces/MutationResponse.md)\>
 
 Defined in: [src/airs/promptsets.ts:153](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L153)
 
@@ -133,7 +133,7 @@ Create a property name.
 
 #### Returns
 
-`Promise`\<[`PropertyName`](../interfaces/PropertyName.md)\>
+`Promise`\<[`MutationResponse`](../interfaces/MutationResponse.md)\>
 
 #### Implementation of
 
@@ -143,7 +143,7 @@ Create a property name.
 
 ### createPropertyValue()
 
-> **createPropertyValue**(`name`, `value`): `Promise`\<[`PropertyValue`](../interfaces/PropertyValue.md)\>
+> **createPropertyValue**(`name`, `value`): `Promise`\<[`MutationResponse`](../interfaces/MutationResponse.md)\>
 
 Defined in: [src/airs/promptsets.ts:164](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L164)
 
@@ -161,7 +161,7 @@ Create a property value.
 
 #### Returns
 
-`Promise`\<[`PropertyValue`](../interfaces/PropertyValue.md)\>
+`Promise`\<[`MutationResponse`](../interfaces/MutationResponse.md)\>
 
 #### Implementation of
 
@@ -299,7 +299,7 @@ Get prompt set version info with stats.
 
 ### getPropertyNames()
 
-> **getPropertyNames**(): `Promise`\<[`PropertyName`](../interfaces/PropertyName.md)[]\>
+> **getPropertyNames**(): `Promise`\<`string`[]\>
 
 Defined in: [src/airs/promptsets.ts:147](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L147)
 
@@ -307,7 +307,7 @@ List property names.
 
 #### Returns
 
-`Promise`\<[`PropertyName`](../interfaces/PropertyName.md)[]\>
+`Promise`\<`string`[]\>
 
 #### Implementation of
 
@@ -317,7 +317,7 @@ List property names.
 
 ### getPropertyValues()
 
-> **getPropertyValues**(`name`): `Promise`\<[`PropertyValue`](../interfaces/PropertyValue.md)[]\>
+> **getPropertyValues**(`name`): `Promise`\<[`PropertyValueList`](../interfaces/PropertyValueList.md)\>
 
 Defined in: [src/airs/promptsets.ts:158](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L158)
 
@@ -331,7 +331,7 @@ Get values for a property.
 
 #### Returns
 
-`Promise`\<[`PropertyValue`](../interfaces/PropertyValue.md)[]\>
+`Promise`\<[`PropertyValueList`](../interfaces/PropertyValueList.md)\>
 
 #### Implementation of
 

@@ -1,11 +1,11 @@
 import { RedTeamClient, type RedTeamClientOptions } from '@cdot65/prisma-airs-sdk';
 import type {
+  MutationResponse,
   PromptDetail,
   PromptSetDetail,
   PromptSetService,
   PromptSetVersionInfo,
-  PropertyName,
-  PropertyValue,
+  PropertyValueList,
 } from './types.js';
 
 /** Normalize SDK prompt set response to PromptSetDetail. */
@@ -144,28 +144,28 @@ export class SdkPromptSetService implements PromptSetService {
     await this.client.customAttacks.deletePrompt(setUuid, promptUuid);
   }
 
-  async getPropertyNames(): Promise<PropertyName[]> {
+  async getPropertyNames(): Promise<string[]> {
     const response = await this.client.customAttacks.getPropertyNames();
-    const raw = response as unknown as { data?: PropertyName[] };
+    const raw = response as unknown as { data?: string[] };
     return raw.data ?? [];
   }
 
-  async createPropertyName(name: string): Promise<PropertyName> {
+  async createPropertyName(name: string): Promise<MutationResponse> {
     const response = await this.client.customAttacks.createPropertyName({ name } as never);
-    return response as unknown as PropertyName;
+    return response as unknown as MutationResponse;
   }
 
-  async getPropertyValues(name: string): Promise<PropertyValue[]> {
+  async getPropertyValues(name: string): Promise<PropertyValueList> {
     const response = await this.client.customAttacks.getPropertyValues(name);
-    const raw = response as unknown as { data?: PropertyValue[] };
-    return raw.data ?? [];
+    const raw = response as unknown as { name?: string; values?: string[] };
+    return { name: raw.name ?? name, values: raw.values ?? [] };
   }
 
-  async createPropertyValue(name: string, value: string): Promise<PropertyValue> {
+  async createPropertyValue(name: string, value: string): Promise<MutationResponse> {
     const response = await this.client.customAttacks.createPropertyValue({
       property_name: name,
       property_value: value,
     });
-    return response as unknown as PropertyValue;
+    return response as unknown as MutationResponse;
   }
 }

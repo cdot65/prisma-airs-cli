@@ -234,8 +234,22 @@ airs runtime dlp profiles create [options]
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Create a custom advanced profile from a body fixture (see docs/cli/examples/dlp/profiles/create.json). Body uses the discriminated-union detection_rules shape (rule_type=expression_tree).*
+
+```bash
+airs runtime dlp profiles create --body-file docs/cli/examples/dlp/profiles/create.json --output json
+```
+
+```text
+{
+  "action": "created",
+  "id": "00000099",
+  "name": "docs-example-profile",
+  "type": "custom",
+  "status": "active",
+  "version": 1
+}
+```
 
 ---
 
@@ -259,8 +273,60 @@ airs runtime dlp profiles get [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default — predefined profile)*
+
+```bash
+airs runtime dlp profiles get 00000001
+```
+
+```text
+Data Profile:
+
+  ID            00000001
+  Name          Bulk CCN
+  Description   Default profile for Bulk CCN
+  Type          predefined
+  Profile Type  basic
+  Status        active
+  Version       1
+  Updated       2026-05-15T08:05:35.599Z
+```
+
+*JSON output*
+
+```bash
+airs runtime dlp profiles get 00000001 --output json
+```
+
+```text
+{
+  "id": "00000001",
+  "name": "Bulk CCN",
+  "description": "Default profile for Bulk CCN",
+  "type": "predefined",
+  "profile_type": "basic",
+  "status": "active",
+  "version": 1,
+  "updated": "2026-05-15T08:05:35.599Z"
+}
+```
+
+*YAML output*
+
+```bash
+airs runtime dlp profiles get 00000001 --output yaml
+```
+
+```text
+id: '00000001'
+name: Bulk CCN
+description: Default profile for Bulk CCN
+type: predefined
+profile_type: basic
+status: active
+version: 1
+updated: '2026-05-15T08:05:35.599Z'
+```
 
 ---
 
