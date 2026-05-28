@@ -1,5 +1,0 @@
----
-"@cdot65/prisma-airs-cli": patch
----
-
-docs(redteam): add end-to-end walkthrough — onboard a target behind a `NETWORK_BROKER` channel, run a STATIC scan, and pull the report. Tutorial-style page with every command and (redacted) response from a real LiteLLM/`mistral-7b` provisioning session. Surfaces six user-facing gotchas inline (`url` vs `api_endpoint` scaffold mismatch, missing discriminator fields, no `channels list` CLI surface, no `--output json` on `targets get`, mandatory `--categories` JSON on STATIC scans, uppercase-only `--severity`) and links the seven separately-filed renderer/upstream bug trackers ([#200](https://github.com/cdot65/prisma-airs-cli/issues/200), [#201](https://github.com/cdot65/prisma-airs-cli/issues/201), [#202](https://github.com/cdot65/prisma-airs-cli/issues/202), [#203](https://github.com/cdot65/prisma-airs-cli/issues/203), [#204](https://github.com/cdot65/prisma-airs-cli/issues/204), [#205](https://github.com/cdot65/prisma-airs-cli/issues/205), [#206](https://github.com/cdot65/prisma-airs-cli/issues/206)).
