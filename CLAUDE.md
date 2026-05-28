@@ -36,6 +36,21 @@ pnpm run format:check      # Biome format (check only, no write)
 pnpm tsc --noEmit
 ```
 
+## Releases
+
+**Always cut versions via `pnpm changeset version`. Never hand-edit `package.json`.**
+
+Workflow when shipping a release:
+
+1. `pnpm changeset version` — consumes queued `.changeset/*.md` → writes `CHANGELOG.md` + bumps `package.json` based on the highest bump type across queued entries (`major` > `minor` > `patch`).
+2. Commit the resulting `package.json` + `CHANGELOG.md` + deleted changeset files together: `chore(release): X.Y.Z — <short title>`.
+3. Tag `vX.Y.Z` and push commit + tag.
+4. `gh release create vX.Y.Z --title "vX.Y.Z — <title>" --notes ...` — this fires `.github/workflows/publish.yml`, which runs lint/typecheck/test/build and `npm publish` via OIDC.
+
+Why this matters: prior to 2026-05-28 the repo used manual `chore: bump to vX.Y.Z` commits and never ran `changeset version`, so 21 stale changeset files accumulated since 2026-03 and required a one-off cleanup PR (#223). Going forward, the changeset workflow is the only path so the backlog stays drained.
+
+For hotfixes that should bypass all queued changesets and ship only one fix: add only the hotfix's changeset, branch off the release tag (not `main`), run `pnpm changeset version`, release, then rebase/merge back. Manual `package.json` edits are only acceptable as a last resort (e.g. the queued backlog is corrupted) and must be paired with a follow-up cleanup PR.
+
 ## Agent-Driven Optimization
 
 The `topics create/apply/eval/revert` commands are designed for autonomous agent loops (autoresearch pattern). An agent can: create a topic, apply it to a profile, eval against a static prompt set, keep or revert based on FP/FN metrics, and repeat. See `AGENTS.md` for the agent loop protocol.
