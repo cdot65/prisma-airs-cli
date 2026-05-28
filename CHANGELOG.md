@@ -1,5 +1,51 @@
 # @cdot65/prisma-airs-cli
 
+## 2.12.0
+
+### Minor Changes
+
+- bcad4b8: `airs runtime dlp generate` now emits visible-text variants alongside the existing
+  hidden-channel techniques: `visible` for PDF/PNG/JPEG/SVG/DOCX, plus
+  `visible-samecolor` for PDF and DOCX (body text drawn in the same color as its
+  background — extractable but camouflaged). Full corpus grows from 15 to 21
+  dirty files per run.
+- 49bbc33: Add `airs runtime customer-apps consumption [appName]` for per-app token consumption + violation breakdown, sourced from the SCM AI Security > Runtime > API Applications dashboard endpoints (via the new `mgmt.dashboard` SDK namespace).
+
+  ```
+  # pretty (default): per-app sections with tokens, sessions, firing detectors
+  airs runtime customer-apps consumption chatbot
+
+  # all apps in tenant (omit appName)
+  airs runtime customer-apps consumption
+
+  # 60-day window instead of default 30
+  airs runtime customer-apps consumption chatbot --time-interval 60
+
+  # structured outputs (table / csv / json / yaml) — one row per detector per app
+  airs runtime customer-apps consumption --output csv > consumption.csv
+  ```
+
+  The API enforces an enum for `--time-interval`: only `7`, `30`, and `60` are accepted (verified live 2026-05-28; the CLI validates client-side before calling). The dashboard endpoints require both `appId` and `appName`, so the CLI resolves the UUID from the `customer-apps list` endpoint internally - users only supply the human-readable app name.
+
+  Closes #222.
+
+### Patch Changes
+
+- bcad4b8: CI: red team scan workflow now supports CUSTOM scans with `prompt_sets` from
+  target configs and fails the build when any target's ASR exceeds the
+  `ASR_THRESHOLD` (default 10%).
+- bcad4b8: Fix: `airs redteam report <jobId>` now routes DYNAMIC jobs to the dynamic
+  report endpoint (`/v1/report/dynamic/{jobId}/report`) instead of the static
+  one, which was returning 500. Adds a dedicated dynamic report renderer
+  (Score, ASR, Goals, Threats, Summary).
+- 43c7e45: docs(examples): land DLP examples for filtering-profiles get, patterns get/replace/patch, profiles get/create after v2.11.0 + SDK 0.10.0 unblocked them.
+- 11b621e: Rewire `redteam properties` commands for SDK 0.10.0 response shapes.
+
+  - `properties list` now renders the SDK's plain `string[]` (was incorrectly typed/rendered as `{name}[]`); adds `--output json|yaml` support.
+  - `properties values <name>` now renders the SDK's `{name, values: string[]}` object (was incorrectly typed/rendered as `{name, value}[]`); adds `--output json|yaml`.
+  - `properties create` and `properties add-value` now print the SDK's mutation message instead of fabricating a fake `name=value` line.
+  - Adds curated input/output examples for `redteam properties list` (refreshed), `redteam properties values`, and `redteam properties add-value`; updates `.missing-allowlist` accordingly.
+
 ## 2.11.0
 
 ### Minor Changes
