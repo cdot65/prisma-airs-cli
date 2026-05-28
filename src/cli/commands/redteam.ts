@@ -17,6 +17,7 @@ import {
   renderCategories,
   renderCustomAttackList,
   renderCustomReport,
+  renderDynamicReport,
   renderError,
   renderEulaContent,
   renderEulaStatus,
@@ -732,6 +733,9 @@ export function registerRedteamCommand(program: Command): void {
             });
             renderCustomAttackList(attacks);
           }
+        } else if (job.jobType === 'DYNAMIC') {
+          const report = await service.getDynamicReport(jobId);
+          renderDynamicReport(report);
         } else {
           const report = await service.getStaticReport(jobId);
           renderStaticReport(report);

@@ -9,6 +9,7 @@ import type {
   RedTeamCategory,
   RedTeamCustomAttack,
   RedTeamCustomReport,
+  RedTeamDynamicReport,
   RedTeamJob,
   RedTeamService,
   RedTeamStaticReport,
@@ -426,6 +427,19 @@ export class SdkRedTeamService implements RedTeamService {
           total,
         };
       }),
+    };
+  }
+
+  async getDynamicReport(jobId: string): Promise<RedTeamDynamicReport> {
+    const raw = (await this.client.reports.getDynamicReport(jobId)) as Record<string, unknown>;
+    return {
+      score: raw.score as number | undefined,
+      asr: raw.asr as number | undefined,
+      totalGoals: raw.total_goals as number | undefined,
+      goalsAchieved: raw.goals_achieved as number | undefined,
+      totalStreams: raw.total_streams as number | undefined,
+      totalThreats: raw.total_threats as number | undefined,
+      reportSummary: interpolateReportSummary(raw.report_summary as string | null | undefined),
     };
   }
 

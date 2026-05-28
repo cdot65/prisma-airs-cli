@@ -281,6 +281,17 @@ export interface RedTeamStaticReport {
   }>;
 }
 
+/** Normalized dynamic scan report summary. */
+export interface RedTeamDynamicReport {
+  score?: number;
+  asr?: number;
+  totalGoals?: number;
+  goalsAchieved?: number;
+  totalStreams?: number;
+  totalThreats?: number;
+  reportSummary?: string | null;
+}
+
 /** Normalized custom attack report summary. */
 export interface RedTeamCustomReport {
   totalPrompts: number;
@@ -489,6 +500,9 @@ export interface RedTeamService {
 
   /** Get static scan report. */
   getStaticReport(jobId: string): Promise<RedTeamStaticReport>;
+
+  /** Get dynamic scan report. */
+  getDynamicReport(jobId: string): Promise<RedTeamDynamicReport>;
 
   /** Get custom attack report. */
   getCustomReport(jobId: string): Promise<RedTeamCustomReport>;

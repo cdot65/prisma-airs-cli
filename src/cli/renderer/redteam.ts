@@ -169,6 +169,34 @@ export function renderStaticReport(report: {
   console.log();
 }
 
+/** Render a dynamic scan report. */
+export function renderDynamicReport(report: {
+  score?: number;
+  asr?: number;
+  totalGoals?: number;
+  goalsAchieved?: number;
+  totalStreams?: number;
+  totalThreats?: number;
+  reportSummary?: string | null;
+}): void {
+  console.log(chalk.bold('\n  Dynamic Scan Report:'));
+  if (report.score != null) console.log(`    Score:   ${report.score}`);
+  if (report.asr != null) console.log(`    ASR:     ${(report.asr * 100).toFixed(1)}%`);
+  if (report.totalGoals != null || report.goalsAchieved != null) {
+    console.log(
+      `    Goals:   ${report.goalsAchieved ?? 0} achieved / ${report.totalGoals ?? 0} total`,
+    );
+  }
+  if (report.totalStreams != null) console.log(`    Streams: ${report.totalStreams}`);
+  if (report.totalThreats != null) console.log(`    Threats: ${report.totalThreats}`);
+
+  if (report.reportSummary) {
+    console.log(chalk.bold('\n  Summary:'));
+    console.log(`    ${report.reportSummary}`);
+  }
+  console.log();
+}
+
 /** Render a custom attack report. */
 export function renderCustomReport(report: {
   totalPrompts: number;
