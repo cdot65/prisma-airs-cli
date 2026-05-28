@@ -45,6 +45,22 @@ function normalizeJob(raw: Record<string, unknown>): RedTeamJob {
   };
 }
 
+/**
+ * Drop noisy "you didn't opt in" fields from `target_metadata` when the
+ * corresponding feature is disabled. `multi_turn_error_message` always comes
+ * back populated, but it's only a real error when `multi_turn === true`.
+ */
+export function sanitizeTargetMetadata<T extends Record<string, unknown> | undefined>(
+  metadata: T,
+): T {
+  if (!metadata) return metadata;
+  if (metadata.multi_turn === false && 'multi_turn_error_message' in metadata) {
+    const { multi_turn_error_message: _drop, ...rest } = metadata;
+    return rest as T;
+  }
+  return metadata;
+}
+
 /** Normalize an SDK target response into a RedTeamTargetDetail. */
 function normalizeTargetDetail(raw: Record<string, unknown>): RedTeamTargetDetail {
   return {
@@ -65,7 +81,7 @@ function normalizeTargetDetail(raw: Record<string, unknown>): RedTeamTargetDetai
     connectionParams: raw.connection_params as Record<string, unknown> | undefined,
     background: raw.target_background as RedTeamTargetDetail['background'],
     additionalContext: raw.additional_context as RedTeamTargetDetail['additionalContext'],
-    metadata: raw.target_metadata as RedTeamTargetDetail['metadata'],
+    metadata: sanitizeTargetMetadata(raw.target_metadata as RedTeamTargetDetail['metadata']),
   };
 }
 
@@ -274,7 +290,12 @@ export class SdkRedTeamService implements RedTeamService {
 
   async probeTarget(request: Record<string, unknown>): Promise<Record<string, unknown>> {
     const response = await this.client.targets.probe(request as never);
-    return response as unknown as Record<string, unknown>;
+    const raw = response as unknown as Record<string, unknown>;
+    const meta = raw.target_metadata;
+    if (meta && typeof meta === 'object') {
+      raw.target_metadata = sanitizeTargetMetadata(meta as Record<string, unknown>);
+    }
+    return raw;
   }
 
   async getTargetProfile(uuid: string): Promise<Record<string, unknown>> {

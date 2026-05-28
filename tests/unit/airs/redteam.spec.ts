@@ -753,6 +753,91 @@ describe('SdkRedTeamService', () => {
       expect(result).toEqual({ status: 'connected', latency_ms: 42 });
       expect(mockTargetsProbe).toHaveBeenCalledWith({ api_endpoint: 'https://example.com' });
     });
+
+    it('strips multi_turn_error_message from target_metadata when multi_turn is false', async () => {
+      mockTargetsProbe.mockResolvedValue({
+        status: 'connected',
+        target_metadata: {
+          multi_turn: false,
+          multi_turn_error_message: 'Multi turn configuration JSON not provided',
+          rate_limit: 50,
+        },
+      });
+      const result = await service.probeTarget({ api_endpoint: 'https://example.com' });
+      const meta = result.target_metadata as Record<string, unknown>;
+      expect(meta).not.toHaveProperty('multi_turn_error_message');
+      expect(meta.multi_turn).toBe(false);
+      expect(meta.rate_limit).toBe(50);
+    });
+
+    it('keeps multi_turn_error_message when multi_turn is true (real error)', async () => {
+      mockTargetsProbe.mockResolvedValue({
+        status: 'connected',
+        target_metadata: {
+          multi_turn: true,
+          multi_turn_error_message: 'something actually wrong',
+        },
+      });
+      const result = await service.probeTarget({ api_endpoint: 'https://example.com' });
+      const meta = result.target_metadata as Record<string, unknown>;
+      expect(meta.multi_turn_error_message).toBe('something actually wrong');
+    });
+  });
+
+  describe('multi_turn_error_message sanitization on normalized target paths', () => {
+    it('getTarget: drops multi_turn_error_message when multi_turn is false', async () => {
+      mockTargetsGet.mockResolvedValue({
+        uuid: 't-1',
+        name: 'Target',
+        status: 'active',
+        active: true,
+        target_metadata: {
+          multi_turn: false,
+          multi_turn_error_message: 'Multi turn configuration JSON not provided',
+          rate_limit: 25,
+        },
+      });
+      const result = await service.getTarget('t-1');
+      expect(result.metadata).not.toHaveProperty('multi_turn_error_message');
+      expect(result.metadata).toEqual({ multi_turn: false, rate_limit: 25 });
+    });
+
+    it('getTarget: keeps multi_turn_error_message when multi_turn is true', async () => {
+      mockTargetsGet.mockResolvedValue({
+        uuid: 't-1',
+        name: 'Target',
+        status: 'active',
+        active: true,
+        target_metadata: {
+          multi_turn: true,
+          multi_turn_error_message: 'real failure',
+        },
+      });
+      const result = await service.getTarget('t-1');
+      expect(result.metadata).toEqual({
+        multi_turn: true,
+        multi_turn_error_message: 'real failure',
+      });
+    });
+
+    it('createTarget: drops multi_turn_error_message when multi_turn is false', async () => {
+      mockTargetsCreate.mockResolvedValue({
+        uuid: 't-new',
+        name: 'New',
+        status: 'active',
+        active: true,
+        target_metadata: {
+          multi_turn: false,
+          multi_turn_error_message: 'Multi turn configuration JSON not provided',
+        },
+      });
+      const result = await service.createTarget({
+        name: 'New',
+        target_type: 'REST',
+        connection_params: {},
+      });
+      expect(result.metadata).toEqual({ multi_turn: false });
+    });
   });
 
   describe('getTargetProfile', () => {
