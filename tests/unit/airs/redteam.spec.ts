@@ -533,8 +533,8 @@ describe('SdkRedTeamService', () => {
       });
 
       const result = await service.listAttacks('job-1', { severity: 'HIGH', limit: 10 });
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
+      expect(result.attacks).toHaveLength(2);
+      expect(result.attacks[0]).toEqual({
         id: 'atk-1',
         name: 'Prompt Injection Basic',
         severity: 'HIGH',
@@ -542,14 +542,14 @@ describe('SdkRedTeamService', () => {
         subCategory: 'Prompt Injection',
         successful: true,
       });
-      expect(result[1].successful).toBe(false);
+      expect(result.attacks[1].successful).toBe(false);
       expect(mockReportsListAttacks).toHaveBeenCalledWith('job-1', { severity: 'HIGH', limit: 10 });
     });
 
     it('returns empty array when no attacks', async () => {
       mockReportsListAttacks.mockResolvedValue({ data: [] });
       const result = await service.listAttacks('job-1');
-      expect(result).toEqual([]);
+      expect(result.attacks).toEqual([]);
     });
 
     it('lifts sub_category_display_name into subCategoryDisplayName', async () => {
@@ -567,8 +567,8 @@ describe('SdkRedTeamService', () => {
         ],
       });
       const result = await service.listAttacks('job-1');
-      expect(result[0].subCategoryDisplayName).toBe('Jailbreak');
-      expect(result[0].subCategory).toBe('JAILBREAK');
+      expect(result.attacks[0].subCategoryDisplayName).toBe('Jailbreak');
+      expect(result.attacks[0].subCategory).toBe('JAILBREAK');
     });
 
     it('treats missing threat as not successful (BLOCKED default)', async () => {
@@ -584,7 +584,7 @@ describe('SdkRedTeamService', () => {
         ],
       });
       const result = await service.listAttacks('job-1');
-      expect(result[0].successful).toBe(false);
+      expect(result.attacks[0].successful).toBe(false);
     });
 
     it('leaves subCategoryDisplayName undefined when API omits it', async () => {
@@ -600,8 +600,23 @@ describe('SdkRedTeamService', () => {
         ],
       });
       const result = await service.listAttacks('job-1');
-      expect(result[0].subCategoryDisplayName).toBeUndefined();
-      expect(result[0].subCategory).toBe('JAILBREAK');
+      expect(result.attacks[0].subCategoryDisplayName).toBeUndefined();
+      expect(result.attacks[0].subCategory).toBe('JAILBREAK');
+    });
+
+    it('lifts pagination.total_items into totalItems', async () => {
+      mockReportsListAttacks.mockResolvedValue({
+        data: [],
+        pagination: { total_items: 109 },
+      });
+      const result = await service.listAttacks('job-1');
+      expect(result.totalItems).toBe(109);
+    });
+
+    it('leaves totalItems undefined when pagination missing', async () => {
+      mockReportsListAttacks.mockResolvedValue({ data: [] });
+      const result = await service.listAttacks('job-1');
+      expect(result.totalItems).toBeUndefined();
     });
   });
 

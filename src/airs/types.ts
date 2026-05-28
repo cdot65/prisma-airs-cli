@@ -497,7 +497,7 @@ export interface RedTeamService {
   listAttacks(
     jobId: string,
     opts?: { severity?: string; limit?: number },
-  ): Promise<RedTeamAttack[]>;
+  ): Promise<{ attacks: RedTeamAttack[]; totalItems?: number }>;
 
   /** List attacks from a custom prompt set scan. */
   listCustomAttacks(jobId: string, opts?: { limit?: number }): Promise<RedTeamCustomAttack[]>;

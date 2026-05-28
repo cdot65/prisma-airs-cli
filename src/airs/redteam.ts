@@ -454,10 +454,15 @@ export class SdkRedTeamService implements RedTeamService {
   async listAttacks(
     jobId: string,
     opts?: { severity?: string; limit?: number },
-  ): Promise<RedTeamAttack[]> {
-    const response = await this.client.reports.listAttacks(jobId, opts);
-    return ((response as Record<string, unknown>).data as Array<Record<string, unknown>>).map(
-      (a) => ({
+  ): Promise<{ attacks: RedTeamAttack[]; totalItems?: number }> {
+    const response = (await this.client.reports.listAttacks(jobId, opts)) as Record<
+      string,
+      unknown
+    >;
+    const data = (response.data ?? []) as Array<Record<string, unknown>>;
+    const pagination = response.pagination as { total_items?: number } | undefined;
+    return {
+      attacks: data.map((a) => ({
         id: a.uuid as string,
         name: a.attack_name as string,
         severity: a.severity as string | undefined,
@@ -465,8 +470,9 @@ export class SdkRedTeamService implements RedTeamService {
         subCategory: a.sub_category as string | undefined,
         subCategoryDisplayName: a.sub_category_display_name as string | undefined,
         successful: (a.threat ?? false) as boolean,
-      }),
-    );
+      })),
+      totalItems: pagination?.total_items,
+    };
   }
 
   async listCustomAttacks(

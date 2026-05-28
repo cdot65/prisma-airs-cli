@@ -82,6 +82,26 @@ describe('renderAttackList', () => {
     expect(text).not.toContain('BYPASSED');
   });
 
+  it('prints footnote when passed via options', async () => {
+    const { renderAttackList } = await import('../../../src/cli/renderer/redteam.js');
+    renderAttackList(
+      [
+        {
+          id: 'atk-1',
+          name: undefined as unknown as string,
+          severity: 'CRITICAL',
+          category: 'SECURITY',
+          subCategory: 'JAILBREAK',
+          successful: false,
+        },
+      ],
+      { footnote: '(showing 19 of 109 expected for severity CRITICAL — #206)' },
+    );
+    const text = output.join('\n');
+    expect(text).toContain('19 of 109');
+    expect(text).toContain('CRITICAL');
+  });
+
   it('prints em-dash when neither subcategory field is present', async () => {
     const { renderAttackList } = await import('../../../src/cli/renderer/redteam.js');
     renderAttackList([

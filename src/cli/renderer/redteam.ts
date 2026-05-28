@@ -209,9 +209,11 @@ export function renderAttackList(
     subCategoryDisplayName?: string;
     successful: boolean;
   }>,
+  options?: { footnote?: string },
 ): void {
   if (attacks.length === 0) {
     console.log(chalk.dim('  No attacks found.\n'));
+    if (options?.footnote) console.log(chalk.dim(`  ${options.footnote}\n`));
     return;
   }
   console.log(chalk.bold('\n  Attacks:\n'));
@@ -223,7 +225,26 @@ export function renderAttackList(
     const label = a.subCategoryDisplayName ?? a.subCategory ?? '—';
     console.log(`    ${sev} ${result}  ${label}${a.category ? chalk.dim(` [${a.category}]`) : ''}`);
   }
+  if (options?.footnote) console.log(chalk.dim(`  ${options.footnote}`));
   console.log();
+}
+
+/**
+ * Build a footnote for `report --attacks --severity X` when the list-attacks
+ * endpoint returns fewer items than the summary breakdown expects. Returns
+ * undefined when no footnote is warranted.
+ */
+export function buildAttackListFootnote(args: {
+  severity?: string;
+  totalItems?: number;
+  severityBreakdown: Array<{ severity: string; successful: number; failed: number }>;
+}): string | undefined {
+  if (!args.severity || args.totalItems == null) return undefined;
+  const row = args.severityBreakdown.find((s) => s.severity === args.severity);
+  if (!row) return undefined;
+  const expected = row.successful + row.failed;
+  if (args.totalItems >= expected) return undefined;
+  return `(showing ${args.totalItems} of ${expected} expected for severity ${args.severity} — list-attacks endpoint excludes some variants; tracking upstream divergence at #206)`;
 }
 
 /** Render custom attack list (prompt-level results). */

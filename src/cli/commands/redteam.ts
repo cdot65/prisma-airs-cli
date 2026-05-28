@@ -8,6 +8,7 @@ import { resolveOutputDir } from '../../backup/io.js';
 import type { BackupFormat } from '../../backup/types.js';
 import { loadConfig } from '../../config/loader.js';
 import {
+  buildAttackListFootnote,
   type OutputFormat,
   renderAttackList,
   renderAuthValidation,
@@ -725,23 +726,26 @@ export function registerRedteamCommand(program: Command): void {
         if (job.jobType === 'CUSTOM') {
           const report = await service.getCustomReport(jobId);
           renderCustomReport(report);
-        } else {
-          const report = await service.getStaticReport(jobId);
-          renderStaticReport(report);
-        }
-
-        if (opts.attacks) {
-          if (job.jobType === 'CUSTOM') {
+          if (opts.attacks) {
             const attacks = await service.listCustomAttacks(jobId, {
               limit: Number.parseInt(opts.limit, 10),
             });
             renderCustomAttackList(attacks);
-          } else {
-            const attacks = await service.listAttacks(jobId, {
+          }
+        } else {
+          const report = await service.getStaticReport(jobId);
+          renderStaticReport(report);
+          if (opts.attacks) {
+            const { attacks, totalItems } = await service.listAttacks(jobId, {
               severity: opts.severity,
               limit: Number.parseInt(opts.limit, 10),
             });
-            renderAttackList(attacks);
+            const footnote = buildAttackListFootnote({
+              severity: opts.severity,
+              totalItems,
+              severityBreakdown: report.severityBreakdown,
+            });
+            renderAttackList(attacks, { footnote });
           }
         }
       } catch (err) {
