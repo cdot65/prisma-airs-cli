@@ -27,42 +27,44 @@ airs redteam categories
 ```
   Attack Categories:
 
-  Security -- Select categories for adversarial testing of security vulnerabilities
-    * Adversarial Suffix -- Adversarial suffix attacks
-    * Evasion -- Evasion techniques
-    * Indirect Prompt Injection -- Indirect prompt injection attacks
-    * Jailbreak -- Jailbreak attempts
-    * Multi-turn -- Multi-turn conversation exploits
-    * Prompt Injection -- Direct prompt injection attacks
-    * Remote Code Execution -- Remote code execution attempts
-    * System Prompt leak -- System prompt extraction
-    * Tool Leak -- Tool information leakage
-    * Malware Generation -- Malware generation requests
+  Security (SECURITY) — Select categories for adversarial testing of security vulnerabilities
+    • Adversarial Suffix (ADVERSARIAL_SUFFIX) — Adversarial suffix attacks
+    • Evasion (EVASION) — Evasion techniques
+    • Indirect Prompt Injection (INDIRECT_PROMPT_INJECTION) — Indirect prompt injection attacks
+    • Jailbreak (JAILBREAK) — Jailbreak attempts
+    • Multi-turn (MULTI_TURN) — Multi-turn conversation exploits
+    • Prompt Injection (PROMPT_INJECTION) — Direct prompt injection attacks
+    • Remote Code Execution (REMOTE_CODE_EXECUTION) — Remote code execution attempts
+    • System Prompt leak (SYSTEM_PROMPT_LEAK) — System prompt extraction
+    • Tool Leak (TOOL_LEAK) — Tool information leakage
+    • Malware Generation (MALWARE_GENERATION) — Malware generation requests
 
-  Safety -- Select categories for testing harmful or toxic content
-    * Bias -- Bias-related content
-    * CBRN -- Chemical, Biological, Radiological, Nuclear content
-    * Cybercrime -- Cybercrime-related content
-    * Drugs -- Drug-related content
-    * Hate / Toxic / Abuse -- Hate speech, toxic, or abusive content
-    * Non Violent Crimes -- Non-violent criminal activities
-    * Political -- Political content
-    * Self Harm -- Self-harm related content
-    * Sexual -- Sexual content
-    * Violent Crimes / Weapons -- Violent crimes and weapons
+  Safety (SAFETY) — Select categories for testing harmful or toxic content
+    • Bias (BIAS) — Bias-related content
+    • CBRN (CBRN) — Chemical, Biological, Radiological, Nuclear content
+    • Cybercrime (CYBERCRIME) — Cybercrime-related content
+    • Drugs (DRUGS) — Drug-related content
+    • Hate / Toxic / Abuse (HATE_TOXIC_ABUSE) — Hate speech, toxic, or abusive content
+    • Non Violent Crimes (NON_VIOLENT_CRIMES) — Non-violent criminal activities
+    • Political (POLITICAL) — Political content
+    • Self Harm (SELF_HARM) — Self-harm related content
+    • Sexual (SEXUAL) — Sexual content
+    • Violent Crimes / Weapons (VIOLENT_CRIMES_WEAPONS) — Violent crimes and weapons
 
-  Brand Reputation -- Select categories for testing off-brand content
-    * Competitor Endorsements
-    * Brand Tarnishing / Self-Criticism
-    * Discriminating Claims
-    * Political Endorsements
+  Brand Reputation (BRAND_REPUTATION) — Select categories for testing off-brand content
+    • Competitor Endorsements (COMPETITOR_ENDORSEMENTS)
+    • Brand Tarnishing / Self-Criticism (BRAND_TARNISHING)
+    • Discriminating Claims (DISCRIMINATING_CLAIMS)
+    • Political Endorsements (POLITICAL_ENDORSEMENTS)
 
-  Compliance -- Select framework for compliance across security and safety standards
-    * OWASP Top 10 for LLMs 2025
-    * MITRE ATLAS
-    * NIST AI-RMF
-    * DASF V2.0
+  Compliance (COMPLIANCE) — Select framework for compliance across security and safety standards
+    • OWASP Top 10 for LLMs 2025 (OWASP_TOP_10_LLM_2025)
+    • MITRE ATLAS (MITRE_ATLAS)
+    • NIST AI-RMF (NIST_AI_RMF)
+    • DASF V2.0 (DASF_V2)
 ```
+
+The parenthesized values are the category IDs you pass to `--categories` on a STATIC scan, e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`.
 
 ## Launch a Scan
 

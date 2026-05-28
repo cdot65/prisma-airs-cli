@@ -311,11 +311,11 @@ export function renderCategories(
   console.log(chalk.bold('\n  Attack Categories:\n'));
   for (const c of categories) {
     console.log(
-      `  ${chalk.bold(c.displayName)}${c.description ? chalk.dim(` — ${c.description}`) : ''}`,
+      `  ${chalk.bold(c.displayName)} ${chalk.cyan(`(${c.id})`)}${c.description ? chalk.dim(` — ${c.description}`) : ''}`,
     );
     for (const sc of c.subCategories) {
       console.log(
-        `    ${chalk.dim('•')} ${sc.displayName}${sc.description ? chalk.dim(` — ${sc.description}`) : ''}`,
+        `    ${chalk.dim('•')} ${sc.displayName} ${chalk.cyan(`(${sc.id})`)}${sc.description ? chalk.dim(` — ${sc.description}`) : ''}`,
       );
     }
     console.log();

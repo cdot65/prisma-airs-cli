@@ -99,28 +99,16 @@ Two things to note:
 airs redteam categories
 ```
 
-The pretty renderer prints display names (`Jailbreak`, `Prompt Injection`, …) — but a STATIC scan's `--categories` flag wants the **IDs** (`JAILBREAK`, `PROMPT_INJECTION`, …).
+The pretty renderer prints both the display name and the ID inline — the parenthesized value is what `--categories` wants:
 
-!!! warning "Gotcha: category IDs are hidden in pretty mode"
-    `airs redteam categories` shows display names only. To see the IDs you need for `--categories`, re-run with `airs --debug redteam categories` and read the raw response from `~/.prisma-airs/debug-api-*.jsonl`. The raw shape is:
+```text
+  Security (SECURITY) — …
+    • Jailbreak (JAILBREAK) — Jailbreak attempts
+    • Prompt Injection (PROMPT_INJECTION) — Direct prompt injection attacks
+    …
+```
 
-    ```json
-    [
-      { "id": "SECURITY", "display_name": "Security",
-        "sub_categories": [
-          { "id": "JAILBREAK",          "preselect": true },
-          { "id": "PROMPT_INJECTION",   "preselect": true },
-          { "id": "ADVERSARIAL_SUFFIX", "preselect": true },
-          "..."
-        ]
-      },
-      { "id": "SAFETY",           "sub_categories": [ "..." ] },
-      { "id": "BRAND_REPUTATION", "sub_categories": [ "..." ] },
-      { "id": "COMPLIANCE",       "sub_categories": [ "..." ] }
-    ]
-    ```
-
-    Top-level groups: `SECURITY`, `SAFETY`, `BRAND_REPUTATION`, `COMPLIANCE`. Each carries an array of `sub_categories` whose `id` values are the strings you put into `--categories`.
+Top-level groups: `SECURITY`, `SAFETY`, `BRAND_REPUTATION`, `COMPLIANCE`. The `id` strings you see in parens are exactly what you put into `--categories`, e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`. For the raw `/v1/categories` JSON (preselect flags etc.) use `airs --debug redteam categories` and read `~/.prisma-airs/debug-api-*.jsonl`.
 
 ---
 
@@ -332,7 +320,7 @@ A STATIC scan walks the AIRS-maintained attack library against your target. Pick
     }
     ```
 
-    This shape is not in `airs redteam scan --help` today — use `airs redteam categories` (with `--debug` per [phase 1.5](#15-list-attack-categories)) to find the IDs.
+    This shape is not in `airs redteam scan --help` today — run `airs redteam categories` and use the IDs shown in parens (see [phase 1.5](#15-list-attack-categories)).
 
 ```bash
 airs redteam scan --name "litellm-mistral-7b-static-1" \
