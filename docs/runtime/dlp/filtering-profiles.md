@@ -75,44 +75,22 @@ airs runtime dlp filtering-profiles get 6a146fe17e175b786523c03a --output json
     Updated         2026-05-25T17:06:36.032Z
 ```
 
-!!! warning "Snake-case mangling on JSON/YAML (issue #105)"
-    The JSON shape below is the **intended** SDK contract. The current CLI snake_case transformer drops the character after each camelCase boundary, so the actual live output renders `datarofile` / `scanype` / `fileased` / `nonileased` / `fileypes` instead of `data_profile` / `scan_type` / `file_based` / `non_file_based` / `file_types`. Use `pretty` until [#105](https://github.com/cdot65/prisma-airs-cli/issues/105) lands.
-
-**JSON output (target shape):**
+**JSON output:**
 
 ```json
 {
   "id": "6a10...",
   "name": "asdfafdsadsa",
-  "description": null,
-  "tenant_id": "<TENANT_ID>",
   "type": "custom",
-  "data_profile_id": 1234567890,
+  "data_profile": 1234567890,
   "direction": "c2s",
-  "file_based": true,
-  "non_file_based": false,
-  "log_severity": "low",
+  "severity": "low",
   "scan_type": "include",
+  "file_based": "yes",
+  "non_file_based": "no",
   "version": 1,
-  "audit_metadata": {
-    "created_at": 1779473698140,
-    "created_by": null,
-    "updated_at": 1779473698140,
-    "updated_by": "Strata Cloud Manager"
-  },
-  "criteria_details": [],
-  "exception_rules": [],
-  "exclusions": {
-    "app_exclusion_list": [],
-    "url_exclusion_list": [],
-    "exclusion_list": {}
-  },
-  "rule1": {
-    "action": "alert",
-    "response_page": "This file has dlp issues",
-    "show_rsp_page": "no"
-  },
-  "rule2": null
+  "file_types": 35,
+  "updated": "2026-05-25T17:06:36.032Z"
 }
 ```
 

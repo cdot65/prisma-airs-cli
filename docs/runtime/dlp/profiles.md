@@ -170,15 +170,12 @@ airs runtime dlp profiles get 11995028 --output json
   "name": "U.K. PIOCP",
   "description": "Default profile for U.K. PIOCP",
   "type": "predefined",
-  "profileype": "basic",
+  "profile_type": "basic",
   "status": "active",
   "version": 1,
   "updated": "2026-05-15T08:05:35.633Z"
 }
 ```
-
-!!! warning "Snake-case mangling on JSON/YAML (issue #105)"
-    The JSON output above shows `profileype` instead of `profile_type` — the CLI's camelCase→snake_case transformer drops the character after each boundary. Use `pretty` until [#105](https://github.com/cdot65/prisma-airs-cli/issues/105) lands.
 
 ## replace
 

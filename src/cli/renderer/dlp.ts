@@ -92,11 +92,11 @@ function fieldsToObject(
   return obj;
 }
 
-function toKey(label: string): string {
+export function toKey(label: string): string {
   return label
     .toLowerCase()
-    .replace(/[^a-z0-9]+(.)/g, (_, c) => c.toUpperCase())
-    .replace(/[^a-z0-9]/g, '');
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
 function emitDetail(

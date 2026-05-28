@@ -5,7 +5,78 @@ import {
   dlpFilteringProfiles,
   dlpPatterns,
   dlpProfiles,
+  toKey,
 } from '../../../src/cli/renderer/dlp.js';
+
+describe('toKey (snake_case label transformer)', () => {
+  it('multi-word labels become snake_case', () => {
+    expect(toKey('Data Profile')).toBe('data_profile');
+    expect(toKey('Scan Type')).toBe('scan_type');
+    expect(toKey('File Based')).toBe('file_based');
+    expect(toKey('File Types')).toBe('file_types');
+    expect(toKey('Profile Type')).toBe('profile_type');
+  });
+
+  it('hyphens become underscores', () => {
+    expect(toKey('Non-File Based')).toBe('non_file_based');
+  });
+
+  it('single-word labels lowercased unchanged', () => {
+    expect(toKey('ID')).toBe('id');
+    expect(toKey('Name')).toBe('name');
+    expect(toKey('Version')).toBe('version');
+  });
+
+  it('empty string returns empty', () => {
+    expect(toKey('')).toBe('');
+  });
+});
+
+describe('dlp renderGet json keys are snake_case (regression #105)', () => {
+  it('filtering-profiles get json uses snake_case keys, not mangled camelCase', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    dlpFilteringProfiles.renderGet(
+      {
+        id: 'a',
+        name: 'p',
+        type: 'custom',
+        data_profile_id: 11995047,
+        direction: 'c2s',
+        log_severity: 'low',
+        scan_type: 'include',
+        file_based: true,
+        non_file_based: false,
+        version: 1,
+        file_type: new Array(35).fill('txt'),
+      } as any,
+      'json',
+    );
+    const out = String(spy.mock.calls[0]?.[0]);
+    expect(out).toContain('"data_profile"');
+    expect(out).toContain('"scan_type"');
+    expect(out).toContain('"file_based"');
+    expect(out).toContain('"non_file_based"');
+    expect(out).toContain('"file_types"');
+    expect(out).not.toContain('datarofile');
+    expect(out).not.toContain('scanype');
+    expect(out).not.toContain('fileased');
+    expect(out).not.toContain('nonileased');
+    expect(out).not.toContain('fileypes');
+    spy.mockRestore();
+  });
+
+  it('profiles get json uses profile_type, not profileype', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    dlpProfiles.renderGet(
+      { id: 'dp', name: 'n', type: 'advanced', profile_type: 'predefined', version: 2 } as any,
+      'json',
+    );
+    const out = String(spy.mock.calls[0]?.[0]);
+    expect(out).toContain('"profile_type"');
+    expect(out).not.toContain('profileype');
+    spy.mockRestore();
+  });
+});
 
 describe('dlpFilteringProfiles renderer', () => {
   it('renderList json emits curated items + page meta (not raw SDK envelope)', () => {
