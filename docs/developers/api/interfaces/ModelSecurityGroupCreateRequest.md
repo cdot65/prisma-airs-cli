@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupCreateRequest
 
-Defined in: [src/airs/types.ts:532](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L532)
+Defined in: [src/airs/types.ts:533](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L533)
 
 Request to create a security group.
 
@@ -10,7 +10,7 @@ Request to create a security group.
 
 > `optional` **description?**: `string`
 
-Defined in: [src/airs/types.ts:535](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L535)
+Defined in: [src/airs/types.ts:536](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L536)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:535](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:533](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L533)
+Defined in: [src/airs/types.ts:534](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L534)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:533](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **ruleConfigurations?**: `Record`\<`string`, `Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:536](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L536)
+Defined in: [src/airs/types.ts:537](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L537)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [src/airs/types.ts:536](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **sourceType**: `string`
 
-Defined in: [src/airs/types.ts:534](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L534)
+Defined in: [src/airs/types.ts:535](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L535)

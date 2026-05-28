@@ -112,13 +112,13 @@ export interface PromptSetService {
   /** Delete a prompt. */
   deletePrompt(setUuid: string, promptUuid: string): Promise<void>;
   /** List property names. */
-  getPropertyNames(): Promise<PropertyName[]>;
+  getPropertyNames(): Promise<string[]>;
   /** Create a property name. */
-  createPropertyName(name: string): Promise<PropertyName>;
+  createPropertyName(name: string): Promise<MutationResponse>;
   /** Get values for a property. */
-  getPropertyValues(name: string): Promise<PropertyValue[]>;
+  getPropertyValues(name: string): Promise<PropertyValueList>;
   /** Create a property value. */
-  createPropertyValue(name: string, value: string): Promise<PropertyValue>;
+  createPropertyValue(name: string, value: string): Promise<MutationResponse>;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,15 +238,16 @@ export interface PromptDetail {
   promptSetId: string;
 }
 
-/** Property name entry. */
-export interface PropertyName {
+/** Values for a single property name (SDK 0.10.0 shape). */
+export interface PropertyValueList {
   name: string;
+  values: string[];
 }
 
-/** Property value entry. */
-export interface PropertyValue {
-  name: string;
-  value: string;
+/** Generic write-op response from custom-attack endpoints (SDK BaseResponseSchema). */
+export interface MutationResponse {
+  message: string;
+  status?: number;
 }
 
 /** Normalized attack category with subcategories. */

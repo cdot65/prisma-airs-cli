@@ -29,10 +29,8 @@ const sampleVersionInfo = {
   stats: { total: 42, active: 40, inactive: 2 },
 };
 
-const sampleValues = [
-  { name: 'persona', value: 'pirate' },
-  { name: 'persona', value: 'doctor' },
-];
+const sampleValues = { name: 'persona', values: ['pirate', 'doctor'] };
+const sampleNames = ['persona', 'severity'];
 
 const sampleTarget = {
   uuid: 'tg-uuid-001',
@@ -84,12 +82,12 @@ describe('renderPromptSetDetail --output', () => {
 });
 
 describe('renderPropertyValues --output', () => {
-  it('emits JSON array when format=json', async () => {
+  it('emits JSON object with name + values[] when format=json', async () => {
     const { renderPropertyValues } = await import('../../../src/cli/renderer/redteam.js');
     renderPropertyValues(sampleValues, 'json');
     const parsed = JSON.parse(output.join('\n'));
-    expect(Array.isArray(parsed)).toBe(true);
     expect(parsed).toEqual(sampleValues);
+    expect(Array.isArray(parsed.values)).toBe(true);
   });
 
   it('emits YAML when format=yaml', async () => {
@@ -99,18 +97,51 @@ describe('renderPropertyValues --output', () => {
     expect(parsed).toEqual(sampleValues);
   });
 
-  it('still renders pretty form when format=pretty', async () => {
+  it('renders pretty form with property name + bulleted values', async () => {
     const { renderPropertyValues } = await import('../../../src/cli/renderer/redteam.js');
     renderPropertyValues(sampleValues, 'pretty');
     const text = output.join('\n');
     expect(text).toContain('Property Values');
     expect(text).toContain('persona');
+    expect(text).toContain('pirate');
+    expect(text).toContain('doctor');
   });
 
-  it('prints empty-state message for empty list in pretty mode', async () => {
+  it('prints empty-state message when values list is empty in pretty mode', async () => {
     const { renderPropertyValues } = await import('../../../src/cli/renderer/redteam.js');
-    renderPropertyValues([], 'pretty');
+    renderPropertyValues({ name: 'persona', values: [] }, 'pretty');
     expect(output.join('\n')).toContain('No property values');
+  });
+});
+
+describe('renderPropertyNames --output', () => {
+  it('emits JSON string array when format=json', async () => {
+    const { renderPropertyNames } = await import('../../../src/cli/renderer/redteam.js');
+    renderPropertyNames(sampleNames, 'json');
+    const parsed = JSON.parse(output.join('\n'));
+    expect(parsed).toEqual(sampleNames);
+  });
+
+  it('emits YAML string list when format=yaml', async () => {
+    const { renderPropertyNames } = await import('../../../src/cli/renderer/redteam.js');
+    renderPropertyNames(sampleNames, 'yaml');
+    const parsed = yamlLoad(output.join('\n'));
+    expect(parsed).toEqual(sampleNames);
+  });
+
+  it('renders pretty form with bulleted names', async () => {
+    const { renderPropertyNames } = await import('../../../src/cli/renderer/redteam.js');
+    renderPropertyNames(sampleNames, 'pretty');
+    const text = output.join('\n');
+    expect(text).toContain('Property Names');
+    expect(text).toContain('persona');
+    expect(text).toContain('severity');
+  });
+
+  it('prints empty-state message for empty array in pretty mode', async () => {
+    const { renderPropertyNames } = await import('../../../src/cli/renderer/redteam.js');
+    renderPropertyNames([], 'pretty');
+    expect(output.join('\n')).toContain('No property names');
   });
 });
 

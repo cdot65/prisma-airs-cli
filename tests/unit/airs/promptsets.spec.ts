@@ -374,46 +374,63 @@ describe('SdkPromptSetService', () => {
   });
 
   describe('getPropertyNames', () => {
-    it('returns property names', async () => {
-      mockGetPropertyNames.mockResolvedValue({
-        data: [{ name: 'category' }, { name: 'severity' }],
-      });
+    it('returns property names as a flat string array (SDK 0.10.0 shape)', async () => {
+      mockGetPropertyNames.mockResolvedValue({ data: ['category', 'severity'] });
       const result = await service.getPropertyNames();
-      expect(result).toEqual([{ name: 'category' }, { name: 'severity' }]);
+      expect(result).toEqual(['category', 'severity']);
+    });
+
+    it('returns empty array when SDK response has no data', async () => {
+      mockGetPropertyNames.mockResolvedValue({});
+      const result = await service.getPropertyNames();
+      expect(result).toEqual([]);
     });
   });
 
   describe('createPropertyName', () => {
-    it('creates and returns property name', async () => {
-      mockCreatePropertyName.mockResolvedValue({ name: 'priority' });
+    it('returns the SDK mutation response (message + status)', async () => {
+      mockCreatePropertyName.mockResolvedValue({
+        message: "Property name 'priority' created successfully",
+        status: 200,
+      });
       const result = await service.createPropertyName('priority');
-      expect(result).toEqual({ name: 'priority' });
+      expect(result).toEqual({
+        message: "Property name 'priority' created successfully",
+        status: 200,
+      });
       expect(mockCreatePropertyName).toHaveBeenCalledWith({ name: 'priority' });
     });
   });
 
   describe('getPropertyValues', () => {
-    it('returns property values', async () => {
+    it('returns {name, values[]} as a single object (SDK 0.10.0 shape)', async () => {
       mockGetPropertyValues.mockResolvedValue({
-        data: [
-          { name: 'category', value: 'security' },
-          { name: 'category', value: 'safety' },
-        ],
+        name: 'category',
+        values: ['security', 'safety'],
       });
       const result = await service.getPropertyValues('category');
-      expect(result).toEqual([
-        { name: 'category', value: 'security' },
-        { name: 'category', value: 'safety' },
-      ]);
+      expect(result).toEqual({ name: 'category', values: ['security', 'safety'] });
       expect(mockGetPropertyValues).toHaveBeenCalledWith('category');
+    });
+
+    it('coerces missing values to an empty array', async () => {
+      mockGetPropertyValues.mockResolvedValue({ name: 'category' });
+      const result = await service.getPropertyValues('category');
+      expect(result).toEqual({ name: 'category', values: [] });
     });
   });
 
   describe('createPropertyValue', () => {
-    it('sends property_name/property_value matching SDK schema', async () => {
-      mockCreatePropertyValue.mockResolvedValue({ name: 'category', value: 'compliance' });
+    it('sends property_name/property_value and returns mutation response', async () => {
+      mockCreatePropertyValue.mockResolvedValue({
+        message: "Property value 'compliance' created successfully",
+        status: 200,
+      });
       const result = await service.createPropertyValue('category', 'compliance');
-      expect(result).toEqual({ name: 'category', value: 'compliance' });
+      expect(result).toEqual({
+        message: "Property value 'compliance' created successfully",
+        status: 200,
+      });
       expect(mockCreatePropertyValue).toHaveBeenCalledWith({
         property_name: 'category',
         property_value: 'compliance',

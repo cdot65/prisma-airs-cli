@@ -538,22 +538,25 @@ export function renderPromptDetail(p: {
 }
 
 /** Render property names list. */
-export function renderPropertyNames(
-  names: Array<{ name: string }>,
-  format: OutputFormat = 'pretty',
-): void {
+export function renderPropertyNames(names: string[], format: OutputFormat = 'pretty'): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(names, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(names));
+    } else {
+      const rows = names.map((n) => ({ name: n }));
+      console.log(formatOutput(rows, [{ key: 'name', label: 'Name' }], format));
+    }
+    return;
+  }
   if (names.length === 0) {
     console.log(chalk.dim('  No property names found.\n'));
     return;
   }
-  if (format !== 'pretty') {
-    const rows = names.map((n) => ({ name: n.name }));
-    console.log(formatOutput(rows, [{ key: 'name', label: 'Name' }], format));
-    return;
-  }
   console.log(chalk.bold('\n  Property Names:\n'));
   for (const n of names) {
-    console.log(`    ${chalk.dim('•')} ${n.name}`);
+    console.log(`    ${chalk.dim('•')} ${n}`);
   }
   console.log();
 }
@@ -602,26 +605,27 @@ export function renderEulaContent(content: { content: string }): void {
   console.log(`    ${content.content}\n`);
 }
 
-/** Render property values. */
+/** Render property values for a single property name. */
 export function renderPropertyValues(
-  values: Array<{ name: string; value: string }>,
+  payload: { name: string; values: string[] },
   format: OutputFormat = 'pretty',
 ): void {
   if (format !== 'pretty') {
     if (format === 'json') {
-      console.log(JSON.stringify(values, null, 2));
+      console.log(JSON.stringify(payload, null, 2));
     } else if (format === 'yaml') {
-      console.log(yamlDump(values));
+      console.log(yamlDump(payload));
     }
     return;
   }
-  if (values.length === 0) {
+  if (payload.values.length === 0) {
     console.log(chalk.dim('  No property values found.\n'));
     return;
   }
   console.log(chalk.bold('\n  Property Values:\n'));
-  for (const v of values) {
-    console.log(`    ${v.name}: ${chalk.dim(v.value)}`);
+  console.log(`    ${chalk.dim('Property:')} ${payload.name}`);
+  for (const v of payload.values) {
+    console.log(`      ${chalk.dim('•')} ${v}`);
   }
   console.log();
 }
