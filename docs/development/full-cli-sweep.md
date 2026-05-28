@@ -50,7 +50,7 @@ airs runtime deployment-profiles list
 airs runtime deployment-profiles list --unactivated
 
 # DLP profiles
-airs runtime dlp-profiles list
+airs runtime dlp profiles list
 
 # Scan logs (last 24h)
 airs runtime scan-logs query --interval 24 --unit hours
@@ -128,7 +128,7 @@ airs model-security pypi-auth
 
 ### B.4 — Runtime DLP (data patterns, profiles, dictionaries, filtering profiles)
 
-Read-only sweep of the four DLP resources exposed by `airs runtime dlp`. Distinct from `airs runtime dlp-profiles list` above (that's the read-only DLP profile list used in Security Profiles).
+Read-only sweep of the four DLP resources exposed by `airs runtime dlp`.
 
 ```bash
 # Lists (Spring Page<> envelopes; totalElements/totalPages emit as null)

@@ -80,7 +80,7 @@ airs runtime deployment-profiles list --unactivated
 ## DLP Profiles
 
 ```bash
-airs runtime dlp-profiles list
+airs runtime dlp profiles list
 ```
 
 ## Scan Logs
