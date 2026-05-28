@@ -15,6 +15,7 @@ const mockScansList = vi.fn();
 const mockScansAbort = vi.fn();
 const mockScansGetCategories = vi.fn();
 const mockReportsGetStaticReport = vi.fn();
+const mockReportsGetDynamicReport = vi.fn();
 const mockReportsListAttacks = vi.fn();
 const mockCustomAttackReportsGetReport = vi.fn();
 const mockCustomAttackReportsListCustomAttacks = vi.fn();
@@ -57,6 +58,7 @@ function makeMockClient() {
     },
     reports: {
       getStaticReport: mockReportsGetStaticReport,
+      getDynamicReport: mockReportsGetDynamicReport,
       listAttacks: mockReportsListAttacks,
     },
     customAttackReports: {
@@ -424,6 +426,71 @@ describe('SdkRedTeamService', () => {
         'The application has high risk with an overall Risk Score of 83.63/100.',
       );
       expect(result.reportSummary).not.toContain('{{HIGH_RISK}}');
+    });
+  });
+
+  describe('getDynamicReport', () => {
+    it('calls SDK reports.getDynamicReport with the job id', async () => {
+      mockReportsGetDynamicReport.mockResolvedValue({
+        total_goals: 12,
+        goals_achieved: 3,
+        total_streams: 24,
+        total_threats: 5,
+        score: 75,
+        asr: 0.25,
+        report_summary: 'Dynamic scan summary',
+      });
+
+      await service.getDynamicReport('job-dyn-1');
+      expect(mockReportsGetDynamicReport).toHaveBeenCalledWith('job-dyn-1');
+    });
+
+    it('returns normalized dynamic report', async () => {
+      mockReportsGetDynamicReport.mockResolvedValue({
+        total_goals: 12,
+        goals_achieved: 3,
+        total_streams: 24,
+        total_threats: 5,
+        score: 75,
+        asr: 0.25,
+        report_summary: 'Dynamic scan summary',
+      });
+
+      const result = await service.getDynamicReport('job-dyn-1');
+      expect(result.totalGoals).toBe(12);
+      expect(result.goalsAchieved).toBe(3);
+      expect(result.totalStreams).toBe(24);
+      expect(result.totalThreats).toBe(5);
+      expect(result.score).toBe(75);
+      expect(result.asr).toBe(0.25);
+      expect(result.reportSummary).toBe('Dynamic scan summary');
+    });
+
+    it('interpolates {{HIGH_RISK}} in reportSummary', async () => {
+      mockReportsGetDynamicReport.mockResolvedValue({
+        total_goals: 5,
+        goals_achieved: 4,
+        total_streams: 10,
+        total_threats: 4,
+        score: 20,
+        asr: 0.8,
+        report_summary: 'The application has {{HIGH_RISK}} for dynamic exploits.',
+      });
+
+      const result = await service.getDynamicReport('job-dyn-2');
+      expect(result.reportSummary).toBe(
+        'The application has high risk for dynamic exploits.',
+      );
+    });
+
+    it('handles missing optional fields', async () => {
+      mockReportsGetDynamicReport.mockResolvedValue({});
+      const result = await service.getDynamicReport('job-dyn-3');
+      expect(result.totalGoals).toBeUndefined();
+      expect(result.goalsAchieved).toBeUndefined();
+      expect(result.score).toBeUndefined();
+      expect(result.asr).toBeUndefined();
+      expect(result.reportSummary).toBeUndefined();
     });
   });
 
