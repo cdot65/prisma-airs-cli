@@ -2,7 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { buildProgram } from '../src/cli/program.js';
 import { loadExamples } from './cli-docs/examples.js';
-import { renderGroupPage, renderIndex } from './cli-docs/render.js';
+import { renderGroupPage, renderIndex, renderSummary } from './cli-docs/render.js';
 import { collectPages, walkProgram } from './cli-docs/walk.js';
 
 const OUT_DIR = 'docs/cli';
@@ -26,6 +26,10 @@ export function generate(outDir = OUT_DIR, examplesDir = EXAMPLES_DIR): string[]
   const indexFile = join(outDir, 'index.md');
   writeFileSync(indexFile, renderIndex(pages));
   written.push(indexFile);
+
+  const summaryFile = join(outDir, 'SUMMARY.md');
+  writeFileSync(summaryFile, renderSummary(pages));
+  written.push(summaryFile);
   return written;
 }
 

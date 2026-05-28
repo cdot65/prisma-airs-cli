@@ -80,3 +80,24 @@ export function renderIndex(pages: PageNode[]): string {
     '',
   ].join('\n');
 }
+
+export function renderSummary(pages: PageNode[]): string {
+  const groups = new Map<string, PageNode[]>();
+  for (const p of pages) {
+    const top = p.slug.split('/')[0];
+    const arr = groups.get(top) ?? [];
+    arr.push(p);
+    groups.set(top, arr);
+  }
+  const out: string[] = ['* [CLI Reference](index.md)'];
+  for (const top of groups.keys()) {
+    const label = top.charAt(0).toUpperCase() + top.slice(1);
+    out.push(`* ${label}`);
+    const sorted = (groups.get(top) ?? []).slice().sort((a, b) => a.title.localeCompare(b.title));
+    for (const p of sorted) {
+      out.push(`    * [airs ${p.title}](${p.slug}.md)`);
+    }
+  }
+  out.push('');
+  return out.join('\n');
+}
