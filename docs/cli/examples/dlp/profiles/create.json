@@ -1,0 +1,22 @@
+{
+  "name": "docs-example-profile",
+  "description": "Docs example profile",
+  "profile_type": "advanced",
+  "type": "custom",
+  "detection_rules": [
+    {
+      "rule_type": "expression_tree",
+      "expression_tree": {
+        "operator_type": "or",
+        "rule_item": {
+          "detection_technique": "regex",
+          "id": "000000000000000000000099",
+          "match_type": "include",
+          "confidence_level": "high",
+          "occurrence_count": 1,
+          "occurrence_operator_type": "more_than_equal_to"
+        }
+      }
+    }
+  ]
+}

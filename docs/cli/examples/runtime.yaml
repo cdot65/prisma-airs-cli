@@ -324,6 +324,88 @@
           "version": 1
         }
 
+"runtime dlp patterns get":
+  examples:
+    - note: Pretty output (default — predefined pattern)
+      input: airs runtime dlp patterns get 000000000000000000000001
+      output: |
+          Data Pattern:
+
+            ID           000000000000000000000001
+            Name         API Credentials Client ID - Amazon Web Services AWS
+            Description  This pattern identifies an Amazon Web Services client ID.
+            Type         predefined
+            Status       disabled
+            Technique    regex
+            Confidence   high, low
+            Version      1
+            Updated      2026-05-25T15:50:58.037Z
+    - note: JSON output
+      input: airs runtime dlp patterns get 000000000000000000000001 --output json
+      output: |
+        {
+          "id": "000000000000000000000001",
+          "name": "API Credentials Client ID - Amazon Web Services AWS",
+          "description": "This pattern identifies an Amazon Web Services client ID.",
+          "type": "predefined",
+          "status": "disabled",
+          "technique": "regex",
+          "confidence": "high, low",
+          "version": 1,
+          "updated": "2026-05-25T15:50:58.037Z"
+        }
+    - note: YAML output
+      input: airs runtime dlp patterns get 000000000000000000000001 --output yaml
+      output: |
+        id: 000000000000000000000001
+        name: API Credentials Client ID - Amazon Web Services AWS
+        description: This pattern identifies an Amazon Web Services client ID.
+        type: predefined
+        status: disabled
+        technique: regex
+        confidence: high, low
+        version: 1
+        updated: '2026-05-25T15:50:58.037Z'
+
+"runtime dlp patterns replace":
+  examples:
+    - note: Full-replace a custom pattern from a body fixture (see docs/cli/examples/dlp/patterns/replace.json). API returns the new version.
+      input: airs runtime dlp patterns replace 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/replace.json --output json
+      output: |
+        {
+          "action": "replaced",
+          "id": "000000000000000000000099",
+          "name": "docs-example-pattern",
+          "type": "custom",
+          "status": "active",
+          "version": 2
+        }
+
+"runtime dlp patterns patch":
+  examples:
+    - note: Merge-patch a pattern's description from a body fixture (see docs/cli/examples/dlp/patterns/patch.json). Omitted fields are unchanged.
+      input: airs runtime dlp patterns patch 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/patch.json --output json
+      output: |
+        {
+          "action": "patched",
+          "id": "000000000000000000000099",
+          "name": "docs-example-pattern",
+          "type": "custom",
+          "status": "active",
+          "version": 2
+        }
+    - note: Merge-patch inline via --set (scalar fields only; quote regex/JSON literals as needed)
+      input: airs runtime dlp patterns patch 000000000000000000000099 --set description='docs example' --output json
+      output: |
+        {
+          "action": "patched",
+          "id": "000000000000000000000099",
+          "name": "docs-example-pattern",
+          "type": "custom",
+          "status": "active",
+          "version": 2
+        }
+
 "runtime dlp patterns delete":
   examples:
     - note: Soft-delete (archive) a data pattern by id
@@ -868,6 +950,60 @@
           last: false
           empty: false
 
+"runtime dlp profiles get":
+  examples:
+    - note: Pretty output (default — predefined profile)
+      input: airs runtime dlp profiles get 00000001
+      output: |
+          Data Profile:
+
+            ID            00000001
+            Name          Bulk CCN
+            Description   Default profile for Bulk CCN
+            Type          predefined
+            Profile Type  basic
+            Status        active
+            Version       1
+            Updated       2026-05-15T08:05:35.599Z
+    - note: JSON output
+      input: airs runtime dlp profiles get 00000001 --output json
+      output: |
+        {
+          "id": "00000001",
+          "name": "Bulk CCN",
+          "description": "Default profile for Bulk CCN",
+          "type": "predefined",
+          "profile_type": "basic",
+          "status": "active",
+          "version": 1,
+          "updated": "2026-05-15T08:05:35.599Z"
+        }
+    - note: YAML output
+      input: airs runtime dlp profiles get 00000001 --output yaml
+      output: |
+        id: '00000001'
+        name: Bulk CCN
+        description: Default profile for Bulk CCN
+        type: predefined
+        profile_type: basic
+        status: active
+        version: 1
+        updated: '2026-05-15T08:05:35.599Z'
+
+"runtime dlp profiles create":
+  examples:
+    - note: Create a custom advanced profile from a body fixture (see docs/cli/examples/dlp/profiles/create.json). Body uses the discriminated-union detection_rules shape (rule_type=expression_tree).
+      input: airs runtime dlp profiles create --body-file docs/cli/examples/dlp/profiles/create.json --output json
+      output: |
+        {
+          "action": "created",
+          "id": "00000099",
+          "name": "docs-example-profile",
+          "type": "custom",
+          "status": "active",
+          "version": 1
+        }
+
 "runtime dlp profiles delete":
   examples:
     - note: Stub — DLP data profiles have no DELETE endpoint; soft-delete via patch
@@ -1322,6 +1458,58 @@
           size: 2
           total: 29
           returned: 2
+
+"runtime dlp filtering-profiles get":
+  examples:
+    - note: Pretty output (default — predefined filtering profile)
+      input: airs runtime dlp filtering-profiles get 000000000000000000000001
+      output: |
+          Data Filtering Profile:
+
+            ID              000000000000000000000001
+            Name            Bulk CCN
+            Type            predefined
+            Data Profile    00000001
+            Direction       c2s
+            Severity        low
+            Scan Type       include
+            File Based      yes
+            Non-File Based  no
+            Version         1
+            File Types      35
+            Updated         2026-05-15T08:05:35.599Z
+    - note: JSON output
+      input: airs runtime dlp filtering-profiles get 000000000000000000000001 --output json
+      output: |
+        {
+          "id": "000000000000000000000001",
+          "name": "Bulk CCN",
+          "type": "predefined",
+          "data_profile": 1,
+          "direction": "c2s",
+          "severity": "low",
+          "scan_type": "include",
+          "file_based": "yes",
+          "non_file_based": "no",
+          "version": 1,
+          "file_types": 35,
+          "updated": "2026-05-15T08:05:35.599Z"
+        }
+    - note: YAML output
+      input: airs runtime dlp filtering-profiles get 000000000000000000000001 --output yaml
+      output: |
+        id: 000000000000000000000001
+        name: Bulk CCN
+        type: predefined
+        data_profile: 1
+        direction: c2s
+        severity: low
+        scan_type: include
+        file_based: 'yes'
+        non_file_based: 'no'
+        version: 1
+        file_types: 35
+        updated: '2026-05-15T08:05:35.599Z'
 
 "runtime dlp filtering-profiles replace":
   examples:

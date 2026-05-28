@@ -12,21 +12,9 @@ runtime customer-apps delete
 runtime profiles delete
 # Blocked by SDK — see https://github.com/cdot65/prisma-airs-sdk/issues/165
 runtime topics delete
-# Blocked by CLI bug — see https://github.com/cdot65/prisma-airs-cli/issues/105
-runtime dlp filtering-profiles get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
-runtime dlp patterns get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
-runtime dlp patterns replace
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/98
-runtime dlp patterns patch
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
-runtime dlp profiles create
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/80
-runtime dlp profiles get
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
+# Blocked by upstream API 500 (was 400; create now works) — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles replace
-# Blocked by upstream API 400 — see https://github.com/cdot65/prisma-airs-cli/issues/101
+# Blocked by upstream API 500 (was 400; create now works) — see https://github.com/cdot65/prisma-airs-cli/issues/101
 runtime dlp profiles patch
 # Blocked by upstream — see https://github.com/cdot65/prisma-airs-cli/issues/99
 runtime dlp dictionaries create

@@ -168,8 +168,63 @@ airs runtime dlp patterns get [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default — predefined pattern)*
+
+```bash
+airs runtime dlp patterns get 000000000000000000000001
+```
+
+```text
+Data Pattern:
+
+  ID           000000000000000000000001
+  Name         API Credentials Client ID - Amazon Web Services AWS
+  Description  This pattern identifies an Amazon Web Services client ID.
+  Type         predefined
+  Status       disabled
+  Technique    regex
+  Confidence   high, low
+  Version      1
+  Updated      2026-05-25T15:50:58.037Z
+```
+
+*JSON output*
+
+```bash
+airs runtime dlp patterns get 000000000000000000000001 --output json
+```
+
+```text
+{
+  "id": "000000000000000000000001",
+  "name": "API Credentials Client ID - Amazon Web Services AWS",
+  "description": "This pattern identifies an Amazon Web Services client ID.",
+  "type": "predefined",
+  "status": "disabled",
+  "technique": "regex",
+  "confidence": "high, low",
+  "version": 1,
+  "updated": "2026-05-25T15:50:58.037Z"
+}
+```
+
+*YAML output*
+
+```bash
+airs runtime dlp patterns get 000000000000000000000001 --output yaml
+```
+
+```text
+id: 000000000000000000000001
+name: API Credentials Client ID - Amazon Web Services AWS
+description: This pattern identifies an Amazon Web Services client ID.
+type: predefined
+status: disabled
+technique: regex
+confidence: high, low
+version: 1
+updated: '2026-05-25T15:50:58.037Z'
+```
 
 ---
 
@@ -206,8 +261,22 @@ airs runtime dlp patterns replace [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Full-replace a custom pattern from a body fixture (see docs/cli/examples/dlp/patterns/replace.json). API returns the new version.*
+
+```bash
+airs runtime dlp patterns replace 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/replace.json --output json
+```
+
+```text
+{
+  "action": "replaced",
+  "id": "000000000000000000000099",
+  "name": "docs-example-pattern",
+  "type": "custom",
+  "status": "active",
+  "version": 2
+}
+```
 
 ---
 
@@ -234,8 +303,39 @@ airs runtime dlp patterns patch [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Merge-patch a pattern's description from a body fixture (see docs/cli/examples/dlp/patterns/patch.json). Omitted fields are unchanged.*
+
+```bash
+airs runtime dlp patterns patch 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/patch.json --output json
+```
+
+```text
+{
+  "action": "patched",
+  "id": "000000000000000000000099",
+  "name": "docs-example-pattern",
+  "type": "custom",
+  "status": "active",
+  "version": 2
+}
+```
+
+*Merge-patch inline via --set (scalar fields only; quote regex/JSON literals as needed)*
+
+```bash
+airs runtime dlp patterns patch 000000000000000000000099 --set description='docs example' --output json
+```
+
+```text
+{
+  "action": "patched",
+  "id": "000000000000000000000099",
+  "name": "docs-example-pattern",
+  "type": "custom",
+  "status": "active",
+  "version": 2
+}
+```
 
 ---
 

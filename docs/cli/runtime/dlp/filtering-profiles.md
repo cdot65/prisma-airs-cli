@@ -120,8 +120,72 @@ airs runtime dlp filtering-profiles get [options] <id>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Pretty output (default — predefined filtering profile)*
+
+```bash
+airs runtime dlp filtering-profiles get 000000000000000000000001
+```
+
+```text
+Data Filtering Profile:
+
+  ID              000000000000000000000001
+  Name            Bulk CCN
+  Type            predefined
+  Data Profile    00000001
+  Direction       c2s
+  Severity        low
+  Scan Type       include
+  File Based      yes
+  Non-File Based  no
+  Version         1
+  File Types      35
+  Updated         2026-05-15T08:05:35.599Z
+```
+
+*JSON output*
+
+```bash
+airs runtime dlp filtering-profiles get 000000000000000000000001 --output json
+```
+
+```text
+{
+  "id": "000000000000000000000001",
+  "name": "Bulk CCN",
+  "type": "predefined",
+  "data_profile": 1,
+  "direction": "c2s",
+  "severity": "low",
+  "scan_type": "include",
+  "file_based": "yes",
+  "non_file_based": "no",
+  "version": 1,
+  "file_types": 35,
+  "updated": "2026-05-15T08:05:35.599Z"
+}
+```
+
+*YAML output*
+
+```bash
+airs runtime dlp filtering-profiles get 000000000000000000000001 --output yaml
+```
+
+```text
+id: 000000000000000000000001
+name: Bulk CCN
+type: predefined
+data_profile: 1
+direction: c2s
+severity: low
+scan_type: include
+file_based: 'yes'
+non_file_based: 'no'
+version: 1
+file_types: 35
+updated: '2026-05-15T08:05:35.599Z'
+```
 
 ---
 
