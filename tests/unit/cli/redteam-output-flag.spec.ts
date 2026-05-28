@@ -34,6 +34,26 @@ const sampleValues = [
   { name: 'persona', value: 'doctor' },
 ];
 
+const sampleTarget = {
+  uuid: 'tg-uuid-001',
+  name: 'litellm-mistral-7b',
+  status: 'INACTIVE',
+  targetType: 'APPLICATION',
+  active: false,
+  connectionParams: {
+    api_endpoint: 'http://litellm.example.local:4000/v1/chat/completions',
+    request_headers: { 'Content-Type': 'application/json', apikey: 'sk-xxx' },
+    request_json: {
+      model: 'mistral-7b',
+      messages: [{ role: 'user', content: '{INPUT}' }],
+    },
+    response_json: { choices: [{ message: { content: '' } }] },
+    response_key: 'choices.0.message.content',
+  },
+  background: { industry: 'Generic', use_case: 'Chatbot' },
+  metadata: { rate_limit: 50, multi_turn: false },
+};
+
 describe('renderPromptSetDetail --output', () => {
   it('emits JSON with combined detail + versionInfo when format=json', async () => {
     const { renderPromptSetDetail } = await import('../../../src/cli/renderer/redteam.js');
@@ -91,5 +111,64 @@ describe('renderPropertyValues --output', () => {
     const { renderPropertyValues } = await import('../../../src/cli/renderer/redteam.js');
     renderPropertyValues([], 'pretty');
     expect(output.join('\n')).toContain('No property values');
+  });
+});
+
+describe('renderTargetDetail --output', () => {
+  it('emits JSON with full target payload when format=json', async () => {
+    const { renderTargetDetail } = await import('../../../src/cli/renderer/redteam.js');
+    renderTargetDetail(sampleTarget, 'json');
+    const parsed = JSON.parse(output.join('\n'));
+    expect(parsed.uuid).toBe('tg-uuid-001');
+    expect(parsed.name).toBe('litellm-mistral-7b');
+    expect(parsed.connectionParams.request_headers).toEqual({
+      'Content-Type': 'application/json',
+      apikey: 'sk-xxx',
+    });
+    expect(parsed.connectionParams.request_json.model).toBe('mistral-7b');
+  });
+
+  it('emits YAML with full target payload when format=yaml', async () => {
+    const { renderTargetDetail } = await import('../../../src/cli/renderer/redteam.js');
+    renderTargetDetail(sampleTarget, 'yaml');
+    const parsed = yamlLoad(output.join('\n')) as Record<string, unknown>;
+    expect(parsed.uuid).toBe('tg-uuid-001');
+    const conn = parsed.connectionParams as Record<string, unknown>;
+    expect((conn.request_headers as Record<string, string>).apikey).toBe('sk-xxx');
+  });
+
+  it('renders nested connection_params as indented JSON in pretty mode (not [object Object])', async () => {
+    const { renderTargetDetail } = await import('../../../src/cli/renderer/redteam.js');
+    renderTargetDetail(sampleTarget, 'pretty');
+    const text = output.join('\n');
+    expect(text).not.toContain('[object Object]');
+    expect(text).toContain('request_headers');
+    expect(text).toContain('apikey');
+    expect(text).toContain('sk-xxx');
+    expect(text).toContain('mistral-7b');
+  });
+
+  it('defaults to pretty when no format is passed', async () => {
+    const { renderTargetDetail } = await import('../../../src/cli/renderer/redteam.js');
+    renderTargetDetail(sampleTarget);
+    const text = output.join('\n');
+    expect(text).toContain('Target Detail');
+    expect(text).not.toContain('[object Object]');
+  });
+
+  it('renders nested background/metadata objects without [object Object]', async () => {
+    const { renderTargetDetail } = await import('../../../src/cli/renderer/redteam.js');
+    renderTargetDetail(
+      {
+        ...sampleTarget,
+        background: { industry: 'Generic', nested: { foo: 'bar' } },
+        metadata: { tags: { a: 1, b: 2 } },
+      },
+      'pretty',
+    );
+    const text = output.join('\n');
+    expect(text).not.toContain('[object Object]');
+    expect(text).toContain('foo');
+    expect(text).toContain('bar');
   });
 });

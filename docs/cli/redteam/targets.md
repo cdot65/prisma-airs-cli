@@ -47,9 +47,15 @@ airs redteam targets get [options] <uuid>
 
 - `uuid` (required) —
 
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+
 #### Examples
 
-*Show full target detail (connection, background, metadata)*
+*Show full target detail (nested connection_params expand inline as indented JSON)*
 
 ```bash
 airs redteam targets get 00000000-0000-0000-0000-000000000001
@@ -69,9 +75,28 @@ Target Detail:
 
   Connection:
     api_endpoint: https://api.example.com/v1/chat/completions
-    request_headers: [object Object]
-    request_json: [object Object]
-    response_json: [object Object]
+    request_headers: {
+      "Content-Type": "application/json",
+      "apikey": "<api-key>"
+    }
+    request_json: {
+      "model": "<model-id>",
+      "messages": [
+        {
+          "role": "user",
+          "content": "{INPUT}"
+        }
+      ]
+    }
+    response_json: {
+      "choices": [
+        {
+          "message": {
+            "content": ""
+          }
+        }
+      ]
+    }
     response_key: content
     target_connection_config: null
     curl: curl \
@@ -95,6 +120,41 @@ Target Detail:
     content_filter_error_code: 403
     probe_message: I like turtles
     request_timeout: 110
+```
+
+*Emit full target as JSON for piping to jq*
+
+```bash
+airs redteam targets get 00000000-0000-0000-0000-000000000001 --output json
+```
+
+```text
+{
+  "uuid": "00000000-0000-0000-0000-000000000001",
+  "name": "example-target",
+  "status": "ACTIVE",
+  "targetType": "APPLICATION",
+  "active": true,
+  "connectionParams": {
+    "api_endpoint": "https://api.example.com/v1/chat/completions",
+    "request_headers": {
+      "Content-Type": "application/json",
+      "apikey": "<api-key>"
+    },
+    "request_json": {
+      "model": "<model-id>",
+      "messages": [
+        { "role": "user", "content": "{INPUT}" }
+      ]
+    },
+    "response_json": {
+      "choices": [
+        { "message": { "content": "" } }
+      ]
+    },
+    "response_key": "content"
+  }
+}
 ```
 
 ---

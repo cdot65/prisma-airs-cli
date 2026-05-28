@@ -361,17 +361,37 @@ export function renderPromptSetList(
   console.log();
 }
 
+/** Format a scalar/object value for pretty rendering — nested objects become indented JSON. */
+function formatDetailValue(value: unknown, indent: string): string {
+  if (value === null || value === undefined) return String(value);
+  if (typeof value !== 'object') return String(value);
+  const json = JSON.stringify(value, null, 2);
+  // Indent every line after the first so the block lines up under the key.
+  return json.split('\n').join(`\n${indent}`);
+}
+
 /** Render target detail. */
-export function renderTargetDetail(target: {
-  uuid: string;
-  name: string;
-  status: string;
-  targetType?: string;
-  active: boolean;
-  connectionParams?: Record<string, unknown>;
-  background?: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
-}): void {
+export function renderTargetDetail(
+  target: {
+    uuid: string;
+    name: string;
+    status: string;
+    targetType?: string;
+    active: boolean;
+    connectionParams?: Record<string, unknown>;
+    background?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(target, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(target));
+    }
+    return;
+  }
   console.log(chalk.bold('\n  Target Detail:\n'));
   console.log(`    UUID:   ${chalk.dim(target.uuid)}`);
   console.log(`    Name:   ${target.name}`);
@@ -382,19 +402,19 @@ export function renderTargetDetail(target: {
   if (target.connectionParams) {
     console.log(chalk.bold('\n    Connection:'));
     for (const [k, v] of Object.entries(target.connectionParams)) {
-      console.log(`      ${k}: ${chalk.dim(String(v))}`);
+      console.log(`      ${k}: ${chalk.dim(formatDetailValue(v, '      '))}`);
     }
   }
   if (target.background) {
     console.log(chalk.bold('\n    Background:'));
     for (const [k, v] of Object.entries(target.background)) {
-      if (v != null) console.log(`      ${k}: ${chalk.dim(String(v))}`);
+      if (v != null) console.log(`      ${k}: ${chalk.dim(formatDetailValue(v, '      '))}`);
     }
   }
   if (target.metadata) {
     console.log(chalk.bold('\n    Metadata:'));
     for (const [k, v] of Object.entries(target.metadata)) {
-      if (v != null) console.log(`      ${k}: ${chalk.dim(String(v))}`);
+      if (v != null) console.log(`      ${k}: ${chalk.dim(formatDetailValue(v, '      '))}`);
     }
   }
   console.log();

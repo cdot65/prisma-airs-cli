@@ -859,12 +859,14 @@ export function registerRedteamCommand(program: Command): void {
   targets
     .command('get <uuid>')
     .description('Get target details')
-    .action(async (uuid: string) => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (uuid: string, opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
         const target = await service.getTarget(uuid);
-        renderTargetDetail(target);
+        renderTargetDetail(target, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
