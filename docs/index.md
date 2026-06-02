@@ -19,7 +19,7 @@ title: Home
 
 ---
 
-Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities — runtime prompt scanning and configuration management, LLM-driven guardrail generation, adversarial AI red teaming, ML model supply chain security, and multi-topic profile audits with conflict detection. Six LLM provider configurations are supported out of the box.
+Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities — runtime prompt scanning and configuration management, custom topic guardrail commands, adversarial AI red teaming, ML model supply chain security, and multi-topic profile audits with conflict detection. Six LLM provider configurations are supported out of the box.
 
 ---
 
@@ -39,7 +39,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     ---
 
-    LLM-driven feedback loop that generates, deploys, tests, evaluates, and iteratively refines custom topic guardrails until coverage meets your target threshold.
+    Atomic `runtime topics` commands — create, apply, evaluate, and revert custom topic guardrails. An external agent orchestrates the create–apply–eval–revert loop to refine coverage against a static prompt set.
 
     [:octicons-arrow-right-24: Guardrail Generation](runtime/guardrails/overview.md)
 
@@ -91,23 +91,13 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     [:octicons-arrow-right-24: LLM Providers](providers/overview.md)
 
--   :material-memory:{ .lg .middle } **Cross-Run Memory**
+-   :material-clipboard-text-search:{ .lg .middle } **DLP Detection**
 
     ---
 
-    Persists learnings across guardrail runs so the LLM avoids repeating past mistakes. Budget-aware injection keeps prompts focused.
+    Generate, scan, and manage DLP filtering profiles, patterns, and dictionaries for sensitive-data detection.
 
--   :material-play-pause:{ .lg .middle } **Resumable Runs**
-
-    ---
-
-    Every guardrail iteration checkpoints to disk. Resume failed or paused runs from exactly where they left off.
-
--   :material-test-tube:{ .lg .middle } **Test Composition**
-
-    ---
-
-    Carried failures, regression tiers, and fresh LLM-generated tests are composed each iteration with weighted category generation.
+    [:octicons-arrow-right-24: DLP](runtime/dlp/overview.md)
 
 </div>
 
@@ -145,7 +135,7 @@ Prisma AIRS CLI is a CLI tool that provides full operational coverage over **Pal
 
     ---
 
-    System overview, core loop, memory system, and design decisions.
+    System overview, core loop, and design decisions.
 
     [:octicons-arrow-right-24: Architecture](architecture/overview.md)
 

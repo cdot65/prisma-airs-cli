@@ -11,11 +11,11 @@ The guardrail workflow uses four atomic commands (`create`, `apply`, `eval`, `re
 !!! note "Agent-driven"
     The agent provides all intelligence (topic generation, analysis, improvement decisions). The CLI provides only the AIRS API operations and metric computation.
 
-## 2. Topic Name Locking
+## 2. Topic Name as Identity
 
-The topic name is generated in iteration 1 and locked for all subsequent iterations. Only the description and examples are refined.
+The topic name is the stable identity for a guardrail. The external agent picks a name once and keeps it fixed while refining only the description and examples.
 
-**Rationale:** AIRS topics are identified by name. Changing the name each iteration would create new entities rather than updating the existing one, leaving orphaned topics and breaking profile references. Locking the name ensures a stable identity throughout the refinement process.
+**Rationale:** AIRS topics are identified by name. Changing the name would create new entities rather than updating the existing one, leaving orphaned topics and breaking profile references. Keeping the name stable ensures a consistent identity throughout refinement (see Upsert-by-Name below).
 
 ## 3. Static Prompt Set Evaluation
 
@@ -36,11 +36,11 @@ CLI flags  >  Environment variables  >  Config file (~/.prisma-airs/config.json)
 !!! tip "Home Directory Expansion"
     Paths containing `~` are expanded via `expandHome()` during config loading, so `~/.prisma-airs/config.json` works on all platforms.
 
-## 5. Post-LLM Clamping
+## 5. Constraint Validation on Create
 
-LLM output is clamped to AIRS constraints *after* generation rather than relying solely on Zod schema validation.
+`runtime topics create` validates every topic against AIRS hard limits via `validateTopic()` before upserting, rejecting anything that overflows rather than silently truncating it.
 
-**Rationale:** LLMs routinely exceed the 250-character AIRS description limit despite prompt instructions. `clampTopic()` enforces hard limits:
+**Rationale:** The external agent supplies topic definitions; surfacing a clear validation error keeps the agent's loop honest and prevents AIRS from rejecting a malformed topic later. The enforced limits:
 
 | Constraint | Limit |
 |-----------|-------|
@@ -50,10 +50,8 @@ LLM output is clamped to AIRS constraints *after* generation rather than relying
 | Max examples | 5 |
 | Combined (description + all examples) | 1000 characters |
 
-The clamping strategy is ordered: drop trailing examples first if the combined limit is exceeded, then trim the description as a last resort. This preserves as much semantic content as possible.
-
-!!! warning "Why Not Zod Alone?"
-    Zod `.max()` would reject the entire response on overflow, requiring a full retry. Clamping is cheaper and deterministic -- it always produces a valid topic on the first pass.
+!!! tip "Fail Fast"
+    Validation happens at the CLI boundary, so the agent gets an immediate, actionable error instead of an opaque AIRS API rejection mid-loop.
 
 ## 6. Upsert-by-Name Semantics
 
@@ -63,15 +61,15 @@ The `create` command upserts topics by name rather than requiring separate creat
 
 ## 7. Structured Output via Zod
 
-All four LLM calls use LangChain's `withStructuredOutput(ZodSchema)` with 3 retries on parse failure.
+The guardrail commands make no LLM calls — the only remaining LLM dependency is **profile audits** (test generation) and the audit/eval report renderer. Those calls use LangChain's `withStructuredOutput(ZodSchema)` with retries on parse failure.
 
-**Rationale:** Structured output guarantees type-safe responses at the boundary between the LLM and the application. The retry mechanism handles occasional malformed JSON from the model without failing the entire iteration. Zod schemas serve double duty as both runtime validators and TypeScript type sources.
+**Rationale:** Structured output guarantees type-safe responses at the boundary between the LLM and the application. The retry mechanism handles occasional malformed JSON from the model without failing the run. Zod schemas serve double duty as both runtime validators and TypeScript type sources.
 
 ```typescript
-const chain = llm.withStructuredOutput(TopicSchema, {
-  name: "generate_topic",
+const chain = llm.withStructuredOutput(TestsSchema, {
+  name: "generate_tests",
 });
-// Returns a typed CustomTopic or throws after 3 retries
+// Returns typed test cases or throws after retries
 ```
 
 ## 8. External Agent Orchestration
@@ -80,35 +78,19 @@ The CLI provides atomic operations; an external agent provides the intelligence 
 
 **Rationale:** Embedding the LLM loop inside the CLI created tight coupling between the optimization strategy and the CLI tool. By extracting the loop to an external agent (defined in `program.md`), the optimization strategy can evolve independently. Different agents can use the same CLI commands with different strategies.
 
-## 9. Intent-Aware Refinement
+## 9. Intent-Aware Refinement (Agent Responsibility)
 
-The `analyzeResults()` and `improveTopic()` LLM calls receive the guardrail intent (`"block"` or `"allow"`) as a prompt variable.
-
-**Rationale:** Block and allow guardrails have opposite error priorities:
+Refinement intelligence lives in the external agent, not the CLI. The agent decides how to evolve a topic between `eval` runs, and `block` vs `allow` intent flips the error priority it should optimize for:
 
 | Intent | High Severity Error | Strategy |
 |--------|-------------------|----------|
 | `block` (blacklist) | False Negatives — dangerous content slipping through | Widen coverage, broaden examples |
 | `allow` (whitelist) | False Positives — blocking legitimate conversations | Tighten precision, sharpen description |
 
-Without intent context, the LLM defaults to block-style refinement (catch more), which actively harms allow guardrails by making them over-trigger.
+Treating every guardrail as block-style (catch more) actively harms allow guardrails by making them over-trigger, so the agent must carry the intent through its own loop.
 
-### Allow-Intent Detection via `category`
-
-AIRS reports topic detection differently for allow vs block intent:
-
-| Intent | Prompt matches topic | `triggered` | `category` |
-|--------|---------------------|-------------|------------|
-| Block | Yes (violating content) | `true` | `malicious` |
-| Block | No (benign content) | `false` | `benign` |
-| Allow | Yes (permitted content) | `false` | `benign` |
-| Allow | No (non-permitted content) | `false` | `malicious` |
-
-For allow intent, `triggered` is never `true`. The `action` field is also unreliable (always `allow`). The `category` field is the correct discriminator: `"benign"` means the content matched the allow topic, `"malicious"` means it did not. The loop uses `category === 'benign'` for allow-intent detection, falling back to `triggered` when `category` is absent.
-
-### Variable Example Count (2-5)
-
-The LLM is instructed to vary example count between 2-5 across iterations. The AIRS API requires a minimum of 2 examples. The description field carries the most weight in AIRS topic matching, so fewer, sharper examples often outperform many broad ones. The memory system tracks example count per iteration and extracts learnings about which counts correlate with better efficacy.
+!!! note "Example Count (2-5)"
+    AIRS requires a minimum of 2 examples and allows up to 5. The description field carries the most weight in topic matching, so fewer, sharper examples often outperform many broad ones — a trade-off the agent tunes per topic.
 
 ## 10. CSV Prompt Sets
 
