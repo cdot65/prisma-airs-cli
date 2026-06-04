@@ -283,7 +283,7 @@ total: 1
 airs runtime customer-apps consumption example-app --time-interval 60
 ```
 
-*All-apps loop — omit `appName` to scan every customer app in the tenant. Errors on individual apps are reported per-app; the loop continues past failures. Zero-traffic apps render `no detector violations in window`.*
+*All-apps loop — omit `appName` to enumerate every dashboard application bucket (one per distinct scan-payload `app_name`, so a single registered customer-app can appear as several buckets). Errors on individual apps are reported per-app; the loop continues past failures. Zero-traffic apps render `no detector violations in window`.*
 
 ```bash
 airs runtime customer-apps consumption
@@ -299,7 +299,7 @@ airs runtime customer-apps consumption example-app --time-interval 14
 Error: --time-interval must be 7, 30, or 60 (the API rejects other values)
 ```
 
-*Unknown app name returns a helpful error pointing at `customer-apps list`.*
+*Unknown name lists the available dashboard application names and explains that the name to use is the literal scan-payload `metadata.app_name` (which may differ from the SCM-registered customer-app name).*
 
 ```bash
 airs runtime customer-apps consumption no-such-app
@@ -310,5 +310,5 @@ Prisma AIRS — Runtime Configuration
 Security profile and topic management
 
 
-Error: Customer app not found: "no-such-app". Run `airs runtime customer-apps list` to see available apps.
+Error: Dashboard application not found: "no-such-app". Available (as shown in SCM AI Applications view): example-app, Claude Code, LiteLLM, Portkey, chatbot. Note: the name to use is the literal value your integration sends in scan metadata.app_name (which may differ from the SCM application name).
 ```
