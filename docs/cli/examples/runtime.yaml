@@ -1786,20 +1786,20 @@
         total: 1
     - note: Alternate time window — `--time-interval` accepts 7, 30, or 60 days (server-enforced enum).
       input: airs runtime customer-apps consumption example-app --time-interval 60
-    - note: All-apps loop — omit `appName` to scan every customer app in the tenant. Errors on individual apps are reported per-app; the loop continues past failures. Zero-traffic apps render `no detector violations in window`.
+    - note: All-apps loop — omit `appName` to enumerate every dashboard application bucket (one per distinct scan-payload `app_name`, so a single registered customer-app can appear as several buckets). Errors on individual apps are reported per-app; the loop continues past failures. Zero-traffic apps render `no detector violations in window`.
       input: airs runtime customer-apps consumption
     - note: Invalid time-interval rejected client-side before incurring an API call.
       input: airs runtime customer-apps consumption example-app --time-interval 14
       output: |
           Error: --time-interval must be 7, 30, or 60 (the API rejects other values)
-    - note: Unknown app name returns a helpful error pointing at `customer-apps list`.
+    - note: Unknown name lists the available dashboard application names and explains that the name to use is the literal scan-payload `metadata.app_name` (which may differ from the SCM-registered customer-app name).
       input: airs runtime customer-apps consumption no-such-app
       output: |
           Prisma AIRS — Runtime Configuration
           Security profile and topic management
 
 
-          Error: Customer app not found: "no-such-app". Run `airs runtime customer-apps list` to see available apps.
+          Error: Dashboard application not found: "no-such-app". Available (as shown in SCM AI Applications view): example-app, Claude Code, LiteLLM, Portkey, chatbot. Note: the name to use is the literal value your integration sends in scan metadata.app_name (which may differ from the SCM application name).
 
 "runtime api-keys create":
   examples:

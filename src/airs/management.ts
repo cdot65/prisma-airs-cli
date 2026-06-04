@@ -9,6 +9,7 @@ import type { ProfileTopic } from '../audit/types.js';
 import type {
   ApiKeyInfo,
   ApiKeyListResult,
+  ConsumptionAppListEntry,
   ConsumptionQueryOptions,
   CustomerAppConsumption,
   CustomerAppInfo,
@@ -368,22 +369,54 @@ export class SdkManagementService implements ManagementService {
     return this.normalizeCustomerApp(response as unknown as Record<string, unknown>);
   }
 
+  async listConsumptionApps(opts?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ConsumptionAppListEntry[]> {
+    // dashboard.applicationsOverview is the canonical apps-list source. customerApps.list
+    // returns registered customer-apps (one per customer_appId), but the dashboard tracks
+    // one bucket per distinct scan-payload metadata.app_name. Using applicationsOverview
+    // surfaces every bucket - which is what the SCM UI's AI Applications view shows.
+    const response = await this.client.dashboard.applicationsOverview({
+      limit: opts?.limit ?? 100,
+      offset: opts?.offset ?? 0,
+    });
+    return (response.items ?? [])
+      .filter(
+        (item): item is typeof item & { id: string; name: string } =>
+          typeof item.id === 'string' && typeof item.name === 'string',
+      )
+      .map((item) => ({
+        appId: item.id,
+        appName: item.name,
+        cloud: item.cloud ?? undefined,
+        source: item.source ?? undefined,
+      }));
+  }
+
   async getCustomerAppConsumption(
     appName: string,
     opts?: ConsumptionQueryOptions,
   ): Promise<CustomerAppConsumption> {
     // The dashboard endpoints need BOTH appId and appName; the only way to resolve appId
-    // from a name is via the list endpoint, so do that first.
-    const list = (await this.client.customerApps.list({
-      offset: 0,
-      limit: 100,
-    })) as unknown as { customer_apps?: Array<Record<string, unknown>> };
-    const apps = list.customer_apps ?? [];
-    const target = apps.find((a) => (a.app_name as string) === appName);
-    const appId = target?.customer_appId as string | undefined;
+    // from a name is via the apps-overview list, so do that first. We enumerate
+    // applicationsOverview rather than customerApps.list because the dashboard buckets by
+    // scan-payload metadata.app_name (not by SCM-registered app_name), so the customer-apps
+    // name may not match any dashboard bucket.
+    const dashboardApps = await this.listConsumptionApps({ limit: 100 });
+    const target = dashboardApps.find((a) => a.appName === appName);
+    const appId = target?.appId;
     if (!appId) {
+      const sample = dashboardApps
+        .slice(0, 5)
+        .map((a) => `"${a.appName}"`)
+        .join(', ');
+      const more = dashboardApps.length > 5 ? `, ... (${dashboardApps.length} total)` : '';
       throw new Error(
-        `Customer app not found: "${appName}". Run \`airs runtime customer-apps list\` to see available apps.`,
+        `Dashboard application not found: "${appName}". ` +
+          `Available (as shown in SCM AI Applications view): ${sample}${more}. ` +
+          `Note: the name to use is the literal value your integration sends in scan ` +
+          `metadata.app_name (which may differ from the SCM application name).`,
       );
     }
 

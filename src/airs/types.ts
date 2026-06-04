@@ -897,6 +897,25 @@ export interface ConsumptionQueryOptions {
   timeInterval?: ConsumptionTimeInterval;
 }
 
+/**
+ * One entry from the dashboard's apps-overview enumeration.
+ *
+ * One per dashboard bucket. A single registered customer-app can produce multiple buckets when
+ * scan payloads sent under its API key carry different `metadata.app_name` values - the
+ * dashboard tracks each as its own bucket. The `id` field is the registered `customer_appId`
+ * UUID; the `name` field is the literal scan-payload value.
+ */
+export interface ConsumptionAppListEntry {
+  /** Registered customer_appId UUID. */
+  appId: string;
+  /** Dashboard bucket name (literal scan-payload `metadata.app_name`). */
+  appName: string;
+  /** Cloud provider tag, if reported by the dashboard. */
+  cloud?: string;
+  /** Origin of the bucket, e.g. 'api'. */
+  source?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Deployment profile types
 // ---------------------------------------------------------------------------
@@ -997,6 +1016,18 @@ export interface ManagementService {
     appName: string,
     opts?: ConsumptionQueryOptions,
   ): Promise<CustomerAppConsumption>;
+  /**
+   * List dashboard application buckets - the canonical apps source for consumption reporting.
+   *
+   * Drawn from `dashboard.applicationsOverview`. One entry per dashboard bucket, which is one
+   * per distinct scan-payload `metadata.app_name` per registered customer-app. Distinct from
+   * {@link ManagementService.listCustomerApps}, which enumerates registered customer-apps
+   * (different granularity).
+   */
+  listConsumptionApps(opts?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ConsumptionAppListEntry[]>;
 
   // Deployment profiles
   listDeploymentProfiles(opts?: { unactivated?: boolean }): Promise<DeploymentProfileInfo[]>;

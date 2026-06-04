@@ -316,7 +316,11 @@ export function registerRuntimeCommand(program: Command): void {
     });
 
   customerApps
-    .command('consumption [appName]')
+    .command('consumption')
+    .argument(
+      '[appName]',
+      'Dashboard application name — the literal scan-payload metadata.app_name, as shown in the SCM AI Applications view (may differ from the SCM-registered customer-app name). Omit to report every dashboard bucket.',
+    )
     .description(
       'Show per-app token consumption + violation breakdown (SCM dashboard). Omit appName to scan all apps.',
     )
@@ -343,20 +347,24 @@ export function registerRuntimeCommand(program: Command): void {
           return;
         }
 
-        // All-apps mode: loop the list and emit one record per app.
-        const list = await service.listCustomerApps({ limit: 100 });
-        if (list.apps.length === 0) {
-          console.log('  No customer apps found.');
+        // All-apps mode: enumerate dashboard buckets from applicationsOverview and emit one
+        // record per bucket. We use the dashboard-side list (not customerApps.list) because
+        // the dashboard buckets by scan-payload metadata.app_name, so a single customer-app
+        // can have multiple buckets - one per distinct name an integration has sent. The
+        // SCM UI's AI Applications view reflects this same list.
+        const apps = await service.listConsumptionApps({ limit: 100 });
+        if (apps.length === 0) {
+          console.log('  No dashboard applications found.');
           return;
         }
-        for (const app of list.apps) {
+        for (const app of apps) {
           try {
-            const data = await service.getCustomerAppConsumption(app.name, {
+            const data = await service.getCustomerAppConsumption(app.appName, {
               timeInterval: interval,
             });
             renderCustomerAppConsumption(data, fmt);
           } catch (err) {
-            renderError(`[${app.name}] ${err instanceof Error ? err.message : String(err)}`);
+            renderError(`[${app.appName}] ${err instanceof Error ? err.message : String(err)}`);
           }
         }
       } catch (err) {

@@ -1,6 +1,6 @@
 # Class: SdkManagementService
 
-Defined in: [src/airs/management.ts:30](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L30)
+Defined in: [src/airs/management.ts:31](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L31)
 
 Wraps the SDK's ManagementClient to implement our ManagementService interface.
 OAuth2 token management, caching, and retry are handled by the SDK.
@@ -15,7 +15,7 @@ OAuth2 token management, caching, and retry are handled by the SDK.
 
 > **new SdkManagementService**(`opts?`): `SdkManagementService`
 
-Defined in: [src/airs/management.ts:33](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L33)
+Defined in: [src/airs/management.ts:34](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L34)
 
 #### Parameters
 
@@ -33,7 +33,7 @@ Defined in: [src/airs/management.ts:33](https://github.com/cdot65/prisma-airs-cl
 
 > **assignTopicsToProfile**(`profileName`, `topics`, `guardrailAction?`): `Promise`\<`void`\>
 
-Defined in: [src/airs/management.ts:95](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L95)
+Defined in: [src/airs/management.ts:96](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L96)
 
 Sets one or more custom topics on a profile's topic-guardrails config.
 Replaces any existing topics — previous runs' stale topics are cleared.
@@ -71,7 +71,7 @@ it defaults to revision 0 (original content), not the latest.
 
 > **assignTopicToProfile**(`profileName`, `topicId`, `topicName`, `action`): `Promise`\<`void`\>
 
-Defined in: [src/airs/management.ts:77](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L77)
+Defined in: [src/airs/management.ts:78](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L78)
 
 Sets a single custom topic on a profile's topic-guardrails config.
 Delegates to [assignTopicsToProfile](#assigntopicstoprofile) for backward compatibility.
@@ -108,7 +108,7 @@ Delegates to [assignTopicsToProfile](#assigntopicstoprofile) for backward compat
 
 > **createApiKey**(`request`): `Promise`\<`ApiKeyInfo`\>
 
-Defined in: [src/airs/management.ts:315](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L315)
+Defined in: [src/airs/management.ts:316](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L316)
 
 #### Parameters
 
@@ -130,7 +130,7 @@ Defined in: [src/airs/management.ts:315](https://github.com/cdot65/prisma-airs-c
 
 > **createProfile**(`request`): `Promise`\<`SecurityProfileInfo`\>
 
-Defined in: [src/airs/management.ts:267](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L267)
+Defined in: [src/airs/management.ts:268](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L268)
 
 Create a security profile.
 
@@ -154,7 +154,7 @@ Create a security profile.
 
 > **createTopic**(`request`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodArray`\<`ZodString`, `"many"`\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: [src/airs/management.ts:37](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L37)
+Defined in: [src/airs/management.ts:38](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L38)
 
 Create a new custom topic.
 
@@ -178,7 +178,7 @@ Create a new custom topic.
 
 > **deleteApiKey**(`apiKeyName`, `updatedBy`): `Promise`\<`DeleteResponse`\>
 
-Defined in: [src/airs/management.ts:325](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L325)
+Defined in: [src/airs/management.ts:326](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L326)
 
 #### Parameters
 
@@ -204,7 +204,7 @@ Defined in: [src/airs/management.ts:325](https://github.com/cdot65/prisma-airs-c
 
 > **deleteCustomerApp**(`appName`, `updatedBy`): `Promise`\<`CustomerAppInfo`\>
 
-Defined in: [src/airs/management.ts:366](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L366)
+Defined in: [src/airs/management.ts:367](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L367)
 
 #### Parameters
 
@@ -230,7 +230,7 @@ Defined in: [src/airs/management.ts:366](https://github.com/cdot65/prisma-airs-c
 
 > **deleteProfile**(`profileId`): `Promise`\<`DeleteResponse`\>
 
-Defined in: [src/airs/management.ts:280](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L280)
+Defined in: [src/airs/management.ts:281](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L281)
 
 Delete a security profile.
 
@@ -254,7 +254,7 @@ Delete a security profile.
 
 > **deleteTopic**(`topicId`): `Promise`\<`void`\>
 
-Defined in: [src/airs/management.ts:45](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L45)
+Defined in: [src/airs/management.ts:46](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L46)
 
 Delete a custom topic by ID.
 
@@ -278,7 +278,7 @@ Delete a custom topic by ID.
 
 > **forceDeleteProfile**(`profileId`, `updatedBy`): `Promise`\<`DeleteResponse`\>
 
-Defined in: [src/airs/management.ts:285](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L285)
+Defined in: [src/airs/management.ts:286](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L286)
 
 Force-delete a security profile (removes from referencing policies).
 
@@ -306,7 +306,7 @@ Force-delete a security profile (removes from referencing policies).
 
 > **forceDeleteTopic**(`topicId`, `updatedBy?`): `Promise`\<`DeleteResponse`\>
 
-Defined in: [src/airs/management.ts:49](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L49)
+Defined in: [src/airs/management.ts:50](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L50)
 
 Force-delete a custom topic (removes from all referencing profiles).
 
@@ -334,7 +334,7 @@ Force-delete a custom topic (removes from all referencing profiles).
 
 > **getCustomerApp**(`appName`): `Promise`\<`CustomerAppInfo`\>
 
-Defined in: [src/airs/management.ts:353](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L353)
+Defined in: [src/airs/management.ts:354](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L354)
 
 #### Parameters
 
@@ -356,7 +356,7 @@ Defined in: [src/airs/management.ts:353](https://github.com/cdot65/prisma-airs-c
 
 > **getCustomerAppConsumption**(`appName`, `opts?`): `Promise`\<`CustomerAppConsumption`\>
 
-Defined in: [src/airs/management.ts:371](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L371)
+Defined in: [src/airs/management.ts:397](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L397)
 
 Get per-app token consumption + violation breakdown from the SCM dashboard endpoints.
 
@@ -384,7 +384,7 @@ Get per-app token consumption + violation breakdown from the SCM dashboard endpo
 
 > **getProfile**(`profileId`): `Promise`\<`SecurityProfileInfo`\>
 
-Defined in: [src/airs/management.ts:247](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L247)
+Defined in: [src/airs/management.ts:248](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L248)
 
 Get a single security profile by UUID.
 
@@ -408,7 +408,7 @@ Get a single security profile by UUID.
 
 > **getProfileByName**(`profileName`): `Promise`\<`SecurityProfileInfo`\>
 
-Defined in: [src/airs/management.ts:252](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L252)
+Defined in: [src/airs/management.ts:253](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L253)
 
 Get a single security profile by name (returns highest revision).
 
@@ -432,7 +432,7 @@ Get a single security profile by name (returns highest revision).
 
 > **getProfileTopics**(`profileName`): `Promise`\<[`ProfileTopic`](../interfaces/ProfileTopic.md)[]\>
 
-Defined in: [src/airs/management.ts:175](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L175)
+Defined in: [src/airs/management.ts:176](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L176)
 
 List all topics configured in a profile with full details.
 
@@ -456,7 +456,7 @@ List all topics configured in a profile with full details.
 
 > **getTopic**(`topicId`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodArray`\<`ZodString`, `"many"`\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: [src/airs/management.ts:59](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L59)
+Defined in: [src/airs/management.ts:60](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L60)
 
 Get a single custom topic by ID.
 
@@ -480,7 +480,7 @@ Get a single custom topic by ID.
 
 > **getTopicByName**(`topicName`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodArray`\<`ZodString`, `"many"`\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: [src/airs/management.ts:66](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L66)
+Defined in: [src/airs/management.ts:67](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L67)
 
 Get a single custom topic by name.
 
@@ -504,7 +504,7 @@ Get a single custom topic by name.
 
 > **listApiKeys**(`opts?`): `Promise`\<`ApiKeyListResult`\>
 
-Defined in: [src/airs/management.ts:305](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L305)
+Defined in: [src/airs/management.ts:306](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L306)
 
 #### Parameters
 
@@ -522,11 +522,46 @@ Defined in: [src/airs/management.ts:305](https://github.com/cdot65/prisma-airs-c
 
 ***
 
+### listConsumptionApps()
+
+> **listConsumptionApps**(`opts?`): `Promise`\<`ConsumptionAppListEntry`[]\>
+
+Defined in: [src/airs/management.ts:372](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L372)
+
+List dashboard application buckets - the canonical apps source for consumption reporting.
+
+Drawn from `dashboard.applicationsOverview`. One entry per dashboard bucket, which is one
+per distinct scan-payload `metadata.app_name` per registered customer-app. Distinct from
+ManagementService.listCustomerApps, which enumerates registered customer-apps
+(different granularity).
+
+#### Parameters
+
+##### opts?
+
+###### limit?
+
+`number`
+
+###### offset?
+
+`number`
+
+#### Returns
+
+`Promise`\<`ConsumptionAppListEntry`[]\>
+
+#### Implementation of
+
+`ManagementService.listConsumptionApps`
+
+***
+
 ### listCustomerApps()
 
 > **listCustomerApps**(`opts?`): `Promise`\<`CustomerAppListResult`\>
 
-Defined in: [src/airs/management.ts:343](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L343)
+Defined in: [src/airs/management.ts:344](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L344)
 
 #### Parameters
 
@@ -548,7 +583,7 @@ Defined in: [src/airs/management.ts:343](https://github.com/cdot65/prisma-airs-c
 
 > **listDeploymentProfiles**(`opts?`): `Promise`\<`DeploymentProfileInfo`[]\>
 
-Defined in: [src/airs/management.ts:438](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L438)
+Defined in: [src/airs/management.ts:471](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L471)
 
 #### Parameters
 
@@ -572,7 +607,7 @@ Defined in: [src/airs/management.ts:438](https://github.com/cdot65/prisma-airs-c
 
 > **listProfiles**(`opts?`): `Promise`\<`SecurityProfileListResult`\>
 
-Defined in: [src/airs/management.ts:257](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L257)
+Defined in: [src/airs/management.ts:258](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L258)
 
 List security profiles.
 
@@ -596,7 +631,7 @@ List security profiles.
 
 > **listTopics**(): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodArray`\<`ZodString`, `"many"`\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>[]\>
 
-Defined in: [src/airs/management.ts:54](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L54)
+Defined in: [src/airs/management.ts:55](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L55)
 
 List all custom topics.
 
@@ -614,7 +649,7 @@ List all custom topics.
 
 > **queryScanLogs**(`opts`): `Promise`\<`ScanLogQueryResult`\>
 
-Defined in: [src/airs/management.ts:449](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L449)
+Defined in: [src/airs/management.ts:482](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L482)
 
 #### Parameters
 
@@ -636,7 +671,7 @@ Defined in: [src/airs/management.ts:449](https://github.com/cdot65/prisma-airs-c
 
 > **regenerateApiKey**(`apiKeyId`, `request`): `Promise`\<`ApiKeyInfo`\>
 
-Defined in: [src/airs/management.ts:320](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L320)
+Defined in: [src/airs/management.ts:321](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L321)
 
 #### Parameters
 
@@ -662,7 +697,7 @@ Defined in: [src/airs/management.ts:320](https://github.com/cdot65/prisma-airs-c
 
 > **updateCustomerApp**(`appId`, `request`): `Promise`\<`CustomerAppInfo`\>
 
-Defined in: [src/airs/management.ts:358](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L358)
+Defined in: [src/airs/management.ts:359](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L359)
 
 #### Parameters
 
@@ -688,7 +723,7 @@ Defined in: [src/airs/management.ts:358](https://github.com/cdot65/prisma-airs-c
 
 > **updateProfile**(`profileId`, `request`): `Promise`\<`SecurityProfileInfo`\>
 
-Defined in: [src/airs/management.ts:272](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L272)
+Defined in: [src/airs/management.ts:273](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L273)
 
 Update a security profile.
 
@@ -716,7 +751,7 @@ Update a security profile.
 
 > **updateTopic**(`topicId`, `request`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodArray`\<`ZodString`, `"many"`\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: [src/airs/management.ts:41](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L41)
+Defined in: [src/airs/management.ts:42](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/management.ts#L42)
 
 Update an existing custom topic by ID.
 

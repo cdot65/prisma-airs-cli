@@ -49,6 +49,7 @@ const mockDeploymentProfilesList = vi.fn();
 const mockScanLogsQuery = vi.fn();
 const mockDashboardApplication = vi.fn();
 const mockDashboardViolationBreakdown = vi.fn();
+const mockDashboardApplicationsOverview = vi.fn();
 
 vi.mock('@cdot65/prisma-airs-sdk', () => ({
   ManagementClient: vi.fn().mockImplementation(() => ({
@@ -89,6 +90,7 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
     dashboard: {
       application: mockDashboardApplication,
       applicationViolationBreakdown: mockDashboardViolationBreakdown,
+      applicationsOverview: mockDashboardApplicationsOverview,
     },
   })),
 }));
@@ -1188,16 +1190,20 @@ describe('SdkManagementService', () => {
 
   describe('getCustomerAppConsumption', () => {
     function primeApps() {
-      mockCustomerAppsList.mockResolvedValue({
-        customer_apps: [
-          { customer_appId: 'uuid-chatbot', app_name: 'chatbot' },
-          { customer_appId: 'uuid-litellm', app_name: 'litellm' },
+      // The CLI enumerates dashboard buckets via applicationsOverview, not customer_apps.
+      // The dashboard's `id` IS the customer_appId UUID; `name` is the scan-payload value.
+      // Same id can appear with multiple names - one bucket per distinct scan-payload name.
+      mockDashboardApplicationsOverview.mockResolvedValue({
+        items: [
+          { id: 'uuid-shared', name: 'chatbot', cloud: 'other', source: 'api' },
+          { id: 'uuid-shared', name: 'LiteLLM', cloud: 'other', source: 'api' },
+          { id: 'uuid-litellm', name: 'litellm', cloud: 'other', source: 'api' },
         ],
-        next_offset: 0,
+        pagination: { limit: 100, skip: 0, total_items: 3 },
       });
     }
 
-    it('resolves appId from list, calls both dashboard endpoints, normalizes the result', async () => {
+    it('resolves appId from applicationsOverview, calls both dashboard endpoints, normalizes the result', async () => {
       primeApps();
       mockDashboardApplication.mockResolvedValue({
         id: 'uuid-chatbot',
@@ -1230,7 +1236,7 @@ describe('SdkManagementService', () => {
 
       const result = await service.getCustomerAppConsumption('chatbot');
 
-      expect(result.appId).toBe('uuid-chatbot');
+      expect(result.appId).toBe('uuid-shared');
       expect(result.appName).toBe('chatbot');
       expect(result.tokens.dailyAverage).toBe(744.233);
       expect(result.tokens.dailyAverageScale).toBe('K');
@@ -1251,12 +1257,12 @@ describe('SdkManagementService', () => {
       });
 
       expect(mockDashboardApplication).toHaveBeenCalledWith({
-        appId: 'uuid-chatbot',
+        appId: 'uuid-shared',
         appName: 'chatbot',
         timeInterval: 30,
       });
       expect(mockDashboardViolationBreakdown).toHaveBeenCalledWith({
-        appId: 'uuid-chatbot',
+        appId: 'uuid-shared',
         appName: 'chatbot',
         timeInterval: 30,
       });
@@ -1276,13 +1282,31 @@ describe('SdkManagementService', () => {
       });
     });
 
-    it('throws a clear error when the app name is not found in the list', async () => {
-      mockCustomerAppsList.mockResolvedValue({ customer_apps: [], next_offset: 0 });
+    it('throws a clear error when the app name is not found in the dashboard list', async () => {
+      mockDashboardApplicationsOverview.mockResolvedValue({
+        items: [{ id: 'uuid-a', name: 'real-app', cloud: 'other', source: 'api' }],
+        pagination: { limit: 100, skip: 0, total_items: 1 },
+      });
       await expect(service.getCustomerAppConsumption('nonexistent')).rejects.toThrow(
-        /Customer app not found.*nonexistent/i,
+        /Dashboard application not found.*nonexistent/i,
       );
       expect(mockDashboardApplication).not.toHaveBeenCalled();
       expect(mockDashboardViolationBreakdown).not.toHaveBeenCalled();
+    });
+
+    it('resolves the correct bucket when the same appId has multiple scan-payload names', async () => {
+      primeApps();
+      mockDashboardApplication.mockResolvedValue({});
+      mockDashboardViolationBreakdown.mockResolvedValue({});
+
+      await service.getCustomerAppConsumption('LiteLLM');
+
+      // Same shared appId, but the second bucket name ('LiteLLM', different from 'chatbot').
+      expect(mockDashboardApplication).toHaveBeenCalledWith({
+        appId: 'uuid-shared',
+        appName: 'LiteLLM',
+        timeInterval: 30,
+      });
     });
 
     it('returns zeros for missing/null fields rather than throwing', async () => {
@@ -1302,6 +1326,65 @@ describe('SdkManagementService', () => {
       expect(result.profiles).toEqual([]);
       expect(result.detectors).toEqual([]);
       expect(result.totalViolating).toBe(0);
+    });
+  });
+
+  describe('listConsumptionApps', () => {
+    it('enumerates dashboard buckets and normalizes shape', async () => {
+      mockDashboardApplicationsOverview.mockResolvedValue({
+        items: [
+          { id: 'uuid-shared', name: 'chatbot', cloud: 'other', source: 'api' },
+          { id: 'uuid-shared', name: 'LiteLLM', cloud: 'other', source: 'api' },
+          { id: 'uuid-aws', name: 'aws-bedrock-demo', cloud: 'aws', source: 'api' },
+        ],
+        pagination: { limit: 100, skip: 0, total_items: 3 },
+      });
+
+      const result = await service.listConsumptionApps();
+
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual({
+        appId: 'uuid-shared',
+        appName: 'chatbot',
+        cloud: 'other',
+        source: 'api',
+      });
+      // Same appId, different appName - two distinct buckets is the whole point.
+      expect(result[0].appId).toBe(result[1].appId);
+      expect(result[0].appName).not.toBe(result[1].appName);
+      expect(mockDashboardApplicationsOverview).toHaveBeenCalledWith({ limit: 100, offset: 0 });
+    });
+
+    it('respects caller-supplied limit/offset', async () => {
+      mockDashboardApplicationsOverview.mockResolvedValue({
+        items: [],
+        pagination: { limit: 25, skip: 50, total_items: 0 },
+      });
+      await service.listConsumptionApps({ limit: 25, offset: 50 });
+      expect(mockDashboardApplicationsOverview).toHaveBeenCalledWith({ limit: 25, offset: 50 });
+    });
+
+    it('filters out items missing id or name (defensive)', async () => {
+      mockDashboardApplicationsOverview.mockResolvedValue({
+        items: [
+          { id: 'uuid-1', name: 'real-app' },
+          { id: null, name: 'no-id' },
+          { id: 'uuid-3', name: null },
+        ],
+        pagination: { limit: 100, skip: 0, total_items: 3 },
+      });
+      const result = await service.listConsumptionApps();
+      expect(result).toHaveLength(1);
+      expect(result[0].appName).toBe('real-app');
+    });
+
+    it('tolerates empty items', async () => {
+      mockDashboardApplicationsOverview.mockResolvedValue({
+        items: [],
+        pagination: { limit: 100, skip: 0, total_items: 0 },
+      });
+      const result = await service.listConsumptionApps();
+      expect(result).toEqual([]);
     });
   });
 });
