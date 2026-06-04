@@ -316,7 +316,11 @@ export function registerRuntimeCommand(program: Command): void {
     });
 
   customerApps
-    .command('consumption [appName]')
+    .command('consumption')
+    .argument(
+      '[appName]',
+      'Dashboard application name — the literal scan-payload metadata.app_name, as shown in the SCM AI Applications view (may differ from the SCM-registered customer-app name). Omit to report every dashboard bucket.',
+    )
     .description(
       'Show per-app token consumption + violation breakdown (SCM dashboard). Omit appName to scan all apps.',
     )

@@ -152,7 +152,7 @@ airs runtime customer-apps consumption [options] [appName]
 
 #### Arguments
 
-- `appName` (optional) —
+- `appName` (optional) — Dashboard application name — the literal scan-payload metadata.app_name, as shown in the SCM AI Applications view (may differ from the SCM-registered customer-app name). Omit to report every dashboard bucket.
 
 #### Options
 
