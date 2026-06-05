@@ -57,6 +57,12 @@ airs model-security groups get [options] <uuid>
 
 - `uuid` (required) —
 
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+
 #### Examples
 
 *Pretty output (default; no --output flag on this command)*

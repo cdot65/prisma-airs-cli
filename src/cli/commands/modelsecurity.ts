@@ -108,12 +108,14 @@ export function registerModelSecurityCommand(program: Command): void {
   groups
     .command('get <uuid>')
     .description('Get security group details')
-    .action(async (uuid: string) => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (uuid: string, opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const group = await service.getGroup(uuid);
-        renderGroupDetail(group);
+        renderGroupDetail(group, fmt);
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);
