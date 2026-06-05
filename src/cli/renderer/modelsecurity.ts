@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { dump as yamlDump } from 'js-yaml';
 import type {
   ModelSecurityEvaluation,
   ModelSecurityFile,
@@ -56,7 +57,18 @@ export function renderGroupList(
 }
 
 /** Render security group detail. */
-export function renderGroupDetail(group: ModelSecurityGroup): void {
+export function renderGroupDetail(
+  group: ModelSecurityGroup,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format === 'json') {
+    console.log(JSON.stringify(group, null, 2));
+    return;
+  }
+  if (format === 'yaml') {
+    console.log(yamlDump(group));
+    return;
+  }
   console.log(chalk.bold('\n  Security Group Detail:\n'));
   console.log(`    UUID:        ${chalk.dim(group.uuid)}`);
   console.log(`    Name:        ${group.name}`);
