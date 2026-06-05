@@ -54,6 +54,33 @@
         d68a14f5-cea3-4047-bedb-ae5726ba20d2
           Saffron  inactive
 
+"redteam prompt-sets get":
+  examples:
+    - note: |
+        Get a prompt set's details. The version-info section degrades gracefully — if the
+        upstream `/version-info` endpoint errors, the set detail still renders and Version
+        Info shows as unavailable rather than failing the whole command.
+      input: airs redteam prompt-sets get 00000000-0000-0000-0000-000000000002
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+
+          Prompt Set Detail:
+
+            UUID:        00000000-0000-0000-0000-000000000002
+            Name:        redteam-demo-set
+            Status:      active
+            Archived:    no
+            Description: Red team prompt set with sample adversarial prompts
+            Created:     2026-06-05T13:46:08.274350Z
+            Updated:     2026-06-05T13:48:09.423595Z
+
+
+          Version Info:
+
+            unavailable (version-info endpoint returned an error)
+
 "redteam categories":
   examples:
     - note: |

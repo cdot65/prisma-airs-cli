@@ -258,6 +258,51 @@ describe('SdkPromptSetService', () => {
     });
   });
 
+  describe('getPromptSetWithVersionInfo', () => {
+    it('returns the set plus version info when both succeed', async () => {
+      mockGetPromptSet.mockResolvedValue({
+        uuid: 'ps-1',
+        name: 'set-a',
+        active: true,
+        archive: false,
+      });
+      mockGetPromptSetVersionInfo.mockResolvedValue({
+        uuid: 'ps-1',
+        version: 3,
+        stats: { total: 50, active: 45, inactive: 5 },
+      });
+
+      const result = await service.getPromptSetWithVersionInfo('ps-1');
+      expect(result.set.uuid).toBe('ps-1');
+      expect(result.versionInfo).toEqual({
+        uuid: 'ps-1',
+        version: 3,
+        stats: { total: 50, active: 45, inactive: 5 },
+      });
+    });
+
+    it('degrades gracefully when version-info fails (upstream 500) — set still returned, versionInfo undefined', async () => {
+      mockGetPromptSet.mockResolvedValue({
+        uuid: 'ps-1',
+        name: 'set-a',
+        active: true,
+        archive: false,
+      });
+      mockGetPromptSetVersionInfo.mockRejectedValue(
+        new Error('AISEC_CLIENT_SIDE_ERROR:API error 500'),
+      );
+
+      const result = await service.getPromptSetWithVersionInfo('ps-1');
+      expect(result.set.uuid).toBe('ps-1');
+      expect(result.versionInfo).toBeUndefined();
+    });
+
+    it('still propagates a failure of the primary getPromptSet call', async () => {
+      mockGetPromptSet.mockRejectedValue(new Error('not found'));
+      await expect(service.getPromptSetWithVersionInfo('ps-x')).rejects.toThrow('not found');
+    });
+  });
+
   describe('downloadTemplate', () => {
     it('delegates to SDK and returns CSV string', async () => {
       mockDownloadTemplate.mockResolvedValue('prompt,goal\n"test","test goal"');

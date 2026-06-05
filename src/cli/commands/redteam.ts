@@ -40,6 +40,7 @@ import {
   renderTargetList,
   renderTargetTemplates,
   renderVersionInfo,
+  renderVersionInfoUnavailable,
 } from '../renderer/index.js';
 import { backupTargets } from './backup.js';
 import { restoreTargets } from './restore.js';
@@ -441,11 +442,11 @@ export function registerRedteamCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
-        const ps = await service.getPromptSet(uuid);
-        const info = await service.getPromptSetVersionInfo(uuid);
+        const { set: ps, versionInfo: info } = await service.getPromptSetWithVersionInfo(uuid);
         if (fmt === 'pretty') {
           renderPromptSetDetail(ps);
-          renderVersionInfo(info);
+          if (info) renderVersionInfo(info);
+          else renderVersionInfoUnavailable();
         } else {
           renderPromptSetDetail(ps, fmt, info);
         }

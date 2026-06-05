@@ -30,10 +30,6 @@ redteam instances delete
 redteam devices create
 redteam devices update
 redteam devices delete
-# Blocked by upstream API 500 on /version-info — see https://github.com/cdot65/prisma-airs-cli/issues/117
-# (CLI calls version-info unconditionally after detail fetch, so all three formats fail until either
-# upstream is fixed or CLI gains graceful degradation — see sub-issue #164 retry 2026-05-28)
-redteam prompt-sets get
 # Blocked by SDK wrong-schema-on-write — POST property-names returns 201 with {data: string[]} but SDK
 # declares BaseResponseSchema — see sub-issue #172 retry 2026-05-28
 redteam properties create
