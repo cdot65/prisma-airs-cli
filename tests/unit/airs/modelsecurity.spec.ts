@@ -258,6 +258,35 @@ describe('SdkModelSecurityService', () => {
     });
   });
 
+  describe('deleteGroupAndVerify', () => {
+    it('confirmed when the group is gone after delete (get 404s)', async () => {
+      mockGroupsDelete.mockResolvedValue(undefined);
+      mockGroupsGet.mockRejectedValue(new Error('AISEC_CLIENT_SIDE_ERROR:not found'));
+      const result = await service.deleteGroupAndVerify('g-1');
+      expect(mockGroupsDelete).toHaveBeenCalledWith('g-1');
+      expect(result).toEqual({ confirmed: true });
+    });
+
+    it('NOT confirmed when the group still resolves (soft/async delete) — reports its state', async () => {
+      mockGroupsDelete.mockResolvedValue(undefined);
+      mockGroupsGet.mockResolvedValue({
+        uuid: 'g-1',
+        name: 'still-here',
+        state: 'ACTIVE',
+        sourceType: 'LOCAL',
+        createdAt: 'x',
+        updatedAt: 'y',
+      });
+      const result = await service.deleteGroupAndVerify('g-1');
+      expect(result).toEqual({ confirmed: false, state: 'ACTIVE' });
+    });
+
+    it('propagates a failure of the delete call itself', async () => {
+      mockGroupsDelete.mockRejectedValue(new Error('boom'));
+      await expect(service.deleteGroupAndVerify('g-1')).rejects.toThrow('boom');
+    });
+  });
+
   // -----------------------------------------------------------------------
   // Rule Instances
   // -----------------------------------------------------------------------
