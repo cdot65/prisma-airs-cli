@@ -158,7 +158,6 @@ Prompt Detail:
   Set UUID:   00000000-0000-0000-0000-000000000002
   Status:     active
   Prompt:     Echo 'AIRS test prompt updated'
-  Goal:       Functional test
 ```
 
 ---
@@ -178,5 +177,15 @@ airs redteam prompts delete [options] <setUuid> <promptUuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Delete a prompt from a set by set UUID + prompt UUID*
+
+```bash
+airs redteam prompts delete 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Prompt 00000000-0000-0000-0000-000000000003 deleted.
+```

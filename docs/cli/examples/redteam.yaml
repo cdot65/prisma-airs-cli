@@ -843,4 +843,24 @@
             Set UUID:   00000000-0000-0000-0000-000000000002
             Status:     active
             Prompt:     Echo 'AIRS test prompt updated'
+
+"redteam prompts delete":
+  examples:
+    - note: Delete a prompt from a set by set UUID + prompt UUID
+      input: airs redteam prompts delete 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Prompt 00000000-0000-0000-0000-000000000003 deleted.
+
+"redteam targets delete":
+  examples:
+    - note: Delete a target by UUID (SDK now returns a clean confirmation on the empty-body 204)
+      input: airs redteam targets delete 00000000-0000-0000-0000-000000000001
+      output: |
+          Prisma AIRS — AI Red Team
+          Adversarial scan operations
+
+          Target 00000000-0000-0000-0000-000000000001 deleted.
             Goal:       Functional test

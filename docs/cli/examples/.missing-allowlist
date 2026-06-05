@@ -34,10 +34,6 @@ redteam devices delete
 # (CLI calls version-info unconditionally after detail fetch, so all three formats fail until either
 # upstream is fixed or CLI gains graceful degradation — see sub-issue #164 retry 2026-05-28)
 redteam prompt-sets get
-# Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
-redteam prompts delete
 # Blocked by SDK wrong-schema-on-write — POST property-names returns 201 with {data: string[]} but SDK
 # declares BaseResponseSchema — see sub-issue #172 retry 2026-05-28
 redteam properties create
-# Blocked by SDK empty-body response validation — see https://github.com/cdot65/prisma-airs-sdk/issues/168
-redteam targets delete

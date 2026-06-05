@@ -241,8 +241,19 @@ airs redteam targets delete [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Delete a target by UUID (SDK now returns a clean confirmation on the empty-body 204)*
+
+```bash
+airs redteam targets delete 00000000-0000-0000-0000-000000000001
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+Target 00000000-0000-0000-0000-000000000001 deleted.
+  Goal:       Functional test
+```
 
 ---
 
