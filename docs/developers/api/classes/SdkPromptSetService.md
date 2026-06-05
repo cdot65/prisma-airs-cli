@@ -121,7 +121,7 @@ Create a new custom prompt set.
 
 > **createPropertyName**(`name`): `Promise`\<[`MutationResponse`](../interfaces/MutationResponse.md)\>
 
-Defined in: [src/airs/promptsets.ts:153](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L153)
+Defined in: [src/airs/promptsets.ts:173](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L173)
 
 Create a property name.
 
@@ -145,7 +145,7 @@ Create a property name.
 
 > **createPropertyValue**(`name`, `value`): `Promise`\<[`MutationResponse`](../interfaces/MutationResponse.md)\>
 
-Defined in: [src/airs/promptsets.ts:164](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L164)
+Defined in: [src/airs/promptsets.ts:184](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L184)
 
 Create a property value.
 
@@ -173,7 +173,7 @@ Create a property value.
 
 > **deletePrompt**(`setUuid`, `promptUuid`): `Promise`\<`void`\>
 
-Defined in: [src/airs/promptsets.ts:143](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L143)
+Defined in: [src/airs/promptsets.ts:163](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L163)
 
 Delete a prompt.
 
@@ -201,7 +201,7 @@ Delete a prompt.
 
 > **downloadTemplate**(`uuid`): `Promise`\<`string`\>
 
-Defined in: [src/airs/promptsets.ts:106](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L106)
+Defined in: [src/airs/promptsets.ts:126](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L126)
 
 Download CSV template for a prompt set.
 
@@ -225,7 +225,7 @@ Download CSV template for a prompt set.
 
 > **getPrompt**(`setUuid`, `promptUuid`): `Promise`\<[`PromptDetail`](../interfaces/PromptDetail.md)\>
 
-Defined in: [src/airs/promptsets.ts:125](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L125)
+Defined in: [src/airs/promptsets.ts:145](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L145)
 
 Get a single prompt.
 
@@ -297,11 +297,35 @@ Get prompt set version info with stats.
 
 ***
 
+### getPromptSetWithVersionInfo()
+
+> **getPromptSetWithVersionInfo**(`uuid`): `Promise`\<\{ `set`: [`PromptSetDetail`](../interfaces/PromptSetDetail.md); `versionInfo?`: [`PromptSetVersionInfo`](../interfaces/PromptSetVersionInfo.md); \}\>
+
+Defined in: [src/airs/promptsets.ts:113](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L113)
+
+Fetch a prompt set and its version info in one call, degrading gracefully when the
+version-info endpoint is unavailable. The upstream `/version-info` route currently
+returns 500 for every prompt set (see prisma-airs-cli#117); without this, a 500 there
+would abort the whole `prompt-sets get` command even though the set itself fetched fine.
+The set is always returned; `versionInfo` is `undefined` when that lookup fails.
+
+#### Parameters
+
+##### uuid
+
+`string`
+
+#### Returns
+
+`Promise`\<\{ `set`: [`PromptSetDetail`](../interfaces/PromptSetDetail.md); `versionInfo?`: [`PromptSetVersionInfo`](../interfaces/PromptSetVersionInfo.md); \}\>
+
+***
+
 ### getPropertyNames()
 
 > **getPropertyNames**(): `Promise`\<`string`[]\>
 
-Defined in: [src/airs/promptsets.ts:147](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L147)
+Defined in: [src/airs/promptsets.ts:167](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L167)
 
 List property names.
 
@@ -319,7 +343,7 @@ List property names.
 
 > **getPropertyValues**(`name`): `Promise`\<[`PropertyValueList`](../interfaces/PropertyValueList.md)\>
 
-Defined in: [src/airs/promptsets.ts:158](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L158)
+Defined in: [src/airs/promptsets.ts:178](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L178)
 
 Get values for a property.
 
@@ -343,7 +367,7 @@ Get values for a property.
 
 > **listPrompts**(`setUuid`, `opts?`): `Promise`\<[`PromptDetail`](../interfaces/PromptDetail.md)[]\>
 
-Defined in: [src/airs/promptsets.ts:115](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L115)
+Defined in: [src/airs/promptsets.ts:135](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L135)
 
 List prompts in a prompt set.
 
@@ -395,7 +419,7 @@ List all custom prompt sets.
 
 > **updatePrompt**(`setUuid`, `promptUuid`, `request`): `Promise`\<[`PromptDetail`](../interfaces/PromptDetail.md)\>
 
-Defined in: [src/airs/promptsets.ts:130](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L130)
+Defined in: [src/airs/promptsets.ts:150](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L150)
 
 Update a prompt.
 
@@ -467,7 +491,7 @@ Update prompt set name/description.
 
 > **uploadPromptsCsv**(`uuid`, `file`): `Promise`\<\{ `message`: `string`; `status`: `number`; \}\>
 
-Defined in: [src/airs/promptsets.ts:110](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L110)
+Defined in: [src/airs/promptsets.ts:130](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/promptsets.ts#L130)
 
 Upload CSV file to a prompt set.
 

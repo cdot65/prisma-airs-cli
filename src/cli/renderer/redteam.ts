@@ -524,6 +524,13 @@ export function renderVersionInfo(info: {
   console.log();
 }
 
+/** Render a placeholder when the version-info endpoint is unavailable (upstream 500). */
+export function renderVersionInfoUnavailable(): void {
+  console.log(chalk.bold('\n  Version Info:\n'));
+  console.log(chalk.dim('    unavailable (version-info endpoint returned an error)'));
+  console.log();
+}
+
 /** Render a list of prompts. */
 export function renderPromptList(
   prompts: Array<{

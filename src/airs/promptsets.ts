@@ -103,6 +103,26 @@ export class SdkPromptSetService implements PromptSetService {
     };
   }
 
+  /**
+   * Fetch a prompt set and its version info in one call, degrading gracefully when the
+   * version-info endpoint is unavailable. The upstream `/version-info` route currently
+   * returns 500 for every prompt set (see prisma-airs-cli#117); without this, a 500 there
+   * would abort the whole `prompt-sets get` command even though the set itself fetched fine.
+   * The set is always returned; `versionInfo` is `undefined` when that lookup fails.
+   */
+  async getPromptSetWithVersionInfo(
+    uuid: string,
+  ): Promise<{ set: PromptSetDetail; versionInfo?: PromptSetVersionInfo }> {
+    const set = await this.getPromptSet(uuid);
+    let versionInfo: PromptSetVersionInfo | undefined;
+    try {
+      versionInfo = await this.getPromptSetVersionInfo(uuid);
+    } catch {
+      versionInfo = undefined;
+    }
+    return { set, versionInfo };
+  }
+
   async downloadTemplate(uuid: string): Promise<string> {
     return this.client.customAttacks.downloadTemplate(uuid);
   }

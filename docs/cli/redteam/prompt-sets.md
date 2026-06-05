@@ -55,8 +55,35 @@ airs redteam prompt-sets get [options] <uuid>
 
 #### Examples
 
-!!! warning "Example needed"
-    No curated input/output example for this command yet.
+*Get a prompt set's details. The version-info section degrades gracefully — if the
+upstream `/version-info` endpoint errors, the set detail still renders and Version
+Info shows as unavailable rather than failing the whole command.
+*
+
+```bash
+airs redteam prompt-sets get 00000000-0000-0000-0000-000000000002
+```
+
+```text
+Prisma AIRS — AI Red Team
+Adversarial scan operations
+
+
+Prompt Set Detail:
+
+  UUID:        00000000-0000-0000-0000-000000000002
+  Name:        redteam-demo-set
+  Status:      active
+  Archived:    no
+  Description: Red team prompt set with sample adversarial prompts
+  Created:     2026-06-05T13:46:08.274350Z
+  Updated:     2026-06-05T13:48:09.423595Z
+
+
+Version Info:
+
+  unavailable (version-info endpoint returned an error)
+```
 
 ---
 
