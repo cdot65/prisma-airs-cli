@@ -173,8 +173,15 @@ export function registerModelSecurityCommand(program: Command): void {
       try {
         renderModelSecurityHeader();
         const service = await createService();
-        await service.deleteGroup(uuid);
-        console.log(`  Group ${uuid} deleted.\n`);
+        const { confirmed, state } = await service.deleteGroupAndVerify(uuid);
+        if (confirmed) {
+          console.log(`  Group ${uuid} deleted.\n`);
+        } else {
+          console.log(
+            `  Delete request accepted, but group ${uuid} still reports state '${state}'.\n` +
+              `  Deletion is asynchronous (soft-delete) — re-check with \`model-security groups get ${uuid}\`.\n`,
+          );
+        }
       } catch (err) {
         renderError(err instanceof Error ? err.message : String(err));
         process.exit(1);

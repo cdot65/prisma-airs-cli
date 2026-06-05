@@ -203,6 +203,24 @@ export class SdkModelSecurityService implements ModelSecurityService {
     await this.client.securityGroups.delete(uuid);
   }
 
+  /**
+   * Delete a group, then verify whether it is actually gone. The API soft/async-deletes
+   * security groups — a successful DELETE does not immediately remove the resource, so a
+   * follow-up `get` may still return it as ACTIVE (see prisma-airs-cli#239). The SDK delete
+   * returns void, so re-reading is the only way to report the real outcome rather than
+   * claiming an unconditional success. Returns `{ confirmed: true }` when the group no longer
+   * resolves, or `{ confirmed: false, state }` when it still does.
+   */
+  async deleteGroupAndVerify(uuid: string): Promise<{ confirmed: boolean; state?: string }> {
+    await this.deleteGroup(uuid);
+    try {
+      const group = await this.getGroup(uuid);
+      return { confirmed: false, state: group.state };
+    } catch {
+      return { confirmed: true };
+    }
+  }
+
   // -----------------------------------------------------------------------
   // Rule Instances
   // -----------------------------------------------------------------------
