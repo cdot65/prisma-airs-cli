@@ -14,7 +14,7 @@ airs runtime topics apply [options]
 |------|:--------:|---------|-------------|
 | `--profile <name>` | Yes | — | Security profile name |
 | `--name <name>` | Yes | — | Topic name to assign |
-| `--intent <intent>` | No | `block` | Topic intent: block or allow |
+| `--intent <intent>` | No | `block` | Topic intent: block, allow, or alert |
 | `--format <format>` | No | `terminal` | Output format: json or terminal |
 
 #### Examples
