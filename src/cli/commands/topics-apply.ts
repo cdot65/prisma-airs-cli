@@ -7,7 +7,7 @@ import { renderError } from '../renderer/index.js';
 export interface ApplyInput {
   profileName: string;
   topicName: string;
-  intent: 'allow' | 'block';
+  intent: 'allow' | 'block' | 'alert';
 }
 
 export interface ApplyOutput {
@@ -39,7 +39,10 @@ export async function applyTopicToProfile(
     action: input.intent,
   });
 
-  const guardrailAction = input.intent === 'block' ? 'allow' : 'block';
+  // 'block' and 'alert' both keep the topic-guardrails layer in allow-all-unless-matched
+  // mode (blacklist); only 'allow' intent flips the layer to block-all-unless-matched
+  // (whitelist). 'alert' detects + logs the matched topic without blocking the request.
+  const guardrailAction = input.intent === 'allow' ? 'block' : 'allow';
 
   await mgmt.assignTopicsToProfile(input.profileName, merged, guardrailAction);
 
@@ -57,12 +60,12 @@ export function registerApplyCommand(parent: Command): void {
     .description('Assign a topic to a security profile (additive)')
     .requiredOption('--profile <name>', 'Security profile name')
     .requiredOption('--name <name>', 'Topic name to assign')
-    .option('--intent <intent>', 'Topic intent: block or allow', 'block')
+    .option('--intent <intent>', 'Topic intent: block, allow, or alert', 'block')
     .option('--format <format>', 'Output format: json or terminal', 'terminal')
     .action(async (opts) => {
       try {
-        if (opts.intent !== 'allow' && opts.intent !== 'block') {
-          renderError(`--intent must be "allow" or "block", got: "${opts.intent}"`);
+        if (!['allow', 'block', 'alert'].includes(opts.intent)) {
+          renderError(`--intent must be "allow", "block", or "alert", got: "${opts.intent}"`);
           process.exit(1);
         }
 
@@ -77,7 +80,7 @@ export function registerApplyCommand(parent: Command): void {
         const result = await applyTopicToProfile(mgmt, {
           profileName: opts.profile,
           topicName: opts.name,
-          intent: opts.intent as 'allow' | 'block',
+          intent: opts.intent as 'allow' | 'block' | 'alert',
         });
 
         if (opts.format === 'json') {

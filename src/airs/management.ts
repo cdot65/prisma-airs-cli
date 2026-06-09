@@ -78,7 +78,7 @@ export class SdkManagementService implements ManagementService {
     profileName: string,
     topicId: string,
     topicName: string,
-    action: 'allow' | 'block',
+    action: 'allow' | 'block' | 'alert',
   ): Promise<void> {
     return this.assignTopicsToProfile(profileName, [{ topicId, topicName, action }]);
   }
@@ -94,7 +94,7 @@ export class SdkManagementService implements ManagementService {
    */
   async assignTopicsToProfile(
     profileName: string,
-    topics: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' }>,
+    topics: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' | 'alert' }>,
     guardrailAction?: 'allow' | 'block',
   ): Promise<void> {
     // Find profile by name
@@ -198,13 +198,17 @@ export class SdkManagementService implements ManagementService {
       }>) ?? [];
 
     // Flatten entries into topic refs with action
-    const topicRefs: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' }> = [];
+    const topicRefs: Array<{
+      topicId: string;
+      topicName: string;
+      action: 'allow' | 'block' | 'alert';
+    }> = [];
     for (const entry of topicList) {
       for (const t of entry.topic ?? []) {
         topicRefs.push({
           topicId: t.topic_id,
           topicName: t.topic_name,
-          action: entry.action as 'allow' | 'block',
+          action: entry.action as 'allow' | 'block' | 'alert',
         });
       }
     }

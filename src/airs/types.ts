@@ -952,12 +952,12 @@ export interface ManagementService {
     profileName: string,
     topicId: string,
     topicName: string,
-    action: 'allow' | 'block',
+    action: 'allow' | 'block' | 'alert',
   ): Promise<void>;
   /** Assign multiple topics to a security profile's topic-guardrails. */
   assignTopicsToProfile(
     profileName: string,
-    topics: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' }>,
+    topics: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' | 'alert' }>,
     guardrailAction?: 'allow' | 'block',
   ): Promise<void>;
   /** List all topics configured in a profile with full details. */

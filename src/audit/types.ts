@@ -8,7 +8,7 @@ import type { EfficacyMetrics, TestResult } from '../core/types.js';
 export interface ProfileTopic {
   topicId: string;
   topicName: string;
-  action: 'allow' | 'block';
+  action: 'allow' | 'block' | 'alert';
   description: string;
   examples: string[];
 }
