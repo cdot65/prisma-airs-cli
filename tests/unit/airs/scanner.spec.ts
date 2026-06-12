@@ -24,9 +24,28 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
 describe('AirsScanService', () => {
   let service: AirsScanService;
 
+  describe('constructor', () => {
+    it('passes init options through to SDK init()', async () => {
+      const { init } = await import('@cdot65/prisma-airs-sdk');
+      vi.mocked(init).mockClear();
+      new AirsScanService({
+        apiKey: 'k',
+        apiToken: 't',
+        apiEndpoint: 'https://airs.example.com',
+        numRetries: 1,
+      });
+      expect(init).toHaveBeenCalledWith({
+        apiKey: 'k',
+        apiToken: 't',
+        apiEndpoint: 'https://airs.example.com',
+        numRetries: 1,
+      });
+    });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new AirsScanService('test-api-key');
+    service = new AirsScanService({ apiKey: 'test-api-key' });
   });
 
   describe('scan', () => {

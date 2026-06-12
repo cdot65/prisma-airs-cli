@@ -18,7 +18,31 @@ describe('SdkRuntimeService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new SdkRuntimeService('test-api-key');
+    service = new SdkRuntimeService({ apiKey: 'test-api-key' });
+  });
+
+  describe('constructor', () => {
+    it('passes all init options through to SDK init()', async () => {
+      const { init } = await import('@cdot65/prisma-airs-sdk');
+      new SdkRuntimeService({
+        apiKey: 'k',
+        apiToken: 't',
+        apiEndpoint: 'https://airs.example.com',
+        numRetries: 2,
+      });
+      expect(init).toHaveBeenCalledWith({
+        apiKey: 'k',
+        apiToken: 't',
+        apiEndpoint: 'https://airs.example.com',
+        numRetries: 2,
+      });
+    });
+
+    it('supports apiToken-only auth', async () => {
+      const { init } = await import('@cdot65/prisma-airs-sdk');
+      new SdkRuntimeService({ apiToken: 'tok-only' });
+      expect(init).toHaveBeenCalledWith(expect.objectContaining({ apiToken: 'tok-only' }));
+    });
   });
 
   describe('scanPrompt', () => {

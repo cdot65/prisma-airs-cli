@@ -5,6 +5,7 @@ import { SdkManagementService } from '../../airs/management.js';
 import { AirsScanService } from '../../airs/scanner.js';
 import { buildAuditReportHtml, buildAuditReportJson } from '../../audit/report.js';
 import { runAudit } from '../../audit/runner.js';
+import { runtimeInitOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import { createLlmProvider } from '../../llm/provider.js';
 import { LangChainLlmService } from '../../llm/service.js';
@@ -53,11 +54,11 @@ export function registerAuditCommand(parent: Command): void {
           tokenEndpoint: config.mgmtTokenEndpoint,
         });
 
-        if (!config.airsApiKey) {
-          renderError('PANW_AI_SEC_API_KEY is required');
+        if (!config.airsApiKey && !config.airsApiToken) {
+          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
           process.exit(1);
         }
-        const scanner = new AirsScanService(config.airsApiKey);
+        const scanner = new AirsScanService(runtimeInitOptions(config));
 
         const format: string = opts.format;
 

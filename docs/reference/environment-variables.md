@@ -27,7 +27,13 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 
 | Variable | Required | What it does |
 |----------|:--------:|-------------|
-| `PANW_AI_SEC_API_KEY` | Yes | AI Security scan API key |
+| `PANW_AI_SEC_API_KEY` | Yes* | AI Security scan API key |
+| `PANW_AI_SEC_API_TOKEN` | Yes* | Pre-obtained bearer token (alternative to the API key) |
+| `PANW_AI_SEC_API_ENDPOINT` | -- | Custom scan API endpoint (default: `service.api.aisecurity.paloaltonetworks.com`) |
+| `PANW_AI_SEC_NUM_RETRIES` | -- | Max retry attempts, 0--5 (default: `5`) |
+
+!!! note
+    *Provide either `PANW_AI_SEC_API_KEY` or `PANW_AI_SEC_API_TOKEN`.
 
 ---
 
@@ -54,6 +60,19 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 
 !!! note
     Red Team commands reuse `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from the Management API section. The variables above are optional overrides for dedicated Red Team endpoints.
+
+---
+
+## AIRS Model Security API
+
+| Variable | Required | What it does |
+|----------|:--------:|-------------|
+| `PANW_MODEL_SEC_DATA_ENDPOINT` | -- | Custom Model Security data-plane endpoint |
+| `PANW_MODEL_SEC_MGMT_ENDPOINT` | -- | Custom Model Security management-plane endpoint |
+| `PANW_MODEL_SEC_TOKEN_ENDPOINT` | -- | Custom Model Security OAuth2 token endpoint |
+
+!!! note
+    Model Security commands also reuse the `PANW_MGMT_*` credentials. All endpoint overrides above (and their Red Team counterparts) can equally be set in `~/.prisma-airs/config.json` via the matching config keys (`airsApiToken`, `airsApiEndpoint`, `airsNumRetries`, `redTeamDataEndpoint`, `redTeamMgmtEndpoint`, `redTeamTokenEndpoint`, `modelSecDataEndpoint`, `modelSecMgmtEndpoint`, `modelSecTokenEndpoint`). Precedence: CLI > environment > config file.
 
 ---
 

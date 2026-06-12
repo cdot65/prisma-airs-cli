@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import type { Command } from 'commander';
 import { AirsScanService, RateLimitedScanService } from '../../airs/scanner.js';
 import type { ScanService } from '../../airs/types.js';
+import { runtimeInitOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import { computeMetrics } from '../../core/metrics.js';
 import { loadPrompts } from '../../core/prompt-loader.js';
@@ -62,11 +63,11 @@ export function registerEvalCommand(parent: Command): void {
           console.warn(`  Warning: ${msg}`),
         );
 
-        if (!config.airsApiKey) {
-          renderError('PANW_AI_SEC_API_KEY is required');
+        if (!config.airsApiKey && !config.airsApiToken) {
+          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
           process.exit(1);
         }
-        let scanner: ScanService = new AirsScanService(config.airsApiKey);
+        let scanner: ScanService = new AirsScanService(runtimeInitOptions(config));
         if (opts.rate) {
           scanner = new RateLimitedScanService(scanner, Number.parseInt(opts.rate, 10));
         }

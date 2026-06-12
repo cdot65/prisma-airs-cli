@@ -2,16 +2,12 @@ import { SdkRedTeamService } from '../../airs/redteam.js';
 import type { RedTeamTargetDetail } from '../../airs/types.js';
 import { sanitizeFilename, writeBackupFile } from '../../backup/io.js';
 import type { BackupEnvelope, BackupFormat, BackupResult } from '../../backup/types.js';
+import { redTeamClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 
 export async function createRedTeamService(): Promise<SdkRedTeamService> {
   const config = await loadConfig();
-  return new SdkRedTeamService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
+  return new SdkRedTeamService(redTeamClientOptions(config));
 }
 
 /** Recursively strip keys whose value is null. */
