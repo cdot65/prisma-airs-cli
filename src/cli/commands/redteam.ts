@@ -6,6 +6,7 @@ import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
 import { resolveOutputDir } from '../../backup/io.js';
 import type { BackupFormat } from '../../backup/types.js';
+import { redTeamClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   buildAttackListFootnote,
@@ -48,23 +49,13 @@ import { restoreTargets } from './restore.js';
 /** Create an SdkRedTeamService from config. */
 async function createService() {
   const config = await loadConfig();
-  return new SdkRedTeamService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
+  return new SdkRedTeamService(redTeamClientOptions(config));
 }
 
 /** Create an SdkPromptSetService from config. */
 async function createPromptSetService() {
   const config = await loadConfig();
-  return new SdkPromptSetService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
+  return new SdkPromptSetService(redTeamClientOptions(config));
 }
 
 /** Parse `--goals` arg as inline JSON array (starts with `[`) or path to a JSON file. */

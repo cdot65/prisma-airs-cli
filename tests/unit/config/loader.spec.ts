@@ -29,6 +29,15 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_MGMT_TSG_ID', '');
     vi.stubEnv('PANW_MGMT_ENDPOINT', '');
     vi.stubEnv('PANW_MGMT_TOKEN_ENDPOINT', '');
+    vi.stubEnv('PANW_AI_SEC_API_TOKEN', '');
+    vi.stubEnv('PANW_AI_SEC_API_ENDPOINT', '');
+    vi.stubEnv('PANW_AI_SEC_NUM_RETRIES', '');
+    vi.stubEnv('PANW_RED_TEAM_DATA_ENDPOINT', '');
+    vi.stubEnv('PANW_RED_TEAM_MGMT_ENDPOINT', '');
+    vi.stubEnv('PANW_RED_TEAM_TOKEN_ENDPOINT', '');
+    vi.stubEnv('PANW_MODEL_SEC_DATA_ENDPOINT', '');
+    vi.stubEnv('PANW_MODEL_SEC_MGMT_ENDPOINT', '');
+    vi.stubEnv('PANW_MODEL_SEC_TOKEN_ENDPOINT', '');
   });
 
   afterEach(async () => {
@@ -78,6 +87,44 @@ describe('loadConfig', () => {
 
     const config = await loadConfig({}, configPath);
     expect(config.scanConcurrency).toBe(7);
+  });
+
+  it('reads endpoint/auth override env vars', async () => {
+    vi.stubEnv('PANW_AI_SEC_API_TOKEN', 'tok-env');
+    vi.stubEnv('PANW_AI_SEC_API_ENDPOINT', 'https://airs.example.com');
+    vi.stubEnv('PANW_AI_SEC_NUM_RETRIES', '2');
+    vi.stubEnv('PANW_RED_TEAM_DATA_ENDPOINT', 'https://rt-data.example.com');
+    vi.stubEnv('PANW_RED_TEAM_MGMT_ENDPOINT', 'https://rt-mgmt.example.com');
+    vi.stubEnv('PANW_RED_TEAM_TOKEN_ENDPOINT', 'https://rt-token.example.com');
+    vi.stubEnv('PANW_MODEL_SEC_DATA_ENDPOINT', 'https://ms-data.example.com');
+    vi.stubEnv('PANW_MODEL_SEC_MGMT_ENDPOINT', 'https://ms-mgmt.example.com');
+    vi.stubEnv('PANW_MODEL_SEC_TOKEN_ENDPOINT', 'https://ms-token.example.com');
+
+    const config = await loadConfig({}, configPath);
+    expect(config.airsApiToken).toBe('tok-env');
+    expect(config.airsApiEndpoint).toBe('https://airs.example.com');
+    expect(config.airsNumRetries).toBe(2);
+    expect(config.redTeamDataEndpoint).toBe('https://rt-data.example.com');
+    expect(config.redTeamMgmtEndpoint).toBe('https://rt-mgmt.example.com');
+    expect(config.redTeamTokenEndpoint).toBe('https://rt-token.example.com');
+    expect(config.modelSecDataEndpoint).toBe('https://ms-data.example.com');
+    expect(config.modelSecMgmtEndpoint).toBe('https://ms-mgmt.example.com');
+    expect(config.modelSecTokenEndpoint).toBe('https://ms-token.example.com');
+  });
+
+  it('reads endpoint/auth overrides from config file with env taking precedence', async () => {
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        airsApiEndpoint: 'https://file.example.com',
+        redTeamDataEndpoint: 'https://rt-file.example.com',
+      }),
+    );
+    vi.stubEnv('PANW_AI_SEC_API_ENDPOINT', 'https://env.example.com');
+
+    const config = await loadConfig({}, configPath);
+    expect(config.airsApiEndpoint).toBe('https://env.example.com');
+    expect(config.redTeamDataEndpoint).toBe('https://rt-file.example.com');
   });
 
   it('expands ~ in dataDir', async () => {

@@ -5,6 +5,7 @@ import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import { SdkRuntimeService } from '../../airs/runtime.js';
 import type { RuntimeScanResult, SecurityProfileInfo } from '../../airs/types.js';
+import { runtimeInitOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   buildProfileOverrides,
@@ -174,8 +175,8 @@ export function registerRuntimeCommand(program: Command): void {
     .action(async (opts) => {
       try {
         const config = await loadConfig({});
-        if (!config.airsApiKey) {
-          renderError('PANW_AI_SEC_API_KEY is required');
+        if (!config.airsApiKey && !config.airsApiToken) {
+          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
           process.exit(1);
         }
 
@@ -189,7 +190,7 @@ export function registerRuntimeCommand(program: Command): void {
 
         const sessionId = opts.sessionId ?? `prisma-airs-cli-bulk-${Date.now().toString(36)}`;
 
-        const service = new SdkRuntimeService(config.airsApiKey);
+        const service = new SdkRuntimeService(runtimeInitOptions(config));
         console.log(chalk.bold.cyan('\n  Prisma AIRS Bulk Scan'));
         console.log(chalk.dim(`  Profile:  ${opts.profile}`));
         console.log(chalk.dim(`  Session:  ${sessionId}`));
@@ -697,13 +698,13 @@ export function registerRuntimeCommand(program: Command): void {
     .action(async (stateFile: string, opts) => {
       try {
         const config = await loadConfig({});
-        if (!config.airsApiKey) {
-          renderError('PANW_AI_SEC_API_KEY is required');
+        if (!config.airsApiKey && !config.airsApiToken) {
+          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
           process.exit(1);
         }
 
         const state = await loadBulkScanState(stateFile);
-        const service = new SdkRuntimeService(config.airsApiKey);
+        const service = new SdkRuntimeService(runtimeInitOptions(config));
 
         console.log(chalk.bold.cyan('\n  Prisma AIRS Resume Poll'));
         console.log(chalk.dim(`  Profile:  ${state.profile}`));
@@ -751,12 +752,12 @@ export function registerRuntimeCommand(program: Command): void {
     .action(async (prompt: string, opts) => {
       try {
         const config = await loadConfig({});
-        if (!config.airsApiKey) {
-          renderError('PANW_AI_SEC_API_KEY is required');
+        if (!config.airsApiKey && !config.airsApiToken) {
+          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
           process.exit(1);
         }
 
-        const service = new SdkRuntimeService(config.airsApiKey);
+        const service = new SdkRuntimeService(runtimeInitOptions(config));
         console.log(chalk.bold.cyan('\n  Prisma AIRS Runtime Scan'));
         console.log(chalk.dim(`  Profile: ${opts.profile}`));
         console.log(

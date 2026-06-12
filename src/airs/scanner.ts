@@ -1,5 +1,5 @@
 import * as fs from 'node:fs/promises';
-import { Content, init, Scanner } from '@cdot65/prisma-airs-sdk';
+import { Content, type InitOptions, init, Scanner } from '@cdot65/prisma-airs-sdk';
 import pLimit from 'p-limit';
 import type { ScanResult, ScanService } from './types.js';
 
@@ -7,8 +7,8 @@ import type { ScanResult, ScanService } from './types.js';
 export class AirsScanService implements ScanService {
   private scanner: InstanceType<typeof Scanner>;
 
-  constructor(apiKey: string) {
-    init({ apiKey });
+  constructor(opts: InitOptions) {
+    init(opts);
     this.scanner = new Scanner();
   }
 

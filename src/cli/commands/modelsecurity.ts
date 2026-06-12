@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkModelSecurityService } from '../../airs/modelsecurity.js';
+import { modelSecurityClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   type OutputFormat,
@@ -52,12 +53,7 @@ function run(bin: string, args: string[], label: string): Promise<void> {
 /** Create an SdkModelSecurityService from config. */
 async function createService() {
   const config = await loadConfig();
-  return new SdkModelSecurityService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
+  return new SdkModelSecurityService(modelSecurityClientOptions(config));
 }
 
 /** Register the `model-security` command group. */

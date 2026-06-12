@@ -1,4 +1,4 @@
-import { Content, init, Scanner } from '@cdot65/prisma-airs-sdk';
+import { Content, type InitOptions, init, Scanner } from '@cdot65/prisma-airs-sdk';
 import type { RuntimeScanResult, RuntimeService } from './types.js';
 
 const BATCH_SIZE = 5;
@@ -26,8 +26,8 @@ function isRateLimitError(err: unknown): boolean {
 export class SdkRuntimeService implements RuntimeService {
   private scanner: InstanceType<typeof Scanner>;
 
-  constructor(apiKey: string) {
-    init({ apiKey });
+  constructor(opts: InitOptions) {
+    init(opts);
     this.scanner = new Scanner();
   }
 
