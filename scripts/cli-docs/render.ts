@@ -30,8 +30,9 @@ function examplesBlock(path: string, examples: ExampleMap): string {
   const list = examples[path];
   if (!list?.length) {
     return [
-      '!!! warning "Example needed"',
-      '    No curated input/output example for this command yet.',
+      ':::warning[Example needed]',
+      'No curated input/output example for this command yet.',
+      ':::',
     ].join('\n');
   }
   return list
@@ -63,7 +64,9 @@ export function renderGroupPage(page: PageNode, examples: ExampleMap): string {
   const multi = page.commands.length > 1;
   const blocks = page.commands.map((c) => renderCommand(c, examples, multi ? 3 : 2));
   const body = multi ? blocks.join('\n\n---\n\n') : blocks.join('\n\n');
-  return [`# ${page.title}`, '', body, ''].join('\n');
+  const label = page.title.split(' ').pop() ?? page.title;
+  const frontmatter = ['---', `sidebar_label: ${label}`, '---', ''].join('\n');
+  return [frontmatter, `# ${page.title}`, '', body, ''].join('\n');
 }
 
 export function renderIndex(pages: PageNode[]): string {
@@ -72,6 +75,12 @@ export function renderIndex(pages: PageNode[]): string {
     .sort((a, b) => a.slug.localeCompare(b.slug))
     .map((p) => `- [\`airs ${p.title}\`](${p.slug}.md)`);
   return [
+    '---',
+    'sidebar_label: Overview',
+    'sidebar_position: 0',
+    'slug: /cli/',
+    '---',
+    '',
     '# CLI Reference',
     '',
     'Auto-generated from the `airs` command tree. Every command below lists its synopsis, options, and at least one input/output example.',
@@ -79,25 +88,4 @@ export function renderIndex(pages: PageNode[]): string {
     ...lines,
     '',
   ].join('\n');
-}
-
-export function renderSummary(pages: PageNode[]): string {
-  const groups = new Map<string, PageNode[]>();
-  for (const p of pages) {
-    const top = p.slug.split('/')[0];
-    const arr = groups.get(top) ?? [];
-    arr.push(p);
-    groups.set(top, arr);
-  }
-  const out: string[] = ['* [CLI Reference](index.md)'];
-  for (const top of groups.keys()) {
-    const label = top.charAt(0).toUpperCase() + top.slice(1);
-    out.push(`* ${label}`);
-    const sorted = (groups.get(top) ?? []).slice().sort((a, b) => a.title.localeCompare(b.title));
-    for (const p of sorted) {
-      out.push(`    * [airs ${p.title}](${p.slug}.md)`);
-    }
-  }
-  out.push('');
-  return out.join('\n');
 }

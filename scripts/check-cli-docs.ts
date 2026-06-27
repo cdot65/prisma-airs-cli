@@ -6,9 +6,9 @@ import { loadExamples, missingExamples } from './cli-docs/examples.js';
 import { leafCommands, walkProgram } from './cli-docs/walk.js';
 import { generate } from './gen-cli-docs.js';
 
-const COMMITTED = 'docs/cli';
-const EXAMPLES_DIR = 'docs/cli/examples';
-const ALLOWLIST = 'docs/cli/examples/.missing-allowlist';
+const COMMITTED = 'docs-site/docs/cli';
+const EXAMPLES_DIR = 'docs-site/cli-examples';
+const ALLOWLIST = 'docs-site/cli-examples/.missing-allowlist';
 
 function readAllowlist(): Set<string> {
   if (!existsSync(ALLOWLIST)) return new Set();

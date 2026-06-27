@@ -1,0 +1,99 @@
+---
+title: Library — Getting Started
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Library — Getting Started
+
+`@cdot65/prisma-airs-cli` is published to npm as a fully-typed ESM library. In addition to the
+`airs` CLI binary, the package exports service classes and utilities you can import directly in
+Node.js applications or automation scripts.
+
+## Requirements
+
+- Node.js 20 or later
+- ESM project (`"type": "module"` in `package.json`) or TypeScript with `"module": "NodeNext"`
+
+## Installation
+
+<Tabs>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @cdot65/prisma-airs-cli
+```
+
+</TabItem>
+<TabItem value="npm" label="npm">
+
+```bash
+npm install @cdot65/prisma-airs-cli
+```
+
+</TabItem>
+<TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @cdot65/prisma-airs-cli
+```
+
+</TabItem>
+</Tabs>
+
+## Authentication
+
+The library ships two independent auth paths:
+
+| Service class | Credentials needed |
+|---|---|
+| `SdkRuntimeService` | `PANW_AI_SEC_API_KEY` — Scanner API key |
+| `SdkManagementService` | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` — OAuth2 client credentials |
+
+Both sets of credentials are available from the **Prisma AIRS** tenant portal. Set them as
+environment variables (or pass them explicitly to the constructors — see the
+[recipes](recipes.md)).
+
+## Minimal example: scan a prompt
+
+```typescript
+import { SdkRuntimeService } from '@cdot65/prisma-airs-cli';
+
+// Constructor takes a single string: the Scanner API key.
+const runtime = new SdkRuntimeService(process.env.PANW_AI_SEC_API_KEY!);
+
+const result = await runtime.scanPrompt(
+  'my-security-profile', // profile name (always use name, never UUID)
+  'How do I bypass a firewall?',
+);
+
+console.log('action :', result.action);      // 'block' | 'allow'
+console.log('triggered:', result.triggered); // true if any detection fired
+console.log('detections:', result.detections);
+```
+
+`scanPrompt` signature:
+
+```typescript
+scanPrompt(
+  profileName: string,
+  prompt: string,
+  response?: string,
+): Promise<RuntimeScanResult>
+```
+
+The returned `RuntimeScanResult` includes `scanId`, `reportId`, `action`, `category`,
+`triggered`, and `detections` (a map of individual detection flags such as `topic_violation`,
+`injection`, `toxic_content`, `dlp`, `url_cats`, `malicious_code`).
+
+## Important: always scan by profile name
+
+AIRS profiles are versioned. Passing a **name** always uses the latest revision; passing a UUID
+pins to a specific snapshot. The library enforces the name-first convention — `scanPrompt`
+accepts `profileName: string`.
+
+## Next steps
+
+- [Library Recipes](recipes.md) — complete, copy-pasteable code samples
+- [API Reference](../api/README.md) — generated TypeDoc for every exported class and type

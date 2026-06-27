@@ -31,8 +31,9 @@
     "docker:push:arm64": "./scripts/docker-push-arm64.sh",
     "docs:gen": "tsx scripts/gen-cli-docs.ts",
     "docs:api": "typedoc",
-    "docs:build": "pnpm docs:gen && pnpm docs:api && mkdocs build --strict",
-    "docs:serve": "pnpm docs:gen && pnpm docs:api && mkdocs serve",
+    "docs:install": "pnpm -C docs-site install",
+    "docs:build": "pnpm docs:gen && pnpm docs:api && pnpm -C docs-site build",
+    "docs:serve": "pnpm docs:gen && pnpm docs:api && pnpm -C docs-site start",
     "docs:check": "tsx scripts/check-cli-docs.ts"
   },
   "engines": {
