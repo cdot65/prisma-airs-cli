@@ -65,13 +65,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-      - run: pip install -r docs/requirements.txt
-      - run: pnpm docs:gen
-      - run: pnpm docs:api
-      - run: mkdocs build --strict
+      - name: Generate CLI + API reference
+        run: |
+          pnpm docs:gen
+          pnpm docs:api
+      - run: pnpm -C docs-site install --frozen-lockfile
+      # onBrokenLinks/onBrokenAnchors: 'throw' make this the strict build gate.
+      - run: pnpm -C docs-site build
 
   docs-check:
     runs-on: ubuntu-latest

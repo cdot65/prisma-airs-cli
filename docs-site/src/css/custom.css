@@ -1,0 +1,46 @@
+/**
+ * Global styles. The classic template bundles Infima.
+ * Brand identity carried over from the previous mkdocs-material site:
+ * deep purple primary, amber accent.
+ */
+
+:root {
+  --ifm-color-primary: #5e35b1;
+  --ifm-color-primary-dark: #5530a0;
+  --ifm-color-primary-darker: #502d97;
+  --ifm-color-primary-darkest: #42257d;
+  --ifm-color-primary-light: #6b41c0;
+  --ifm-color-primary-lighter: #7146c6;
+  --ifm-color-primary-lightest: #875ed6;
+  --ifm-code-font-size: 95%;
+  --ifm-color-warning: #ffb300;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* Lighter purple for dark mode readability. */
+[data-theme='dark'] {
+  --ifm-color-primary: #b39ddb;
+  --ifm-color-primary-dark: #9f81d0;
+  --ifm-color-primary-darker: #9574cb;
+  --ifm-color-primary-darkest: #7a52bd;
+  --ifm-color-primary-light: #c7b9e6;
+  --ifm-color-primary-lighter: #d1c6eb;
+  --ifm-color-primary-lightest: #efeaf8;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Mermaid diagrams centered with breathing room. */
+.docusaurus-mermaid-container {
+  margin: 1.5em 0;
+  text-align: center;
+}
+
+/* Badges (CI / license / node) align inline on the home page. */
+.markdown img[alt='CI'],
+.markdown img[alt='License: MIT'],
+.markdown img[alt='Node 20+'],
+.markdown img[alt='TypeScript'] {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}

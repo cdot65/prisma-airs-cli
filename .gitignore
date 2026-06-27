@@ -27,8 +27,9 @@ Thumbs.db
 # Design source files
 *.ai
 
-# MkDocs
-site/
+# Docusaurus (also covered by docs-site/.gitignore)
+docs-site/build/
+docs-site/.docusaurus/
 
 # Runtime data
 ~/.prisma-airs/
