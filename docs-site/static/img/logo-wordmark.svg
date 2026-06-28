@@ -4,19 +4,19 @@
 
   <defs>
     <linearGradient id="shieldStroke" x1="108" y1="132" x2="508" y2="594" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A6CFF"/>
-      <stop offset="0.52" stop-color="#149BFF"/>
-      <stop offset="1" stop-color="#20C8C7"/>
+      <stop offset="0" stop-color="#458588"/>
+      <stop offset="0.52" stop-color="#83a598"/>
+      <stop offset="1" stop-color="#8ec07c"/>
     </linearGradient>
     <linearGradient id="airsMark" x1="200" y1="220" x2="382" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A6CFF"/>
-      <stop offset="0.58" stop-color="#18B7DC"/>
-      <stop offset="1" stop-color="#20C8C7"/>
+      <stop offset="0" stop-color="#458588"/>
+      <stop offset="0.58" stop-color="#689d6a"/>
+      <stop offset="1" stop-color="#8ec07c"/>
     </linearGradient>
     <linearGradient id="airsWord" x1="1320" y1="245" x2="1710" y2="460" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A6CFF"/>
-      <stop offset="0.58" stop-color="#149BFF"/>
-      <stop offset="1" stop-color="#20C8C7"/>
+      <stop offset="0" stop-color="#fabd2f"/>
+      <stop offset="0.58" stop-color="#fe8019"/>
+      <stop offset="1" stop-color="#d65d0e"/>
     </linearGradient>
   </defs>
 
