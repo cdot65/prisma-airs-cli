@@ -46,7 +46,7 @@ airs runtime topics eval --profile my-security-profile --prompts prompts.csv --t
 airs runtime topics revert --profile my-security-profile --name "Explosives"
 ```
 
-The full autonomous optimization loop is defined in `program.md` for use with AI agents (Claude Code, Gemini CLI, Codex, Copilot, etc.). [Full guardrail docs](../runtime/guardrails/overview.md)
+The full autonomous optimization loop is defined in [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) for use with AI agents (Claude Code, Codex, Copilot, etc.). [Full guardrail docs](../runtime/guardrails/overview.md)
 
 :::note[Coverage expectations]
 Achievable coverage depends on the topic domain and intent. Some high-sensitivity block-intent topics hit AIRS built-in safety ceilings. Allow-intent topics typically reach 40-70% coverage. See [Platform Constraints](../runtime/guardrails/overview.md#platform-constraints) for details.

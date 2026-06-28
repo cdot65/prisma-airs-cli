@@ -1,6 +1,6 @@
 # Guardrail Optimization
 
-The guardrail workflow was refactored from an embedded LLM-driven async generator loop to a set of atomic CLI commands. An external agent (Claude Code, Gemini CLI, etc.) orchestrates these commands in a loop following the protocol defined in `program.md`.
+The guardrail workflow was refactored from an embedded LLM-driven async generator loop to a set of atomic CLI commands. An external agent (Claude Code, etc.) orchestrates these commands in a loop following the protocol defined in [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md).
 
 ## Atomic Commands
 
@@ -27,7 +27,7 @@ flowchart TD
 
 ## Agent Loop Protocol
 
-The external agent follows `program.md`:
+The external agent follows [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md):
 
 1. Establish baseline by running `eval` on the unmodified profile
 2. Create/update a topic definition
@@ -59,4 +59,4 @@ The topic name is used as the upsert key. The `create` command validates AIRS co
 
 - [Metrics & Evaluation](../runtime/guardrails/metrics.md) — how TP/TN/FP/FN are classified
 - [Topic Constraints](../runtime/guardrails/topic-constraints.md) — AIRS limits on topic definitions
-- `program.md` — full agent loop protocol
+- [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) — full agent loop protocol

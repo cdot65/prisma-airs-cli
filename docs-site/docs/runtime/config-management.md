@@ -46,7 +46,7 @@ airs runtime topics revert --profile <name> --name <name> [--format json]
 airs runtime topics sample [--output <path>]
 ```
 
-See [Guardrail Optimization](guardrails/overview.md) for details on the optimization loop and `program.md` for the agent protocol.
+See [Guardrail Optimization](guardrails/overview.md) for details on the optimization loop and [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) for the agent protocol.
 
 ## API Keys
 

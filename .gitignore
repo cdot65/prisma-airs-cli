@@ -11,6 +11,9 @@ dist/
 # Test
 coverage/
 
+# Logs
+*.log
+
 # Secrets
 .env
 

@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - "docs-site/**"
-      - "scripts/**"
       - "src/**"
       - "typedoc.json"
       - "package.json"
@@ -38,10 +37,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Generate CLI + API reference
-        run: |
-          pnpm docs:gen
-          pnpm docs:api
+      - name: Generate API reference
+        run: pnpm docs:api
 
       - name: Install docs-site deps
         run: pnpm -C docs-site install --frozen-lockfile

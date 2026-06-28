@@ -22,32 +22,38 @@ pnpm test -- -t "pattern"  # Tests matching name pattern
 pnpm test:coverage         # Coverage (excludes src/cli/**, src/index.ts, **/types.ts)
 pnpm test:e2e              # E2E tests (requires real creds, opt-in)
 
-# Docker
-pnpm run docker:build      # Build local image
+# Docker (Dockerfile lives at docker/Dockerfile)
+pnpm run docker:build      # Build local image (-f docker/Dockerfile)
 pnpm run docker:run        # Run (mounts ~/.prisma-airs)
 
-# Lint & Format
-pnpm run lint              # Biome check
-pnpm run lint:fix          # Biome check --write
-pnpm run format            # Biome format --write
-pnpm run format:check      # Biome format (check only, no write)
+# Lint & Format (Biome config lives at config/biome.json)
+pnpm run lint              # Biome check  --config-path config
+pnpm run lint:fix          # Biome check  --write --config-path config
+pnpm run format            # Biome format --write --config-path config
+pnpm run format:check      # Biome format --config-path config (check only)
 
 # Type-check
 pnpm tsc --noEmit
+
+# Docs (Docusaurus site in docs-site/ + TypeDoc API)
+pnpm run docs:api          # Generate TypeDoc markdown API reference
+pnpm run docs:build        # docs:api + build docs-site
+pnpm run docs:serve        # docs:api + serve docs-site locally
 ```
 
 ## Releases
 
 **Always cut versions via `pnpm changeset version`. Never hand-edit `package.json`.**
 
+This repo keeps **no root change-log file** — changesets are configured with `"changelog": false` (`.changeset/config.json`), so `changeset version` only bumps `package.json` and consumes the queued `.changeset/*.md` files; it does not generate a change log. User-facing release notes are hand-maintained in `docs-site/docs/about/release-notes.md` plus the GitHub Release body.
+
 Workflow when shipping a release:
 
-1. `pnpm changeset version` — consumes queued `.changeset/*.md` → writes `CHANGELOG.md` + bumps `package.json` based on the highest bump type across queued entries (`major` > `minor` > `patch`).
-2. Commit the resulting `package.json` + `CHANGELOG.md` + deleted changeset files together: `chore(release): X.Y.Z — <short title>`.
-3. Tag `vX.Y.Z` and push commit + tag.
-4. `gh release create vX.Y.Z --title "vX.Y.Z — <title>" --notes ...` — this fires `.github/workflows/publish.yml`, which runs lint/typecheck/test/build and `npm publish` via OIDC.
-
-Why this matters: prior to 2026-05-28 the repo used manual `chore: bump to vX.Y.Z` commits and never ran `changeset version`, so 21 stale changeset files accumulated since 2026-03 and required a one-off cleanup PR (#223). Going forward, the changeset workflow is the only path so the backlog stays drained.
+1. `pnpm changeset version` — consumes queued `.changeset/*.md` → bumps `package.json` based on the highest bump type across queued entries (`major` > `minor` > `patch`). No changelog is generated.
+2. Commit `package.json` + the deleted changeset files together: `chore(release): X.Y.Z — <short title>`.
+3. Update `docs-site/docs/about/release-notes.md` with the user-facing notes for this version.
+4. Tag `vX.Y.Z` and push commit + tag.
+5. `gh release create vX.Y.Z --title "vX.Y.Z — <title>" --notes ...` — this fires `.github/workflows/publish.yml`, which runs lint/typecheck/test/build and `npm publish` via OIDC.
 
 For hotfixes that should bypass all queued changesets and ship only one fix: add only the hotfix's changeset, branch off the release tag (not `main`), run `pnpm changeset version`, release, then rebase/merge back. Manual `package.json` edits are only acceptable as a last resort (e.g. the queued backlog is corrupted) and must be paired with a follow-up cleanup PR.
 
@@ -65,6 +71,8 @@ Lines: 90%, Functions: 95%, Branches: 80%, Statements: 90%. Coverage excludes `s
 
 ## Directory Structure
 
+Top-level layout: `src/` (library + CLI), `tests/`, `config/biome.json` (Biome config), `docker/` (`Dockerfile`, `docker-push-arm64.sh`), `docs-site/` (Docusaurus documentation site), `typedoc.json` (API-docs generator). There is no top-level build-scripts directory and no root change-log file.
+
 ```
 src/
 ├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
@@ -77,6 +85,7 @@ src/
 │   │   ├── topics-apply.ts   # Assign topic to profile (additive, preserves existing topics)
 │   │   ├── topics-eval.ts    # Scan static prompt set, compute metrics, return FP/FN lists
 │   │   ├── topics-revert.ts  # Remove topic from profile and delete it
+│   │   ├── topics-sample.ts  # Print sample eval CSV (prompt,expected,intent)
 │   │   ├── backup.ts      # Backup core logic (backupTargets, createRedTeamService, toBackupData)
 │   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
@@ -94,13 +103,14 @@ src/
 │       ├── eval.ts        # Eval metrics, FP/FN list rendering
 │       ├── redteam.ts     # Red team scan/target/prompt-set rendering
 │       ├── runtime.ts     # Runtime scan + config management rendering
+│       ├── dlp.ts         # DLP filtering-profiles/patterns/profiles/dictionaries rendering
 │       └── modelsecurity.ts # Model security groups/rules/scans rendering
 ├── config/
 │   ├── schema.ts          # Zod ConfigSchema — all config fields w/ defaults
 │   └── loader.ts          # Config cascade: CLI > env > file > Zod defaults
 ├── core/
 │   ├── prompt-loader.ts   # Load static prompt set from CSV/text for eval command
-│   ├── types.ts           # CustomTopic, EvalMetrics, EvalResult, TopicConstraints
+│   ├── types.ts           # CustomTopic, UserInput, TestCase, TestResult, EfficacyMetrics, AnalysisReport, IterationResult, RunState
 │   ├── metrics.ts         # computeMetrics() — TP/TN/FP/FN → TPR/TNR/accuracy/coverage/F1
 │   └── constraints.ts     # AIRS topic limits: 100 name, 250 desc, 250/example, 5 max, 1000 combined
 ├── airs/
@@ -111,11 +121,19 @@ src/
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
-│   └── types.ts           # ScanResult, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
+│   └── types.ts           # ScanResult, ProfileTopic, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
 ├── backup/
 │   ├── types.ts           # BackupEnvelope<T>, BackupFormat, ResourceType, result types
 │   ├── io.ts              # writeBackupFile, readBackupFile, readBackupDir, sanitizeFilename
 │   └── index.ts           # Barrel exports
+├── dlp/                   # DLP test-file generator (synthetic sensitive data; powers `runtime dlp generate`)
+│   ├── generate/          # Clean carrier-file generators per format (pdf, png, jpeg, svg, docx, raster)
+│   ├── embed/             # "Dirty" embedding techniques per format (metadata, hidden-text, stego, exif, zip, overlay…)
+│   ├── lorem.ts           # Filler text generation
+│   ├── manifest.ts        # Manifest (dirty file → technique + embedded values, for scoring)
+│   ├── payload.ts         # Synthetic sensitive-value payloads
+│   ├── rng.ts             # Seeded RNG for reproducible output
+│   └── types.ts           # DLP generation types
 └── index.ts               # Library exports
 
 tests/
@@ -124,7 +142,8 @@ tests/
 │   ├── backup/            # io.spec.ts
 │   ├── cli/               # parse-input.spec.ts, bulk-scan-state.spec.ts, backup.spec.ts, backup-renderer.spec.ts, restore.spec.ts
 │   ├── config/            # schema.spec.ts, loader.spec.ts
-│   └── core/              # metrics.spec.ts, constraints.spec.ts
+│   ├── core/              # metrics.spec.ts, constraints.spec.ts
+│   └── dlp/               # DLP service + CLI command specs
 └── helpers/               # mocks.ts
 ```
 
@@ -187,12 +206,12 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
-  - `airs runtime dlp-profiles {list}` — DLP profile listing
   - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`)
   - `airs runtime dlp filtering-profiles {list, get, replace}` — read + full-replace
   - `airs runtime dlp patterns {list, create, get, replace, patch, delete}` — full CRUD + soft-delete
   - `airs runtime dlp profiles {list, create, get, replace, patch, delete*}` — no real delete; patch profile_status
   - `airs runtime dlp dictionaries {list, create, get, replace, patch, delete}` — multipart upload, 200/204 fallback
+  - `airs runtime dlp generate` — generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX; no auth (local only)
 
 ### Red Team (`src/airs/redteam.ts`, `src/airs/promptsets.ts`)
 - `SdkRedTeamService` wraps `RedTeamClient` for scan CRUD, polling, reports, **target CRUD**
@@ -204,7 +223,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `waitForCompletion()` polls with configurable interval, throws on FAILED
 - Target create/update accept `{ validate: true }` to validate connection before saving (SDK v0.6.0)
 - CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`
-- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`
+- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
 
 ### DLP (`src/airs/dlp/`)
 - **Shape**: thin SDK wrappers; one class per resource (filtering-profiles, patterns, profiles, dictionaries); all instantiate via `getOrCreateManagementClient()` for shared OAuth token cache
@@ -262,6 +281,12 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 
 ## Guardrail Optimization Loop
 
-For autonomous custom topic guardrail optimization, follow the protocol in `program.md`. It covers setup, baseline, the iteration loop, revert procedure, plateau detection, and companion topics. All lessons from real optimization sessions are encoded there.
+Guardrail generation is **agent-driven** via the atomic `runtime topics` commands — there is no LLM layer and no auto-generation command. An external agent orchestrates the loop:
 
-Key commands: `topics create`, `topics apply`, `topics eval`, `topics revert`, `topics sample`, `topics get --output json`.
+1. `topics sample` — see the expected eval CSV format (`prompt,expected,intent`).
+2. `topics create` — create/update a custom topic (upserts by name; validates AIRS constraints).
+3. `topics apply` — assign the topic to a profile (additive, preserves existing topics).
+4. `topics eval` — scan a static prompt set against the profile; compute TPR/TNR/coverage/F1 and return FP/FN lists.
+5. Keep or `topics revert` (remove from profile + delete the topic) based on metrics, then iterate.
+
+Use `topics get --output json` to read current topic state before modifying. The full protocol (setup, baseline, iteration, plateau detection, companion topics) lives in the docs under `docs-site/docs/runtime/guardrails/` (online: <https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/>).
