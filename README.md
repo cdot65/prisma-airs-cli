@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs-site/static/img/logo-wordmark-dark.svg">
-    <img alt="prisma-airs-cli" src="docs-site/static/img/logo-wordmark.svg" width="560">
+    <img alt="prisma-airs-cli" src="docs-site/static/img/logo-wordmark.svg" width="400">
   </picture>
 </p>
 

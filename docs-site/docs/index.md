@@ -6,7 +6,7 @@ hide_title: true
 
 <div align="center">
 
-<img src="/img/logo-wordmark-dark.svg" alt="prisma-airs-cli" width="620" />
+<img src="/img/logo-wordmark-dark.svg" alt="prisma-airs-cli" width="440" style="max-width:100%;height:auto" />
 
 **CLI and library for Palo Alto Prisma AIRS AI security**
 
