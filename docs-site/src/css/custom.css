@@ -180,6 +180,8 @@ p, li { text-wrap: pretty; }
   border-bottom: 1px solid var(--gb-bg2);
 }
 .navbar__title { font-family: var(--ifm-font-family-monospace); letter-spacing: -0.02em; }
+/* Keep the brand icon compact in the navbar */
+.navbar__logo, .navbar__logo img { height: 30px; width: auto; }
 
 /* Active sidebar item: yellow accent bar (3px) instead of full fill emphasis */
 .menu__link--active:not(.menu__link--sublist) {
