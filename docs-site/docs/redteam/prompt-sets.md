@@ -131,8 +131,8 @@ prompt,goal
 airs redteam prompt-sets upload <setUuid> prompts.csv
 ```
 
-:::tip[Generating prompts automatically]
-Use `airs runtime topics generate --create-prompt-set` to generate test prompts from a guardrail refinement loop and automatically upload them as a custom prompt set. See [Guardrail to Red Team](guardrail-to-redteam.md) for a full walkthrough.
+:::tip[From guardrail refinement to a prompt set]
+Refine a guardrail with the `airs runtime topics create/apply/eval` loop, then turn the resulting prompts into a custom prompt set with `airs redteam prompt-sets create` + `upload`. See [Guardrail to Red Team](guardrail-to-redteam.md) for a full walkthrough.
 :::
 
 ---
