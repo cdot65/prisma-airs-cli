@@ -4,7 +4,7 @@ title: AI Agent Instructions
 
 # AI Agent Instructions
 
-Instructions for AI coding agents (Claude Code, Gemini CLI, Cursor, etc.) to use the `airs` CLI programmatically.
+Instructions for AI coding agents (Claude Code, Cursor, etc.) to use the `airs` CLI programmatically.
 
 The canonical file lives at [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) in the repository root. It is designed to be loaded into an AI agent's context window so the agent can operate the CLI autonomously.
 
@@ -20,14 +20,6 @@ See AGENTS.md for instructions on using the `airs` CLI.
 
 Or reference it directly — Claude Code automatically reads `CLAUDE.md` and can be pointed to `AGENTS.md`.
 
-### Gemini CLI
-
-Add to your project's `GEMINI.md` or system instructions:
-
-```markdown
-See AGENTS.md for instructions on using the `airs` CLI.
-```
-
 ### Other Agents
 
 Copy the contents of `AGENTS.md` into your agent's system prompt or context. The file is self-contained and requires no external references.
@@ -40,7 +32,7 @@ The agent instructions document covers:
 - **Output formats** — how to use `--output json` for machine-parseable results
 - **Complete command reference** — every command, flag, default, and required parameter
 - **Common workflows** — step-by-step recipes for scanning, CRUD, red teaming, auditing, guardrail optimization
-- **Agent loop protocol** — references `program.md` for the autonomous guardrail optimization loop
+- **Agent loop protocol** — `AGENTS.md` documents the autonomous guardrail optimization loop
 - **Error handling** — common errors and fixes
 - **Platform rules** — critical AIRS behaviors agents must know (profile naming, propagation delays, etc.)
 - **Config file** — location, format, and field reference

@@ -41,7 +41,7 @@ graph LR
 
 ## Guardrail Optimization Data Flow
 
-The guardrail workflow uses atomic CLI commands orchestrated by an external agent (see `program.md`):
+The guardrail workflow uses atomic CLI commands orchestrated by an external agent (see [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md)):
 
 ```mermaid
 graph TD

@@ -2,7 +2,7 @@
 # Build and push the arm64 Docker image from a local Apple Silicon machine.
 # CI handles amd64; run this locally after a release tag to complete multi-arch.
 #
-# Usage: ./scripts/docker-push-arm64.sh [version]
+# Usage: ./docker/docker-push-arm64.sh [version]
 #   version: semver tag (e.g. 1.4.0). Defaults to package.json version.
 #
 # Prerequisites:
@@ -21,6 +21,7 @@ MAJOR_MINOR="${VERSION%.*}"
 echo "Building arm64 image for ${REGISTRY}/${IMAGE}:${VERSION}"
 
 docker buildx build \
+  -f docker/Dockerfile \
   --platform linux/arm64 \
   --push \
   --tag "${REGISTRY}/${IMAGE}:${VERSION}-arm64" \

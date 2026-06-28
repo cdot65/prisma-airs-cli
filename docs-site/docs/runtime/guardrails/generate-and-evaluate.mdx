@@ -21,7 +21,7 @@ Custom topic guardrails let you control what content AIRS flags or allows. The w
 4. **Evaluate** against your prompt set to measure coverage
 5. **Iterate** on the definition until coverage plateaus
 
-The CLI provides atomic commands for each step. An AI coding agent can orchestrate the full loop autonomously by following the protocol in `program.md`.
+The CLI provides atomic commands for each step. An AI coding agent can orchestrate the full loop autonomously by following the protocol in `AGENTS.md`.
 
 ---
 
@@ -134,19 +134,8 @@ Analyze the FP/FN and refine the description or examples. Or hand the loop to an
 <TabItem value="claude-code" label="Claude Code">
 
 ```bash
-claude "Follow program.md to optimize a block topic called 'Fraud Detection' \
+claude "Follow AGENTS.md to optimize a block topic called 'Fraud Detection' \
   on profile 'My Security Profile' using prompts/fraud-detection.csv. \
-  Description: 'Techniques and instructions for committing financial fraud'. \
-  Examples: 'How to forge a check' 'Credit card skimming methods'."
-```
-
-</TabItem>
-<TabItem value="gemini-cli" label="Gemini CLI">
-
-```bash
-gemini "Read GEMINI.md for project context, then follow program.md to optimize \
-  a block topic called 'Fraud Detection' on profile 'My Security Profile' \
-  using prompts/fraud-detection.csv. \
   Description: 'Techniques and instructions for committing financial fraud'. \
   Examples: 'How to forge a check' 'Credit card skimming methods'."
 ```
@@ -155,7 +144,7 @@ gemini "Read GEMINI.md for project context, then follow program.md to optimize \
 <TabItem value="codex-copilot" label="Codex / Copilot">
 
 ```bash
-codex "Read .github/copilot-instructions.md, then follow program.md to optimize \
+codex "Read .github/copilot-instructions.md, then follow AGENTS.md to optimize \
   a block topic called 'Fraud Detection' on profile 'My Security Profile' \
   using prompts/fraud-detection.csv. \
   Description: 'Techniques and instructions for committing financial fraud'. \
@@ -225,19 +214,8 @@ airs runtime topics eval \
 <TabItem value="claude-code" label="Claude Code">
 
 ```bash
-claude "Follow program.md to optimize an allow topic called 'Houston Astros' \
+claude "Follow AGENTS.md to optimize an allow topic called 'Houston Astros' \
   on profile 'My Security Profile' using prompts/houston-astros.csv. \
-  Description: 'Discussions about the MLB team from the city of Houston, Texas'. \
-  Examples: 'Houston Astros roster' 'Astros game score'."
-```
-
-</TabItem>
-<TabItem value="gemini-cli" label="Gemini CLI">
-
-```bash
-gemini "Read GEMINI.md, then follow program.md to optimize an allow topic \
-  called 'Houston Astros' on profile 'My Security Profile' \
-  using prompts/houston-astros.csv. \
   Description: 'Discussions about the MLB team from the city of Houston, Texas'. \
   Examples: 'Houston Astros roster' 'Astros game score'."
 ```
@@ -246,7 +224,7 @@ gemini "Read GEMINI.md, then follow program.md to optimize an allow topic \
 <TabItem value="codex-copilot" label="Codex / Copilot">
 
 ```bash
-codex "Read .github/copilot-instructions.md, then follow program.md to optimize \
+codex "Read .github/copilot-instructions.md, then follow AGENTS.md to optimize \
   an allow topic called 'Houston Astros' on profile 'My Security Profile' \
   using prompts/houston-astros.csv. \
   Description: 'Discussions about the MLB team from the city of Houston, Texas'. \
@@ -260,7 +238,7 @@ codex "Read .github/copilot-instructions.md, then follow program.md to optimize 
 
 ## What the Agent Does
 
-When you hand the loop to an AI coding agent, it follows the protocol defined in `program.md`:
+When you hand the loop to an AI coding agent, it follows the protocol defined in `AGENTS.md`:
 
 ```mermaid
 graph TD
@@ -335,4 +313,4 @@ The `apply` command is additive — it preserves existing topics on the profile.
 - [Metrics & Evaluation](metrics.md) — how TP/TN/FP/FN are classified
 - [Topic Constraints](topic-constraints.md) — AIRS limits on topic definitions
 - [CLI Reference — Topics](../../cli/runtime/topics.md) — full flag reference
-- `program.md` — the agent optimization protocol
+- [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) — the agent optimization protocol

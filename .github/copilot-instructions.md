@@ -8,13 +8,12 @@ Prisma AIRS CLI (`airs`) — a CLI and library for Palo Alto Prisma AI Runtime S
 
 ## Key References
 
-- `AGENTS.md` — full CLI command reference with flags, output formats, and workflows
-- `program.md` — autonomous guardrail optimization protocol (the agent loop)
+- `AGENTS.md` — full CLI command reference with flags, output formats, workflows, and the autonomous guardrail optimization protocol (the agent loop)
 - `CLAUDE.md` — additional project context and conventions
 
 ## Guardrail Optimization Loop
 
-For autonomous custom topic guardrail optimization, follow the protocol in `program.md`. It covers setup, baseline, the iteration loop, revert procedure, plateau detection, and companion topics.
+For autonomous custom topic guardrail optimization, follow the protocol in `AGENTS.md`. It covers setup, baseline, the iteration loop, revert procedure, plateau detection, and companion topics.
 
 Key commands: `topics create`, `topics apply`, `topics eval`, `topics revert`, `topics sample`, `topics get --output json`.
 

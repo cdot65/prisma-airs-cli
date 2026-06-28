@@ -6,7 +6,7 @@ The "why" behind Prisma AIRS CLI's architecture. Each decision below was made de
 
 The guardrail workflow uses four atomic commands (`create`, `apply`, `eval`, `revert`) instead of an embedded LLM-driven loop.
 
-**Rationale:** Decouples the optimization intelligence from the CLI. An external agent (Claude Code, Gemini CLI, etc.) orchestrates the commands following the protocol in `program.md`. Each command succeeds or fails independently, making the workflow recoverable at any point. The CLI is stateless -- no run persistence, no cross-run memory, no embedded LLM calls for guardrail optimization.
+**Rationale:** Decouples the optimization intelligence from the CLI. An external agent (Claude Code, etc.) orchestrates the commands following the protocol in [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md). Each command succeeds or fails independently, making the workflow recoverable at any point. The CLI is stateless -- no run persistence, no cross-run memory, no embedded LLM calls for guardrail optimization.
 
 :::note[Agent-driven]
 The agent provides all intelligence (topic generation, analysis, improvement decisions). The CLI provides only the AIRS API operations and metric computation.
@@ -66,7 +66,7 @@ The `create` command upserts topics by name rather than requiring separate creat
 
 The CLI provides atomic operations; an external agent provides the intelligence and orchestration.
 
-**Rationale:** Embedding the LLM loop inside the CLI created tight coupling between the optimization strategy and the CLI tool. By extracting the loop to an external agent (defined in `program.md`), the optimization strategy can evolve independently. Different agents can use the same CLI commands with different strategies.
+**Rationale:** Embedding the LLM loop inside the CLI created tight coupling between the optimization strategy and the CLI tool. By extracting the loop to an external agent (defined in [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md)), the optimization strategy can evolve independently. Different agents can use the same CLI commands with different strategies.
 
 ## 8. Intent-Aware Refinement (Agent Responsibility)
 

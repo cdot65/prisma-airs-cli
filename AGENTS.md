@@ -1,6 +1,6 @@
 # AI Agent Instructions — Prisma AIRS CLI
 
-This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use the `airs` CLI to interact with Palo Alto Prisma AIRS. It is a machine-readable reference — not user documentation. For human docs see `docs/` or <https://cdot65.github.io/prisma-airs-cli/>.
+This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use the `airs` CLI to interact with Palo Alto Prisma AIRS. It is a machine-readable reference — not user documentation. For human docs see the documentation site <https://cdot65.github.io/prisma-airs-cli/> (Docusaurus source in `docs-site/`).
 
 ---
 
@@ -9,12 +9,12 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 `airs` is a CLI for Palo Alto Prisma AIRS AI security platform. It covers:
 
 1. **Runtime Security** — scan prompts against AIRS security profiles, manage profiles/topics/API keys
-2. **Guardrail Optimization** — atomic CLI commands for custom topic guardrails, driven by an external agent loop (see `program.md`)
+2. **Guardrail Optimization** — atomic `runtime topics` commands for custom topic guardrails, driven by an external agent loop (no LLM layer; see the [guardrails docs](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/))
 3. **AI Red Teaming** — adversarial scans against targets with static/dynamic/custom attacks
 4. **Model Security** — ML model supply chain scanning, security groups, rules, violations
-5. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files
+5. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files (subcommands under `redteam targets`)
 
-The binary is `airs`. Five top-level command groups: `runtime`, `redteam`, `model-security`, `backup`, `restore`. Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
+The binary is `airs`. Three top-level command groups: `runtime`, `redteam`, `model-security` (backup/restore live under `redteam targets`). Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
 
 ---
 
@@ -247,7 +247,7 @@ airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|
 
 ### Runtime — Guardrail Optimization
 
-The guardrail workflow uses atomic commands designed for external agent loops (see `program.md`):
+The guardrail workflow uses atomic commands designed for external agent loops (see the [guardrails docs](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/)):
 
 #### Create or update a topic
 
@@ -694,7 +694,7 @@ PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./pre-change-
 
 ### Workflow 8: Autonomous guardrail optimization (agent loop)
 
-The CLI provides atomic commands that an external agent orchestrates in a loop. See `program.md` for the full protocol.
+The CLI provides atomic commands that an external agent orchestrates in a loop (no LLM layer involved). See the [guardrails docs](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/) for the full protocol.
 
 ```bash
 # See the expected CSV format

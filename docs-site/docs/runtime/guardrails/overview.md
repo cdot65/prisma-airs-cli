@@ -4,7 +4,7 @@ title: Guardrail Optimization
 
 # Guardrail Optimization
 
-Prisma AIRS CLI provides atomic commands for creating, testing, and iteratively refining custom topic guardrails. An external agent (Claude Code, Gemini CLI, etc.) orchestrates these commands in a loop following the protocol in `program.md`.
+Prisma AIRS CLI provides atomic commands for creating, testing, and iteratively refining custom topic guardrails. An external agent (Claude Code, etc.) orchestrates these commands in a loop following the protocol in [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md).
 
 ## How It Works
 
@@ -86,4 +86,4 @@ AIRS enforces hard limits on topic definitions. `runtime topics create` validate
 - [Guardrail Optimization Architecture](../../architecture/core-loop.md) — command cycle and design decisions
 - [Metrics & Evaluation](metrics.md) — how TP/TN/FP/FN are classified
 - [Topic Constraints](topic-constraints.md) — AIRS limits on topic definitions
-- `program.md` — full agent loop protocol
+- [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) — full agent loop protocol

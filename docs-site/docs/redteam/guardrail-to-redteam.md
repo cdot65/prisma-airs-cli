@@ -15,7 +15,7 @@ This workflow walks through a complete end-to-end cycle: generate a custom topic
 
 ## Step 1: Create a Guardrail
 
-Create a custom topic guardrail and optimize it using the atomic CLI commands (or let an AI agent follow the protocol in `program.md`):
+Create a custom topic guardrail and optimize it using the atomic CLI commands (or let an AI agent follow the protocol in [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md)):
 
 ```bash
 # Create and apply the topic
