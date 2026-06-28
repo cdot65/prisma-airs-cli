@@ -116,7 +116,7 @@ src/
 ├── airs/
 │   ├── scanner.ts         # AirsScanService + DebugScanService + RateLimitedScanService — syncScan + scanBatch
 │   ├── runtime.ts         # SdkRuntimeService — sync scan, async bulk scan, poll results, CSV export
-│   ├── management.ts      # SdkManagementService — topic CRUD, profile CRUD, API keys, customer apps, deployment/DLP profiles, scan logs
+│   ├── management.ts      # SdkManagementService — topic CRUD, profile CRUD, API keys, customer apps, deployment profile listing, scan logs
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
@@ -173,7 +173,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - **`RateLimitedScanService`**: Wrapper that caps scan throughput to N calls/second via sliding-window token bucket
 - **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Auth tokens are redacted. Works with any subcommand.
 - **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD
-- **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment/DLP profile listing, scan log querying
+- **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment profile listing, scan log querying
 - Profile updates create **new revisions with new UUIDs** — always reference profiles by name, never ID
 - Topics must be added to profile's `model-protection` → `topic-guardrails` → `topic-list`
 - AIRS rejects empty `topic-list` entries — only include entries with topics
@@ -204,7 +204,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
     - Profile builder: `src/cli/builders/profile-builder.ts` — `buildProfileRequest()` (create), `buildProfileOverrides()` (update), `mergeProfilePolicy()` (deep merge). Arrays merge by `name` field; objects overlay specified fields.
   - `airs runtime topics {list,get,create,update,delete,apply,eval,revert}` — custom topic CRUD + agent-driven topic commands (supports `--force --updated-by`)
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
-  - `airs runtime customer-apps {list,get,update,delete}` — customer app CRUD
+  - `airs runtime customer-apps {list,get,update,delete,consumption}` — customer app CRUD + `consumption` (per-app token usage + violation breakdown from SCM dashboard; `--time-interval 7|30|60`)
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
   - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`)
   - `airs runtime dlp filtering-profiles {list, get, replace}` — read + full-replace
