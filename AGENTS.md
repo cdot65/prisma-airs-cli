@@ -221,7 +221,10 @@ airs runtime customer-apps list [--limit <n>] [--output <format>]
 airs runtime customer-apps get <appName>
 airs runtime customer-apps update <appId> --config <json-file>
 airs runtime customer-apps delete <appName> --updated-by <email>
+airs runtime customer-apps consumption [appName] [--time-interval <7|30|60>] [--output <format>]
 ```
+
+`consumption` reports per-app token consumption + violation breakdown from the SCM dashboard. `appName` is the literal scan-payload `metadata.app_name` (may differ from the SCM-registered customer-app name); omit it to report every dashboard bucket. `--time-interval` window in days: `7`, `30`, or `60` (default `30`).
 
 #### Deployment Profiles (read-only)
 
@@ -229,11 +232,7 @@ airs runtime customer-apps delete <appName> --updated-by <email>
 airs runtime deployment-profiles list [--unactivated] [--output <format>]
 ```
 
-#### DLP Profiles (read-only)
-
-```bash
-airs runtime dlp-profiles list [--output <format>]
-```
+(There is no standalone DLP-profile listing command — DLP profile names are supplied to a profile via the `--dlp-profiles` flag on `profiles create`/`update`.)
 
 #### Scan Logs
 
@@ -345,9 +344,18 @@ airs redteam targets delete <uuid>
 airs redteam targets probe --config <json-file>
 airs redteam targets profile <uuid>
 airs redteam targets update-profile <uuid> --config <json-file>
+airs redteam targets validate-auth --auth-type <HEADERS|BASIC_AUTH|OAUTH2> --config <json-file> [--target-id <uuid>]
+airs redteam targets metadata
+airs redteam targets init <provider> [--output <file>]
+airs redteam targets templates
 ```
 
 `--validate` tests the connection before saving.
+
+- `validate-auth` — validate auth credentials (`--config` is a JSON file holding the `auth_config`) without creating a target.
+- `metadata` — get target field metadata (valid field names/enums for building configs).
+- `templates` — get provider-specific target config templates.
+- `init <provider>` — scaffold a target config JSON from a provider template; writes `<provider>-target.json` (or `--output <file>`). Fill in `name`/credentials, then `targets create --config <file> --validate`.
 
 **Target config JSON example:**
 ```json
@@ -401,6 +409,45 @@ airs redteam properties create --name <name>
 airs redteam properties values <name>
 airs redteam properties add-value --name <name> --value <value>
 ```
+
+#### EULA
+
+```bash
+airs redteam eula status            # Check EULA acceptance status
+airs redteam eula content           # Display EULA content
+airs redteam eula accept [--confirm]
+```
+
+`eula accept` only displays the EULA unless `--confirm` is passed; with `--confirm` it accepts the current EULA content. Red Team operations may require an accepted EULA.
+
+#### Instances
+
+Manage Red Team instances (per-tenant provisioning).
+
+```bash
+airs redteam instances create --tsg-id <id> --tenant-id <id> --app-id <id> --region <region>
+airs redteam instances get <tenantId>
+airs redteam instances update <tenantId> --tsg-id <id> --app-id <id> --region <region>
+airs redteam instances delete <tenantId>
+```
+
+#### Devices
+
+Manage Red Team devices for an instance (keyed by `<tenantId>`).
+
+```bash
+airs redteam devices create <tenantId> --config <json-file>          # JSON device request
+airs redteam devices update <tenantId> --config <json-file>          # PATCH device request
+airs redteam devices delete <tenantId> --serial-numbers <sn1,sn2>    # comma-separated serials
+```
+
+#### Registry Credentials
+
+```bash
+airs redteam registry-credentials
+```
+
+Get or create registry credentials (no options).
 
 ---
 
@@ -753,7 +800,6 @@ Location: `~/.prisma-airs/config.json`
   "mgmtClientSecret": "...",
   "mgmtTsgId": "...",
   "scanConcurrency": 5,
-  "propagationDelayMs": 10000,
   "dataDir": "~/.prisma-airs/runs"
 }
 ```
