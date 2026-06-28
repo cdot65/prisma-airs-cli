@@ -1,4 +1,9 @@
-# Prisma AIRS CLI
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs-site/static/img/logo-wordmark-dark.svg">
+    <img alt="prisma-airs-cli" src="docs-site/static/img/logo-wordmark.svg" width="560">
+  </picture>
+</p>
 
 [![CI](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@cdot65/prisma-airs-cli)](https://www.npmjs.com/package/@cdot65/prisma-airs-cli)

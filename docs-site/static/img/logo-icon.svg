@@ -40,8 +40,8 @@
     </g>
 
     <!-- CLI cue, kept intentionally simple. -->
-    <path d="M154 393L213 433L154 473" fill="none" stroke="#ebdbb2" stroke-width="33"/>
-    <path d="M246 473H314" fill="none" stroke="#ebdbb2" stroke-width="33"/>
+    <path d="M154 393L213 433L154 473" fill="none" stroke="#11263F" stroke-width="33"/>
+    <path d="M246 473H314" fill="none" stroke="#11263F" stroke-width="33"/>
   </g>
 
   </g>
