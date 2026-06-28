@@ -1,6 +1,6 @@
 # Interface: ProfileTopic
 
-Defined in: [src/audit/types.ts:8](https://github.com/cdot65/prisma-airs-cli/blob/main/src/audit/types.ts#L8)
+Defined in: [src/airs/types.ts:13](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L13)
 
 Enriched topic entry read from a profile's policy.
 
@@ -10,7 +10,7 @@ Enriched topic entry read from a profile's policy.
 
 > **action**: `"allow"` \| `"block"`
 
-Defined in: [src/audit/types.ts:11](https://github.com/cdot65/prisma-airs-cli/blob/main/src/audit/types.ts#L11)
+Defined in: [src/airs/types.ts:16](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L16)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/audit/types.ts:11](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **description**: `string`
 
-Defined in: [src/audit/types.ts:12](https://github.com/cdot65/prisma-airs-cli/blob/main/src/audit/types.ts#L12)
+Defined in: [src/airs/types.ts:17](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L17)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/audit/types.ts:12](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **examples**: `string`[]
 
-Defined in: [src/audit/types.ts:13](https://github.com/cdot65/prisma-airs-cli/blob/main/src/audit/types.ts#L13)
+Defined in: [src/airs/types.ts:18](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L18)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/audit/types.ts:13](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **topicId**: `string`
 
-Defined in: [src/audit/types.ts:9](https://github.com/cdot65/prisma-airs-cli/blob/main/src/audit/types.ts#L9)
+Defined in: [src/airs/types.ts:14](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L14)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [src/audit/types.ts:9](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **topicName**: `string`
 
-Defined in: [src/audit/types.ts:10](https://github.com/cdot65/prisma-airs-cli/blob/main/src/audit/types.ts#L10)
+Defined in: [src/airs/types.ts:15](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L15)

@@ -24,11 +24,9 @@ plane needs prevents most authentication failures.
 | **Scanner API** | Real-time prompt/response scanning | `PANW_AI_SEC_API_KEY` |
 | **Management API** | Profile/topic configuration, red team, model security, DLP | `PANW_MGMT_CLIENT_ID` + `PANW_MGMT_CLIENT_SECRET` + `PANW_MGMT_TSG_ID` |
 
-:::note[Guardrail optimization and profile audits need both planes]
-Guardrail generation (`topics create/apply/eval/revert`) and profile audits
-(`profiles audit`) call the Management API to read and write configuration, and the Scanner API
-to evaluate prompts. They also require an LLM provider key (e.g. `ANTHROPIC_API_KEY`) to
-generate test prompts.
+:::note[Guardrail optimization needs both planes]
+Guardrail generation (`topics create/apply/eval/revert`) calls the Management API to read and
+write configuration, and the Scanner API to evaluate prompts.
 :::
 
 The config cascade resolves credentials in priority order:
@@ -115,18 +113,6 @@ then decide to keep or revert before the next iteration.
 
 See [Guardrail Optimization](../runtime/guardrails/overview.md) for the iteration protocol and
 metrics reference.
-
-### Profile Audits
-
-A profile audit evaluates every topic in a profile in a single pass. It generates test prompts for
-each topic, scans them, computes per-topic and composite TPR/TNR/F1 scores, and detects conflicts
-between topics (where the same prompt is a false negative for one topic and a false positive for
-another).
-
-Run audits whenever you add new topics or after bulk topic updates to catch regressions before
-they reach production.
-
-See [Profile Audits](../runtime/profile-audits.md) for the full workflow.
 
 ### AI Red Teaming
 

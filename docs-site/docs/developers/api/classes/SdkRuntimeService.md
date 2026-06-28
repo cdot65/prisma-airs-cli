@@ -12,15 +12,15 @@ Contract for runtime scanning operations (sync + async).
 
 ### Constructor
 
-> **new SdkRuntimeService**(`apiKey`): `SdkRuntimeService`
+> **new SdkRuntimeService**(`opts`): `SdkRuntimeService`
 
 Defined in: [src/airs/runtime.ts:29](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L29)
 
 #### Parameters
 
-##### apiKey
+##### opts
 
-`string`
+`InitOptions`
 
 #### Returns
 

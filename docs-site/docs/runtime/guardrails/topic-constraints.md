@@ -4,7 +4,7 @@ title: Topic Constraints
 
 # Topic Constraints
 
-Prisma AIRS enforces hard limits on custom topic definitions. Prisma AIRS CLI handles these automatically so you don't have to worry about truncation or rejection.
+Prisma AIRS enforces hard limits on custom topic definitions. Prisma AIRS CLI validates these on every `topics create`, rejecting overflow with a clear error so a malformed topic never reaches the AIRS API.
 
 ## Limits
 
@@ -22,26 +22,19 @@ All length checks use UTF-8 byte length, not character count. Multi-byte charact
 
 ---
 
-## Automatic Clamping
+## Validation on Create
 
-The LLM frequently exceeds the 250-character description limit — natural language tends to be verbose. The `clampTopic()` function enforces limits automatically after every LLM call.
+`runtime topics create` runs `validateTopic()` before upserting. It checks every limit and fails fast on any overflow, returning error strings that name exactly what exceeded — it never silently truncates. The agent (or you) fixes the definition and retries.
 
-The strategy is ordered by impact: drop trailing examples first, truncate the description only as a last resort. This preserves as much semantic content as possible.
-
-:::note[Why post-LLM, not Zod]
-Clamping happens _after_ the LLM generates output, not via Zod schema validation. The LLM needs freedom to produce natural descriptions, and the priority-based truncation logic is more nuanced than schema constraints can express.
+:::note[Why reject, not clamp]
+Surfacing a clear validation error at the CLI boundary keeps the agent loop honest and gives an immediate, actionable message instead of an opaque AIRS API rejection mid-loop.
 :::
 
 ---
 
-## Validation vs. Clamping
+## Where It Lives
 
-`src/core/constraints.ts` exports two approaches:
-
-| Function | What it does |
-|----------|-------------|
-| **Validation** | Checks all limits, returns error strings. Non-destructive — useful for diagnostics and tests. |
-| **Clamping** | Silently enforces all limits by truncating and dropping as needed. Used in the production pipeline. |
+`validateTopic()` is exported from `src/core/constraints.ts` and used by the topic commands and test suites. It checks all limits and returns error strings — non-destructive, so it doubles for diagnostics and tests.
 
 ---
 

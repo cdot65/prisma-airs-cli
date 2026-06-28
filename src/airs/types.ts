@@ -8,7 +8,15 @@ import type {
   CreateSecurityProfileRequest,
   CustomTopic as SdkCustomTopic,
 } from '@cdot65/prisma-airs-sdk';
-import type { ProfileTopic } from '../audit/types.js';
+
+/** Enriched topic entry read from a profile's policy. */
+export interface ProfileTopic {
+  topicId: string;
+  topicName: string;
+  action: 'allow' | 'block';
+  description: string;
+  examples: string[];
+}
 
 // ---------------------------------------------------------------------------
 // SDK re-exports — upstream types used across the AIRS layer

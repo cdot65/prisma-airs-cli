@@ -10,15 +10,6 @@ function expandHome(p: string): string {
 function fromEnv(): Record<string, unknown> {
   const env = process.env;
   return {
-    llmProvider: env.LLM_PROVIDER,
-    llmModel: env.LLM_MODEL,
-    anthropicApiKey: env.ANTHROPIC_API_KEY,
-    googleApiKey: env.GOOGLE_API_KEY,
-    googleCloudProject: env.GOOGLE_CLOUD_PROJECT,
-    googleCloudLocation: env.GOOGLE_CLOUD_LOCATION,
-    awsRegion: env.AWS_REGION,
-    awsAccessKeyId: env.AWS_ACCESS_KEY_ID,
-    awsSecretAccessKey: env.AWS_SECRET_ACCESS_KEY,
     airsApiKey: env.PANW_AI_SEC_API_KEY,
     airsApiToken: env.PANW_AI_SEC_API_TOKEN,
     airsApiEndpoint: env.PANW_AI_SEC_API_ENDPOINT,

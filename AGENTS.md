@@ -12,8 +12,7 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 2. **Guardrail Optimization** — atomic CLI commands for custom topic guardrails, driven by an external agent loop (see `program.md`)
 3. **AI Red Teaming** — adversarial scans against targets with static/dynamic/custom attacks
 4. **Model Security** — ML model supply chain scanning, security groups, rules, violations
-5. **Profile Audits** — multi-topic evaluation with conflict detection
-6. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files
+5. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files
 
 The binary is `airs`. Five top-level command groups: `runtime`, `redteam`, `model-security`, `backup`, `restore`. Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
 
@@ -27,20 +26,8 @@ Different commands require different credentials. Set these as environment varia
 
 | Credential Set | Environment Variables | Used By |
 |---|---|---|
-| **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime topics eval`, `runtime profiles audit` |
+| **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime topics eval` |
 | **Management API** (OAuth2) | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` | All CRUD commands (profiles, topics, api-keys, customer-apps), all redteam commands, all model-security commands, `backup`, `restore` |
-| **LLM Provider** | Depends on provider (see below) | `runtime profiles audit` |
-
-### LLM Providers
-
-| Provider Value | Required Env Vars | Default Model |
-|---|---|---|
-| `claude-api` | `ANTHROPIC_API_KEY` | `claude-opus-4-6` |
-| `claude-vertex` | `GOOGLE_CLOUD_PROJECT` | `claude-opus-4-6` |
-| `claude-bedrock` | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | `anthropic.claude-opus-4-6-v1` |
-| `gemini-api` | `GOOGLE_API_KEY` | `gemini-2.5-pro` |
-| `gemini-vertex` | `GOOGLE_CLOUD_PROJECT` | `gemini-2.5-pro` |
-| `gemini-bedrock` | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | `gemini-2.5-pro` |
 
 ### Optional Management Endpoints
 
@@ -311,26 +298,6 @@ airs runtime topics revert --profile <name> --name <name> [--format json]
 Removes the topic from the profile and deletes the topic definition.
 
 **Auth:** Management API
-
----
-
-### Runtime — Profile Audit
-
-```bash
-airs runtime profiles audit <profileName> [options]
-```
-
-| Flag | Default | Description |
-|---|---|---|
-| `--max-tests-per-topic <n>` | `20` | Tests per topic |
-| `--format <fmt>` | `terminal` | Output: terminal, json, html |
-| `--output <path>` | — | File path for json/html |
-| `--provider <name>` | `claude-api` | LLM provider |
-| `--model <name>` | per-provider | Override model |
-
-**Auth:** LLM provider + Scanner API + Management API
-
-Evaluates every topic in a profile, computes per-topic metrics (TPR, TNR, coverage, F1), composite metrics, and detects cross-topic conflicts.
 
 ---
 
@@ -683,14 +650,7 @@ airs redteam scan --target <uuid> --name "Security Audit"
 airs redteam report <jobId> --attacks --limit 50
 ```
 
-### Workflow 5: Audit a profile's topics
-
-```bash
-# Generates tests, scans, evaluates each topic, detects conflicts
-airs runtime profiles audit my-profile --format json --output audit.json
-```
-
-### Workflow 6: Check model security scan results
+### Workflow 5: Check model security scan results
 
 ```bash
 # 1. List recent scans
@@ -703,7 +663,7 @@ airs model-security scans violations <scanUuid>
 airs model-security scans files <scanUuid>
 ```
 
-### Workflow 7: Bulk scan from a file
+### Workflow 6: Bulk scan from a file
 
 ```bash
 # 1. Create input file
@@ -716,7 +676,7 @@ airs runtime bulk-scan --profile my-profile --input prompts.txt --output results
 airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output results.csv
 ```
 
-### Workflow 8: Backup and restore targets
+### Workflow 7: Backup and restore targets
 
 ```bash
 # 1. Backup all targets before making changes
@@ -732,7 +692,7 @@ airs redteam targets restore --input-dir ./pre-change-backup/ --overwrite
 PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./pre-change-backup/
 ```
 
-### Workflow 9: Autonomous guardrail optimization (agent loop)
+### Workflow 8: Autonomous guardrail optimization (agent loop)
 
 The CLI provides atomic commands that an external agent orchestrates in a loop. See `program.md` for the full protocol.
 
@@ -788,8 +748,6 @@ Location: `~/.prisma-airs/config.json`
 
 ```json
 {
-  "llmProvider": "claude-api",
-  "anthropicApiKey": "sk-...",
   "airsApiKey": "...",
   "mgmtClientId": "...",
   "mgmtClientSecret": "...",

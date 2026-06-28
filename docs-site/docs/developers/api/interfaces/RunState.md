@@ -88,7 +88,7 @@ Defined in: [src/core/types.ts:109](https://github.com/cdot65/prisma-airs-cli/bl
 
 ### status
 
-> **status**: `"running"` \| `"paused"` \| `"completed"` \| `"failed"`
+> **status**: `"completed"` \| `"failed"` \| `"running"` \| `"paused"`
 
 Defined in: [src/core/types.ts:118](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L118)
 

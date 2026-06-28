@@ -4,26 +4,6 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 
 ---
 
-## LLM Provider
-
-| Variable | Needed for | What it does |
-|----------|-----------|-------------|
-| `LLM_PROVIDER` | All | Provider selection (`claude-api`, `claude-vertex`, `claude-bedrock`, `gemini-api`, `gemini-vertex`, `gemini-bedrock`) |
-| `LLM_MODEL` | -- | Override the default model for any provider |
-| `ANTHROPIC_API_KEY` | `claude-api` | Anthropic API key (`sk-ant-...`) |
-| `GOOGLE_API_KEY` | `gemini-api` | Google AI API key |
-| `GOOGLE_CLOUD_PROJECT` | `claude-vertex`, `gemini-vertex` | GCP project ID |
-| `GOOGLE_CLOUD_LOCATION` | `claude-vertex`, `gemini-vertex` | GCP region (default: `us-central1`; claude-vertex uses `global`) |
-| `AWS_REGION` | `claude-bedrock`, `gemini-bedrock` | AWS region (default: `us-east-1`) |
-| `AWS_ACCESS_KEY_ID` | `claude-bedrock`*, `gemini-bedrock`* | IAM access key |
-| `AWS_SECRET_ACCESS_KEY` | `claude-bedrock`*, `gemini-bedrock`* | IAM secret key |
-
-:::note
-*AWS key variables are not required if using the default credential chain (instance roles, SSO, `~/.aws/credentials`, etc.).
-:::
-
----
-
 ## AIRS Scan API
 
 | Variable | Required | What it does |

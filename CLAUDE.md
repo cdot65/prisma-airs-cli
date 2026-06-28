@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Summary
 
-Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, ML model supply chain security, multi-topic profile audits with conflict detection, and backup/restore of AIRS configuration to local files.
+Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, ML model supply chain security, and backup/restore of AIRS configuration to local files.
 
 ## Commands
 
@@ -81,8 +81,7 @@ src/
 │   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── dlp/           # DLP CLI commands (4 subgroups + aggregator + shared patch/parseBody utils)
-│   │   ├── runtime.ts     # Runtime scanning + config management + topics + audit (profiles)
-│   │   ├── audit.ts       # Profile-level multi-topic evaluation (registered under runtime profiles)
+│   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Save/load bulk scan IDs for resume after poll failure
@@ -95,7 +94,6 @@ src/
 │       ├── eval.ts        # Eval metrics, FP/FN list rendering
 │       ├── redteam.ts     # Red team scan/target/prompt-set rendering
 │       ├── runtime.ts     # Runtime scan + config management rendering
-│       ├── audit.ts       # Audit topics, results, conflicts
 │       └── modelsecurity.ts # Model security groups/rules/scans rendering
 ├── config/
 │   ├── schema.ts          # Zod ConfigSchema — all config fields w/ defaults
@@ -105,11 +103,6 @@ src/
 │   ├── types.ts           # CustomTopic, EvalMetrics, EvalResult, TopicConstraints
 │   ├── metrics.ts         # computeMetrics() — TP/TN/FP/FN → TPR/TNR/accuracy/coverage/F1
 │   └── constraints.ts     # AIRS topic limits: 100 name, 250 desc, 250/example, 5 max, 1000 combined
-├── llm/
-│   ├── provider.ts        # createLlmProvider() — factory for LangChain providers (used by audit)
-│   ├── service.ts         # LangChainLlmService
-│   ├── schemas.ts         # Zod output schemas for structured LLM responses
-│   └── prompts/           # ChatPromptTemplate definitions
 ├── airs/
 │   ├── scanner.ts         # AirsScanService + DebugScanService + RateLimitedScanService — syncScan + scanBatch
 │   ├── runtime.ts         # SdkRuntimeService — sync scan, async bulk scan, poll results, CSV export
@@ -119,32 +112,19 @@ src/
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
-├── audit/
-│   ├── types.ts           # ProfileTopic, TopicAuditResult, ConflictPair, AuditResult, AuditEvent
-│   ├── evaluator.ts       # groupResultsByTopic, computeTopicAuditResults, computeCompositeMetrics, detectConflicts
-│   ├── runner.ts          # runAudit() async generator — yields AuditEvent
-│   └── report.ts          # buildAuditReportJson(), buildAuditReportHtml()
 ├── backup/
 │   ├── types.ts           # BackupEnvelope<T>, BackupFormat, ResourceType, result types
 │   ├── io.ts              # writeBackupFile, readBackupFile, readBackupDir, sanitizeFilename
 │   └── index.ts           # Barrel exports
-├── report/
-│   ├── types.ts           # ReportOutput, TestDetail, RunDiff, MetricsDelta
-│   ├── json.ts            # buildReportJson() — RunState → structured ReportOutput
-│   └── html.ts            # buildReportHtml() — ReportOutput → self-contained HTML
 └── index.ts               # Library exports
 
 tests/
 ├── unit/                  # spec files
 │   ├── airs/              # scanner.spec.ts, management.spec.ts, modelsecurity.spec.ts, promptsets.spec.ts, redteam.spec.ts, runtime.spec.ts
-│   ├── audit/             # evaluator.spec.ts, runner.spec.ts, report.spec.ts
 │   ├── backup/            # io.spec.ts
 │   ├── cli/               # parse-input.spec.ts, bulk-scan-state.spec.ts, backup.spec.ts, backup-renderer.spec.ts, restore.spec.ts
 │   ├── config/            # schema.spec.ts, loader.spec.ts
-│   ├── core/              # metrics.spec.ts, constraints.spec.ts
-│   ├── llm/               # provider.spec.ts, schemas.spec.ts, service.spec.ts, prompts.spec.ts
-│   └── report/            # json.spec.ts, html.spec.ts
-├── e2e/                   # vertex-provider.e2e.spec.ts (opt-in, requires real creds)
+│   └── core/              # metrics.spec.ts, constraints.spec.ts
 └── helpers/               # mocks.ts
 ```
 
@@ -196,7 +176,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
 - CLI: `airs runtime resume-poll <stateFile> [--output <file>]` — resume polling from saved scan IDs
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
-  - `airs runtime profiles {list,get,create,update,delete,audit,cleanup}` — security profile CRUD + profile audit + revision cleanup
+  - `airs runtime profiles {list,get,create,update,delete,cleanup}` — security profile CRUD + revision cleanup
     - `get` accepts name or UUID, supports `--output pretty|json|yaml`
     - `create` requires `--name`, plus optional protection flags: `--prompt-injection`, `--toxic-content`, `--contextual-grounding`, `--malicious-code`, `--url-action`, `--allow-url-categories`, `--block-url-categories`, `--alert-url-categories`, `--agent-security`, `--dlp-action`, `--dlp-profiles`, `--mask-data-inline`, `--db-security-{create,read,update,delete}`, `--inline-timeout-action`, `--max-inline-latency`, `--mask-data-in-storage`, `--no-active`. Hidden `--config <path>` legacy escape hatch.
     - `update` uses read-modify-write: fetches current profile → merges only specified flags → PUTs full payload. Same protection flags as create. Topic-guardrails never modified by CLI flags. Hidden `--config <path>` legacy escape hatch.
@@ -242,29 +222,9 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - Rule instances: state = BLOCKING | ALLOWING | DISABLED
 - Scans: create/list/get with evaluations, violations, files sub-queries
 
-### LLM Service (`src/llm/`)
-- Used by the `audit` command for test generation and analysis
-- 6 providers: `claude-api` (default), `claude-vertex`, `claude-bedrock`, `gemini-api`, `gemini-vertex`, `gemini-bedrock`
-- Default model: `claude-opus-4-6` (Vertex: `claude-opus-4-6`, Bedrock: `anthropic.claude-opus-4-6-v1`), Gemini providers: `gemini-2.5-pro`
-- `claude-vertex` default region: `global` (not `us-central1`)
-- Structured output via `withStructuredOutput(ZodSchema)` — 3 retries on parse failure
-
 ### Config (`src/config/`)
 - Priority: CLI flags > env vars > `~/.prisma-airs/config.json` > Zod defaults
 - All fields in `ConfigSchema` with coercion + defaults; `~` expanded via `expandHome()`
-
-### Reports (`src/report/`)
-- `buildReportJson(run, opts)` maps `RunState` → `ReportOutput` (pure function, no I/O)
-- `buildReportHtml(report)` renders `ReportOutput` → self-contained HTML string
-- `--format json|html|terminal`, `--tests` for per-test details, `--diff <runId>` for run comparison
-- HTML includes embedded CSS, iteration trends table, metrics, test result tables, diff sections
-
-### Audit (`src/audit/`)
-- `runAudit()` async generator yields `AuditEvent` discriminated union: `topics:loaded`, `tests:generated`, `scan:progress`, `evaluate:complete`, `audit:complete`
-- Reads all topics from profile via `getProfileTopics()`, generates tests per topic (tagged with `targetTopic`), batch scans, evaluates per-topic + composite metrics
-- Both intents use `triggered` (= `prompt_detected.topic_violation`) as sole detection signal
-- `detectConflicts()` finds FN/FP overlaps between topic pairs — same prompt failing as FN for topic A and FP for topic B
-- `getProfileTopics()` reads profile policy `model-protection → topic-guardrails → topic-list`, cross-references with `listTopics()` for full details
 
 ## AIRS Constraints (`src/core/constraints.ts`)
 
@@ -282,17 +242,10 @@ These four commands compose into an autoresearch-style optimization loop: an age
 
 See `.env.example` for the full list. Config priority: CLI flags > env vars > `~/.prisma-airs/config.json` > Zod defaults.
 
-### Required (one set per provider)
+### Required
 
 | Variable | Purpose |
 |----------|---------|
-| `ANTHROPIC_API_KEY` | Claude API provider |
-| `GOOGLE_API_KEY` | Gemini API provider |
-| `GOOGLE_CLOUD_PROJECT` | Vertex AI (Claude or Gemini) |
-| `GOOGLE_CLOUD_LOCATION` | Vertex AI region (default: `us-central1`, Claude Vertex: `global`) |
-| `AWS_REGION` | Bedrock region (default: `us-east-1`) |
-| `AWS_ACCESS_KEY_ID` | Bedrock auth |
-| `AWS_SECRET_ACCESS_KEY` | Bedrock auth |
 | `PANW_AI_SEC_API_KEY` | Prisma AIRS Scanner API |
 | `PANW_MGMT_CLIENT_ID` | Prisma AIRS Management OAuth2 |
 | `PANW_MGMT_CLIENT_SECRET` | Prisma AIRS Management OAuth2 |
@@ -302,8 +255,6 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `LLM_PROVIDER` | `claude-api` | LLM provider selection |
-| `LLM_MODEL` | per-provider | Override model name |
 | `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
 | `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
 | `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |

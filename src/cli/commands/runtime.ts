@@ -31,7 +31,6 @@ import {
   renderTopicDetail,
   renderTopicList,
 } from '../renderer/index.js';
-import { registerAuditCommand } from './audit.js';
 import { registerDlpCommands } from './dlp/index.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
 import { registerApplyCommand } from './topics-apply.js';
@@ -684,9 +683,6 @@ export function registerRuntimeCommand(program: Command): void {
 
   // Register cleanup under profiles
   registerCleanupCommand(profiles);
-
-  // Register audit under profiles
-  registerAuditCommand(profiles);
 
   // -----------------------------------------------------------------------
   // runtime resume-poll — resume polling for bulk scans

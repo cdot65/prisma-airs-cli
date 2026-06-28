@@ -8,7 +8,7 @@ Sections D and after exercise write paths. Use a non-production tenant if you ca
 
 ## Prerequisites
 
-Same as [smoke-tests.md prerequisites](smoke-tests.md#prerequisites): `PANW_AI_SEC_API_KEY`, `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`. Plus, for Section E's `audit` flow, one LLM provider key (e.g. `ANTHROPIC_API_KEY`).
+Same as [smoke-tests.md prerequisites](smoke-tests.md#prerequisites): `PANW_AI_SEC_API_KEY`, `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`.
 
 Throughout this doc, placeholders look like `<profileName>`, `<topicId>`, `<targetUuid>`. Substitute values from your tenant — typically from the output of a list command earlier in the same section. Where a command takes a JSON config file, the file's expected shape is shown inline.
 
@@ -310,9 +310,6 @@ airs runtime profiles get "smoke-test-profile" --output json
 # Update — toggle one flag (read-modify-write)
 airs runtime profiles update "smoke-test-profile" --no-active
 
-# Audit (multi-topic eval — see Section E.2 for the full flow with knobs)
-airs runtime profiles audit "smoke-test-profile"
-
 # Delete (creates a new revision marker; does not hard-delete history)
 airs runtime profiles delete "smoke-test-profile" --force --updated-by "$(git config user.email)"
 
@@ -548,28 +545,14 @@ airs runtime bulk-scan --profile "<profileName>" --input prompts.csv --output re
 airs runtime resume-poll ~/.prisma-airs/bulk-scans/<stateFile>.json --output results.csv
 ```
 
-### E.2 — Profile audit (multi-topic eval, LLM-driven)
-
-```bash
-# Default: terminal output
-airs runtime profiles audit "<profileName>"
-
-# Format selection (terminal | json | html). --output writes the formatted result to a file.
-airs runtime profiles audit "<profileName>" --format json
-airs runtime profiles audit "<profileName>" --format html --output audit.html
-
-# Knobs: --max-tests-per-topic <n>, --provider <name>, --model <name>
-airs runtime profiles audit "<profileName>" --max-tests-per-topic 10 --provider claude-api
-```
-
-### E.3 — Scan logs query
+### E.2 — Scan logs query
 
 ```bash
 airs runtime scan-logs query --interval 24 --unit hours
 airs runtime scan-logs query --interval 7 --unit days --filter "action=block"
 ```
 
-### E.4 — Red team scan (full flow)
+### E.3 — Red team scan (full flow)
 
 ```bash
 # Submit (note: --prompt-sets for CUSTOM type, NOT --custom-prompt-sets)
@@ -595,7 +578,7 @@ airs redteam abort <jobId>
 airs redteam report <jobId> --output json > scan-report.json
 ```
 
-### E.5 — Model security install (Python SDK helper)
+### E.4 — Model security install (Python SDK helper)
 
 ```bash
 # Auto-detects uv, falls back to python3 -m venv + pip install

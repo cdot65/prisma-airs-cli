@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleEditableField
 
-Defined in: [src/airs/types.ts:590](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L590)
+Defined in: [src/airs/types.ts:598](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L598)
 
 Editable field spec for a security rule.
 
@@ -10,7 +10,7 @@ Editable field spec for a security rule.
 
 > **attributeName**: `string`
 
-Defined in: [src/airs/types.ts:591](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L591)
+Defined in: [src/airs/types.ts:599](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L599)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:591](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **description?**: `string`
 
-Defined in: [src/airs/types.ts:595](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L595)
+Defined in: [src/airs/types.ts:603](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L603)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:595](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **displayName**: `string`
 
-Defined in: [src/airs/types.ts:593](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L593)
+Defined in: [src/airs/types.ts:601](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L601)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:593](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **displayType**: `string`
 
-Defined in: [src/airs/types.ts:594](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L594)
+Defined in: [src/airs/types.ts:602](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L602)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:594](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **dropdownValues?**: `object`[]
 
-Defined in: [src/airs/types.ts:596](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L596)
+Defined in: [src/airs/types.ts:604](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L604)
 
 #### label
 
@@ -58,4 +58,4 @@ Defined in: [src/airs/types.ts:596](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **type**: `string`
 
-Defined in: [src/airs/types.ts:592](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L592)
+Defined in: [src/airs/types.ts:600](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L600)

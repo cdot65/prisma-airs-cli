@@ -69,9 +69,9 @@ Allow-intent matching uses **broad semantic similarity**, not logical constraint
 - Typical achievable coverage for allow-intent topics: **40–70%** depending on topic breadth
 - Best results usually come from the first few iterations; extended refinement often degrades coverage
 
-### Description Truncation
+### Description Limits
 
-AIRS enforces hard limits on topic definitions. Descriptions exceeding 250 characters are silently truncated by `clampTopic()`, which can strip the positive definition while preserving only exclusion clauses — further degrading performance.
+AIRS enforces hard limits on topic definitions. `runtime topics create` validates these limits and rejects any topic whose description exceeds 250 characters rather than silently truncating it — keep descriptions short and focused on the positive definition.
 
 | Constraint | Limit |
 |-----------|-------|

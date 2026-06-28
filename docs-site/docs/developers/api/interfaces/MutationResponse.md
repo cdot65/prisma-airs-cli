@@ -1,6 +1,6 @@
 # Interface: MutationResponse
 
-Defined in: [src/airs/types.ts:248](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L248)
+Defined in: [src/airs/types.ts:256](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L256)
 
 Generic write-op response from custom-attack endpoints (SDK BaseResponseSchema).
 
@@ -10,7 +10,7 @@ Generic write-op response from custom-attack endpoints (SDK BaseResponseSchema).
 
 > **message**: `string`
 
-Defined in: [src/airs/types.ts:249](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L249)
+Defined in: [src/airs/types.ts:257](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L257)
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: [src/airs/types.ts:249](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **status?**: `number`
 
-Defined in: [src/airs/types.ts:250](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L250)
+Defined in: [src/airs/types.ts:258](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L258)

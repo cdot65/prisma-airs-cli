@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigSchema, LlmProviderSchema } from '../../../src/config/schema.js';
+import { ConfigSchema } from '../../../src/config/schema.js';
 
 describe('ConfigSchema', () => {
   it('returns Zod defaults on empty input', () => {
     const config = ConfigSchema.parse({});
-    expect(config.llmProvider).toBe('claude-api');
-    expect(config.googleCloudLocation).toBe('us-central1');
-    expect(config.awsRegion).toBe('us-east-1');
     expect(config.scanConcurrency).toBe(5);
     expect(config.dataDir).toBe('~/.prisma-airs/runs');
   });
@@ -67,31 +64,12 @@ describe('ConfigSchema', () => {
 
   it('preserves optional string fields when provided', () => {
     const config = ConfigSchema.parse({
-      anthropicApiKey: 'sk-test',
-      googleApiKey: 'gk-test',
-      googleCloudProject: 'my-project',
+      airsApiKey: 'sk-test',
+      mgmtClientId: 'client-1',
+      mgmtTsgId: 'tsg-1',
     });
-    expect(config.anthropicApiKey).toBe('sk-test');
-    expect(config.googleApiKey).toBe('gk-test');
-    expect(config.googleCloudProject).toBe('my-project');
-  });
-});
-
-describe('LlmProviderSchema', () => {
-  it('accepts all valid providers', () => {
-    for (const p of [
-      'claude-api',
-      'claude-vertex',
-      'claude-bedrock',
-      'gemini-api',
-      'gemini-vertex',
-      'gemini-bedrock',
-    ]) {
-      expect(LlmProviderSchema.parse(p)).toBe(p);
-    }
-  });
-
-  it('rejects invalid provider', () => {
-    expect(() => LlmProviderSchema.parse('openai')).toThrow();
+    expect(config.airsApiKey).toBe('sk-test');
+    expect(config.mgmtClientId).toBe('client-1');
+    expect(config.mgmtTsgId).toBe('tsg-1');
   });
 });

@@ -25,16 +25,13 @@ Edit `.env` with your credentials:
 
 | Variable | Required | What it's for |
 |----------|:--------:|-------------|
-| `ANTHROPIC_API_KEY` | Yes* | LLM provider API key |
 | `PANW_AI_SEC_API_KEY` | Yes | Prisma AIRS Scan API key |
 | `PANW_MGMT_CLIENT_ID` | Yes | AIRS Management OAuth2 client ID |
 | `PANW_MGMT_CLIENT_SECRET` | Yes | AIRS Management OAuth2 client secret |
 | `PANW_MGMT_TSG_ID` | Yes | Tenant Service Group ID |
 
-*Or the equivalent for your chosen provider.
-
 :::note[Tests run without credentials]
-Unit and integration tests use MSW mocks — you only need real credentials for E2E tests and actual AIRS operations.
+Unit and integration tests use MSW mocks — you only need real credentials for actual AIRS operations.
 :::
 
 ## Register `airs` command

@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
 
-**Full operational coverage over Palo Alto Prisma AIRS AI security — guardrail refinement, runtime scanning, AI red teaming, model security, and profile audits.**
+**Full operational coverage over Palo Alto Prisma AIRS AI security — guardrail refinement, runtime scanning, AI red teaming, and model security.**
 
 > **[Read the full documentation](https://cdot65.github.io/prisma-airs-cli/)** — installation, configuration, architecture, CLI reference, and examples.
 
@@ -20,7 +20,6 @@
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see `program.md`)
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
-- **Profile Audits** — multi-topic evaluation with per-topic metrics and cross-topic conflict detection
 
 ## Install
 
@@ -161,7 +160,7 @@ airs runtime dlp dictionaries delete <id>
 | `runtime scan` | Single prompt scanning against AIRS profiles |
 | `runtime bulk-scan` | Batch prompt scanning with CSV output |
 | `runtime topics` | Custom topic management (`list`, `get`, `create`, `apply`, `eval`, `revert`, `update`, `delete`) |
-| `runtime profiles` | Security profile CRUD (`list`, `get`, `create`, `update`, `delete`) + multi-topic `audit` |
+| `runtime profiles` | Security profile CRUD (`list`, `get`, `create`, `update`, `delete`) |
 | `runtime api-keys` | API key management |
 | `runtime customer-apps` | Customer app CRUD |
 | `runtime deployment-profiles` | Deployment profile listing |
@@ -209,13 +208,9 @@ Credentials are configured via environment variables or `~/.prisma-airs/config.j
 | `PANW_MGMT_CLIENT_SECRET` | Management API OAuth client secret | Yes (for management) |
 | `PANW_MGMT_TSG_ID` | Management API tenant security group ID | Yes (for management) |
 | `PANW_DLP_ENDPOINT` | DLP API base URL override | No (defaults to `api.dlp.paloaltonetworks.com`) |
-| `LLM_PROVIDER` | LLM provider for profile audits | Yes (for audit) |
-| `ANTHROPIC_API_KEY` | Claude API key | Yes (if using Claude) |
-| `GOOGLE_API_KEY` | Google Gemini API key | Yes (if using Gemini) |
 
 **Required for scanning:** `PANW_AI_SEC_API_KEY`
 **Required for management:** `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`
-**Required for profile audits:** one LLM provider key + scanning + management credentials
 
 ## Live Smoke Testing
 

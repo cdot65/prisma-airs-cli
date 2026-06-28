@@ -14,7 +14,7 @@ Settings are resolved in priority order (highest wins):
 CLI flags  >  Environment variables  >  ~/.prisma-airs/config.json  >  Zod defaults
 ```
 
-This means a `--provider` flag always beats an env var, which always beats the config file.
+This means a CLI flag always beats an env var, which always beats the config file.
 
 ## Config File
 
@@ -22,27 +22,9 @@ For settings you use across every run, create `~/.prisma-airs/config.json`:
 
 ```json title="~/.prisma-airs/config.json"
 {
-  "llmProvider": "claude-api",
   "scanConcurrency": 5
 }
 ```
-
-## LLM Providers
-
-| Provider | Config Value | Default Model | Auth |
-|----------|-------------|---------------|------|
-| Claude API | `claude-api` | `claude-opus-4-6` | `ANTHROPIC_API_KEY` |
-| Claude Vertex | `claude-vertex` | `claude-opus-4-6` | GCP ADC |
-| Claude Bedrock | `claude-bedrock` | `anthropic.claude-opus-4-6-v1` | AWS creds |
-| Gemini API | `gemini-api` | `gemini-2.5-pro` | `GOOGLE_API_KEY` |
-| Gemini Vertex | `gemini-vertex` | `gemini-2.5-pro` | GCP ADC |
-| Gemini Bedrock | `gemini-bedrock` | `gemini-2.5-pro` | AWS creds |
-
-:::note[Claude Vertex region]
-The `claude-vertex` provider defaults to the `global` region, not `us-central1`. Override with `GOOGLE_CLOUD_LOCATION` if needed.
-:::
-
-For detailed provider setup, see [LLM Providers](../providers/overview.md).
 
 ## Tuning Parameters
 

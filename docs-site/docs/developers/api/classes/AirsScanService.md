@@ -12,15 +12,15 @@ Scans prompts against AIRS security profiles via the Prisma AIRS SDK.
 
 ### Constructor
 
-> **new AirsScanService**(`apiKey`): `AirsScanService`
+> **new AirsScanService**(`opts`): `AirsScanService`
 
 Defined in: [src/airs/scanner.ts:10](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/scanner.ts#L10)
 
 #### Parameters
 
-##### apiKey
+##### opts
 
-`string`
+`InitOptions`
 
 #### Returns
 
