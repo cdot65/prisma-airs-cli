@@ -1,6 +1,7 @@
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
-import { themes as prismThemes } from 'prism-react-renderer';
+// Gruvbox dark (hard contrast) syntax theme — see src/css/prism-gruvbox.js
+import gruvboxTheme from './src/css/prism-gruvbox';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -8,7 +9,7 @@ const config: Config = {
   title: 'Prisma AIRS CLI',
   tagline:
     'CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.svg',
 
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
@@ -59,9 +60,11 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/social-card.png',
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'dark',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
     navbar: {
       title: 'Prisma AIRS CLI',
@@ -117,8 +120,8 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} cdot65. Built with Docusaurus.`,
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      theme: gruvboxTheme,
+      darkTheme: gruvboxTheme,
       additionalLanguages: ['bash', 'json', 'yaml', 'python', 'powershell', 'toml', 'diff'],
     },
   } satisfies Preset.ThemeConfig,
