@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetCreateRequest
 
-Defined in: [src/airs/types.ts:186](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L186)
+Defined in: [src/airs/types.ts:194](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L194)
 
 Request to create a red team target.
 
@@ -10,7 +10,7 @@ Request to create a red team target.
 
 > `optional` **additional\_context?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:191](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L191)
+Defined in: [src/airs/types.ts:199](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L199)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:191](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **background?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:190](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L190)
+Defined in: [src/airs/types.ts:198](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L198)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:190](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **connection\_params**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:189](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L189)
+Defined in: [src/airs/types.ts:197](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L197)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:189](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **metadata?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:192](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L192)
+Defined in: [src/airs/types.ts:200](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L200)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:192](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:187](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L187)
+Defined in: [src/airs/types.ts:195](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L195)
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [src/airs/types.ts:187](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **target\_type**: `string`
 
-Defined in: [src/airs/types.ts:188](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L188)
+Defined in: [src/airs/types.ts:196](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L196)

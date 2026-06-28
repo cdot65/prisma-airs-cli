@@ -1,6 +1,6 @@
 # Interface: PromptDetail
 
-Defined in: [src/airs/types.ts:233](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L233)
+Defined in: [src/airs/types.ts:241](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L241)
 
 Normalized individual prompt.
 
@@ -10,7 +10,7 @@ Normalized individual prompt.
 
 > **active**: `boolean`
 
-Defined in: [src/airs/types.ts:237](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L237)
+Defined in: [src/airs/types.ts:245](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L245)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:237](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **goal?**: `string`
 
-Defined in: [src/airs/types.ts:236](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L236)
+Defined in: [src/airs/types.ts:244](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L244)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:236](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **prompt**: `string`
 
-Defined in: [src/airs/types.ts:235](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L235)
+Defined in: [src/airs/types.ts:243](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L243)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:235](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **promptSetId**: `string`
 
-Defined in: [src/airs/types.ts:238](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L238)
+Defined in: [src/airs/types.ts:246](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L246)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [src/airs/types.ts:238](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:234](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L234)
+Defined in: [src/airs/types.ts:242](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L242)

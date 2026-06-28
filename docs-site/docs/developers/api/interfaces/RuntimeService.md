@@ -1,6 +1,6 @@
 # Interface: RuntimeService
 
-Defined in: [src/airs/types.ts:49](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L49)
+Defined in: [src/airs/types.ts:57](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L57)
 
 Contract for runtime scanning operations (sync + async).
 
@@ -10,7 +10,7 @@ Contract for runtime scanning operations (sync + async).
 
 > **pollResults**(`scanIds`, `intervalMs?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)[]\>
 
-Defined in: [src/airs/types.ts:55](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L55)
+Defined in: [src/airs/types.ts:63](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L63)
 
 Poll async scan results until all complete.
 
@@ -34,7 +34,7 @@ Poll async scan results until all complete.
 
 > **scanPrompt**(`profileName`, `prompt`, `response?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)\>
 
-Defined in: [src/airs/types.ts:51](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L51)
+Defined in: [src/airs/types.ts:59](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L59)
 
 Scan a single prompt (and optional response) synchronously.
 
@@ -62,7 +62,7 @@ Scan a single prompt (and optional response) synchronously.
 
 > **submitBulkScan**(`profileName`, `prompts`): `Promise`\<`string`[]\>
 
-Defined in: [src/airs/types.ts:53](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L53)
+Defined in: [src/airs/types.ts:61](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L61)
 
 Submit prompts for async bulk scanning, returns scan IDs.
 

@@ -126,22 +126,6 @@ airs runtime profiles update <nameOrId> \
   --toxic-content "high:alert, moderate:allow"
 ```
 
-## Profile Audits
-
-Evaluate all topics in a security profile at once, with conflict detection.
-
-```bash
-# Terminal output
-airs runtime profiles audit my-security-profile
-
-# HTML report
-airs runtime profiles audit my-security-profile --format html --output audit-report.html
-```
-
-[Full audit docs](../runtime/profile-audits.md)
-
----
-
 ## Utility Commands
 
 ```bash

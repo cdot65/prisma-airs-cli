@@ -5,7 +5,6 @@ import {
   type ManagementClientOptions,
   type CustomTopic as SdkCustomTopic,
 } from '@cdot65/prisma-airs-sdk';
-import type { ProfileTopic } from '../audit/types.js';
 import type {
   ApiKeyInfo,
   ApiKeyListResult,
@@ -18,6 +17,7 @@ import type {
   DeploymentProfileInfo,
   ManagementService,
   PaginationOptions,
+  ProfileTopic,
   ScanLogQueryOptions,
   ScanLogQueryResult,
   SecurityProfileInfo,

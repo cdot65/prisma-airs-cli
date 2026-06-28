@@ -2,7 +2,7 @@
 
 ## Why
 
-The unit suite uses fully mocked services. Zero tests in this repo hit a real Prisma AIRS tenant. The only `tests/e2e/` file targets LangChain's Vertex AI provider for the `audit` command's LLM path — not the AIRS Scanner, Management, RedTeam, or ModelSecurity APIs.
+The unit suite uses fully mocked services. Zero tests in this repo hit a real Prisma AIRS tenant.
 
 That means every AIRS API endpoint group can drift in production without CI noticing. SDK 0.8.0 enables runtime Zod validation on every response, so this 16-command smoke check is the lightest way to catch wire-format drift before it reaches users.
 

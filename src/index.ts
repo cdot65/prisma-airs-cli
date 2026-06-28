@@ -38,6 +38,7 @@ export type {
   ModelSecurityService,
   ModelSecurityViolation,
   MutationResponse,
+  ProfileTopic,
   PromptDetail,
   PromptSetDetail,
   PromptSetService,
@@ -58,23 +59,6 @@ export type {
   RuntimeService,
   TargetOperationOptions,
 } from './airs/types.js';
-// ---------------------------------------------------------------------------
-// Audit — profile-level multi-topic evaluation and conflict detection
-// ---------------------------------------------------------------------------
-export {
-  computeCompositeMetrics,
-  computeTopicAuditResults,
-  detectConflicts,
-} from './audit/evaluator.js';
-export { buildAuditReportHtml, buildAuditReportJson } from './audit/report.js';
-export { runAudit } from './audit/runner.js';
-export type {
-  AuditEvent,
-  AuditResult,
-  ConflictPair,
-  ProfileTopic,
-  TopicAuditResult,
-} from './audit/types.js';
 // ---------------------------------------------------------------------------
 // Backup — export/import AIRS configuration to/from local files
 // ---------------------------------------------------------------------------
@@ -118,17 +102,3 @@ export type {
   TestResult,
   UserInput,
 } from './core/types.js';
-
-// ---------------------------------------------------------------------------
-// Reports — structured evaluation report generation (JSON/HTML)
-// ---------------------------------------------------------------------------
-export { buildReportHtml } from './report/html.js';
-export { buildReportJson } from './report/json.js';
-export type {
-  IterationSummary,
-  MetricsDelta,
-  ReportOutput,
-  RunDiff,
-  RunSummary,
-  TestDetail,
-} from './report/types.js';

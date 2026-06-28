@@ -1,6 +1,6 @@
 # AIRS Constraints
 
-Prisma AIRS enforces hard limits on custom topic definitions. Prisma AIRS CLI validates and auto-clamps topics to fit within these boundaries before every API call.
+Prisma AIRS enforces hard limits on custom topic definitions. Prisma AIRS CLI validates topics against these boundaries before every API call, rejecting anything that overflows rather than silently truncating it.
 
 ---
 
@@ -20,25 +20,21 @@ The combined total uses **UTF-8 byte length**, not character count. Multi-byte c
 
 ---
 
-## Automatic Clamping
+## Validation on Create
 
-`clampTopic()` enforces limits after every LLM response:
+`runtime topics create` runs `validateTopic()` before upserting. It checks every limit and, on any overflow, fails with a clear error listing what exceeded — it never silently truncates:
 
-1. **Truncate name** to 100 characters
-2. **Truncate each example** to 250 characters
-3. **If combined > 1000**: drop trailing examples one at a time
-4. **If still over**: truncate description to fit remaining budget
+1. **Name** must be ≤ 100 characters
+2. **Each example** must be ≤ 250 characters
+3. **Description** must be ≤ 250 characters
+4. **Combined** (description + all examples) must be ≤ 1000 characters
 
-```
-LLM output → clampTopic() → AIRS-compliant topic
-```
+### Why Reject Instead of Truncate?
 
-### Why Post-LLM Clamping?
-
-The LLM routinely exceeds the 250-char description limit when writing natural language. Rejecting the entire response via Zod validation would force expensive retries. Post-processing lets the LLM generate freely while guaranteeing AIRS compatibility on every call.
+Surfacing a clear validation error at the CLI boundary keeps the agent loop honest and gives an immediate, actionable message instead of an opaque AIRS API rejection later. The agent fixes the definition and retries.
 
 :::note
-Constraints are defined in `src/core/constraints.ts` and imported by the LLM service and test suites.
+Constraints and `validateTopic()` are defined in `src/core/constraints.ts` and imported by the topic commands and test suites.
 :::
 
 ---

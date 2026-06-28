@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetDetail
 
-Defined in: [src/airs/types.ts:153](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L153)
+Defined in: [src/airs/types.ts:161](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L161)
 
 Detailed target info with connection params and metadata.
 
@@ -14,7 +14,7 @@ Detailed target info with connection params and metadata.
 
 > **active**: `boolean`
 
-Defined in: [src/airs/types.ts:149](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L149)
+Defined in: [src/airs/types.ts:157](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L157)
 
 #### Inherited from
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:149](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **additionalContext?**: `object`
 
-Defined in: [src/airs/types.ts:169](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L169)
+Defined in: [src/airs/types.ts:177](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L177)
 
 #### documents?
 
@@ -46,7 +46,7 @@ Defined in: [src/airs/types.ts:169](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **apiEndpointType?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:155](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L155)
+Defined in: [src/airs/types.ts:163](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L163)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [src/airs/types.ts:155](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **authConfig?**: `Record`\<`string`, `unknown`\> \| `null`
 
-Defined in: [src/airs/types.ts:158](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L158)
+Defined in: [src/airs/types.ts:166](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L166)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [src/airs/types.ts:158](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **authType?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:157](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L157)
+Defined in: [src/airs/types.ts:165](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L165)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [src/airs/types.ts:157](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **background?**: `object`
 
-Defined in: [src/airs/types.ts:164](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L164)
+Defined in: [src/airs/types.ts:172](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L172)
 
 #### competitors?
 
@@ -90,7 +90,7 @@ Defined in: [src/airs/types.ts:164](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **connectionParams?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:163](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L163)
+Defined in: [src/airs/types.ts:171](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L171)
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: [src/airs/types.ts:163](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **connectionType?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:154](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L154)
+Defined in: [src/airs/types.ts:162](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L162)
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: [src/airs/types.ts:154](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **description?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:162](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L162)
+Defined in: [src/airs/types.ts:170](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L170)
 
 ***
 
@@ -114,7 +114,7 @@ Defined in: [src/airs/types.ts:162](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **extraInfo?**: `Record`\<`string`, `unknown`\> \| `null`
 
-Defined in: [src/airs/types.ts:161](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L161)
+Defined in: [src/airs/types.ts:169](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L169)
 
 ***
 
@@ -122,7 +122,7 @@ Defined in: [src/airs/types.ts:161](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **metadata?**: `object`
 
-Defined in: [src/airs/types.ts:174](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L174)
+Defined in: [src/airs/types.ts:182](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L182)
 
 #### api\_endpoint\_type?
 
@@ -158,7 +158,7 @@ Defined in: [src/airs/types.ts:174](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:146](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L146)
+Defined in: [src/airs/types.ts:154](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L154)
 
 #### Inherited from
 
@@ -170,7 +170,7 @@ Defined in: [src/airs/types.ts:146](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **networkBrokerChannelUuid?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:159](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L159)
+Defined in: [src/airs/types.ts:167](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L167)
 
 ***
 
@@ -178,7 +178,7 @@ Defined in: [src/airs/types.ts:159](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **responseMode?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:156](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L156)
+Defined in: [src/airs/types.ts:164](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L164)
 
 ***
 
@@ -186,7 +186,7 @@ Defined in: [src/airs/types.ts:156](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **sessionSupported?**: `boolean`
 
-Defined in: [src/airs/types.ts:160](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L160)
+Defined in: [src/airs/types.ts:168](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L168)
 
 ***
 
@@ -194,7 +194,7 @@ Defined in: [src/airs/types.ts:160](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **status**: `string`
 
-Defined in: [src/airs/types.ts:147](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L147)
+Defined in: [src/airs/types.ts:155](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L155)
 
 #### Inherited from
 
@@ -206,7 +206,7 @@ Defined in: [src/airs/types.ts:147](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **targetType?**: `string`
 
-Defined in: [src/airs/types.ts:148](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L148)
+Defined in: [src/airs/types.ts:156](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L156)
 
 #### Inherited from
 
@@ -218,7 +218,7 @@ Defined in: [src/airs/types.ts:148](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:145](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L145)
+Defined in: [src/airs/types.ts:153](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L153)
 
 #### Inherited from
 

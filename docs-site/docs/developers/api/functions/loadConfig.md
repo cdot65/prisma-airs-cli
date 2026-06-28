@@ -1,6 +1,6 @@
 # Function: loadConfig()
 
-> **loadConfig**(`cliOverrides?`, `configFilePath?`): `Promise`\<\{ `airsApiKey?`: `string`; `anthropicApiKey?`: `string`; `awsAccessKeyId?`: `string`; `awsRegion`: `string`; `awsSecretAccessKey?`: `string`; `dataDir`: `string`; `dlpEndpoint?`: `string`; `googleApiKey?`: `string`; `googleCloudLocation`: `string`; `googleCloudProject?`: `string`; `llmModel?`: `string`; `llmProvider`: `"claude-api"` \| `"claude-vertex"` \| `"claude-bedrock"` \| `"gemini-api"` \| `"gemini-vertex"` \| `"gemini-bedrock"`; `mgmtClientId?`: `string`; `mgmtClientSecret?`: `string`; `mgmtEndpoint?`: `string`; `mgmtTokenEndpoint?`: `string`; `mgmtTsgId?`: `string`; `scanConcurrency`: `number`; \}\>
+> **loadConfig**(`cliOverrides?`, `configFilePath?`): `Promise`\<\{ `airsApiEndpoint?`: `string`; `airsApiKey?`: `string`; `airsApiToken?`: `string`; `airsNumRetries?`: `number`; `dataDir`: `string`; `dlpEndpoint?`: `string`; `mgmtClientId?`: `string`; `mgmtClientSecret?`: `string`; `mgmtEndpoint?`: `string`; `mgmtTokenEndpoint?`: `string`; `mgmtTsgId?`: `string`; `modelSecDataEndpoint?`: `string`; `modelSecMgmtEndpoint?`: `string`; `modelSecTokenEndpoint?`: `string`; `redTeamDataEndpoint?`: `string`; `redTeamMgmtEndpoint?`: `string`; `redTeamTokenEndpoint?`: `string`; `scanConcurrency`: `number`; \}\>
 
 Defined in: [src/config/loader.ts:47](https://github.com/cdot65/prisma-airs-cli/blob/main/src/config/loader.ts#L47)
 
@@ -16,4 +16,4 @@ Defined in: [src/config/loader.ts:47](https://github.com/cdot65/prisma-airs-cli/
 
 ## Returns
 
-`Promise`\<\{ `airsApiKey?`: `string`; `anthropicApiKey?`: `string`; `awsAccessKeyId?`: `string`; `awsRegion`: `string`; `awsSecretAccessKey?`: `string`; `dataDir`: `string`; `dlpEndpoint?`: `string`; `googleApiKey?`: `string`; `googleCloudLocation`: `string`; `googleCloudProject?`: `string`; `llmModel?`: `string`; `llmProvider`: `"claude-api"` \| `"claude-vertex"` \| `"claude-bedrock"` \| `"gemini-api"` \| `"gemini-vertex"` \| `"gemini-bedrock"`; `mgmtClientId?`: `string`; `mgmtClientSecret?`: `string`; `mgmtEndpoint?`: `string`; `mgmtTokenEndpoint?`: `string`; `mgmtTsgId?`: `string`; `scanConcurrency`: `number`; \}\>
+`Promise`\<\{ `airsApiEndpoint?`: `string`; `airsApiKey?`: `string`; `airsApiToken?`: `string`; `airsNumRetries?`: `number`; `dataDir`: `string`; `dlpEndpoint?`: `string`; `mgmtClientId?`: `string`; `mgmtClientSecret?`: `string`; `mgmtEndpoint?`: `string`; `mgmtTokenEndpoint?`: `string`; `mgmtTsgId?`: `string`; `modelSecDataEndpoint?`: `string`; `modelSecMgmtEndpoint?`: `string`; `modelSecTokenEndpoint?`: `string`; `redTeamDataEndpoint?`: `string`; `redTeamMgmtEndpoint?`: `string`; `redTeamTokenEndpoint?`: `string`; `scanConcurrency`: `number`; \}\>

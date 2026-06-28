@@ -457,7 +457,7 @@ Until the renderer is fixed, treat the pretty `--attacks` output as informationa
 
 - Schedule a regression scan after any model or prompt change
 - Add an AIRS runtime profile in front of your LLM gateway and re-scan to measure the lift
-- Generate a custom prompt set with `airs runtime topics generate --create-prompt-set` and run a `CUSTOM` scan to test domain-specific guardrails ([Guardrail to Red Team](guardrail-to-redteam.md))
+- Build a custom prompt set with `airs redteam prompt-sets create` + `upload` and run a `CUSTOM` scan to test domain-specific guardrails ([Guardrail to Red Team](guardrail-to-redteam.md))
 
 ### Tear-down (optional)
 

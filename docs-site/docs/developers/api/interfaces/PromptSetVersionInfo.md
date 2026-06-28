@@ -1,6 +1,6 @@
 # Interface: PromptSetVersionInfo
 
-Defined in: [src/airs/types.ts:222](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L222)
+Defined in: [src/airs/types.ts:230](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L230)
 
 Prompt set version info with stats.
 
@@ -10,7 +10,7 @@ Prompt set version info with stats.
 
 > **stats**: `object`
 
-Defined in: [src/airs/types.ts:225](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L225)
+Defined in: [src/airs/types.ts:233](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L233)
 
 #### active
 
@@ -30,7 +30,7 @@ Defined in: [src/airs/types.ts:225](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:223](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L223)
+Defined in: [src/airs/types.ts:231](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L231)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [src/airs/types.ts:223](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **version**: `number`
 
-Defined in: [src/airs/types.ts:224](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L224)
+Defined in: [src/airs/types.ts:232](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L232)

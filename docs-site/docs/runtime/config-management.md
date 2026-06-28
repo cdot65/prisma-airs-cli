@@ -18,10 +18,6 @@ airs runtime profiles update <nameOrId> --prompt-injection alert --malicious-cod
 airs runtime profiles delete <nameOrId>
 airs runtime profiles delete <nameOrId> --force --updated-by user@example.com
 
-# Audit all topics in a profile
-airs runtime profiles audit <profileName>
-airs runtime profiles audit <profileName> --format html --output audit.html
-
 # Clean up old profile revisions (keeps only latest per name)
 airs runtime profiles cleanup              # preview only
 airs runtime profiles cleanup --force      # delete old revisions

@@ -1,6 +1,6 @@
 # Interface: RedTeamTarget
 
-Defined in: [src/airs/types.ts:144](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L144)
+Defined in: [src/airs/types.ts:152](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L152)
 
 Normalized red team target info.
 
@@ -14,7 +14,7 @@ Normalized red team target info.
 
 > **active**: `boolean`
 
-Defined in: [src/airs/types.ts:149](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L149)
+Defined in: [src/airs/types.ts:157](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L157)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [src/airs/types.ts:149](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:146](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L146)
+Defined in: [src/airs/types.ts:154](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L154)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [src/airs/types.ts:146](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **status**: `string`
 
-Defined in: [src/airs/types.ts:147](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L147)
+Defined in: [src/airs/types.ts:155](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L155)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [src/airs/types.ts:147](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **targetType?**: `string`
 
-Defined in: [src/airs/types.ts:148](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L148)
+Defined in: [src/airs/types.ts:156](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L156)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [src/airs/types.ts:148](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:145](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L145)
+Defined in: [src/airs/types.ts:153](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L153)

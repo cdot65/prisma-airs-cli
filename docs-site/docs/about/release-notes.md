@@ -8,6 +8,11 @@
 
 ### Removed (breaking)
 
+- **External LLM functionality removed.** Custom topic guardrail generation is now fully agent-driven (see `AGENTS.md` / `CLAUDE.md`), so the LLM provider layer is no longer needed.
+  - Removed the `airs runtime profiles audit` command (it used an LLM to generate test prompts).
+  - Removed the LLM provider configuration: `--provider` / `--model` flags, the `llmProvider` / `llmModel` config fields, and the `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_CLOUD_*`, `AWS_*`, `LLM_PROVIDER`, `LLM_MODEL` environment variables. AIRS scanner + management credentials are unchanged.
+  - Removed the **LLM Providers** documentation section.
+  - Library: removed the `audit` exports (`runAudit`, `computeTopicAuditResults`, `computeCompositeMetrics`, `detectConflicts`, `buildAuditReportJson`, `buildAuditReportHtml`) and the orphaned run-report exports (`buildReportJson`, `buildReportHtml`). `ProfileTopic` is retained.
 - **`airs runtime dlp-profiles list` removed.** Use `airs runtime dlp profiles list` (DLP namespace) instead — it is now the canonical listing and returns populated profile IDs plus `type`, `profile_type`, `status`, and `version` fields, paginated as `{items, page:{number,size,total,returned}}`.
 
 #### Migration note

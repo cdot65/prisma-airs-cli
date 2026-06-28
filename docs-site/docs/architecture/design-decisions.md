@@ -22,7 +22,7 @@ The topic name is the stable identity for a guardrail. The external agent picks 
 
 The `eval` command scans a static CSV prompt set rather than generating test prompts dynamically via LLM.
 
-**Rationale:** Static prompt sets are deterministic and reproducible. The external agent can curate and evolve the prompt set over time. This removes the LLM dependency from the guardrail optimization loop (LLM is still used for profile audits).
+**Rationale:** Static prompt sets are deterministic and reproducible. The external agent can curate and evolve the prompt set over time. This removes the LLM dependency from the guardrail optimization loop.
 
 ## 4. Config Cascade
 
@@ -62,26 +62,13 @@ The `create` command upserts topics by name rather than requiring separate creat
 
 **Rationale:** The external agent doesn't need to track topic IDs. It specifies the topic by name, and the CLI handles create-vs-update internally. This simplifies the agent loop protocol.
 
-## 7. Structured Output via Zod
-
-The guardrail commands make no LLM calls — the only remaining LLM dependency is **profile audits** (test generation) and the audit/eval report renderer. Those calls use LangChain's `withStructuredOutput(ZodSchema)` with retries on parse failure.
-
-**Rationale:** Structured output guarantees type-safe responses at the boundary between the LLM and the application. The retry mechanism handles occasional malformed JSON from the model without failing the run. Zod schemas serve double duty as both runtime validators and TypeScript type sources.
-
-```typescript
-const chain = llm.withStructuredOutput(TestsSchema, {
-  name: "generate_tests",
-});
-// Returns typed test cases or throws after retries
-```
-
-## 8. External Agent Orchestration
+## 7. External Agent Orchestration
 
 The CLI provides atomic operations; an external agent provides the intelligence and orchestration.
 
 **Rationale:** Embedding the LLM loop inside the CLI created tight coupling between the optimization strategy and the CLI tool. By extracting the loop to an external agent (defined in `program.md`), the optimization strategy can evolve independently. Different agents can use the same CLI commands with different strategies.
 
-## 9. Intent-Aware Refinement (Agent Responsibility)
+## 8. Intent-Aware Refinement (Agent Responsibility)
 
 Refinement intelligence lives in the external agent, not the CLI. The agent decides how to evolve a topic between `eval` runs, and `block` vs `allow` intent flips the error priority it should optimize for:
 
@@ -96,7 +83,7 @@ Treating every guardrail as block-style (catch more) actively harms allow guardr
 AIRS requires a minimum of 2 examples and allows up to 5. The description field carries the most weight in topic matching, so fewer, sharper examples often outperform many broad ones — a trade-off the agent tunes per topic.
 :::
 
-## 10. CSV Prompt Sets
+## 9. CSV Prompt Sets
 
 The `eval` command accepts CSV prompt sets with `prompt` and `expectedTriggered` columns.
 
