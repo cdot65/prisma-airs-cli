@@ -1,10 +1,12 @@
 import chalk from 'chalk';
 import { dump as yamlDump } from 'js-yaml';
 import { formatOutput, type OutputFormat } from './common.js';
+import { ui } from './ui.js';
 
 // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
 type Any = any;
 
+/** Status → inline color (value coloring within composed list lines). */
 function statusColor(status: string | undefined): string {
   switch (status) {
     case 'active':
@@ -64,18 +66,18 @@ function emitList(
     return;
   }
   if (content.length === 0) {
-    console.log(chalk.dim(`  No ${header.toLowerCase()} found.\n`));
+    ui.emptyList(header.toLowerCase());
     return;
   }
   if (fmt === 'pretty') {
-    console.log(chalk.bold(`\n  ${header}:\n`));
+    ui.section(`${header}:`);
     for (const item of content) console.log(prettyLine(item));
     const meta = pageMeta(page, content.length);
-    console.log(
-      chalk.dim(
-        `\n  page=${meta.number} size=${meta.size} returned=${meta.returned} total=${meta.total ?? '?'}\n`,
-      ),
+    console.log();
+    ui.dim(
+      `page=${meta.number} size=${meta.size} returned=${meta.returned} total=${meta.total ?? '?'}`,
     );
+    console.log();
     return;
   }
   console.log(formatOutput(rows, columns, fmt));
@@ -110,12 +112,13 @@ function emitDetail(
     return;
   }
   if (fmt === 'pretty') {
-    console.log(chalk.bold(`\n  ${title}:\n`));
-    const w = Math.max(...fields.map((f) => f.label.length));
+    ui.section(`${title}:`);
+    const pairs: Array<[string, unknown]> = [];
     for (const f of fields) {
       if (f.value === undefined || f.value === null || f.value === '') continue;
-      console.log(`    ${f.label.padEnd(w)}  ${f.value}`);
+      pairs.push([f.label, f.value]);
     }
+    ui.keyValue(pairs);
     console.log();
     return;
   }
@@ -135,7 +138,7 @@ function ackObject(verb: string, item: Any): Record<string, unknown> {
   return out;
 }
 
-function emitAck(verb: string, color: (s: string) => string, item: Any, fmt: OutputFormat): void {
+function emitAck(verb: string, item: Any, fmt: OutputFormat): void {
   if (fmt === 'json' || fmt === 'yaml') {
     emitStructured(ackObject(verb, item), fmt);
     return;
@@ -146,12 +149,12 @@ function emitAck(verb: string, color: (s: string) => string, item: Any, fmt: Out
     console.log(formatOutput([row], cols, fmt));
     return;
   }
-  const ver = item?.version != null ? chalk.dim(` v${item.version}`) : '';
-  console.log(`  ${color(verb)} ${chalk.dim(item?.id ?? '')}  ${item?.name ?? ''}${ver}`);
+  const ver = item?.version != null ? ` v${item.version}` : '';
+  ui.success(`${verb} ${item?.id ?? ''}  ${item?.name ?? ''}${ver}`);
 }
 
-function emitIdAck(verb: string, color: (s: string) => string, id: string): void {
-  console.log(`  ${color(verb)} ${chalk.dim(id)}`);
+function emitIdAck(verb: string, id: string): void {
+  ui.success(`${verb} ${id}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -213,7 +216,7 @@ export const dlpFilteringProfiles = {
     );
   },
   renderReplaced(item: Any, fmt: OutputFormat) {
-    emitAck('replaced', chalk.green, item, fmt);
+    emitAck('replaced', item, fmt);
   },
 };
 
@@ -281,16 +284,16 @@ export const dlpPatterns = {
     );
   },
   renderCreated(item: Any, fmt: OutputFormat) {
-    emitAck('created', chalk.green, item, fmt);
+    emitAck('created', item, fmt);
   },
   renderReplaced(item: Any, fmt: OutputFormat) {
-    emitAck('replaced', chalk.green, item, fmt);
+    emitAck('replaced', item, fmt);
   },
   renderPatched(item: Any, fmt: OutputFormat) {
-    emitAck('patched', chalk.green, item, fmt);
+    emitAck('patched', item, fmt);
   },
   renderArchived(id: string) {
-    emitIdAck('archived', chalk.yellow, id);
+    emitIdAck('archived', id);
   },
 };
 
@@ -345,13 +348,13 @@ export const dlpProfiles = {
     );
   },
   renderCreated(item: Any, fmt: OutputFormat) {
-    emitAck('created', chalk.green, item, fmt);
+    emitAck('created', item, fmt);
   },
   renderReplaced(item: Any, fmt: OutputFormat) {
-    emitAck('replaced', chalk.green, item, fmt);
+    emitAck('replaced', item, fmt);
   },
   renderPatched(item: Any, fmt: OutputFormat) {
-    emitAck('patched', chalk.green, item, fmt);
+    emitAck('patched', item, fmt);
   },
 };
 
@@ -409,18 +412,18 @@ export const dlpDictionaries = {
     );
   },
   renderCreated(item: Any, fmt: OutputFormat) {
-    emitAck('created', chalk.green, item, fmt);
+    emitAck('created', item, fmt);
   },
   renderReplaced(item: Any, fmt: OutputFormat) {
-    emitAck('replaced', chalk.green, item, fmt);
+    emitAck('replaced', item, fmt);
   },
   renderPatched(item: Any, fmt: OutputFormat) {
-    emitAck('patched', chalk.green, item, fmt);
+    emitAck('patched', item, fmt);
   },
   renderReplaced204Fallback(id: string) {
-    console.log(`  ${chalk.green('replaced')} ${chalk.dim(id)} (state not echoed by region)`);
+    ui.success(`replaced ${id} (state not echoed by region)`);
   },
   renderDeleted(id: string) {
-    emitIdAck('deleted', chalk.yellow, id);
+    emitIdAck('deleted', id);
   },
 };

@@ -10,11 +10,31 @@ import type {
   ModelSecurityViolation,
 } from '../../airs/types.js';
 import { formatOutput, type OutputFormat } from './common.js';
+import { ui } from './ui.js';
 
 /** Render the model security banner. */
 export function renderModelSecurityHeader(): void {
-  console.log(chalk.bold.blue('\n  Prisma AIRS — Model Security'));
-  console.log(chalk.dim('  ML model supply chain security\n'));
+  ui.header('Prisma AIRS — Model Security', 'ML model supply chain security');
+}
+
+/** State/result → inline color (value coloring within composed lines). */
+function stateColor(state: string): (s: string) => string {
+  switch (state) {
+    case 'ACTIVE':
+    case 'ALLOWED':
+    case 'ALLOWING':
+    case 'PASSED':
+    case 'SUCCESS':
+      return chalk.green;
+    case 'BLOCKED':
+    case 'BLOCKING':
+    case 'FAILED':
+      return chalk.red;
+    case 'DISABLED':
+      return chalk.dim;
+    default:
+      return chalk.yellow;
+  }
 }
 
 /** Render security group list. */
@@ -23,7 +43,7 @@ export function renderGroupList(
   format: OutputFormat = 'pretty',
 ): void {
   if (groups.length === 0) {
-    console.log(chalk.dim('  No security groups found.\n'));
+    ui.emptyList('security groups');
     return;
   }
   if (format !== 'pretty') {
@@ -47,11 +67,11 @@ export function renderGroupList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Security Groups:\n'));
+  ui.section('Security Groups:');
   for (const g of groups) {
-    console.log(`  ${chalk.dim(g.uuid)}`);
-    const stateColor = g.state === 'ACTIVE' ? chalk.green : chalk.yellow;
-    console.log(`    ${g.name}  ${stateColor(g.state)}  source: ${chalk.dim(g.sourceType)}`);
+    ui.dim(g.uuid);
+    const color = g.state === 'ACTIVE' ? chalk.green : chalk.yellow;
+    console.log(`    ${g.name}  ${color(g.state)}  source: ${chalk.dim(g.sourceType)}`);
   }
   console.log();
 }
@@ -69,22 +89,24 @@ export function renderGroupDetail(
     console.log(yamlDump(group));
     return;
   }
-  console.log(chalk.bold('\n  Security Group Detail:\n'));
-  console.log(`    UUID:        ${chalk.dim(group.uuid)}`);
-  console.log(`    Name:        ${group.name}`);
-  console.log(`    Description: ${group.description || chalk.dim('(none)')}`);
-  console.log(`    Source Type: ${group.sourceType}`);
-  const stateColor = group.state === 'ACTIVE' ? chalk.green : chalk.yellow;
-  console.log(`    State:       ${stateColor(group.state)}`);
-  console.log(`    Created:     ${chalk.dim(group.createdAt)}`);
-  console.log(`    Updated:     ${chalk.dim(group.updatedAt)}`);
+  ui.section('Security Group Detail:');
+  const color = group.state === 'ACTIVE' ? chalk.green : chalk.yellow;
+  ui.keyValue([
+    ['UUID', group.uuid],
+    ['Name', group.name],
+    ['Description', group.description || chalk.dim('(none)')],
+    ['Source Type', group.sourceType],
+    ['State', color(group.state)],
+    ['Created', group.createdAt],
+    ['Updated', group.updatedAt],
+  ]);
   console.log();
 }
 
 /** Render security rule list. */
 export function renderRuleList(rules: ModelSecurityRule[], format: OutputFormat = 'pretty'): void {
   if (rules.length === 0) {
-    console.log(chalk.dim('  No security rules found.\n'));
+    ui.emptyList('security rules');
     return;
   }
   if (format !== 'pretty') {
@@ -110,9 +132,9 @@ export function renderRuleList(rules: ModelSecurityRule[], format: OutputFormat 
     );
     return;
   }
-  console.log(chalk.bold('\n  Security Rules:\n'));
+  ui.section('Security Rules:');
   for (const r of rules) {
-    console.log(`  ${chalk.dim(r.uuid)}`);
+    ui.dim(r.uuid);
     console.log(
       `    ${r.name}  type: ${chalk.dim(r.ruleType)}  default: ${chalk.dim(r.defaultState)}`,
     );
@@ -124,32 +146,34 @@ export function renderRuleList(rules: ModelSecurityRule[], format: OutputFormat 
 
 /** Render security rule detail. */
 export function renderRuleDetail(rule: ModelSecurityRule): void {
-  console.log(chalk.bold('\n  Security Rule Detail:\n'));
-  console.log(`    UUID:          ${chalk.dim(rule.uuid)}`);
-  console.log(`    Name:          ${rule.name}`);
-  console.log(`    Description:   ${rule.description}`);
-  console.log(`    Rule Type:     ${rule.ruleType}`);
-  console.log(`    Default State: ${rule.defaultState}`);
-  console.log(`    Sources:       ${rule.compatibleSources.join(', ')}`);
+  ui.section('Security Rule Detail:');
+  ui.keyValue([
+    ['UUID', rule.uuid],
+    ['Name', rule.name],
+    ['Description', rule.description],
+    ['Rule Type', rule.ruleType],
+    ['Default State', rule.defaultState],
+    ['Sources', rule.compatibleSources.join(', ')],
+  ]);
 
   if (rule.remediation.description) {
-    console.log(chalk.bold('\n    Remediation:'));
-    console.log(`      ${rule.remediation.description}`);
+    ui.section('Remediation:');
+    console.log(`  ${rule.remediation.description}`);
     if (rule.remediation.steps.length > 0) {
       for (const step of rule.remediation.steps) {
-        console.log(`      ${chalk.dim('•')} ${step}`);
+        ui.bullet(step, 'neutral');
       }
     }
     if (rule.remediation.url) {
-      console.log(`      ${chalk.dim(rule.remediation.url)}`);
+      ui.dim(rule.remediation.url);
     }
   }
 
   if (rule.editableFields.length > 0) {
-    console.log(chalk.bold('\n    Editable Fields:'));
+    ui.section('Editable Fields:');
     for (const f of rule.editableFields) {
-      console.log(`      ${f.displayName} (${chalk.dim(f.attributeName)}): ${f.displayType}`);
-      if (f.description) console.log(`        ${chalk.dim(f.description)}`);
+      console.log(`  ${f.displayName} (${chalk.dim(f.attributeName)}): ${f.displayType}`);
+      if (f.description) console.log(`    ${chalk.dim(f.description)}`);
     }
   }
   console.log();
@@ -158,44 +182,41 @@ export function renderRuleDetail(rule: ModelSecurityRule): void {
 /** Render rule instance list. */
 export function renderRuleInstanceList(instances: ModelSecurityRuleInstance[]): void {
   if (instances.length === 0) {
-    console.log(chalk.dim('  No rule instances found.\n'));
+    ui.emptyList('rule instances');
     return;
   }
-  console.log(chalk.bold('\n  Rule Instances:\n'));
+  ui.section('Rule Instances:');
   for (const ri of instances) {
-    const stateColor =
-      ri.state === 'BLOCKING' ? chalk.red : ri.state === 'ALLOWING' ? chalk.green : chalk.dim;
     const ruleName = (ri.rule as { name?: string })?.name ?? ri.securityRuleUuid;
-    console.log(`  ${chalk.dim(ri.uuid)}`);
-    console.log(`    ${ruleName}  ${stateColor(ri.state)}`);
+    ui.dim(ri.uuid);
+    console.log(`    ${ruleName}  ${stateColor(ri.state)(ri.state)}`);
   }
   console.log();
 }
 
 /** Render rule instance detail. */
 export function renderRuleInstanceDetail(instance: ModelSecurityRuleInstance): void {
-  console.log(chalk.bold('\n  Rule Instance Detail:\n'));
-  console.log(`    UUID:         ${chalk.dim(instance.uuid)}`);
-  console.log(`    Group UUID:   ${chalk.dim(instance.securityGroupUuid)}`);
-  console.log(`    Rule UUID:    ${chalk.dim(instance.securityRuleUuid)}`);
-  const stateColor =
-    instance.state === 'BLOCKING'
-      ? chalk.red
-      : instance.state === 'ALLOWING'
-        ? chalk.green
-        : chalk.dim;
-  console.log(`    State:        ${stateColor(instance.state)}`);
+  ui.section('Rule Instance Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', instance.uuid],
+    ['Group UUID', instance.securityGroupUuid],
+    ['Rule UUID', instance.securityRuleUuid],
+    ['State', stateColor(instance.state)(instance.state)],
+  ];
   const ruleName = (instance.rule as { name?: string })?.name;
-  if (ruleName) console.log(`    Rule Name:    ${ruleName}`);
-  console.log(`    Created:      ${chalk.dim(instance.createdAt)}`);
-  console.log(`    Updated:      ${chalk.dim(instance.updatedAt)}`);
+  if (ruleName) pairs.push(['Rule Name', ruleName]);
+  pairs.push(['Created', instance.createdAt]);
+  pairs.push(['Updated', instance.updatedAt]);
+  ui.keyValue(pairs);
 
   if (Object.keys(instance.fieldValues).length > 0) {
-    console.log(chalk.bold('\n    Field Values:'));
-    for (const [key, value] of Object.entries(instance.fieldValues)) {
-      const display = Array.isArray(value) ? value.join(', ') : String(value);
-      console.log(`      ${key}: ${chalk.dim(display)}`);
-    }
+    ui.section('Field Values:');
+    ui.keyValue(
+      Object.entries(instance.fieldValues).map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.join(', ') : String(value),
+      ]),
+    );
   }
   console.log();
 }
@@ -210,7 +231,7 @@ export function renderMsScanList(
   format: OutputFormat = 'pretty',
 ): void {
   if (scans.length === 0) {
-    console.log(chalk.dim('  No scans found.\n'));
+    ui.emptyList('scans');
     return;
   }
   if (format !== 'pretty') {
@@ -240,17 +261,11 @@ export function renderMsScanList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Model Security Scans:\n'));
+  ui.section('Model Security Scans:');
   for (const s of scans) {
-    const outcomeColor =
-      s.evalOutcome === 'ALLOWED'
-        ? chalk.green
-        : s.evalOutcome === 'BLOCKED'
-          ? chalk.red
-          : chalk.yellow;
-    console.log(`  ${chalk.dim(s.uuid)}`);
+    ui.dim(s.uuid);
     console.log(
-      `    ${outcomeColor(s.evalOutcome)}  ${chalk.dim(s.scanOrigin)}  ${chalk.dim(s.createdAt)}`,
+      `    ${stateColor(s.evalOutcome)(s.evalOutcome)}  ${chalk.dim(s.scanOrigin)}  ${chalk.dim(s.createdAt)}`,
     );
     if (s.modelUri) console.log(`    ${chalk.dim(s.modelUri)}`);
     if (s.evalSummary) {
@@ -265,32 +280,28 @@ export function renderMsScanList(
 
 /** Render full scan detail. */
 export function renderMsScanDetail(scan: ModelSecurityScan): void {
-  console.log(chalk.bold('\n  Scan Detail:\n'));
-  console.log(`    UUID:       ${chalk.dim(scan.uuid)}`);
-  const outcomeColor =
-    scan.evalOutcome === 'ALLOWED'
-      ? chalk.green
-      : scan.evalOutcome === 'BLOCKED'
-        ? chalk.red
-        : chalk.yellow;
-  console.log(`    Outcome:    ${outcomeColor(scan.evalOutcome)}`);
-  if (scan.modelUri) console.log(`    Model URI:  ${scan.modelUri}`);
-  console.log(`    Origin:     ${scan.scanOrigin}`);
-  console.log(`    Source:     ${scan.sourceType}`);
-  console.log(`    Group:      ${scan.securityGroupName}`);
-  console.log(`    Created:    ${chalk.dim(scan.createdAt)}`);
-  console.log(`    Updated:    ${chalk.dim(scan.updatedAt)}`);
+  ui.section('Scan Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', scan.uuid],
+    ['Outcome', stateColor(scan.evalOutcome)(scan.evalOutcome)],
+  ];
+  if (scan.modelUri) pairs.push(['Model URI', scan.modelUri]);
+  pairs.push(['Origin', scan.scanOrigin]);
+  pairs.push(['Source', scan.sourceType]);
+  pairs.push(['Group', scan.securityGroupName]);
+  pairs.push(['Created', scan.createdAt]);
+  pairs.push(['Updated', scan.updatedAt]);
   if (scan.evalSummary) {
     const { rulesPassed, rulesFailed, totalRules } = scan.evalSummary;
-    console.log(
-      `    Rules:      ${chalk.green(`${rulesPassed} passed`)}  ${chalk.red(`${rulesFailed} failed`)}  / ${totalRules} total`,
-    );
+    pairs.push([
+      'Rules',
+      `${chalk.green(`${rulesPassed} passed`)}  ${chalk.red(`${rulesFailed} failed`)}  / ${totalRules} total`,
+    ]);
   }
+  ui.keyValue(pairs);
   if (scan.labels.length > 0) {
-    console.log(chalk.bold('\n    Labels:'));
-    for (const l of scan.labels) {
-      console.log(`      ${l.key}: ${chalk.dim(l.value)}`);
-    }
+    ui.section('Labels:');
+    ui.keyValue(scan.labels.map((l) => [l.key, l.value]));
   }
   console.log();
 }
@@ -302,35 +313,31 @@ export function renderMsScanDetail(scan: ModelSecurityScan): void {
 /** Render a list of evaluations. */
 export function renderEvaluationList(evaluations: ModelSecurityEvaluation[]): void {
   if (evaluations.length === 0) {
-    console.log(chalk.dim('  No evaluations found.\n'));
+    ui.emptyList('evaluations');
     return;
   }
-  console.log(chalk.bold('\n  Rule Evaluations:\n'));
+  ui.section('Rule Evaluations:');
   for (const e of evaluations) {
-    const color =
-      e.result === 'PASSED' ? chalk.green : e.result === 'FAILED' ? chalk.red : chalk.yellow;
-    console.log(`  ${chalk.dim(e.uuid)}`);
-    console.log(`    ${e.ruleName}  ${color(e.result)}  ${chalk.dim(e.ruleInstanceState)}`);
+    ui.dim(e.uuid);
+    console.log(
+      `    ${e.ruleName}  ${stateColor(e.result)(e.result)}  ${chalk.dim(e.ruleInstanceState)}`,
+    );
   }
   console.log();
 }
 
 /** Render a single evaluation detail. */
 export function renderEvaluationDetail(evaluation: ModelSecurityEvaluation): void {
-  console.log(chalk.bold('\n  Evaluation Detail:\n'));
-  console.log(`    UUID:           ${chalk.dim(evaluation.uuid)}`);
-  console.log(`    Rule:           ${evaluation.ruleName}`);
-  console.log(`    Description:    ${chalk.dim(evaluation.ruleDescription)}`);
-  console.log(`    Instance UUID:  ${chalk.dim(evaluation.ruleInstanceUuid)}`);
-  console.log(`    Instance State: ${evaluation.ruleInstanceState}`);
-  const color =
-    evaluation.result === 'PASSED'
-      ? chalk.green
-      : evaluation.result === 'FAILED'
-        ? chalk.red
-        : chalk.yellow;
-  console.log(`    Result:         ${color(evaluation.result)}`);
-  console.log(`    Violations:     ${evaluation.violationCount}`);
+  ui.section('Evaluation Detail:');
+  ui.keyValue([
+    ['UUID', evaluation.uuid],
+    ['Rule', evaluation.ruleName],
+    ['Description', evaluation.ruleDescription],
+    ['Instance UUID', evaluation.ruleInstanceUuid],
+    ['Instance State', evaluation.ruleInstanceState],
+    ['Result', stateColor(evaluation.result)(evaluation.result)],
+    ['Violations', evaluation.violationCount],
+  ]);
   console.log();
 }
 
@@ -341,12 +348,12 @@ export function renderEvaluationDetail(evaluation: ModelSecurityEvaluation): voi
 /** Render a list of violations. */
 export function renderViolationList(violations: ModelSecurityViolation[]): void {
   if (violations.length === 0) {
-    console.log(chalk.dim('  No violations found.\n'));
+    ui.emptyList('violations');
     return;
   }
-  console.log(chalk.bold('\n  Violations:\n'));
+  ui.section('Violations:');
   for (const v of violations) {
-    console.log(`  ${chalk.dim(v.uuid)}`);
+    ui.dim(v.uuid);
     console.log(`    ${chalk.red(v.ruleName)}  ${chalk.dim(v.file)}`);
     console.log(`    ${v.description}`);
     console.log(`    Threat: ${chalk.dim(v.threat)}`);
@@ -356,14 +363,16 @@ export function renderViolationList(violations: ModelSecurityViolation[]): void 
 
 /** Render a single violation detail. */
 export function renderViolationDetail(violation: ModelSecurityViolation): void {
-  console.log(chalk.bold('\n  Violation Detail:\n'));
-  console.log(`    UUID:        ${chalk.dim(violation.uuid)}`);
-  console.log(`    Rule:        ${chalk.red(violation.ruleName)}`);
-  console.log(`    Description: ${violation.ruleDescription}`);
-  console.log(`    State:       ${violation.ruleInstanceState}`);
-  console.log(`    File:        ${violation.file}`);
-  console.log(`    Threat:      ${violation.threat}`);
-  console.log(`    Detail:      ${violation.description}`);
+  ui.section('Violation Detail:');
+  ui.keyValue([
+    ['UUID', violation.uuid],
+    ['Rule', chalk.red(violation.ruleName)],
+    ['Description', violation.ruleDescription],
+    ['State', violation.ruleInstanceState],
+    ['File', violation.file],
+    ['Threat', violation.threat],
+    ['Detail', violation.description],
+  ]);
   console.log();
 }
 
@@ -374,10 +383,10 @@ export function renderViolationDetail(violation: ModelSecurityViolation): void {
 /** Render a list of scanned files. */
 export function renderFileList(files: ModelSecurityFile[]): void {
   if (files.length === 0) {
-    console.log(chalk.dim('  No files found.\n'));
+    ui.emptyList('files');
     return;
   }
-  console.log(chalk.bold('\n  Scanned Files:\n'));
+  ui.section('Scanned Files:');
   for (const f of files) {
     const color =
       f.result === 'SUCCESS' ? chalk.green : f.result === 'SKIPPED' ? chalk.yellow : chalk.red;
@@ -394,12 +403,12 @@ export function renderFileList(files: ModelSecurityFile[]): void {
 /** Render label keys. */
 export function renderLabelKeys(keys: string[]): void {
   if (keys.length === 0) {
-    console.log(chalk.dim('  No label keys found.\n'));
+    ui.emptyList('label keys');
     return;
   }
-  console.log(chalk.bold('\n  Label Keys:\n'));
+  ui.section('Label Keys:');
   for (const k of keys) {
-    console.log(`    ${k}`);
+    console.log(`  ${k}`);
   }
   console.log();
 }
@@ -407,12 +416,12 @@ export function renderLabelKeys(keys: string[]): void {
 /** Render label values for a key. */
 export function renderLabelValues(key: string, values: string[]): void {
   if (values.length === 0) {
-    console.log(chalk.dim(`  No values for key "${key}".\n`));
+    ui.emptyList(`values for key "${key}"`);
     return;
   }
-  console.log(chalk.bold(`\n  Label Values for "${key}":\n`));
+  ui.section(`Label Values for "${key}":`);
   for (const v of values) {
-    console.log(`    ${v}`);
+    console.log(`  ${v}`);
   }
   console.log();
 }

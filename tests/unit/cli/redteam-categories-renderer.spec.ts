@@ -14,7 +14,7 @@ describe('renderCategories', () => {
     console.log = (...args: unknown[]) => output.push(args.join(' '));
     const { renderCategories } = await import('../../../src/cli/renderer/redteam.js');
     renderCategories([]);
-    expect(output.join('\n')).toContain('No categories found.');
+    expect(output.join('\n')).toContain('No categories found');
   });
 
   it('prints parent and sub-category IDs inline with display names', async () => {

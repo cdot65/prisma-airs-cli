@@ -1,16 +1,16 @@
 import chalk from 'chalk';
 import { dump as yamlDump } from 'js-yaml';
 import { formatOutput, type OutputFormat } from './common.js';
+import { ui } from './ui.js';
 
 /** Render the red team banner. */
 export function renderRedteamHeader(): void {
-  console.log(chalk.bold.red('\n  Prisma AIRS — AI Red Team'));
-  console.log(chalk.dim('  Adversarial scan operations\n'));
+  ui.header('Prisma AIRS — AI Red Team', 'Adversarial scan operations');
 }
 
 type ChalkFn = (text: string) => string;
 
-/** Severity → chalk color mapping. */
+/** Severity → chalk color mapping (inline value coloring within composed lines). */
 function severityColor(severity: string): ChalkFn {
   switch (severity.toUpperCase()) {
     case 'CRITICAL':
@@ -26,7 +26,7 @@ function severityColor(severity: string): ChalkFn {
   }
 }
 
-/** Status → chalk color mapping. */
+/** Status → chalk color mapping (inline value coloring within composed lines). */
 function statusColor(status: string): ChalkFn {
   switch (status) {
     case 'COMPLETED':
@@ -46,6 +46,11 @@ function statusColor(status: string): ChalkFn {
   }
 }
 
+/** Colorize an active/inactive state word. */
+function activeState(active: boolean): string {
+  return statusColor(active ? 'COMPLETED' : 'FAILED')(active ? 'active' : 'inactive');
+}
+
 /** Render a scan's status summary. */
 export function renderScanStatus(job: {
   uuid: string;
@@ -58,17 +63,20 @@ export function renderScanStatus(job: {
   completed?: number | null;
   total?: number | null;
 }): void {
-  console.log(chalk.bold('  Scan Status:'));
-  console.log(`    ID:      ${chalk.dim(job.uuid)}`);
-  console.log(`    Name:    ${job.name}`);
-  console.log(`    Type:    ${job.jobType}`);
-  if (job.targetName) console.log(`    Target:  ${job.targetName}`);
-  console.log(`    Status:  ${statusColor(job.status)(job.status)}`);
+  ui.section('Scan Status:');
+  const pairs: Array<[string, unknown]> = [
+    ['ID', job.uuid],
+    ['Name', job.name],
+    ['Type', job.jobType],
+  ];
+  if (job.targetName) pairs.push(['Target', job.targetName]);
+  pairs.push(['Status', statusColor(job.status)(job.status)]);
   if (job.total != null && job.completed != null) {
-    console.log(`    Progress: ${job.completed}/${job.total}`);
+    pairs.push(['Progress', `${job.completed}/${job.total}`]);
   }
-  if (job.score != null) console.log(`    Score:   ${job.score}`);
-  if (job.asr != null) console.log(`    ASR:     ${job.asr.toFixed(1)}%`);
+  if (job.score != null) pairs.push(['Score', job.score]);
+  if (job.asr != null) pairs.push(['ASR', `${job.asr.toFixed(1)}%`]);
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -85,7 +93,7 @@ export function renderScanList(
   format: OutputFormat = 'pretty',
 ): void {
   if (jobs.length === 0) {
-    console.log(chalk.dim('  No scans found.\n'));
+    ui.emptyList('scans');
     return;
   }
   if (format !== 'pretty') {
@@ -113,9 +121,9 @@ export function renderScanList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Recent Scans:\n'));
+  ui.section('Recent Scans:');
   for (const job of jobs) {
-    console.log(`  ${chalk.dim(job.uuid)}`);
+    ui.dim(job.uuid);
     console.log(
       `    ${job.name}  ${statusColor(job.status)(job.status)}  ${job.jobType}${job.score != null ? `  score: ${job.score}` : ''}`,
     );
@@ -139,12 +147,14 @@ export function renderStaticReport(report: {
     total: number;
   }>;
 }): void {
-  console.log(chalk.bold('\n  Static Scan Report:'));
-  if (report.score != null) console.log(`    Score: ${report.score}`);
-  if (report.asr != null) console.log(`    ASR:   ${report.asr.toFixed(1)}%`);
+  ui.section('Static Scan Report:');
+  const pairs: Array<[string, unknown]> = [];
+  if (report.score != null) pairs.push(['Score', report.score]);
+  if (report.asr != null) pairs.push(['ASR', `${report.asr.toFixed(1)}%`]);
+  if (pairs.length > 0) ui.keyValue(pairs);
 
   if (report.severityBreakdown.length > 0) {
-    console.log(chalk.bold('\n  Severity Breakdown:'));
+    ui.section('Severity Breakdown:');
     for (const s of report.severityBreakdown) {
       const color = severityColor(s.severity);
       console.log(
@@ -154,16 +164,23 @@ export function renderStaticReport(report: {
   }
 
   if (report.categories.length > 0) {
-    console.log(chalk.bold('\n  Categories:'));
-    for (const c of report.categories) {
-      console.log(
-        `    ${c.displayName.padEnd(30)} ASR: ${c.asr.toFixed(1)}%  (${c.successful}/${c.total})`,
-      );
-    }
+    ui.section('Categories:');
+    ui.table(
+      [
+        { key: 'category', label: 'Category' },
+        { key: 'asr', label: 'ASR' },
+        { key: 'hits', label: 'Bypassed/Total' },
+      ],
+      report.categories.map((c) => ({
+        category: c.displayName,
+        asr: `${c.asr.toFixed(1)}%`,
+        hits: `${c.successful}/${c.total}`,
+      })),
+    );
   }
 
   if (report.reportSummary) {
-    console.log(chalk.bold('\n  Summary:'));
+    ui.section('Summary:');
     console.log(`    ${report.reportSummary}`);
   }
   console.log();
@@ -179,19 +196,22 @@ export function renderDynamicReport(report: {
   totalThreats?: number;
   reportSummary?: string | null;
 }): void {
-  console.log(chalk.bold('\n  Dynamic Scan Report:'));
-  if (report.score != null) console.log(`    Score:   ${report.score}`);
-  if (report.asr != null) console.log(`    ASR:     ${(report.asr * 100).toFixed(1)}%`);
+  ui.section('Dynamic Scan Report:');
+  const pairs: Array<[string, unknown]> = [];
+  if (report.score != null) pairs.push(['Score', report.score]);
+  if (report.asr != null) pairs.push(['ASR', `${(report.asr * 100).toFixed(1)}%`]);
   if (report.totalGoals != null || report.goalsAchieved != null) {
-    console.log(
-      `    Goals:   ${report.goalsAchieved ?? 0} achieved / ${report.totalGoals ?? 0} total`,
-    );
+    pairs.push([
+      'Goals',
+      `${report.goalsAchieved ?? 0} achieved / ${report.totalGoals ?? 0} total`,
+    ]);
   }
-  if (report.totalStreams != null) console.log(`    Streams: ${report.totalStreams}`);
-  if (report.totalThreats != null) console.log(`    Threats: ${report.totalThreats}`);
+  if (report.totalStreams != null) pairs.push(['Streams', report.totalStreams]);
+  if (report.totalThreats != null) pairs.push(['Threats', report.totalThreats]);
+  if (pairs.length > 0) ui.keyValue(pairs);
 
   if (report.reportSummary) {
-    console.log(chalk.bold('\n  Summary:'));
+    ui.section('Summary:');
     console.log(`    ${report.reportSummary}`);
   }
   console.log();
@@ -211,18 +231,28 @@ export function renderCustomReport(report: {
     threatRate: number;
   }>;
 }): void {
-  console.log(chalk.bold('\n  Custom Attack Report:'));
-  console.log(`    Score:   ${report.score}`);
-  console.log(`    ASR:     ${report.asr.toFixed(1)}%`);
-  console.log(`    Attacks: ${report.totalAttacks}  Threats: ${report.totalThreats}`);
+  ui.section('Custom Attack Report:');
+  ui.keyValue([
+    ['Score', report.score],
+    ['ASR', `${report.asr.toFixed(1)}%`],
+    ['Attacks', report.totalAttacks],
+    ['Threats', report.totalThreats],
+  ]);
 
   if (report.promptSets.length > 0) {
-    console.log(chalk.bold('\n  Prompt Sets:'));
-    for (const ps of report.promptSets) {
-      console.log(
-        `    ${ps.promptSetName.padEnd(40)} ${ps.totalThreats}/${ps.totalPrompts} threats  (${ps.threatRate.toFixed(1)}%)`,
-      );
-    }
+    ui.section('Prompt Sets:');
+    ui.table(
+      [
+        { key: 'promptSet', label: 'Prompt Set' },
+        { key: 'threats', label: 'Threats' },
+        { key: 'threatRate', label: 'Threat Rate' },
+      ],
+      report.promptSets.map((ps) => ({
+        promptSet: ps.promptSetName,
+        threats: `${ps.totalThreats}/${ps.totalPrompts}`,
+        threatRate: `${ps.threatRate.toFixed(1)}%`,
+      })),
+    );
   }
   console.log();
 }
@@ -240,11 +270,11 @@ export function renderAttackList(
   options?: { footnote?: string },
 ): void {
   if (attacks.length === 0) {
-    console.log(chalk.dim('  No attacks found.\n'));
-    if (options?.footnote) console.log(chalk.dim(`  ${options.footnote}\n`));
+    ui.emptyList('attacks');
+    if (options?.footnote) ui.dim(options.footnote);
     return;
   }
-  console.log(chalk.bold('\n  Attacks:\n'));
+  ui.section('Attacks:');
   for (const a of attacks) {
     const sev = a.severity
       ? severityColor(a.severity)(a.severity.padEnd(10))
@@ -253,7 +283,7 @@ export function renderAttackList(
     const label = a.subCategoryDisplayName ?? a.subCategory ?? '—';
     console.log(`    ${sev} ${result}  ${label}${a.category ? chalk.dim(` [${a.category}]`) : ''}`);
   }
-  if (options?.footnote) console.log(chalk.dim(`  ${options.footnote}`));
+  if (options?.footnote) ui.dim(options.footnote);
   console.log();
 }
 
@@ -286,10 +316,10 @@ export function renderCustomAttackList(
   }>,
 ): void {
   if (attacks.length === 0) {
-    console.log(chalk.dim('  No custom attacks found.\n'));
+    ui.emptyList('custom attacks');
     return;
   }
-  console.log(chalk.bold('\n  Custom Attacks:\n'));
+  ui.section('Custom Attacks:');
   for (const a of attacks) {
     const result = a.threat ? chalk.red('THREAT') : chalk.green('SAFE');
     const prompt = a.promptText.length > 80 ? `${a.promptText.substring(0, 77)}...` : a.promptText;
@@ -312,7 +342,7 @@ export function renderTargetList(
   format: OutputFormat = 'pretty',
 ): void {
   if (targets.length === 0) {
-    console.log(chalk.dim('  No targets found.\n'));
+    ui.emptyList('targets');
     return;
   }
   if (format !== 'pretty') {
@@ -336,11 +366,11 @@ export function renderTargetList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Targets:\n'));
+  ui.section('Targets:');
   for (const t of targets) {
-    console.log(`  ${chalk.dim(t.uuid)}`);
+    ui.dim(t.uuid);
     console.log(
-      `    ${t.name}  ${statusColor(t.active ? 'COMPLETED' : 'FAILED')(t.active ? 'active' : 'inactive')}${t.targetType ? `  type: ${t.targetType}` : ''}`,
+      `    ${t.name}  ${activeState(t.active)}${t.targetType ? `  type: ${t.targetType}` : ''}`,
     );
   }
   console.log();
@@ -356,10 +386,10 @@ export function renderCategories(
   }>,
 ): void {
   if (categories.length === 0) {
-    console.log(chalk.dim('  No categories found.\n'));
+    ui.emptyList('categories');
     return;
   }
-  console.log(chalk.bold('\n  Attack Categories:\n'));
+  ui.section('Attack Categories:');
   for (const c of categories) {
     console.log(
       `  ${chalk.bold(c.displayName)} ${chalk.cyan(`(${c.id})`)}${c.description ? chalk.dim(` — ${c.description}`) : ''}`,
@@ -379,7 +409,7 @@ export function renderPromptSetList(
   format: OutputFormat = 'pretty',
 ): void {
   if (promptSets.length === 0) {
-    console.log(chalk.dim('  No prompt sets found.\n'));
+    ui.emptyList('prompt sets');
     return;
   }
   if (format !== 'pretty') {
@@ -401,12 +431,10 @@ export function renderPromptSetList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Prompt Sets:\n'));
+  ui.section('Prompt Sets:');
   for (const ps of promptSets) {
-    console.log(`  ${chalk.dim(ps.uuid)}`);
-    console.log(
-      `    ${ps.name}  ${statusColor(ps.active ? 'COMPLETED' : 'FAILED')(ps.active ? 'active' : 'inactive')}`,
-    );
+    ui.dim(ps.uuid);
+    console.log(`    ${ps.name}  ${activeState(ps.active)}`);
   }
   console.log();
 }
@@ -418,6 +446,16 @@ function formatDetailValue(value: unknown, indent: string): string {
   const json = JSON.stringify(value, null, 2);
   // Indent every line after the first so the block lines up under the key.
   return json.split('\n').join(`\n${indent}`);
+}
+
+/** Render a key/value object block as an aligned keyValue list with JSON-expanded nested values. */
+function keyValueFromObject(obj: Record<string, unknown>, skipNullish = false): void {
+  const pairs: Array<[string, unknown]> = [];
+  for (const [k, v] of Object.entries(obj)) {
+    if (skipNullish && v == null) continue;
+    pairs.push([k, formatDetailValue(v, '  ')]);
+  }
+  if (pairs.length > 0) ui.keyValue(pairs);
 }
 
 /** Render target detail. */
@@ -442,30 +480,25 @@ export function renderTargetDetail(
     }
     return;
   }
-  console.log(chalk.bold('\n  Target Detail:\n'));
-  console.log(`    UUID:   ${chalk.dim(target.uuid)}`);
-  console.log(`    Name:   ${target.name}`);
-  console.log(
-    `    Status: ${statusColor(target.active ? 'COMPLETED' : 'FAILED')(target.active ? 'active' : 'inactive')}`,
-  );
-  if (target.targetType) console.log(`    Type:   ${target.targetType}`);
+  ui.section('Target Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', target.uuid],
+    ['Name', target.name],
+    ['Status', activeState(target.active)],
+  ];
+  if (target.targetType) pairs.push(['Type', target.targetType]);
+  ui.keyValue(pairs);
   if (target.connectionParams) {
-    console.log(chalk.bold('\n    Connection:'));
-    for (const [k, v] of Object.entries(target.connectionParams)) {
-      console.log(`      ${k}: ${chalk.dim(formatDetailValue(v, '      '))}`);
-    }
+    ui.section('Connection:');
+    keyValueFromObject(target.connectionParams);
   }
   if (target.background) {
-    console.log(chalk.bold('\n    Background:'));
-    for (const [k, v] of Object.entries(target.background)) {
-      if (v != null) console.log(`      ${k}: ${chalk.dim(formatDetailValue(v, '      '))}`);
-    }
+    ui.section('Background:');
+    keyValueFromObject(target.background, true);
   }
   if (target.metadata) {
-    console.log(chalk.bold('\n    Metadata:'));
-    for (const [k, v] of Object.entries(target.metadata)) {
-      if (v != null) console.log(`      ${k}: ${chalk.dim(formatDetailValue(v, '      '))}`);
-    }
+    ui.section('Metadata:');
+    keyValueFromObject(target.metadata, true);
   }
   console.log();
 }
@@ -497,16 +530,17 @@ export function renderPromptSetDetail(
     }
     return;
   }
-  console.log(chalk.bold('\n  Prompt Set Detail:\n'));
-  console.log(`    UUID:        ${chalk.dim(ps.uuid)}`);
-  console.log(`    Name:        ${ps.name}`);
-  console.log(
-    `    Status:      ${statusColor(ps.active ? 'COMPLETED' : 'FAILED')(ps.active ? 'active' : 'inactive')}`,
-  );
-  console.log(`    Archived:    ${ps.archive ? 'yes' : 'no'}`);
-  if (ps.description) console.log(`    Description: ${ps.description}`);
-  if (ps.createdAt) console.log(`    Created:     ${chalk.dim(ps.createdAt)}`);
-  if (ps.updatedAt) console.log(`    Updated:     ${chalk.dim(ps.updatedAt)}`);
+  ui.section('Prompt Set Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', ps.uuid],
+    ['Name', ps.name],
+    ['Status', activeState(ps.active)],
+    ['Archived', ps.archive ? 'yes' : 'no'],
+  ];
+  if (ps.description) pairs.push(['Description', ps.description]);
+  if (ps.createdAt) pairs.push(['Created', ps.createdAt]);
+  if (ps.updatedAt) pairs.push(['Updated', ps.updatedAt]);
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -516,18 +550,20 @@ export function renderVersionInfo(info: {
   version: number;
   stats: { total: number; active: number; inactive: number };
 }): void {
-  console.log(chalk.bold('\n  Version Info:\n'));
-  console.log(`    Version:  ${info.version}`);
-  console.log(`    Total:    ${info.stats.total}`);
-  console.log(`    Active:   ${chalk.green(String(info.stats.active))}`);
-  console.log(`    Inactive: ${chalk.dim(String(info.stats.inactive))}`);
+  ui.section('Version Info:');
+  ui.keyValue([
+    ['Version', info.version],
+    ['Total', info.stats.total],
+    ['Active', info.stats.active],
+    ['Inactive', info.stats.inactive],
+  ]);
   console.log();
 }
 
 /** Render a placeholder when the version-info endpoint is unavailable (upstream 500). */
 export function renderVersionInfoUnavailable(): void {
-  console.log(chalk.bold('\n  Version Info:\n'));
-  console.log(chalk.dim('    unavailable (version-info endpoint returned an error)'));
+  ui.section('Version Info:');
+  ui.dim('unavailable (version-info endpoint returned an error)');
   console.log();
 }
 
@@ -541,10 +577,10 @@ export function renderPromptList(
   }>,
 ): void {
   if (prompts.length === 0) {
-    console.log(chalk.dim('  No prompts found.\n'));
+    ui.emptyList('prompts');
     return;
   }
-  console.log(chalk.bold('\n  Prompts:\n'));
+  ui.section('Prompts:');
   for (const p of prompts) {
     const status = p.active ? chalk.green('active') : chalk.dim('inactive');
     const text = p.prompt.length > 80 ? `${p.prompt.substring(0, 77)}...` : p.prompt;
@@ -563,12 +599,15 @@ export function renderPromptDetail(p: {
   active: boolean;
   promptSetId: string;
 }): void {
-  console.log(chalk.bold('\n  Prompt Detail:\n'));
-  console.log(`    UUID:       ${chalk.dim(p.uuid)}`);
-  console.log(`    Set UUID:   ${chalk.dim(p.promptSetId)}`);
-  console.log(`    Status:     ${p.active ? chalk.green('active') : chalk.dim('inactive')}`);
-  console.log(`    Prompt:     ${p.prompt}`);
-  if (p.goal) console.log(`    Goal:       ${p.goal}`);
+  ui.section('Prompt Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', p.uuid],
+    ['Set UUID', p.promptSetId],
+    ['Status', p.active ? chalk.green('active') : chalk.dim('inactive')],
+    ['Prompt', p.prompt],
+  ];
+  if (p.goal) pairs.push(['Goal', p.goal]);
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -586,12 +625,12 @@ export function renderPropertyNames(names: string[], format: OutputFormat = 'pre
     return;
   }
   if (names.length === 0) {
-    console.log(chalk.dim('  No property names found.\n'));
+    ui.emptyList('property names');
     return;
   }
-  console.log(chalk.bold('\n  Property Names:\n'));
+  ui.section('Property Names:');
   for (const n of names) {
-    console.log(`    ${chalk.dim('•')} ${n}`);
+    ui.bullet(n, 'neutral');
   }
   console.log();
 }
@@ -602,19 +641,22 @@ export function renderAuthValidation(result: {
   tokenPreview?: string;
   expiresIn?: number;
 }): void {
-  console.log(chalk.bold('\n  Auth Validation:\n'));
-  console.log(`    Validated: ${result.validated ? chalk.green('yes') : chalk.red('no')}`);
-  if (result.tokenPreview) console.log(`    Token:     ${chalk.dim(result.tokenPreview)}`);
-  if (result.expiresIn != null) console.log(`    Expires In: ${result.expiresIn}s`);
+  ui.section('Auth Validation:');
+  const pairs: Array<[string, unknown]> = [
+    ['Validated', result.validated ? chalk.green('yes') : chalk.red('no')],
+  ];
+  if (result.tokenPreview) pairs.push(['Token', result.tokenPreview]);
+  if (result.expiresIn != null) pairs.push(['Expires In', `${result.expiresIn}s`]);
+  ui.keyValue(pairs);
   console.log();
 }
 
 /** Render target templates keyed by provider. */
 export function renderTargetTemplates(templates: Record<string, unknown>): void {
-  console.log(chalk.bold('\n  Target Templates:\n'));
+  ui.section('Target Templates:');
   for (const [provider, config] of Object.entries(templates)) {
-    console.log(`  ${chalk.bold(provider)}`);
-    console.log(`    ${chalk.dim(JSON.stringify(config, null, 2).replace(/\n/g, '\n    '))}`);
+    ui.section(provider);
+    ui.dim(JSON.stringify(config, null, 2).replace(/\n/g, '\n  '));
     console.log();
   }
 }
@@ -625,19 +667,20 @@ export function renderEulaStatus(status: {
   acceptedAt?: string;
   acceptedByUserId?: string;
 }): void {
-  console.log(chalk.bold('\n  EULA Status:\n'));
-  console.log(`    Accepted: ${status.isAccepted ? chalk.green('yes') : chalk.red('no')}`);
-  if (status.acceptedAt) console.log(`    Accepted At: ${chalk.dim(status.acceptedAt)}`);
-  if (status.acceptedByUserId) {
-    console.log(`    Accepted By: ${chalk.dim(status.acceptedByUserId)}`);
-  }
+  ui.section('EULA Status:');
+  const pairs: Array<[string, unknown]> = [
+    ['Accepted', status.isAccepted ? chalk.green('yes') : chalk.red('no')],
+  ];
+  if (status.acceptedAt) pairs.push(['Accepted At', status.acceptedAt]);
+  if (status.acceptedByUserId) pairs.push(['Accepted By', status.acceptedByUserId]);
+  ui.keyValue(pairs);
   console.log();
 }
 
 /** Render EULA content. */
 export function renderEulaContent(content: { content: string }): void {
-  console.log(chalk.bold('\n  EULA Content:\n'));
-  console.log(`    ${content.content}\n`);
+  ui.section('EULA Content:');
+  console.log(`  ${content.content}\n`);
 }
 
 /** Render property values for a single property name. */
@@ -654,13 +697,13 @@ export function renderPropertyValues(
     return;
   }
   if (payload.values.length === 0) {
-    console.log(chalk.dim('  No property values found.\n'));
+    ui.emptyList('property values');
     return;
   }
-  console.log(chalk.bold('\n  Property Values:\n'));
-  console.log(`    ${chalk.dim('Property:')} ${payload.name}`);
+  ui.section('Property Values:');
+  ui.keyValue([['Property', payload.name]]);
   for (const v of payload.values) {
-    console.log(`      ${chalk.dim('•')} ${v}`);
+    ui.bullet(v, 'neutral');
   }
   console.log();
 }
@@ -672,13 +715,14 @@ export function renderInstanceResponse(resp: {
   appId?: string;
   isSuccess?: boolean;
 }): void {
-  console.log(chalk.bold('\n  Instance:\n'));
-  console.log(`    TSG ID:    ${resp.tsgId}`);
-  if (resp.tenantId) console.log(`    Tenant ID: ${resp.tenantId}`);
-  if (resp.appId) console.log(`    App ID:    ${resp.appId}`);
+  ui.section('Instance:');
+  const pairs: Array<[string, unknown]> = [['TSG ID', resp.tsgId]];
+  if (resp.tenantId) pairs.push(['Tenant ID', resp.tenantId]);
+  if (resp.appId) pairs.push(['App ID', resp.appId]);
   if (resp.isSuccess != null) {
-    console.log(`    Success:   ${resp.isSuccess ? chalk.green('yes') : chalk.red('no')}`);
+    pairs.push(['Success', resp.isSuccess ? chalk.green('yes') : chalk.red('no')]);
   }
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -689,18 +733,22 @@ export function renderInstanceDetail(inst: {
   appId: string;
   region: string;
 }): void {
-  console.log(chalk.bold('\n  Instance Detail:\n'));
-  console.log(`    TSG ID:    ${inst.tsgId}`);
-  console.log(`    Tenant ID: ${inst.tenantId}`);
-  console.log(`    App ID:    ${inst.appId}`);
-  console.log(`    Region:    ${inst.region}`);
+  ui.section('Instance Detail:');
+  ui.keyValue([
+    ['TSG ID', inst.tsgId],
+    ['Tenant ID', inst.tenantId],
+    ['App ID', inst.appId],
+    ['Region', inst.region],
+  ]);
   console.log();
 }
 
 /** Render registry credentials. */
 export function renderRegistryCredentials(creds: { token: string; expiry: string }): void {
-  console.log(chalk.bold('\n  Registry Credentials:\n'));
-  console.log(`    Token:  ${chalk.dim(creds.token.substring(0, 20))}...`);
-  console.log(`    Expiry: ${creds.expiry}`);
+  ui.section('Registry Credentials:');
+  ui.keyValue([
+    ['Token', `${creds.token.substring(0, 20)}...`],
+    ['Expiry', creds.expiry],
+  ]);
   console.log();
 }

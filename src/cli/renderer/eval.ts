@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import type { EfficacyMetrics, TestResult } from '../../core/types.js';
+import { ui } from './ui.js';
 
 export interface EvalOutput {
   profile: string;
@@ -56,6 +57,7 @@ export function buildEvalOutput(
 }
 
 export function renderEvalTerminal(output: EvalOutput): void {
+  // Inline value coloring: coverage thresholds have no ui primitive.
   const coverageColor =
     output.metrics.coverage >= 0.9
       ? chalk.green
@@ -63,36 +65,37 @@ export function renderEvalTerminal(output: EvalOutput): void {
         ? chalk.yellow
         : chalk.red;
 
-  console.log(chalk.bold('\n  Eval Results'));
-  console.log(chalk.dim('  ─────────────────────────'));
-  console.log(`  Profile: ${chalk.white(output.profile)}`);
-  console.log(`  Topic:   ${chalk.white(output.topic)}`);
-  console.log(`  Intent:  ${chalk.white(output.intent)}`);
+  ui.header('Eval Results');
+  ui.keyValue([
+    ['Profile', output.profile],
+    ['Topic', output.topic],
+    ['Intent', output.intent],
+  ]);
 
-  console.log(chalk.bold('\n  Metrics:'));
-  console.log(`    Coverage:  ${coverageColor(`${(output.metrics.coverage * 100).toFixed(1)}%`)}`);
-  console.log(`    TPR:       ${(output.metrics.tpr * 100).toFixed(1)}%`);
-  console.log(`    TNR:       ${(output.metrics.tnr * 100).toFixed(1)}%`);
-  console.log(`    F1:        ${output.metrics.f1.toFixed(3)}`);
-  console.log(
-    chalk.dim(
-      `    TP: ${output.metrics.tp}  TN: ${output.metrics.tn}  ` +
-        `FP: ${output.metrics.fp}  FN: ${output.metrics.fn}  ` +
-        `Total: ${output.metrics.total}`,
-    ),
+  ui.section('Metrics:');
+  ui.keyValue([
+    ['Coverage', coverageColor(`${(output.metrics.coverage * 100).toFixed(1)}%`)],
+    ['TPR', `${(output.metrics.tpr * 100).toFixed(1)}%`],
+    ['TNR', `${(output.metrics.tnr * 100).toFixed(1)}%`],
+    ['F1', output.metrics.f1.toFixed(3)],
+  ]);
+  ui.dim(
+    `TP: ${output.metrics.tp}  TN: ${output.metrics.tn}  ` +
+      `FP: ${output.metrics.fp}  FN: ${output.metrics.fn}  ` +
+      `Total: ${output.metrics.total}`,
   );
 
   if (output.false_positives.length > 0) {
-    console.log(chalk.bold.yellow('\n  False Positives:'));
+    ui.section('False Positives:');
     for (const fp of output.false_positives) {
-      console.log(`    ${chalk.yellow('●')} ${fp.prompt}`);
+      ui.bullet(fp.prompt, 'flag');
     }
   }
 
   if (output.false_negatives.length > 0) {
-    console.log(chalk.bold.red('\n  False Negatives:'));
+    ui.section('False Negatives:');
     for (const fn of output.false_negatives) {
-      console.log(`    ${chalk.red('●')} ${fn.prompt}`);
+      ui.bullet(fn.prompt, 'flag');
     }
   }
 
