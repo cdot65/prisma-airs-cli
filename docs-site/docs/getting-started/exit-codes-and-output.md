@@ -24,7 +24,7 @@ This means machine-readable output always pipes cleanly:
 
 ```bash
 airs runtime profiles list --output json | jq '.[].profile_name'
-airs runtime bulk-scan --profile demo --input prompts.txt --output results.csv
+airs runtime bulk-scan --profile demo --file prompts.txt --output-file results.csv
 # progress lines appear on the terminal (stderr) without corrupting the CSV
 ```
 

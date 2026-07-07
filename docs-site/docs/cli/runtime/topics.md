@@ -19,7 +19,7 @@ airs runtime topics apply [options]
 | `--profile <name>` | Yes | — | Security profile name |
 | `--name <name>` | Yes | — | Topic name to assign |
 | `--intent <intent>` | No | `block` | Topic intent: block or allow |
-| `--format <format>` | No | `terminal` | Output format: json or terminal |
+| `--output <format>` | No | `pretty` | Output format: pretty or json |
 
 #### Examples
 
@@ -46,7 +46,7 @@ airs runtime topics create [options]
 | `--name <name>` | Yes | — | Topic name |
 | `--description <desc>` | Yes | — | Topic description |
 | `--examples <examples...>` | Yes | — | Example prompts (2-5 required) |
-| `--format <format>` | No | `terminal` | Output format: json or terminal |
+| `--output <format>` | No | `pretty` | Output format: pretty or json |
 
 #### Examples
 
@@ -106,7 +106,7 @@ airs runtime topics eval [options]
 | `--profile <name>` | Yes | — | Security profile name |
 | `--prompts <path>` | Yes | — | Path to CSV file with prompt,expected,intent columns |
 | `--topic <name>` | No | `unknown` | Topic name (for output labeling) |
-| `--format <format>` | No | `terminal` | Output format: json or terminal |
+| `--output <format>` | No | `pretty` | Output format: pretty or json |
 | `--rate <n>` | No | — | Max AIRS scan API calls per second |
 | `--concurrency <n>` | No | `5` | Concurrent scan requests |
 
@@ -115,7 +115,7 @@ airs runtime topics eval [options]
 *Evaluate topic against prompt set*
 
 ```bash
-airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons" --format json
+airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons" --output json
 ```
 
 ---
@@ -304,7 +304,7 @@ airs runtime topics revert [options]
 |------|:--------:|---------|-------------|
 | `--profile <name>` | Yes | — | Security profile name |
 | `--name <name>` | Yes | — | Topic name to remove |
-| `--format <format>` | No | `terminal` | Output format: json or terminal |
+| `--output <format>` | No | `pretty` | Output format: pretty or json |
 
 #### Examples
 
@@ -328,7 +328,7 @@ airs runtime topics sample [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <path>` | No | — | Write to file instead of stdout |
+| `--output-file <path>` | No | — | Write to file instead of stdout |
 
 #### Examples
 
@@ -341,7 +341,7 @@ airs runtime topics sample
 *Write to file*
 
 ```bash
-airs runtime topics sample --output prompts/template.csv
+airs runtime topics sample --output-file prompts/template.csv
 ```
 
 ---

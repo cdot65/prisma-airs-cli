@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### New
+
+- **`airs doctor`** — credential and connectivity preflight. Checks Node.js version, config file presence/validity, which scanner and management credentials are set (and from which source), scanner API reachability, and management OAuth. Network checks are time-boxed at 5s; prints a pass/warn/fail report with fix hints. Supports `--output json|yaml`. Exits 0 when healthy (warnings OK), 1 on any failure.
+- **`airs config {list,get,set,unset,path}`** — manage `~/.prisma-airs/config.json` from the CLI: effective-config listing with per-key source (env/file/default), schema-validated `set`, round-trip-safe `unset` that preserves unknown file keys, secret masking with `--reveal` opt-out, and a `PRISMA_AIRS_CONFIG_PATH` env override for the config file location.
+- **`airs completion <bash|zsh|fish>`** — shell completion scripts with install snippets.
+- **Global `--quiet` flag** — suppresses status and decorative output while keeping data, results, and errors.
+- **Confirmation prompts on destructive operations** — profiles/topics/targets delete, topics revert, and profiles cleanup now ask Y/N before proceeding. `--force` bypasses; non-interactive runs without `--force` exit 2.
+- **`ls`/`rm` aliases** on every `list`/`delete` subcommand, and usage examples in `--help` for the most-used commands.
+- **Endpoint and auth overrides (full SDK parity)** — new config keys `airsApiToken` (bearer-token alternative to the scan API key), `airsApiEndpoint`, `airsNumRetries`, `redTeamDataEndpoint`, `redTeamMgmtEndpoint`, `redTeamTokenEndpoint`, `modelSecDataEndpoint`, `modelSecMgmtEndpoint`, `modelSecTokenEndpoint`. Scan commands accept `PANW_AI_SEC_API_TOKEN` in place of `PANW_AI_SEC_API_KEY`.
+
+### Changed
+
+- **Flag standardization** — `--output` always means format; file destinations are `--output-file`; input files are `--file`; pagination is `--limit`/`--offset`; destructive bypass is `--force`. Old spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) keep working throughout v2 as hidden aliases with a stderr deprecation notice and will be removed in v3 — see the [Flag Migration guide](flag-migration.md). Also new: `--output pretty|json|yaml` on `redteam prompts list|get`, `redteam instances get`, `redteam registry-credentials`, and client-side `--limit`/`--offset` on redteam list commands.
+- **Pipe-safe machine-readable output** — `--output json|yaml|csv` emits only the payload on stdout; progress, banners, and rate-limit warnings moved to stderr, so `--output json | jq` always parses. Exit codes standardized across every command group: 0 success, 1 runtime/API failure, 2 usage error. API errors show the HTTP status and a `--debug` hint.
+- **CLI output design system** — all renderers (backup, eval, redteam, runtime, dlp, model-security) migrated to shared `ui` primitives: uniform bold headers, semantic glyphs (✓ ✗ ⚠ ○ ● •), aligned key/value blocks, canonical box-drawing tables, and standardized `No <resource> found` empty-list phrasing.
+- **~6x faster startup** (≈0.4s → ≈0.06s) — the DLP test-file generator dependencies (sharp, pdf-lib, docx, piexifjs) now load lazily, only when `airs runtime dlp generate` runs, and moved to optionalDependencies. Installs with `--no-optional` skip ~50MB of native binaries; `dlp generate` prints an install hint if they are absent.
+- **Bundled build (tsup)** — dist/ went from ~200 files (2.5MB) to 5 files (355KB unpacked), with the DLP generator split into a lazy chunk. No API changes — library entry, types, and CLI bin paths are unchanged.
+- **Hardened `--debug` logging** — sensitive request/response body fields, query parameters, and headers are fully masked before hitting the debug JSONL file (previously only two headers were partially masked). Debug logs rotate automatically, keeping the 10 newest. Unhandled promise rejections print a friendly error instead of a raw crash.
+
 ### Changed (breaking)
 
 - **`airs runtime dlp-gen` moved to `airs runtime dlp generate`.** The DLP test-file generator now lives under the `dlp` namespace alongside `dictionaries`, `filtering-profiles`, `patterns`, and `profiles`. Flags and behavior are unchanged — `--types`, `--count`, `--out`, `--techniques`, `--seed`, `--output` work identically. Update any scripts or aliases that called `airs runtime dlp-gen`.

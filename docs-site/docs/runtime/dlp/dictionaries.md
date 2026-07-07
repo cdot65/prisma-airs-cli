@@ -23,7 +23,7 @@ List all dictionaries with optional pagination.
 
 ```bash
 airs runtime dlp dictionaries list
-airs runtime dlp dictionaries list --page 0 --size 50 --output json
+airs runtime dlp dictionaries list --limit 50 --offset 0 --output json
 airs runtime dlp dictionaries list --keywords  # Include keyword array in output
 ```
 

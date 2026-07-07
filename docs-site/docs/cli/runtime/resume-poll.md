@@ -20,14 +20,14 @@ airs runtime resume-poll [options] <stateFile>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <file>` | No | — | Output CSV file path |
+| `--output-file <file>` | No | — | Output CSV file path |
 
 ### Examples
 
-*Resume polling from a state file written by a prior `runtime bulk-scan` invocation. Output is text-only — there is no JSON/YAML mode. The CSV output path is controlled by `--output`.*
+*Resume polling from a state file written by a prior `runtime bulk-scan` invocation. Output is text-only — there is no JSON/YAML mode. The CSV output path is controlled by `--output-file`.*
 
 ```bash
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-05-25T13-55-11-105Z.bulk-scan.json --output resume-out.csv
+airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-05-25T13-55-11-105Z.bulk-scan.json --output-file resume-out.csv
 ```
 
 ```text

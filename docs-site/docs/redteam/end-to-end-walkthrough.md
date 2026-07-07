@@ -122,7 +122,7 @@ The target is a JSON file you hand to `airs redteam targets {probe,create}`. Sca
 For an OpenAI-compatible Chat Completions endpoint like LiteLLM, **do not** use the `OPENAI` scaffold — it emits the OpenAI **Responses API** shape (`request_json.input[…]`), not Chat Completions (`request_json.messages[…]`). Use `REST` instead, which is fully bring-your-own:
 
 ```bash
-airs redteam targets init REST --output /tmp/redteam-REST.json
+airs redteam targets init REST --output-file /tmp/redteam-REST.json
 ```
 
 ```json

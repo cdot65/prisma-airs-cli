@@ -28,7 +28,7 @@ airs runtime topics create --name "Weapons Manufacturing" \
 airs runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
 
 # Evaluate against a prompt set (CSV: prompt, expected, intent columns)
-airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons Manufacturing" --format json
+airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons Manufacturing" --output json
 
 # Revert if metrics regressed
 airs runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"

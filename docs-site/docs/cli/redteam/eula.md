@@ -86,7 +86,7 @@ airs redteam eula accept [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--confirm` | No | — | Skip confirmation prompt |
+| `--force` | No | — | Skip confirmation prompt |
 
 #### Examples
 

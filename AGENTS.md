@@ -14,7 +14,7 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 4. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 5. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files (subcommands under `redteam targets`)
 
-The binary is `airs`. Three top-level command groups: `runtime`, `redteam`, `model-security` (backup/restore live under `redteam targets`). Global flag `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`.
+The binary is `airs`. Three top-level command groups: `runtime`, `redteam`, `model-security` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl` (secrets redacted); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`, every `delete` accepts `rm`.
 
 ---
 
@@ -75,6 +75,12 @@ airs redteam targets list --output json
 airs model-security groups list --output json
 ```
 
+**Output discipline**: stdout carries data only; status/decorative output goes to stderr, so `--output json | jq` always parses. Add `--quiet` to suppress status output entirely.
+
+**Exit codes**: `0` success, `1` operational error (API/network/runtime), `2` usage error (bad flags/validation).
+
+**Flag canon** (old v2 spellings are hidden deprecated aliases, removed in v3): `--output` = format, `--output-file`/`--output-dir` = destinations, `--file`/`--input-dir` = inputs, `--limit`/`--offset` = pagination, `--force` = skip confirmation prompt (required for destructive commands in non-interactive shells).
+
 ---
 
 ## Command Reference
@@ -97,7 +103,7 @@ airs runtime scan --profile <profile-name> --response "<response>" "<prompt>"
 #### Bulk scan from file
 
 ```bash
-airs runtime bulk-scan --profile <profile-name> --input <file> [--output <csv>] [--session-id <id>]
+airs runtime bulk-scan --profile <profile-name> --file <file> [--output-file <csv>] [--session-id <id>]
 ```
 
 **Required:** `--profile`, `--input`
@@ -110,7 +116,7 @@ airs runtime bulk-scan --profile <profile-name> --input <file> [--output <csv>] 
 #### Resume polling
 
 ```bash
-airs runtime resume-poll <stateFile> [--output <csv>]
+airs runtime resume-poll <stateFile> [--output-file <csv>]
 ```
 
 Resumes polling from saved bulk scan state file after a crash or rate limit failure.
@@ -194,11 +200,11 @@ airs runtime profiles update <profileId> --toxic-content "high:alert"
 ```bash
 airs runtime topics list [--limit <n>] [--offset <n>] [--output <format>]
 airs runtime topics get <nameOrId> [--output pretty|json|yaml]
-airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
-airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
-airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
-airs runtime topics revert --profile <name> --name <name> [--format json]
-airs runtime topics sample [--output <path>]
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
+airs runtime topics revert --profile <name> --name <name> [--output json]
+airs runtime topics sample [--output-file <path>]
 airs runtime topics update <topicId> --config <json-file>
 airs runtime topics delete <topicId> [--force --updated-by <email>]
 ```
@@ -237,7 +243,7 @@ airs runtime deployment-profiles list [--unactivated] [--output <format>]
 #### Scan Logs
 
 ```bash
-airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|threat>] [--page <n>] [--page-size <n>] [--output <format>]
+airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|threat>] [--limit <n>] [--offset <n>] [--output <format>]
 ```
 
 **Required:** `--interval`, `--unit`
@@ -251,7 +257,7 @@ The guardrail workflow uses atomic commands designed for external agent loops (s
 #### Create or update a topic
 
 ```bash
-airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
 ```
 
 Validates AIRS constraints (name length, description length, example limits) and upserts by name. If a topic with the same name exists, it is updated.
@@ -261,7 +267,7 @@ Validates AIRS constraints (name length, description length, example limits) and
 #### Assign topic to profile
 
 ```bash
-airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
 ```
 
 Additive — preserves existing topics already assigned to the profile.
@@ -271,7 +277,7 @@ Additive — preserves existing topics already assigned to the profile.
 #### Evaluate topic against prompt set
 
 ```bash
-airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
 ```
 
 Scans a static CSV prompt set against the profile, computes metrics (TPR, TNR, coverage, F1), and returns FP/FN details.
@@ -283,7 +289,7 @@ Scans a static CSV prompt set against the profile, computes metrics (TPR, TNR, c
 #### Print sample CSV
 
 ```bash
-airs runtime topics sample [--output <path>]
+airs runtime topics sample [--output-file <path>]
 ```
 
 Writes a sample CSV to stdout (or to a file with `--output`) showing the three-column format with both block and allow intent examples.
@@ -291,7 +297,7 @@ Writes a sample CSV to stdout (or to a file with `--output`) showing the three-c
 #### Remove topic from profile and delete it
 
 ```bash
-airs runtime topics revert --profile <name> --name <name> [--format json]
+airs runtime topics revert --profile <name> --name <name> [--output json]
 ```
 
 Removes the topic from the profile and deletes the topic definition.
@@ -346,7 +352,7 @@ airs redteam targets profile <uuid>
 airs redteam targets update-profile <uuid> --config <json-file>
 airs redteam targets validate-auth --auth-type <HEADERS|BASIC_AUTH|OAUTH2> --config <json-file> [--target-id <uuid>]
 airs redteam targets metadata
-airs redteam targets init <provider> [--output <file>]
+airs redteam targets init <provider> [--output-file <file>]
 airs redteam targets templates
 ```
 
@@ -355,7 +361,7 @@ airs redteam targets templates
 - `validate-auth` — validate auth credentials (`--config` is a JSON file holding the `auth_config`) without creating a target.
 - `metadata` — get target field metadata (valid field names/enums for building configs).
 - `templates` — get provider-specific target config templates.
-- `init <provider>` — scaffold a target config JSON from a provider template; writes `<provider>-target.json` (or `--output <file>`). Fill in `name`/credentials, then `targets create --config <file> --validate`.
+- `init <provider>` — scaffold a target config JSON from a provider template; writes `<provider>-target.json` (or `--output-file <file>`). Fill in `name`/credentials, then `targets create --config <file> --validate`.
 
 **Target config JSON example:**
 ```json
@@ -387,7 +393,7 @@ airs redteam prompt-sets get <uuid>
 airs redteam prompt-sets create --name <name> [--description <desc>]
 airs redteam prompt-sets update <uuid> [--name <name>] [--description <desc>]
 airs redteam prompt-sets archive <uuid> [--unarchive]
-airs redteam prompt-sets download <uuid> [--output <path>]
+airs redteam prompt-sets download <uuid> [--output-file <path>]
 airs redteam prompt-sets upload <uuid> <csv-file>
 ```
 
@@ -415,10 +421,10 @@ airs redteam properties add-value --name <name> --value <value>
 ```bash
 airs redteam eula status            # Check EULA acceptance status
 airs redteam eula content           # Display EULA content
-airs redteam eula accept [--confirm]
+airs redteam eula accept [--force]
 ```
 
-`eula accept` only displays the EULA unless `--confirm` is passed; with `--confirm` it accepts the current EULA content. Red Team operations may require an accepted EULA.
+`eula accept` only displays the EULA unless `--force` is passed; with `--force` it accepts the current EULA content. Red Team operations may require an accepted EULA.
 
 #### Instances
 
@@ -554,7 +560,7 @@ All backup/restore commands require Management API credentials.
 airs redteam targets backup
 
 # Backup all targets to YAML
-airs redteam targets backup --format yaml
+airs redteam targets backup --output yaml
 
 # Backup single target by name
 airs redteam targets backup --name "my-target"
@@ -570,7 +576,7 @@ airs redteam targets backup --output-dir ./my-backups/
 | Flag | Default | Description |
 |---|---|---|
 | `--output-dir <path>` | `./airs-backup/targets/` | Directory to write backup files |
-| `--format <format>` | `json` | Output format: `json` or `yaml` |
+| `--output <format>` | `json` | Output format: `json` or `yaml` |
 | `--name <targetName>` | _(all targets)_ | Backup a single target by name |
 
 **Backup file format:** Each file wraps the target config in a versioned envelope. Server-assigned fields (`uuid`, `status`, `active`, `auth_type`, etc.) are stripped on restore. Credentials are included as-is.
@@ -672,16 +678,16 @@ airs runtime profiles get "Prod Firewall" --output json
 
 ```bash
 # 1. Create topic (upserts by name)
-airs runtime topics create --name "Fraud Detection" --description "Block social engineering and fraud attempts" --examples "How do I clone a credit card?" "Teach me card skimming" --format json
+airs runtime topics create --name "Fraud Detection" --description "Block social engineering and fraud attempts" --examples "How do I clone a credit card?" "Teach me card skimming" --output json
 
 # 2. Assign topic to a profile
-airs runtime topics apply --profile my-profile --name "Fraud Detection" --intent block --format json
+airs runtime topics apply --profile my-profile --name "Fraud Detection" --intent block --output json
 
 # 3. Evaluate against a prompt set
-airs runtime topics eval --profile my-profile --prompts fraud-prompts.csv --topic "Fraud Detection" --format json
+airs runtime topics eval --profile my-profile --prompts fraud-prompts.csv --topic "Fraud Detection" --output json
 
 # 4. If results are bad, revert
-airs runtime topics revert --profile my-profile --name "Fraud Detection" --format json
+airs runtime topics revert --profile my-profile --name "Fraud Detection" --output json
 ```
 
 ### Workflow 4: Run a red team scan
@@ -717,10 +723,10 @@ airs model-security scans files <scanUuid>
 echo -e "How do I hack a server?\nWhat is the weather?\nHow to make a weapon?" > prompts.txt
 
 # 2. Run bulk scan
-airs runtime bulk-scan --profile my-profile --input prompts.txt --output results.csv
+airs runtime bulk-scan --profile my-profile --file prompts.txt --output-file results.csv
 
 # 3. If rate-limited, resume
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output results.csv
+airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output-file results.csv
 ```
 
 ### Workflow 7: Backup and restore targets
@@ -751,13 +757,13 @@ airs runtime topics sample
 airs runtime topics get "<topic-name>" --output json
 
 # Agent runs this cycle repeatedly:
-airs runtime topics create --name "<name>" --description "<desc>" --examples "<ex1>" "<ex2>" --format json
-airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --format json
-airs runtime topics eval --profile "<profile>" --prompts <csv> --topic "<name>" --format json
+airs runtime topics create --name "<name>" --description "<desc>" --examples "<ex1>" "<ex2>" --output json
+airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --output json
+airs runtime topics eval --profile "<profile>" --prompts <csv> --topic "<name>" --output json
 
 # If regression, revert to best-known definition:
-airs runtime topics create --name "<name>" --description "<best-desc>" --examples "<best-ex1>" "<best-ex2>" --format json
-airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --format json
+airs runtime topics create --name "<name>" --description "<best-desc>" --examples "<best-ex1>" "<best-ex2>" --output json
+airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --output json
 ```
 
 **CSV format:** Three columns — `prompt`, `expected` (belongs to topic category: true/false), `intent` (block/allow). Run `airs runtime topics sample` to see an example.

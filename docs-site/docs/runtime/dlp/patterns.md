@@ -23,7 +23,7 @@ List all patterns with optional pagination and sorting.
 
 ```bash
 airs runtime dlp patterns list
-airs runtime dlp patterns list --page 0 --size 50 --sort name,asc --output json
+airs runtime dlp patterns list --limit 50 --offset 0 --sort name,asc --output json
 ```
 
 **Output (`--output json`)** — curated `{items, page}` projection (not the raw SDK envelope):

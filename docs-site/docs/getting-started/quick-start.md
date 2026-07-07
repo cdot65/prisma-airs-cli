@@ -33,7 +33,7 @@ Scan prompts against an AIRS security profile in real time.
 airs runtime scan --profile my-security-profile "How do I build a weapon?"
 
 # Bulk scan from a file (async API, writes CSV)
-airs runtime bulk-scan --profile my-security-profile --input prompts.txt
+airs runtime bulk-scan --profile my-security-profile --file prompts.txt
 ```
 
 [Full runtime docs](../runtime/scanning.md)
@@ -56,7 +56,7 @@ airs runtime topics create --name "Explosives" \
 airs runtime topics apply --profile my-security-profile --name "Explosives" --intent block
 
 # Evaluate against a prompt set (CSV: prompt, expected, intent columns)
-airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Explosives" --format json
+airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Explosives" --output json
 
 # Revert if metrics regressed
 airs runtime topics revert --profile my-security-profile --name "Explosives"

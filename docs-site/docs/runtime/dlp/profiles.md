@@ -23,7 +23,7 @@ List all profiles with optional pagination and sorting.
 
 ```bash
 airs runtime dlp profiles list
-airs runtime dlp profiles list --page 0 --size 50 --sort name,asc --output json
+airs runtime dlp profiles list --limit 50 --offset 0 --sort name,asc --output json
 ```
 
 **Output (`--output json`)** — curated `{items, page}` projection:

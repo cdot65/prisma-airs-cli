@@ -16,8 +16,8 @@ airs runtime dlp profiles list [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--page <n>` | No | — | Zero-indexed page number |
-| `--size <n>` | No | — | Page size |
+| `--limit <n>` | No | — | Max results per page (API page size) |
+| `--offset <n>` | No | — | Starting offset — rounds down to a page boundary |
 | `--sort <field,dir>` | No | — | Sort criteria (repeatable) |
 | `--output <fmt>` | No | `pretty` | Output format |
 
@@ -26,7 +26,7 @@ airs runtime dlp profiles list [options]
 *Pretty output (default — DLP profiles list has no custom renderer, so pretty == JSON)*
 
 ```bash
-airs runtime dlp profiles list --size 2 --sort id,asc
+airs runtime dlp profiles list --limit 2 --sort id,asc
 ```
 
 ```text
@@ -91,7 +91,7 @@ airs runtime dlp profiles list --size 2 --sort id,asc
 *JSON output*
 
 ```bash
-airs runtime dlp profiles list --size 2 --sort id,asc --output json
+airs runtime dlp profiles list --limit 2 --sort id,asc --output json
 ```
 
 ```text
@@ -156,7 +156,7 @@ airs runtime dlp profiles list --size 2 --sort id,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp profiles list --size 2 --sort id,asc --output yaml
+airs runtime dlp profiles list --limit 2 --sort id,asc --output yaml
 ```
 
 ```text

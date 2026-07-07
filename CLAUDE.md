@@ -75,9 +75,15 @@ Top-level layout: `src/` (library + CLI), `tests/`, `config/biome.json` (Biome c
 
 ```
 src/
-├── cli/                   # CLI entry, 3 top-level command groups, prompts, renderer
-│   ├── index.ts           # Commander program — registers runtime/redteam/model-security, --debug global flag
-│   ├── debug-logger.ts    # Global fetch interceptor — logs AIRS/SCM API traffic to JSONL
+├── cli/                   # CLI entry, command groups, renderer
+│   ├── index.ts           # CLI entry — installs process guards, builds and runs the program
+│   ├── program.ts         # buildProgram() — registers all command groups, global --debug/--quiet flags, ls/rm aliases on every list/delete
+│   ├── process-guards.ts  # Unhandled-rejection/uncaught-exception handlers → friendly error, exit 1
+│   ├── deprecated-flags.ts # Hidden v2 flag aliases (--format/--input/--page…) → canonical flag + stderr deprecation notice
+│   ├── pagination.ts      # Shared --limit/--offset options + page conversion for page-based APIs
+│   ├── confirm.ts         # Interactive confirmation for destructive commands (--force bypasses)
+│   ├── examples.ts        # Usage-example help text formatter (.addHelpText)
+│   ├── debug-logger.ts    # Global fetch interceptor — logs AIRS/SCM API traffic to JSONL (deep redaction, keeps 10 newest files)
 │   ├── builders/
 │   │   └── profile-builder.ts # CLI flags → CreateSecurityProfileRequest builder + merge utility
 │   ├── commands/
@@ -90,14 +96,18 @@ src/
 │   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── dlp/           # DLP CLI commands (4 subgroups + aggregator + shared patch/parseBody utils)
+│   │   ├── config.ts      # airs config {list,get,set,unset,path} — manage ~/.prisma-airs/config.json
+│   │   ├── doctor.ts      # airs doctor — environment/credential/connectivity diagnostics
+│   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Save/load bulk scan IDs for resume after poll failure
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
-│   ├── prompts.ts         # Inquirer interactive input collection
-│   └── renderer/          # Terminal output (chalk), split by command group
+│   └── renderer/          # Terminal output, split by command group — renderers compose ui.ts primitives (no direct chalk)
 │       ├── index.ts       # Barrel re-exports
+│       ├── ui.ts          # Design-system primitives (status/success/warn/error/section/table/keyValue…) + quiet mode
+│       ├── DESIGN.md      # Renderer design-system spec (stdout=data, stderr=status; ui primitive contract)
 │       ├── backup.ts      # Backup/restore summary rendering
 │       ├── common.ts      # renderError
 │       ├── eval.ts        # Eval metrics, FP/FN list rendering
@@ -149,6 +159,15 @@ tests/
 
 ## Architecture
 
+### CLI Conventions (`src/cli/`)
+- **Exit codes**: 0 success, 1 operational error (API/network/runtime), 2 usage error (bad flags/validation)
+- **Output discipline**: stdout carries data only; status/decorative output goes to stderr — `--output json | jq` always parses
+- **`--quiet` global flag**: suppresses status/decorative output; data and errors still print
+- **Flag canon**: `--output` = format (`pretty|table|csv|json|yaml`), `--output-file`/`--output-dir` = destinations, `--file`/`--input-dir` = inputs, `--limit`/`--offset` = pagination, `--force` = skip confirmation. Old v2 spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) are hidden deprecated aliases, removed in v3 — see `docs-site/docs/about/flag-migration.md`
+- **Confirmation prompts**: destructive commands prompt interactively unless `--force` (non-TTY requires `--force`)
+- **Aliases**: every `list` command accepts `ls`, every `delete` accepts `rm`
+- **Utility commands**: `airs config {list,get,set,unset,path}` (config file management), `airs doctor` (env/credential/connectivity diagnostics), `airs completion <shell>` (shell completions)
+
 ### Topic Commands (`src/cli/commands/topics-*.ts`)
 - **`create`** (`topics-create.ts`): create or update a custom topic; validates AIRS constraints (name ≤100, desc ≤250, each example ≤250, combined ≤1000, max 5 examples), upserts by name
 - **`apply`** (`topics-apply.ts`): assign topic to a security profile; additive — reads current profile topic-list, appends the new topic with correct `revision`, writes back; never clobbers existing topics
@@ -163,7 +182,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - Backup envelope: `{ version, resourceType, exportedAt, data }` — server fields (uuid/status/active/version) stripped on restore via `prepareTargetPayload()`
 - Backup data uses API field names: `target_background` (not `background`), `target_metadata` (not `metadata`); legacy names auto-normalized on restore
 - Shared I/O utilities in `src/backup/io.ts` — extensible to future resource types (profiles, topics, prompt-sets)
-- CLI: `airs redteam targets backup [--output-dir <path>] [--format json|yaml] [--name <name>]`
+- CLI: `airs redteam targets backup [--output-dir <path>] [--output json|yaml] [--name <name>]`
 - CLI: `airs redteam targets restore [--input-dir <path>] [--file <path>] [--overwrite] [--validate]`
 
 ### AIRS Integration (`src/airs/`)
@@ -171,7 +190,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - **Detection**: `triggered` (= `topic_violation`) is the sole guardrail detection signal. No category-based or action-based detection.
 - **`DebugScanService`**: Wrapper that appends raw scan responses to a JSONL file when `--debug-scans` is passed
 - **`RateLimitedScanService`**: Wrapper that caps scan throughput to N calls/second via sliding-window token bucket
-- **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Auth tokens are redacted. Works with any subcommand.
+- **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Deep redaction — sensitive headers, query params, and credential-like body fields masked as `***`; only the 10 newest debug files are kept. Works with any subcommand.
 - **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD
 - **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment profile listing, scan log querying
 - Profile updates create **new revisions with new UUIDs** — always reference profiles by name, never ID
@@ -190,10 +209,10 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `pollResults()` — sweeps all pending scan IDs in batches of 5 per cycle; retries on rate limit with exponential backoff (10s base); retry level decays by 1 after a full successful sweep (not per-batch); inter-batch and inter-sweep delays scale with rate limit pressure
 - `formatResultsCsv()` — static method producing CSV from results
 - CLI: `airs runtime scan --profile <name> [--response <text>] <prompt>`
-- CLI: `airs runtime bulk-scan --profile <name> --input <file> [--output <file>] [--session-id <id>]`
+- CLI: `airs runtime bulk-scan --profile <name> --file <file> [--output-file <file>] [--session-id <id>]`
 - Input file parsing: `.csv` files extract the `prompt` column by header; `.txt`/extensionless use line-per-prompt
 - Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
-- CLI: `airs runtime resume-poll <stateFile> [--output <file>]` — resume polling from saved scan IDs
+- CLI: `airs runtime resume-poll <stateFile> [--output-file <file>]` — resume polling from saved scan IDs
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
   - `airs runtime profiles {list,get,create,update,delete,cleanup}` — security profile CRUD + revision cleanup
     - `get` accepts name or UUID, supports `--output pretty|json|yaml`
@@ -206,7 +225,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete,consumption}` — customer app CRUD + `consumption` (per-app token usage + violation breakdown from SCM dashboard; `--time-interval 7|30|60`)
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
-  - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`)
+  - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`/`--limit`/`--offset`)
   - `airs runtime dlp filtering-profiles {list, get, replace}` — read + full-replace
   - `airs runtime dlp patterns {list, create, get, replace, patch, delete}` — full CRUD + soft-delete
   - `airs runtime dlp profiles {list, create, get, replace, patch, delete*}` — no real delete; patch profile_status

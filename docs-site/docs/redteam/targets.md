@@ -36,7 +36,7 @@ This fetches the provider's template from AIRS and writes a ready-to-edit JSON f
 airs redteam targets init openai
 
 # Custom output path
-airs redteam targets init bedrock --output my-bedrock-target.json
+airs redteam targets init bedrock --output-file my-bedrock-target.json
 ```
 
 The scaffolded file contains the provider's connection template with the correct request/response structure. Edit it to fill in your `name` and credentials, then create the target:

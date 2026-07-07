@@ -221,14 +221,14 @@ airs redteam prompt-sets download [options] <uuid>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <path>` | No | — | Output file path |
+| `--output-file <path>` | No | — | Output file path |
 
 #### Examples
 
 *Save CSV template (header + one sample row) to a local file*
 
 ```bash
-airs redteam prompt-sets download 00000000-0000-0000-0000-000000000001 --output template.csv
+airs redteam prompt-sets download 00000000-0000-0000-0000-000000000001 --output-file template.csv
 ```
 
 ```text
