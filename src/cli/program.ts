@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
+import { registerConfigCommand } from './commands/config.js';
 import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
@@ -34,6 +35,7 @@ export function buildProgram(): Command {
   registerRuntimeCommand(program);
   registerRedteamCommand(program);
   registerModelSecurityCommand(program);
+  registerConfigCommand(program);
 
   return program;
 }
