@@ -130,7 +130,7 @@ To capture the raw API traffic for troubleshooting, use the global `--debug` fla
 airs --debug runtime bulk-scan --profile my-profile --input prompts.txt
 ```
 
-This writes every request/response to `~/.prisma-airs/debug-api-<timestamp>.jsonl` — useful for sharing with Palo Alto Networks support.
+This writes every request/response to `~/.prisma-airs/debug-api-<timestamp>.jsonl` — useful for sharing with Palo Alto Networks support. Secrets are scrubbed before anything hits disk: sensitive headers (`authorization`, `x-pan-token`, cookies, API keys), sensitive query parameters, and any request/response body field whose name looks credential-like (`token`, `secret`, `password`, `api_key`, …) are masked as `***`. Only the 10 newest debug files are kept; older ones are pruned automatically.
 
 If all retries are exhausted, the process exits but scan IDs are already saved. Resume with:
 
