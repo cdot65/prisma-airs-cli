@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import { formatOutput, type OutputFormat } from './common.js';
+import { ui } from './ui.js';
 
 /** Render polling progress inline. */
 export function renderScanProgress(job: {
@@ -25,10 +26,8 @@ export function renderTestsComposed(
   regressionTier: number,
   total: number,
 ): void {
-  console.log(
-    chalk.dim(
-      `  Tests: ${generated} generated, ${carriedFailures} carried failures, ${regressionTier} regression, ${total} total`,
-    ),
+  ui.dim(
+    `Tests: ${generated} generated, ${carriedFailures} carried failures, ${regressionTier} regression, ${total} total`,
   );
 }
 
@@ -38,16 +37,16 @@ export function renderTestsAccumulated(
   totalCount: number,
   droppedCount: number,
 ): void {
-  let msg = `  Tests: ${newCount} new, ${totalCount} total (accumulated)`;
+  let msg = `Tests: ${newCount} new, ${totalCount} total (accumulated)`;
   if (droppedCount > 0) {
-    msg += chalk.yellow(` (${droppedCount} dropped by cap)`);
+    msg += ` (${droppedCount} dropped by cap)`;
   }
-  console.log(chalk.dim(msg));
+  ui.dim(msg);
 }
 
 type ChalkFn = (text: string) => string;
 
-/** Status → chalk color mapping. */
+/** Status → chalk color mapping (inline value coloring within composed lines). */
 function statusColor(status: string): ChalkFn {
   switch (status) {
     case 'COMPLETED':
@@ -73,8 +72,7 @@ function statusColor(status: string): ChalkFn {
 
 /** Render the runtime config banner. */
 export function renderRuntimeConfigHeader(): void {
-  console.log(chalk.bold.cyan('\n  Prisma AIRS — Runtime Configuration'));
-  console.log(chalk.dim('  Security profile and topic management\n'));
+  ui.header('Prisma AIRS — Runtime Configuration', 'Security profile and topic management');
 }
 
 /** Render security profile list. */
@@ -89,7 +87,7 @@ export function renderProfileList(
   format: OutputFormat = 'pretty',
 ): void {
   if (profiles.length === 0) {
-    console.log(chalk.dim('  No profiles found.\n'));
+    ui.emptyList('profiles');
     return;
   }
 
@@ -110,9 +108,9 @@ export function renderProfileList(
     return;
   }
 
-  console.log(chalk.bold('\n  Security Profiles:\n'));
+  ui.section('Security Profiles:');
   for (const p of profiles) {
-    console.log(`  ${chalk.dim(p.profileId)}`);
+    ui.dim(p.profileId);
     const status = p.active ? chalk.green('active') : chalk.yellow('inactive');
     const rev = p.revision != null ? chalk.dim(` rev:${p.revision}`) : '';
     console.log(`    ${p.profileName}  ${status}${rev}`);
@@ -131,22 +129,21 @@ export function renderProfileDetail(profile: {
   lastModifiedTs?: string;
   policy?: Record<string, unknown>;
 }): void {
-  console.log(chalk.bold('\n  Profile Detail:\n'));
-  console.log(`    ID:       ${chalk.dim(profile.profileId)}`);
-  console.log(`    Name:     ${profile.profileName}`);
-  console.log(`    Status:   ${profile.active ? chalk.green('active') : chalk.yellow('inactive')}`);
-  if (profile.revision != null) console.log(`    Revision: ${profile.revision}`);
-  if (profile.createdBy) console.log(`    Created:  ${chalk.dim(profile.createdBy)}`);
-  if (profile.updatedBy) console.log(`    Updated:  ${chalk.dim(profile.updatedBy)}`);
-  if (profile.lastModifiedTs) console.log(`    Modified: ${chalk.dim(profile.lastModifiedTs)}`);
+  ui.section('Profile Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['ID', profile.profileId],
+    ['Name', profile.profileName],
+    ['Status', profile.active ? chalk.green('active') : chalk.yellow('inactive')],
+  ];
+  if (profile.revision != null) pairs.push(['Revision', profile.revision]);
+  if (profile.createdBy) pairs.push(['Created', profile.createdBy]);
+  if (profile.updatedBy) pairs.push(['Updated', profile.updatedBy]);
+  if (profile.lastModifiedTs) pairs.push(['Modified', profile.lastModifiedTs]);
   if (profile.policy) {
     const policyJson = JSON.stringify(profile.policy, null, 2);
-    const indented = policyJson
-      .split('\n')
-      .map((line, i) => (i === 0 ? line : `              ${line}`))
-      .join('\n');
-    console.log(`    Policy:   ${chalk.dim(indented)}`);
+    pairs.push(['Policy', policyJson.split('\n').join('\n  ')]);
   }
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -178,25 +175,25 @@ export function renderCleanupPreview(
     return;
   }
 
-  console.log(chalk.bold('\n  Duplicate Profiles:\n'));
-
-  const nameWidth = Math.max(7, ...groups.map((g) => g.name.length));
-  const header = `  ${'Profile'.padEnd(nameWidth)}  Revisions  Keeping   Deleting`;
-  console.log(chalk.dim(header));
-  console.log(
-    chalk.dim(`  ${'─'.repeat(nameWidth)}  ${'─'.repeat(9)}  ${'─'.repeat(8)}  ${'─'.repeat(8)}`),
+  ui.section('Duplicate Profiles:');
+  ui.table(
+    [
+      { key: 'profile', label: 'Profile' },
+      { key: 'revisions', label: 'Revisions' },
+      { key: 'keeping', label: 'Keeping' },
+      { key: 'deleting', label: 'Deleting' },
+    ],
+    groups.map((g) => ({
+      profile: g.name,
+      revisions: g.remove.length + 1,
+      keeping: `rev ${g.keep.revision}`,
+      deleting: g.remove.length,
+    })),
   );
-
-  for (const g of groups) {
-    const total = g.remove.length + 1;
-    console.log(
-      `  ${g.name.padEnd(nameWidth)}  ${String(total).padStart(9)}  ${(`rev ${g.keep.revision}`).padStart(8)}  ${String(g.remove.length).padStart(8)}`,
-    );
-  }
 
   const totalRemove = groups.reduce((sum, g) => sum + g.remove.length, 0);
   console.log(
-    `\n  Total: ${chalk.yellow(String(totalRemove))} old revisions to delete across ${groups.length} profiles\n`,
+    `\n  Total: ${totalRemove} old revisions to delete across ${groups.length} profiles\n`,
   );
 }
 
@@ -220,14 +217,19 @@ export function renderCleanupResult(
   }
 
   if (failed > 0) {
-    console.log(chalk.bold.red('\n  Failures:\n'));
+    ui.section('Failures:');
     for (const r of results.filter((r) => r.status === 'failed')) {
-      console.log(`    ${chalk.red('✗')} ${r.name} rev ${r.revision}: ${r.error}`);
+      ui.bullet(`${r.name} rev ${r.revision}: ${r.error}`, 'error');
     }
   }
 
-  const color = failed > 0 ? chalk.yellow : chalk.green;
-  console.log(color(`\n  Cleanup complete: ${deleted} deleted, ${failed} failed\n`));
+  console.log();
+  if (failed > 0) {
+    ui.warn(`Cleanup complete: ${deleted} deleted, ${failed} failed`);
+  } else {
+    ui.success(`Cleanup complete: ${deleted} deleted, ${failed} failed`);
+  }
+  console.log();
 }
 
 /** Render custom topic list. */
@@ -241,7 +243,7 @@ export function renderTopicList(
   format: OutputFormat = 'pretty',
 ): void {
   if (topics.length === 0) {
-    console.log(chalk.dim('  No topics found.\n'));
+    ui.emptyList('topics');
     return;
   }
   if (format !== 'pretty') {
@@ -265,9 +267,9 @@ export function renderTopicList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Custom Topics:\n'));
+  ui.section('Custom Topics:');
   for (const t of topics) {
-    console.log(`  ${chalk.dim(t.topic_id)}`);
+    ui.dim(String(t.topic_id));
     const rev = t.revision != null ? chalk.dim(` rev:${t.revision}`) : '';
     const desc = t.description ? chalk.dim(` — ${t.description.slice(0, 80)}`) : '';
     console.log(`    ${t.topic_name}${rev}${desc}`);
@@ -286,20 +288,25 @@ export function renderTopicDetail(topic: {
   updated_by?: string;
   last_modified_ts?: string;
 }): void {
-  console.log(chalk.bold('\n  Topic Detail:\n'));
-  console.log(`    ID:          ${chalk.dim(topic.topic_id)}`);
-  console.log(`    Name:        ${topic.topic_name}`);
-  if (topic.revision != null) console.log(`    Revision:    ${topic.revision}`);
-  if (topic.description) console.log(`    Description: ${topic.description}`);
+  ui.section('Topic Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['ID', topic.topic_id],
+    ['Name', topic.topic_name],
+  ];
+  if (topic.revision != null) pairs.push(['Revision', topic.revision]);
+  if (topic.description) pairs.push(['Description', topic.description]);
+  ui.keyValue(pairs);
   if (topic.examples?.length) {
-    console.log('    Examples:');
+    console.log('  Examples:');
     for (const ex of topic.examples) {
-      console.log(`      ${chalk.dim('•')} ${ex}`);
+      ui.bullet(ex, 'neutral');
     }
   }
-  if (topic.created_by) console.log(`    Created:     ${chalk.dim(topic.created_by)}`);
-  if (topic.updated_by) console.log(`    Updated:     ${chalk.dim(topic.updated_by)}`);
-  if (topic.last_modified_ts) console.log(`    Modified:    ${chalk.dim(topic.last_modified_ts)}`);
+  const metaPairs: Array<[string, unknown]> = [];
+  if (topic.created_by) metaPairs.push(['Created', topic.created_by]);
+  if (topic.updated_by) metaPairs.push(['Updated', topic.updated_by]);
+  if (topic.last_modified_ts) metaPairs.push(['Modified', topic.last_modified_ts]);
+  if (metaPairs.length > 0) ui.keyValue(metaPairs);
   console.log();
 }
 
@@ -315,7 +322,7 @@ export function renderApiKeyList(
   format: OutputFormat = 'pretty',
 ): void {
   if (keys.length === 0) {
-    console.log(chalk.dim('  No API keys found.\n'));
+    ui.emptyList('API keys');
     return;
   }
   if (format !== 'pretty') {
@@ -341,9 +348,9 @@ export function renderApiKeyList(
     );
     return;
   }
-  console.log(chalk.bold('\n  API Keys:\n'));
+  ui.section('API Keys:');
   for (const k of keys) {
-    console.log(`  ${chalk.dim(k.id)}`);
+    ui.dim(k.id);
     const last8 = k.last8 ? chalk.dim(` key: …${k.last8}`) : '';
     const expires = k.expiresAt ? chalk.dim(` expires: ${k.expiresAt}`) : '';
     console.log(`    ${k.name}${last8}${expires}`);
@@ -360,13 +367,16 @@ export function renderApiKeyDetail(key: {
   createdAt?: string;
   expiresAt?: string;
 }): void {
-  console.log(chalk.bold('\n  API Key Detail:\n'));
-  console.log(`    ID:      ${chalk.dim(key.id)}`);
-  console.log(`    Name:    ${key.name}`);
-  if (key.apiKey) console.log(`    Key:     ${key.apiKey}`);
-  else if (key.last8) console.log(`    Key:     ${chalk.dim('…')}${key.last8}`);
-  if (key.createdAt) console.log(`    Created: ${chalk.dim(key.createdAt)}`);
-  if (key.expiresAt) console.log(`    Expires: ${chalk.dim(key.expiresAt)}`);
+  ui.section('API Key Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['ID', key.id],
+    ['Name', key.name],
+  ];
+  if (key.apiKey) pairs.push(['Key', key.apiKey]);
+  else if (key.last8) pairs.push(['Key', `…${key.last8}`]);
+  if (key.createdAt) pairs.push(['Created', key.createdAt]);
+  if (key.expiresAt) pairs.push(['Expires', key.expiresAt]);
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -376,7 +386,7 @@ export function renderCustomerAppList(
   format: OutputFormat = 'pretty',
 ): void {
   if (apps.length === 0) {
-    console.log(chalk.dim('  No customer apps found.\n'));
+    ui.emptyList('customer apps');
     return;
   }
   if (format !== 'pretty') {
@@ -398,9 +408,9 @@ export function renderCustomerAppList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Customer Apps:\n'));
+  ui.section('Customer Apps:');
   for (const a of apps) {
-    if (a.id) console.log(`  ${chalk.dim(a.id)}`);
+    if (a.id) ui.dim(a.id);
     const desc = a.description ? chalk.dim(` — ${a.description.slice(0, 80)}`) : '';
     console.log(`    ${a.name}${desc}`);
   }
@@ -414,11 +424,13 @@ export function renderCustomerAppDetail(app: {
   description?: string;
   raw: Record<string, unknown>;
 }): void {
-  console.log(chalk.bold('\n  Customer App Detail:\n'));
-  if (app.id) console.log(`    ID:   ${chalk.dim(app.id)}`);
-  console.log(`    Name: ${app.name}`);
-  if (app.description) console.log(`    Desc: ${app.description}`);
-  console.log(`    Data: ${chalk.dim(JSON.stringify(app.raw, null, 2).slice(0, 500))}`);
+  ui.section('Customer App Detail:');
+  const pairs: Array<[string, unknown]> = [];
+  if (app.id) pairs.push(['ID', app.id]);
+  pairs.push(['Name', app.name]);
+  if (app.description) pairs.push(['Desc', app.description]);
+  pairs.push(['Data', JSON.stringify(app.raw, null, 2).slice(0, 500)]);
+  ui.keyValue(pairs);
   console.log();
 }
 
@@ -494,39 +506,45 @@ export function renderCustomerAppConsumption(
     return;
   }
 
-  console.log(chalk.bold(`\n  ${data.appName}  ${chalk.dim('(' + data.appId + ')')}`));
-  if (data.monitoringSince) console.log(`    Monitoring since: ${chalk.dim(data.monitoringSince)}`);
-  if (data.source) console.log(`    Source:           ${data.source}`);
-  if (data.cloud) console.log(`    Cloud:            ${data.cloud}`);
-  if (data.profiles.length > 0) {
-    console.log(`    Profiles:         ${data.profiles.join(', ')}`);
-  }
+  ui.header(data.appName, `(${data.appId})`);
+  const pairs: Array<[string, unknown]> = [];
+  if (data.monitoringSince) pairs.push(['Monitoring since', data.monitoringSince]);
+  if (data.source) pairs.push(['Source', data.source]);
+  if (data.cloud) pairs.push(['Cloud', data.cloud]);
+  if (data.profiles.length > 0) pairs.push(['Profiles', data.profiles.join(', ')]);
+  if (pairs.length > 0) ui.keyValue(pairs);
 
-  console.log(chalk.bold('\n    Token consumption:'));
-  console.log(
-    `      Daily avg:     ${fmt(data.tokens.dailyAverage, data.tokens.dailyAverageScale)}`,
-  );
-  console.log(
-    `      Monthly total: ${fmt(data.tokens.monthlyTotal, data.tokens.monthlyTotalScale)}`,
-  );
+  ui.section('Token consumption:');
+  ui.keyValue([
+    ['Daily avg', fmt(data.tokens.dailyAverage, data.tokens.dailyAverageScale)],
+    ['Monthly total', fmt(data.tokens.monthlyTotal, data.tokens.monthlyTotalScale)],
+  ]);
 
-  console.log(chalk.bold('\n    Sessions:'));
-  console.log(`      Total:     ${data.sessions.total}`);
-  console.log(`      Violating: ${data.sessions.violating}`);
+  ui.section('Sessions:');
+  ui.keyValue([
+    ['Total', data.sessions.total],
+    ['Violating', data.sessions.violating],
+  ]);
 
   const firing = data.detectors.filter((d) => d.total > 0);
-  console.log(
-    chalk.bold(
-      `\n    Detectors (${data.totalViolating} violating, ${firing.length}/${data.detectors.length} firing):`,
-    ),
+  ui.section(
+    `Detectors (${data.totalViolating} violating, ${firing.length}/${data.detectors.length} firing):`,
   );
   if (firing.length === 0) {
-    console.log(chalk.dim('      no detector violations in window'));
+    ui.dim('no detector violations in window');
   } else {
-    for (const d of firing) {
-      const sev = `c=${d.critical} h=${d.high} m=${d.medium} l=${d.low}`;
-      console.log(`      ${d.type.padEnd(20)} ${String(d.total).padStart(5)}  ${chalk.dim(sev)}`);
-    }
+    ui.table(
+      [
+        { key: 'detector', label: 'Detector' },
+        { key: 'total', label: 'Total' },
+        { key: 'severity', label: 'Severity' },
+      ],
+      firing.map((d) => ({
+        detector: d.type,
+        total: d.total,
+        severity: `c=${d.critical} h=${d.high} m=${d.medium} l=${d.low}`,
+      })),
+    );
   }
   console.log();
 }
@@ -537,7 +555,7 @@ export function renderDeploymentProfileList(
   format: OutputFormat = 'pretty',
 ): void {
   if (profiles.length === 0) {
-    console.log(chalk.dim('  No deployment profiles found.\n'));
+    ui.emptyList('deployment profiles');
     return;
   }
   if (format !== 'pretty') {
@@ -559,7 +577,7 @@ export function renderDeploymentProfileList(
     );
     return;
   }
-  console.log(chalk.bold('\n  Deployment Profiles:\n'));
+  ui.section('Deployment Profiles:');
   for (const p of profiles) {
     const name = (p.raw.dp_name ?? p.raw.profile_name ?? p.raw.name ?? 'unknown') as string;
     const status = p.raw.status as string | undefined;
@@ -579,7 +597,7 @@ export function renderScanLogList(
   format: OutputFormat = 'pretty',
 ): void {
   if (results.length === 0) {
-    console.log(chalk.dim('  No scan logs found.\n'));
+    ui.emptyList('scan logs');
     return;
   }
   if (format !== 'pretty') {
@@ -605,7 +623,7 @@ export function renderScanLogList(
     );
     return;
   }
-  console.log(chalk.bold(`\n  Scan Logs (${results.length} results):\n`));
+  ui.section(`Scan Logs (${results.length} results):`);
   for (const r of results) {
     const action = (r.action ?? r.verdict) as string | undefined;
     const app = r.app_name as string | undefined;
@@ -613,13 +631,14 @@ export function renderScanLogList(
     const ts = (r.received_ts ?? r.timestamp) as string | undefined;
     const scanId = r.scan_id as string | undefined;
     const actionColor = action === 'block' ? chalk.red : chalk.green;
-    if (scanId) console.log(`  ${chalk.dim(scanId)}`);
+    if (scanId) ui.dim(scanId);
     console.log(
       `    ${ts ? chalk.dim(ts) : ''}  ${action ? actionColor(action) : ''}  ${profile ? `[${profile}]` : ''}  ${app ?? ''}`,
     );
   }
   if (pageToken) {
-    console.log(chalk.dim(`\n  Page token: ${pageToken}`));
+    console.log();
+    ui.dim(`Page token: ${pageToken}`);
   }
   console.log();
 }
