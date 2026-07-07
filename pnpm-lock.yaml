@@ -20,9 +20,6 @@ importers:
       commander:
         specifier: ^14.0.3
         version: 14.0.3
-      docx:
-        specifier: ^9.6.1
-        version: 9.6.1
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
@@ -35,15 +32,6 @@ importers:
       p-limit:
         specifier: ^6.0.0
         version: 6.2.0
-      pdf-lib:
-        specifier: ^1.17.1
-        version: 1.17.1
-      piexifjs:
-        specifier: ^1.0.6
-        version: 1.0.6
-      sharp:
-        specifier: ^0.34.5
-        version: 0.34.5
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -78,6 +66,19 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@22.19.13)(msw@2.12.10(@types/node@22.19.13)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.9.0)
+    optionalDependencies:
+      docx:
+        specifier: ^9.6.1
+        version: 9.6.1
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
+      piexifjs:
+        specifier: ^1.0.6
+        version: 1.0.6
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
 
 packages:
 
@@ -2202,7 +2203,8 @@ snapshots:
       '@shikijs/types': 3.23.0
       '@shikijs/vscode-textmate': 10.0.2
 
-  '@img/colour@1.1.0': {}
+  '@img/colour@1.1.0':
+    optional: true
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -2535,10 +2537,12 @@ snapshots:
   '@pdf-lib/standard-fonts@1.0.0':
     dependencies:
       pako: 1.0.11
+    optional: true
 
   '@pdf-lib/upng@1.0.1':
     dependencies:
       pako: 1.0.11
+    optional: true
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -2662,6 +2666,7 @@ snapshots:
   '@types/node@25.9.1':
     dependencies:
       undici-types: 7.24.6
+    optional: true
 
   '@types/statuses@2.0.6':
     optional: true
@@ -2818,7 +2823,8 @@ snapshots:
   cookie@1.1.1:
     optional: true
 
-  core-util-is@1.0.3: {}
+  core-util-is@1.0.3:
+    optional: true
 
   cross-spawn@7.0.6:
     dependencies:
@@ -2834,7 +2840,8 @@ snapshots:
 
   detect-indent@6.1.0: {}
 
-  detect-libc@2.1.2: {}
+  detect-libc@2.1.2:
+    optional: true
 
   dir-glob@3.0.1:
     dependencies:
@@ -2848,6 +2855,7 @@ snapshots:
       nanoid: 5.1.6
       xml: 1.0.1
       xml-js: 1.6.11
+    optional: true
 
   dotenv@17.3.1: {}
 
@@ -3003,6 +3011,7 @@ snapshots:
     dependencies:
       inherits: 2.0.4
       minimalistic-assert: 1.0.1
+    optional: true
 
   headers-polyfill@4.0.3:
     optional: true
@@ -3017,9 +3026,11 @@ snapshots:
 
   ignore@5.3.2: {}
 
-  immediate@3.0.6: {}
+  immediate@3.0.6:
+    optional: true
 
-  inherits@2.0.4: {}
+  inherits@2.0.4:
+    optional: true
 
   is-extglob@2.1.1: {}
 
@@ -3040,7 +3051,8 @@ snapshots:
 
   is-windows@1.0.2: {}
 
-  isarray@1.0.0: {}
+  isarray@1.0.0:
+    optional: true
 
   isexe@2.0.0: {}
 
@@ -3094,10 +3106,12 @@ snapshots:
       pako: 1.0.11
       readable-stream: 2.3.8
       setimmediate: 1.0.5
+    optional: true
 
   lie@3.3.0:
     dependencies:
       immediate: 3.0.6
+    optional: true
 
   linkify-it@5.0.1:
     dependencies:
@@ -3147,7 +3161,8 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.2
 
-  minimalistic-assert@1.0.1: {}
+  minimalistic-assert@1.0.1:
+    optional: true
 
   minimatch@10.2.4:
     dependencies:
@@ -3233,7 +3248,8 @@ snapshots:
     dependencies:
       quansync: 0.2.11
 
-  pako@1.0.11: {}
+  pako@1.0.11:
+    optional: true
 
   path-exists@4.0.0: {}
 
@@ -3259,6 +3275,7 @@ snapshots:
       '@pdf-lib/upng': 1.0.1
       pako: 1.0.11
       tslib: 1.14.1
+    optional: true
 
   picocolors@1.1.1: {}
 
@@ -3266,7 +3283,8 @@ snapshots:
 
   picomatch@4.0.3: {}
 
-  piexifjs@1.0.6: {}
+  piexifjs@1.0.6:
+    optional: true
 
   pify@4.0.1: {}
 
@@ -3278,7 +3296,8 @@ snapshots:
 
   prettier@2.8.8: {}
 
-  process-nextick-args@2.0.1: {}
+  process-nextick-args@2.0.1:
+    optional: true
 
   punycode.js@2.3.1: {}
 
@@ -3302,6 +3321,7 @@ snapshots:
       safe-buffer: 5.1.2
       string_decoder: 1.1.1
       util-deprecate: 1.0.2
+    optional: true
 
   require-directory@2.1.1:
     optional: true
@@ -3350,15 +3370,18 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  safe-buffer@5.1.2: {}
+  safe-buffer@5.1.2:
+    optional: true
 
   safer-buffer@2.1.2: {}
 
-  sax@1.6.0: {}
+  sax@1.6.0:
+    optional: true
 
   semver@7.7.4: {}
 
-  setimmediate@1.0.5: {}
+  setimmediate@1.0.5:
+    optional: true
 
   sharp@0.34.5:
     dependencies:
@@ -3390,6 +3413,7 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
+    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -3437,6 +3461,7 @@ snapshots:
   string_decoder@1.1.1:
     dependencies:
       safe-buffer: 5.1.2
+    optional: true
 
   strip-ansi@6.0.1:
     dependencies:
@@ -3499,7 +3524,8 @@ snapshots:
       tldts: 7.0.24
     optional: true
 
-  tslib@1.14.1: {}
+  tslib@1.14.1:
+    optional: true
 
   tslib@2.8.1:
     optional: true
@@ -3535,14 +3561,16 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.24.6: {}
+  undici-types@7.24.6:
+    optional: true
 
   universalify@0.1.2: {}
 
   until-async@3.0.2:
     optional: true
 
-  util-deprecate@1.0.2: {}
+  util-deprecate@1.0.2:
+    optional: true
 
   vite-node@3.2.4(@types/node@22.19.13)(tsx@4.21.0)(yaml@2.9.0):
     dependencies:
@@ -3651,8 +3679,10 @@ snapshots:
   xml-js@1.6.11:
     dependencies:
       sax: 1.6.0
+    optional: true
 
-  xml@1.0.1: {}
+  xml@1.0.1:
+    optional: true
 
   y18n@5.0.8:
     optional: true

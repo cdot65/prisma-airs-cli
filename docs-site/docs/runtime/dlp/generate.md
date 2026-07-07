@@ -27,6 +27,16 @@ airs runtime dlp generate [options]
 
 **Auth:** none — purely local file generation.
 
+:::note[Optional dependencies]
+File generation relies on `sharp`, `pdf-lib`, `docx`, and `piexifjs`, which ship as
+**optionalDependencies** — every other `airs` command works without them. If your install
+skipped optional deps (`--no-optional`), this command exits with an install hint:
+
+```bash
+pnpm add sharp pdf-lib docx piexifjs
+```
+:::
+
 ## Output
 
 ```
