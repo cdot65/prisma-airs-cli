@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
         'getting-started/installation',
         'getting-started/configuration',
         'getting-started/quick-start',
+        'getting-started/exit-codes-and-output',
       ],
     },
     'concepts/how-prisma-airs-works',

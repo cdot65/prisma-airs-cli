@@ -10,8 +10,9 @@ import type { TestCase, TestResult } from '../../core/types.js';
 import {
   buildEvalOutput,
   type EvalOutput,
-  renderError,
+  fail,
   renderEvalTerminal,
+  ui,
 } from '../renderer/index.js';
 
 export async function evalTopic(
@@ -59,13 +60,10 @@ export function registerEvalCommand(parent: Command): void {
       try {
         const config = await loadConfig();
         const csvContent = await readFile(opts.prompts, 'utf-8');
-        const { cases, intent } = loadPrompts(csvContent, (msg) =>
-          console.warn(`  Warning: ${msg}`),
-        );
+        const { cases, intent } = loadPrompts(csvContent, (msg) => ui.status(`Warning: ${msg}`));
 
         if (!config.airsApiKey && !config.airsApiToken) {
-          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
-          process.exit(1);
+          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
         }
         let scanner: ScanService = new AirsScanService(runtimeInitOptions(config));
         if (opts.rate) {
@@ -88,8 +86,7 @@ export function registerEvalCommand(parent: Command): void {
           renderEvalTerminal(result);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

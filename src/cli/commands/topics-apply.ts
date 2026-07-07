@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
-import { renderError } from '../renderer/index.js';
+import { fail, ui, usageError } from '../renderer/index.js';
 
 export interface ApplyInput {
   profileName: string;
@@ -60,12 +60,10 @@ export function registerApplyCommand(parent: Command): void {
     .option('--intent <intent>', 'Topic intent: block or allow', 'block')
     .option('--format <format>', 'Output format: json or terminal', 'terminal')
     .action(async (opts) => {
+      if (opts.intent !== 'allow' && opts.intent !== 'block') {
+        usageError(`--intent must be "allow" or "block", got: "${opts.intent}"`);
+      }
       try {
-        if (opts.intent !== 'allow' && opts.intent !== 'block') {
-          renderError(`--intent must be "allow" or "block", got: "${opts.intent}"`);
-          process.exit(1);
-        }
-
         const config = await loadConfig();
         const mgmt = new SdkManagementService({
           clientId: config.mgmtClientId,
@@ -83,13 +81,14 @@ export function registerApplyCommand(parent: Command): void {
         if (opts.format === 'json') {
           console.log(JSON.stringify(result, null, 2));
         } else {
-          console.log(`\n  Applied: ${result.topicName}`);
-          console.log(`  Profile: ${result.profileName}`);
-          console.log(`  Intent:  ${result.intent}\n`);
+          ui.keyValue([
+            ['Applied', result.topicName],
+            ['Profile', result.profileName],
+            ['Intent', result.intent],
+          ]);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

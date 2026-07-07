@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { SdkDataProfilesService } from '../../../airs/dlp/data-profiles.js';
-import { dlpProfiles, type OutputFormat, renderError } from '../../renderer/index.js';
+import { dlpProfiles, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildProfileBody, repeatable } from './build-body.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
@@ -60,8 +60,7 @@ export function register(dlp: Command): void {
         opts.output as OutputFormat,
       );
     } catch (err) {
-      renderError(err instanceof Error ? err.message : String(err));
-      process.exit(1);
+      fail(err);
     }
   });
 
@@ -74,8 +73,7 @@ export function register(dlp: Command): void {
         opts.output as OutputFormat,
       );
     } catch (err) {
-      renderError(err instanceof Error ? err.message : String(err));
-      process.exit(2);
+      usageError(err instanceof Error ? err.message : String(err));
     }
   });
 
@@ -90,8 +88,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -105,8 +102,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     },
   );
@@ -136,8 +132,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     });
 
@@ -145,14 +140,12 @@ export function register(dlp: Command): void {
     .command('delete <id>')
     .description('Not supported — prints the patch idiom and exits 2')
     .action((id) => {
-      console.error(`
-This DLP API has no DELETE for data profiles.
-To soft-delete, fetch the profile to get its name + profile_type, then patch:
-
-  airs runtime dlp profiles get ${id} --output json
-  airs runtime dlp profiles patch ${id} --set profile_status='"deleted"' \\
-    --set name='"<existing-name>"' --set profile_type='"<existing-type>"'
-`);
-      process.exit(2);
+      usageError(
+        `This DLP API has no DELETE for data profiles.\n` +
+          `  To soft-delete, fetch the profile to get its name + profile_type, then patch:\n\n` +
+          `    airs runtime dlp profiles get ${id} --output json\n` +
+          `    airs runtime dlp profiles patch ${id} --set profile_status='"deleted"' \\\n` +
+          `      --set name='"<existing-name>"' --set profile_type='"<existing-type>"'`,
+      );
     });
 }

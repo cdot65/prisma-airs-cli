@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { SdkDataPatternsService } from '../../../airs/dlp/data-patterns.js';
-import { dlpPatterns, type OutputFormat, renderError } from '../../renderer/index.js';
+import { dlpPatterns, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildPatternBody, repeatable } from './build-body.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
@@ -50,8 +50,7 @@ export function register(dlp: Command): void {
         opts.output as OutputFormat,
       );
     } catch (err) {
-      renderError(err instanceof Error ? err.message : String(err));
-      process.exit(1);
+      fail(err);
     }
   });
 
@@ -64,8 +63,7 @@ export function register(dlp: Command): void {
         opts.output as OutputFormat,
       );
     } catch (err) {
-      renderError(err instanceof Error ? err.message : String(err));
-      process.exit(2);
+      usageError(err instanceof Error ? err.message : String(err));
     }
   });
 
@@ -80,8 +78,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -95,8 +92,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     },
   );
@@ -126,8 +122,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     });
 
@@ -139,8 +134,7 @@ export function register(dlp: Command): void {
         await new SdkDataPatternsService().delete(id);
         dlpPatterns.renderArchived(id);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

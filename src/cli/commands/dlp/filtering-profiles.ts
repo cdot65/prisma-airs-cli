@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { SdkDataFilteringProfilesService } from '../../../airs/dlp/data-filtering-profiles.js';
-import { dlpFilteringProfiles, type OutputFormat, renderError } from '../../renderer/index.js';
+import { dlpFilteringProfiles, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildFilteringProfileBody, repeatable } from './build-body.js';
 import { parseBody } from './patch.js';
 
@@ -35,8 +35,7 @@ export function register(dlp: Command): void {
       const r = await svc.list({ page: opts.page, size: opts.size, sort: opts.sort });
       dlpFilteringProfiles.renderList(r, opts.output as OutputFormat);
     } catch (err) {
-      renderError(err instanceof Error ? err.message : String(err));
-      process.exit(1);
+      fail(err);
     }
   });
 
@@ -49,8 +48,7 @@ export function register(dlp: Command): void {
         const svc = new SdkDataFilteringProfilesService();
         dlpFilteringProfiles.renderGet(await svc.get(id), opts.output as OutputFormat);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -81,8 +79,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     });
 }

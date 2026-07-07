@@ -15,6 +15,7 @@ import {
 import { loadBulkScanState, saveBulkScanState } from '../bulk-scan-state.js';
 import { parseInputFile } from '../parse-input.js';
 import {
+  fail,
   OUTPUT_FORMATS,
   type OutputFormat,
   renderApiKeyDetail,
@@ -23,13 +24,14 @@ import {
   renderCustomerAppDetail,
   renderCustomerAppList,
   renderDeploymentProfileList,
-  renderError,
   renderProfileDetail,
   renderProfileList,
   renderRuntimeConfigHeader,
   renderScanLogList,
   renderTopicDetail,
   renderTopicList,
+  ui,
+  usageError,
 } from '../renderer/index.js';
 import { registerDlpCommands } from './dlp/index.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
@@ -41,22 +43,22 @@ import { registerSampleCommand } from './topics-sample.js';
 
 function renderScanResult(result: RuntimeScanResult): void {
   const actionColor = result.action === 'block' ? chalk.red : chalk.green;
-  console.log(chalk.bold('\n  Scan Result'));
-  console.log(chalk.dim('  ─────────────────────────'));
-  console.log(`  Action:    ${actionColor(result.action.toUpperCase())}`);
-  console.log(`  Category:  ${result.category}`);
-  console.log(`  Triggered: ${result.triggered ? chalk.red('yes') : chalk.green('no')}`);
-  console.log(`  Scan ID:   ${chalk.dim(result.scanId)}`);
-  console.log(`  Report ID: ${chalk.dim(result.reportId)}`);
+  ui.header('Scan Result');
+  ui.keyValue([
+    ['Action', actionColor(result.action.toUpperCase())],
+    ['Category', result.category],
+    ['Triggered', result.triggered ? chalk.red('yes') : chalk.green('no')],
+    ['Scan ID', chalk.dim(result.scanId)],
+    ['Report ID', chalk.dim(result.reportId)],
+  ]);
 
   const flags = Object.entries(result.detections).filter(([, v]) => v);
   if (flags.length > 0) {
-    console.log(chalk.bold('\n  Detections:'));
+    ui.section('Detections');
     for (const [key] of flags) {
-      console.log(`    ${chalk.yellow('●')} ${key}`);
+      ui.bullet(key, 'flag');
     }
   }
-  console.log();
 }
 
 /** Create a management service from config. */
@@ -95,8 +97,7 @@ export function registerRuntimeCommand(program: Command): void {
         });
         renderApiKeyList(result.apiKeys, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -110,11 +111,10 @@ export function registerRuntimeCommand(program: Command): void {
         const service = await createMgmtService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const key = await service.createApiKey(config);
-        console.log(`  API key created: ${key.id}\n`);
+        ui.success(`API key created: ${key.id}`);
         renderApiKeyDetail(key);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -134,11 +134,10 @@ export function registerRuntimeCommand(program: Command): void {
         };
         if (opts.updatedBy) request.updated_by = opts.updatedBy;
         const key = await service.regenerateApiKey(apiKeyId, request);
-        console.log(`  API key regenerated: ${key.id}\n`);
+        ui.success(`API key regenerated: ${key.id}`);
         renderApiKeyDetail(key);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -151,10 +150,9 @@ export function registerRuntimeCommand(program: Command): void {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const result = await service.deleteApiKey(apiKeyName, opts.updatedBy);
-        console.log(`  ${result.message}\n`);
+        ui.success(result.message);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -175,28 +173,26 @@ export function registerRuntimeCommand(program: Command): void {
       try {
         const config = await loadConfig({});
         if (!config.airsApiKey && !config.airsApiToken) {
-          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
-          process.exit(1);
+          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
         }
 
         const raw = await readFile(opts.input, 'utf-8');
         const prompts = parseInputFile(raw, opts.input);
 
         if (prompts.length === 0) {
-          renderError('No prompts found in input file');
-          process.exit(1);
+          usageError('No prompts found in input file');
         }
 
         const sessionId = opts.sessionId ?? `prisma-airs-cli-bulk-${Date.now().toString(36)}`;
 
         const service = new SdkRuntimeService(runtimeInitOptions(config));
-        console.log(chalk.bold.cyan('\n  Prisma AIRS Bulk Scan'));
-        console.log(chalk.dim(`  Profile:  ${opts.profile}`));
-        console.log(chalk.dim(`  Session:  ${sessionId}`));
-        console.log(chalk.dim(`  Prompts:  ${prompts.length}`));
-        console.log(chalk.dim(`  Batches:  ${Math.ceil(prompts.length / 5)}\n`));
+        ui.status('Prisma AIRS Bulk Scan');
+        ui.status(`Profile:  ${opts.profile}`);
+        ui.status(`Session:  ${sessionId}`);
+        ui.status(`Prompts:  ${prompts.length}`);
+        ui.status(`Batches:  ${Math.ceil(prompts.length / 5)}`);
 
-        console.log(chalk.dim('  Submitting async scans...'));
+        ui.status('Submitting async scans...');
         const scanIds = await service.submitBulkScan(opts.profile, prompts, sessionId);
 
         const stateDir = config.dataDir.replace(/\/runs$/, '/bulk-scans');
@@ -204,16 +200,12 @@ export function registerRuntimeCommand(program: Command): void {
           { scanIds, profile: opts.profile, promptCount: prompts.length, sessionId },
           stateDir,
         );
-        console.log(chalk.dim(`  Scan IDs saved: ${statePath}`));
-        console.log(chalk.dim(`  Submitted ${scanIds.length} batch(es), polling for results...`));
+        ui.status(`Scan IDs saved: ${statePath}`);
+        ui.status(`Submitted ${scanIds.length} batch(es), polling for results...`);
 
         const results = await service.pollResults(scanIds, undefined, {
           onRetry: (attempt, delayMs) => {
-            console.log(
-              chalk.yellow(
-                `  ⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`,
-              ),
-            );
+            ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
           },
         });
 
@@ -229,15 +221,15 @@ export function registerRuntimeCommand(program: Command): void {
         const blocked = results.filter((r) => r.action === 'block').length;
         const allowed = results.filter((r) => r.action === 'allow').length;
 
-        console.log(chalk.bold('\n  Bulk Scan Complete'));
-        console.log(chalk.dim('  ─────────────────────────'));
-        console.log(`  Total:   ${results.length}`);
-        console.log(`  Blocked: ${chalk.red(String(blocked))}`);
-        console.log(`  Allowed: ${chalk.green(String(allowed))}`);
-        console.log(`  Output:  ${chalk.cyan(outputPath)}\n`);
+        ui.header('Bulk Scan Complete');
+        ui.keyValue([
+          ['Total', results.length],
+          ['Blocked', chalk.red(String(blocked))],
+          ['Allowed', chalk.green(String(allowed))],
+          ['Output', chalk.cyan(outputPath)],
+        ]);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -261,8 +253,7 @@ export function registerRuntimeCommand(program: Command): void {
         });
         renderCustomerAppList(result.apps, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -276,8 +267,7 @@ export function registerRuntimeCommand(program: Command): void {
         const app = await service.getCustomerApp(appName);
         renderCustomerAppDetail(app);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -291,11 +281,10 @@ export function registerRuntimeCommand(program: Command): void {
         const service = await createMgmtService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const app = await service.updateCustomerApp(appId, config);
-        console.log(`  Customer app updated: ${app.name}\n`);
+        ui.success(`Customer app updated: ${app.name}`);
         renderCustomerAppDetail(app);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -308,10 +297,9 @@ export function registerRuntimeCommand(program: Command): void {
         renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const app = await service.deleteCustomerApp(appName, opts.updatedBy);
-        console.log(`  Customer app "${app.name}" deleted.\n`);
+        ui.success(`Customer app "${app.name}" deleted.`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -331,8 +319,7 @@ export function registerRuntimeCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         const interval = Number.parseInt(opts.timeInterval, 10);
         if (interval !== 7 && interval !== 30 && interval !== 60) {
-          renderError('--time-interval must be 7, 30, or 60 (the API rejects other values)');
-          process.exit(1);
+          usageError('--time-interval must be 7, 30, or 60 (the API rejects other values)');
         }
         if (fmt === 'pretty') renderRuntimeConfigHeader();
 
@@ -354,7 +341,7 @@ export function registerRuntimeCommand(program: Command): void {
         // SCM UI's AI Applications view reflects this same list.
         const apps = await service.listConsumptionApps({ limit: 100 });
         if (apps.length === 0) {
-          console.log('  No dashboard applications found.');
+          ui.emptyList('dashboard applications');
           return;
         }
         for (const app of apps) {
@@ -364,12 +351,11 @@ export function registerRuntimeCommand(program: Command): void {
             });
             renderCustomerAppConsumption(data, fmt);
           } catch (err) {
-            renderError(`[${app.appName}] ${err instanceof Error ? err.message : String(err)}`);
+            ui.error(`[${app.appName}] ${err instanceof Error ? err.message : String(err)}`);
           }
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -395,8 +381,7 @@ export function registerRuntimeCommand(program: Command): void {
         });
         renderDeploymentProfileList(profiles, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -415,8 +400,7 @@ export function registerRuntimeCommand(program: Command): void {
       try {
         const fmt = opts.output as OutputFormat;
         if (!OUTPUT_FORMATS.includes(fmt)) {
-          renderError(`Invalid output format "${fmt}". Valid: ${OUTPUT_FORMATS.join(', ')}`);
-          process.exit(1);
+          usageError(`Invalid output format "${fmt}". Valid: ${OUTPUT_FORMATS.join(', ')}`);
         }
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
@@ -426,11 +410,10 @@ export function registerRuntimeCommand(program: Command): void {
         });
         renderProfileList(result.profiles, fmt);
         if (fmt === 'pretty' && result.nextOffset != null) {
-          console.log(chalk.dim(`  Next offset: ${result.nextOffset}\n`));
+          ui.dim(`Next offset: ${result.nextOffset}`);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -442,8 +425,7 @@ export function registerRuntimeCommand(program: Command): void {
       try {
         const fmt = opts.output as OutputFormat;
         if (fmt !== 'pretty' && fmt !== 'json' && fmt !== 'yaml') {
-          renderError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
-          process.exit(1);
+          usageError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
         }
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
@@ -468,8 +450,7 @@ export function registerRuntimeCommand(program: Command): void {
           renderProfileDetail(profile);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -535,7 +516,7 @@ export function registerRuntimeCommand(program: Command): void {
           profile = await service.createProfile(request);
         }
 
-        console.log(`  Profile created: ${profile.profileId}\n`);
+        ui.success(`Profile created: ${profile.profileId}`);
         renderProfileDetail(profile);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -543,19 +524,19 @@ export function registerRuntimeCommand(program: Command): void {
           // AIRS may create the profile but also return 409 — check if it exists
           try {
             const created = await service.getProfileByName(opts.name);
-            console.log(`  Profile created: ${created.profileId}\n`);
+            ui.success(`Profile created: ${created.profileId}`);
             renderProfileDetail(created);
             return;
           } catch {
             // Profile truly already existed before our call
-            renderError(
-              `Profile "${opts.name}" already exists. Use 'profiles update' to modify it.`,
+            fail(
+              new Error(
+                `Profile "${opts.name}" already exists. Use 'profiles update' to modify it.`,
+              ),
             );
           }
-        } else {
-          renderError(msg);
         }
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -635,11 +616,10 @@ export function registerRuntimeCommand(program: Command): void {
           });
         }
 
-        console.log(`  Profile updated: ${profile.profileId}\n`);
+        ui.success(`Profile updated: ${profile.profileId}`);
         renderProfileDetail(profile);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -667,17 +647,15 @@ export function registerRuntimeCommand(program: Command): void {
         }
         if (opts.force) {
           if (!opts.updatedBy) {
-            renderError('--updated-by <email> is required with --force');
-            process.exit(1);
+            usageError('--updated-by <email> is required with --force');
           }
           await service.forceDeleteProfile(profileId, opts.updatedBy);
         } else {
           await service.deleteProfile(profileId);
         }
-        console.log(`  Profile deleted: ${profileName} (${profileId})\n`);
+        ui.success(`Profile deleted: ${profileName} (${profileId})`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -695,26 +673,21 @@ export function registerRuntimeCommand(program: Command): void {
       try {
         const config = await loadConfig({});
         if (!config.airsApiKey && !config.airsApiToken) {
-          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
-          process.exit(1);
+          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
         }
 
         const state = await loadBulkScanState(stateFile);
         const service = new SdkRuntimeService(runtimeInitOptions(config));
 
-        console.log(chalk.bold.cyan('\n  Prisma AIRS Resume Poll'));
-        console.log(chalk.dim(`  Profile:  ${state.profile}`));
-        console.log(chalk.dim(`  Scan IDs: ${state.scanIds.length}`));
-        console.log(chalk.dim(`  Prompts:  ${state.promptCount}\n`));
+        ui.status('Prisma AIRS Resume Poll');
+        ui.status(`Profile:  ${state.profile}`);
+        ui.status(`Scan IDs: ${state.scanIds.length}`);
+        ui.status(`Prompts:  ${state.promptCount}`);
 
-        console.log(chalk.dim('  Polling for results...'));
+        ui.status('Polling for results...');
         const results = await service.pollResults(state.scanIds, undefined, {
           onRetry: (attempt, delayMs) => {
-            console.log(
-              chalk.yellow(
-                `  ⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`,
-              ),
-            );
+            ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
           },
         });
 
@@ -725,15 +698,15 @@ export function registerRuntimeCommand(program: Command): void {
         const blocked = results.filter((r) => r.action === 'block').length;
         const allowed = results.filter((r) => r.action === 'allow').length;
 
-        console.log(chalk.bold('\n  Resume Poll Complete'));
-        console.log(chalk.dim('  ─────────────────────────'));
-        console.log(`  Total:   ${results.length}`);
-        console.log(`  Blocked: ${chalk.red(String(blocked))}`);
-        console.log(`  Allowed: ${chalk.green(String(allowed))}`);
-        console.log(`  Output:  ${chalk.cyan(outputPath)}\n`);
+        ui.header('Resume Poll Complete');
+        ui.keyValue([
+          ['Total', results.length],
+          ['Blocked', chalk.red(String(blocked))],
+          ['Allowed', chalk.green(String(allowed))],
+          ['Output', chalk.cyan(outputPath)],
+        ]);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -749,22 +722,18 @@ export function registerRuntimeCommand(program: Command): void {
       try {
         const config = await loadConfig({});
         if (!config.airsApiKey && !config.airsApiToken) {
-          renderError('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required');
-          process.exit(1);
+          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
         }
 
         const service = new SdkRuntimeService(runtimeInitOptions(config));
-        console.log(chalk.bold.cyan('\n  Prisma AIRS Runtime Scan'));
-        console.log(chalk.dim(`  Profile: ${opts.profile}`));
-        console.log(
-          chalk.dim(`  Prompt:  "${prompt.slice(0, 80)}${prompt.length > 80 ? '...' : ''}"`),
-        );
+        ui.status('Prisma AIRS Runtime Scan');
+        ui.status(`Profile: ${opts.profile}`);
+        ui.status(`Prompt:  "${prompt.slice(0, 80)}${prompt.length > 80 ? '...' : ''}"`);
 
         const result = await service.scanPrompt(opts.profile, prompt, opts.response);
         renderScanResult(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -796,8 +765,7 @@ export function registerRuntimeCommand(program: Command): void {
         });
         renderScanLogList(result.results, result.pageToken, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -823,14 +791,13 @@ export function registerRuntimeCommand(program: Command): void {
         const service = await createMgmtService();
         if (opts.force) {
           const result = await service.forceDeleteTopic(topicId, opts.updatedBy);
-          console.log(`  ${result.message}\n`);
+          ui.success(result.message);
         } else {
           await service.deleteTopic(topicId);
-          console.log(`  Topic ${topicId} deleted.\n`);
+          ui.success(`Topic ${topicId} deleted.`);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -844,8 +811,7 @@ export function registerRuntimeCommand(program: Command): void {
       try {
         const fmt = opts.output as OutputFormat;
         if (fmt !== 'pretty' && fmt !== 'json' && fmt !== 'yaml') {
-          renderError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
-          process.exit(1);
+          usageError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
         }
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
@@ -873,8 +839,7 @@ export function registerRuntimeCommand(program: Command): void {
           renderTopicDetail(topic);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -896,11 +861,10 @@ export function registerRuntimeCommand(program: Command): void {
         const page = allTopics.slice(offset, offset + limit);
         renderTopicList(page, fmt);
         if (fmt === 'pretty' && offset + limit < allTopics.length) {
-          console.log(chalk.dim(`  Showing ${page.length} of ${allTopics.length} topics\n`));
+          ui.dim(`Showing ${page.length} of ${allTopics.length} topics`);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -917,11 +881,10 @@ export function registerRuntimeCommand(program: Command): void {
         const service = await createMgmtService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const topic = await service.updateTopic(topicId, config);
-        console.log(`  Topic updated: ${topic.topic_id}\n`);
+        ui.success(`Topic updated: ${topic.topic_id}`);
         renderTopicDetail(topic);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 

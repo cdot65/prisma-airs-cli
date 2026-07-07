@@ -1,13 +1,12 @@
 import { execFileSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
-import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkModelSecurityService } from '../../airs/modelsecurity.js';
 import { modelSecurityClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
+  fail,
   type OutputFormat,
-  renderError,
   renderEvaluationDetail,
   renderEvaluationList,
   renderFileList,
@@ -24,6 +23,8 @@ import {
   renderRuleList,
   renderViolationDetail,
   renderViolationList,
+  ui,
+  usageError,
 } from '../renderer/index.js';
 
 const VALID_EXTRAS = ['all', 'aws', 'gcp', 'azure', 'artifactory', 'gitlab'] as const;
@@ -96,8 +97,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderGroupList(result.groups, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -113,8 +113,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const group = await service.getGroup(uuid);
         renderGroupDetail(group, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -133,11 +132,10 @@ export function registerModelSecurityCommand(program: Command): void {
           description: config.description,
           ruleConfigurations: config.rule_configurations,
         });
-        console.log(`  Group created: ${group.uuid}\n`);
+        ui.success(`Group created: ${group.uuid}`);
         renderGroupDetail(group);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -154,11 +152,10 @@ export function registerModelSecurityCommand(program: Command): void {
         if (opts.name) request.name = opts.name;
         if (opts.description) request.description = opts.description;
         const group = await service.updateGroup(uuid, request);
-        console.log(`  Group updated: ${group.uuid}\n`);
+        ui.success(`Group updated: ${group.uuid}`);
         renderGroupDetail(group);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -171,16 +168,15 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         const { confirmed, state } = await service.deleteGroupAndVerify(uuid);
         if (confirmed) {
-          console.log(`  Group ${uuid} deleted.\n`);
+          ui.success(`Group ${uuid} deleted.`);
         } else {
-          console.log(
-            `  Delete request accepted, but group ${uuid} still reports state '${state}'.\n` +
-              `  Deletion is asynchronous (soft-delete) — re-check with \`model-security groups get ${uuid}\`.\n`,
+          ui.warn(`Delete request accepted, but group ${uuid} still reports state '${state}'.`);
+          ui.dim(
+            `Deletion is asynchronous (soft-delete) — re-check with \`model-security groups get ${uuid}\`.`,
           );
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -203,16 +199,14 @@ export function registerModelSecurityCommand(program: Command): void {
         // Validate extras
         const extras = opts.extras as string;
         if (!VALID_EXTRAS.includes(extras as (typeof VALID_EXTRAS)[number])) {
-          renderError(`Invalid extras "${extras}". Valid: ${VALID_EXTRAS.join(', ')}`);
-          process.exit(1);
+          usageError(`Invalid extras "${extras}". Valid: ${VALID_EXTRAS.join(', ')}`);
         }
 
         const dir = opts.dir as string;
         const useUv = hasBin('uv');
 
         if (!useUv && !hasBin('python3')) {
-          renderError('Neither uv nor python3 found on PATH. Install one first.');
-          process.exit(1);
+          fail(new Error('Neither uv nor python3 found on PATH. Install one first.'));
         }
 
         // Fetch PyPI auth URL
@@ -241,32 +235,30 @@ export function registerModelSecurityCommand(program: Command): void {
             ];
 
         if (opts.dryRun) {
-          console.log(chalk.bold('\n  Commands that would be executed:\n'));
+          ui.section('Commands that would be executed');
           for (const step of steps) {
             const cmdStr = [step.bin, ...step.args]
               .map((a) => (a.includes('[') || a.includes(' ') ? `"${a}"` : a))
               .join(' ');
-            console.log(`    ${chalk.dim('$')} ${cmdStr}`);
+            ui.dim(`$ ${cmdStr}`);
           }
-          console.log();
           return;
         }
 
         for (const step of steps) {
-          console.log(chalk.dim(`\n  → ${step.label}\n`));
+          ui.status(`→ ${step.label}`);
           await run(step.bin, step.args, step.label);
         }
 
-        console.log(chalk.green('\n  model-security-client installed successfully.\n'));
+        ui.success('model-security-client installed successfully.');
 
         if (useUv) {
-          console.log(chalk.dim(`  Activate:  cd ${dir}\n`));
+          ui.dim(`Activate:  cd ${dir}`);
         } else {
-          console.log(chalk.dim(`  Activate:  source ${dir}/.venv/bin/activate\n`));
+          ui.dim(`Activate:  source ${dir}/.venv/bin/activate`);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -285,10 +277,9 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         const parsed = JSON.parse(opts.labels);
         await service.addLabels(scanUuid, parsed);
-        console.log('  Labels added.\n');
+        ui.success('Labels added.');
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -302,10 +293,9 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         const parsed = JSON.parse(opts.labels);
         await service.setLabels(scanUuid, parsed);
-        console.log('  Labels set.\n');
+        ui.success('Labels set.');
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -319,10 +309,9 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         const keys = (opts.keys as string).split(',').map((k: string) => k.trim());
         await service.deleteLabels(scanUuid, keys);
-        console.log('  Labels deleted.\n');
+        ui.success('Labels deleted.');
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -339,8 +328,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderLabelKeys(result.keys);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -357,8 +345,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderLabelValues(key, result.values);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -372,13 +359,13 @@ export function registerModelSecurityCommand(program: Command): void {
         renderModelSecurityHeader();
         const service = await createService();
         const auth = await service.getPyPIAuth();
-        console.log(chalk.bold('\n  PyPI Authentication:\n'));
-        console.log(`    URL:     ${auth.url}`);
-        console.log(`    Expires: ${chalk.dim(auth.expiresAt)}`);
-        console.log();
+        ui.section('PyPI Authentication');
+        ui.keyValue([
+          ['URL', auth.url],
+          ['Expires', auth.expiresAt],
+        ]);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -404,8 +391,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderRuleInstanceList(result.ruleInstances);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -419,8 +405,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const instance = await service.getRuleInstance(groupUuid, instanceUuid);
         renderRuleInstanceDetail(instance);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -437,11 +422,10 @@ export function registerModelSecurityCommand(program: Command): void {
           state: config.state,
           fieldValues: config.field_values,
         });
-        console.log(`  Rule instance updated: ${instance.uuid}\n`);
+        ui.success(`Rule instance updated: ${instance.uuid}`);
         renderRuleInstanceDetail(instance);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -469,8 +453,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderRuleList(result.rules, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -484,8 +467,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const rule = await service.getRule(uuid);
         renderRuleDetail(rule);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -517,8 +499,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderMsScanList(result.scans, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -532,8 +513,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const scan = await service.getScan(uuid);
         renderMsScanDetail(scan);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -547,11 +527,10 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const scan = await service.createScan(config);
-        console.log(`  Scan created: ${scan.uuid}\n`);
+        ui.success(`Scan created: ${scan.uuid}`);
         renderMsScanDetail(scan);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -568,8 +547,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderEvaluationList(result.evaluations);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -583,8 +561,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const evaluation = await service.getEvaluation(uuid);
         renderEvaluationDetail(evaluation);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -601,8 +578,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderViolationList(result.violations);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -616,8 +592,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const violation = await service.getViolation(uuid);
         renderViolationDetail(violation);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -638,8 +613,7 @@ export function registerModelSecurityCommand(program: Command): void {
         });
         renderFileList(result.files);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }
