@@ -5,7 +5,6 @@ import {
   resolveDeprecatedAliases,
 } from '../../../src/cli/deprecated-flags.js';
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escapes are control chars
 const stripAnsi = (s: string) => s.replace(/\[[0-9;]*m/g, '');
 
 afterEach(() => {
