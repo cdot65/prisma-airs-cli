@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v3.0.0 (2026-07-07)
 
 ### New
 
@@ -14,7 +14,7 @@
 
 ### Changed
 
-- **Flag standardization** — `--output` always means format; file destinations are `--output-file`; input files are `--file`; pagination is `--limit`/`--offset`; destructive bypass is `--force`. Old spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) keep working throughout v2 as hidden aliases with a stderr deprecation notice and will be removed in v3 — see the [Flag Migration guide](flag-migration.md). Also new: `--output pretty|json|yaml` on `redteam prompts list|get`, `redteam instances get`, `redteam registry-credentials`, and client-side `--limit`/`--offset` on redteam list commands.
+- **Flag standardization** — `--output` always means format; file destinations are `--output-file`; input files are `--file`; pagination is `--limit`/`--offset`; destructive bypass is `--force`. Old spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) keep working throughout v3 as hidden aliases with a stderr deprecation notice and will be removed in v4 — see the [Flag Migration guide](flag-migration.md). Also new: `--output pretty|json|yaml` on `redteam prompts list|get`, `redteam instances get`, `redteam registry-credentials`, and client-side `--limit`/`--offset` on redteam list commands.
 - **Pipe-safe machine-readable output** — `--output json|yaml|csv` emits only the payload on stdout; progress, banners, and rate-limit warnings moved to stderr, so `--output json | jq` always parses. Exit codes standardized across every command group: 0 success, 1 runtime/API failure, 2 usage error. API errors show the HTTP status and a `--debug` hint.
 - **CLI output design system** — all renderers (backup, eval, redteam, runtime, dlp, model-security) migrated to shared `ui` primitives: uniform bold headers, semantic glyphs (✓ ✗ ⚠ ○ ● •), aligned key/value blocks, canonical box-drawing tables, and standardized `No <resource> found` empty-list phrasing.
 - **~6x faster startup** (≈0.4s → ≈0.06s) — the DLP test-file generator dependencies (sharp, pdf-lib, docx, piexifjs) now load lazily, only when `airs runtime dlp generate` runs, and moved to optionalDependencies. Installs with `--no-optional` skip ~50MB of native binaries; `dlp generate` prints an install hint if they are absent.

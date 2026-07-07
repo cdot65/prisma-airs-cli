@@ -3,7 +3,7 @@ import { type Command, Option } from 'commander';
 
 /**
  * A flag renamed in the v2 standardization. The old spelling keeps working
- * (hidden from help) until v3; using it prints a one-line stderr notice.
+ * (hidden from help) until v4; using it prints a one-line stderr notice.
  */
 export interface DeprecatedAlias {
   /** Old flag as a commander option string, e.g. '--format <format>'. */
@@ -41,7 +41,7 @@ export function resolveDeprecatedAliases<T extends Record<string, unknown>>(
     if (oldValue === undefined) continue;
     console.error(
       chalk.yellow(
-        `  ⚠ ${alias.oldFlag.split(' ')[0]} is deprecated and will be removed in v3 — use ${alias.canonicalFlag}`,
+        `  ⚠ ${alias.oldFlag.split(' ')[0]} is deprecated and will be removed in v4 — use ${alias.canonicalFlag}`,
       ),
     );
     const source = cmd.getOptionValueSource?.(alias.canonicalKey);

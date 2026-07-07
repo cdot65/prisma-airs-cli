@@ -1,8 +1,8 @@
-# Flag Migration (v2 → v3)
+# Flag Migration
 
-The v2.x series standardized flag names across every command group. Old
-spellings keep working throughout v2 — they are hidden from `--help` and print
-a one-line deprecation notice on stderr — and will be **removed in v3**.
+The 2026-07 overhaul standardized flag names across every command group. Old
+spellings keep working throughout v3 — they are hidden from `--help` and print
+a one-line deprecation notice on stderr — and will be **removed in v4**.
 
 ## Renames
 
