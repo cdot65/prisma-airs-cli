@@ -1,6 +1,9 @@
 import { Command } from 'commander';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../../../src/cli/deprecated-flags.js';
+import {
+  registerDeprecatedAlias,
+  resolveDeprecatedAliases,
+} from '../../../src/cli/deprecated-flags.js';
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escapes are control chars
 const stripAnsi = (s: string) => s.replace(/\[[0-9;]*m/g, '');
@@ -33,7 +36,10 @@ describe('deprecated flag aliases', () => {
     cmd.parse(['--format', 'json'], { from: 'user' });
     const opts = resolveDeprecatedAliases(cmd, cmd.opts());
     expect(opts.output).toBe('json');
-    const text = errSpy.mock.calls.flat().map((c) => stripAnsi(String(c))).join('\n');
+    const text = errSpy.mock.calls
+      .flat()
+      .map((c) => stripAnsi(String(c)))
+      .join('\n');
     expect(text).toContain('--format');
     expect(text).toContain('deprecated');
     expect(text).toContain('--output');
