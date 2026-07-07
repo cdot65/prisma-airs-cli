@@ -2,7 +2,7 @@
   "name": "@cdot65/prisma-airs-cli",
   "packageManager": "pnpm@10.6.5",
   "version": "2.12.1",
-  "description": "CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits",
+  "description": "CLI and library for Palo Alto Prisma AIRS \u2014 guardrail refinement, AI red teaming, model security scanning, profile audits",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -47,14 +47,10 @@
     "@inquirer/prompts": "^8.3.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
-    "docx": "^9.6.1",
     "dotenv": "^17.3.1",
     "js-yaml": "^4.1.1",
     "nanoid": "^5.0.0",
     "p-limit": "^6.0.0",
-    "pdf-lib": "^1.17.1",
-    "piexifjs": "^1.0.6",
-    "sharp": "^0.34.5",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -68,5 +64,11 @@
     "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "docx": "^9.6.1",
+    "pdf-lib": "^1.17.1",
+    "piexifjs": "^1.0.6",
+    "sharp": "^0.34.5"
   }
 }

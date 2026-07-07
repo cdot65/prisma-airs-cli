@@ -1,9 +1,37 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { generateCorpus } from '../../../dlp/index.js';
 import type { Format } from '../../../dlp/types.js';
 
 const ALL_FORMATS: Format[] = ['pdf', 'png', 'jpeg', 'svg', 'docx'];
+
+const OPTIONAL_DEPS_HINT =
+  'DLP generate requires optional dependencies. Install them with: pnpm add sharp pdf-lib docx piexifjs';
+
+type DlpModule = typeof import('../../../dlp/index.js');
+type DlpImporter = () => Promise<DlpModule>;
+
+const defaultImporter: DlpImporter = () => import('../../../dlp/index.js');
+
+/**
+ * Lazily load the DLP corpus generator. The dlp module pulls in sharp,
+ * pdf-lib, docx, and piexifjs (optionalDependencies) — importing it eagerly
+ * would make every CLI invocation pay their startup cost, and would crash
+ * installs that skipped optional deps.
+ */
+export async function loadGenerateCorpus(
+  importer: DlpImporter = defaultImporter,
+): Promise<DlpModule['generateCorpus']> {
+  try {
+    const mod = await importer();
+    return mod.generateCorpus;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {
+      throw new Error(OPTIONAL_DEPS_HINT);
+    }
+    throw err;
+  }
+}
 
 function parseTypes(value: string): Format[] {
   if (value === 'all') {
@@ -41,6 +69,7 @@ export function register(parent: Command): void {
           : (opts.techniques as string).split(',').map((t) => t.trim());
       const seed = opts.seed === undefined ? undefined : Number.parseInt(opts.seed, 10);
 
+      const generateCorpus = await loadGenerateCorpus();
       const summary = await generateCorpus({ types, count, out: opts.out, techniques, seed });
 
       if (opts.output === 'json') {
