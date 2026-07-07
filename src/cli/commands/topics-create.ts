@@ -4,6 +4,7 @@ import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
 import { validateTopic } from '../../core/constraints.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
+import { examples } from '../examples.js';
 import { fail, ui } from '../renderer/index.js';
 
 export interface CreateInput {
@@ -65,7 +66,14 @@ export function registerCreateCommand(parent: Command): void {
     .requiredOption('--name <name>', 'Topic name')
     .requiredOption('--description <desc>', 'Topic description')
     .requiredOption('--examples <examples...>', 'Example prompts (2-5 required)')
-    .option('--output <format>', 'Output format: pretty or json', 'pretty');
+    .option('--output <format>', 'Output format: pretty or json', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        'airs runtime topics create --name "Financial Advice" --description "Requests for personal investment advice" --examples "Should I buy TSLA stock?" "How should I invest my savings?"',
+        'airs runtime topics create --name "Legal Advice" --description "Requests for legal counsel" --examples "Can I sue my landlord?" "Draft a contract for me" --output json',
+      ),
+    );
   registerDeprecatedAlias(cmd, {
     oldFlag: '--format <format>',
     oldKey: 'format',

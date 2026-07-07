@@ -8,6 +8,7 @@ import { computeMetrics } from '../../core/metrics.js';
 import { loadPrompts } from '../../core/prompt-loader.js';
 import type { TestCase, TestResult } from '../../core/types.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
+import { examples } from '../examples.js';
 import {
   buildEvalOutput,
   type EvalOutput,
@@ -56,7 +57,15 @@ export function registerEvalCommand(parent: Command): void {
     .option('--topic <name>', 'Topic name (for output labeling)', 'unknown')
     .option('--output <format>', 'Output format: pretty or json', 'pretty')
     .option('--rate <n>', 'Max AIRS scan API calls per second')
-    .option('--concurrency <n>', 'Concurrent scan requests', '5');
+    .option('--concurrency <n>', 'Concurrent scan requests', '5')
+    .addHelpText(
+      'after',
+      examples(
+        'airs runtime topics eval --profile prod-guard --prompts eval.csv --topic "Financial Advice"',
+        'airs runtime topics eval --profile prod-guard --prompts eval.csv --output json',
+        'airs runtime topics eval --profile prod-guard --prompts eval.csv --rate 5 --concurrency 3',
+      ),
+    );
   registerDeprecatedAlias(cmd, {
     oldFlag: '--format <format>',
     oldKey: 'format',

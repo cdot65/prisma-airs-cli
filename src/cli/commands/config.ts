@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import type { Command } from 'commander';
 import { type ConfigEntry, inspectConfig, resolveConfigFilePath } from '../../config/loader.js';
 import { ConfigSchema } from '../../config/schema.js';
+import { examples } from '../examples.js';
 import { fail, formatOutput, ui, usageError } from '../renderer/index.js';
 
 export const CONFIG_KEYS: string[] = Object.keys(ConfigSchema.shape);
@@ -132,7 +133,15 @@ const COLUMNS = [
 export function registerConfigCommand(program: Command): void {
   const config = program
     .command('config')
-    .description('Manage CLI configuration (~/.prisma-airs/config.json)');
+    .description('Manage CLI configuration (~/.prisma-airs/config.json)')
+    .addHelpText(
+      'after',
+      examples(
+        'airs config list',
+        'airs config set scanConcurrency 10',
+        'airs config get mgmtTsgId',
+      ),
+    );
 
   config
     .command('list')

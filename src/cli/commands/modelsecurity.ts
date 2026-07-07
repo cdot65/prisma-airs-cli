@@ -4,6 +4,7 @@ import type { Command } from 'commander';
 import { SdkModelSecurityService } from '../../airs/modelsecurity.js';
 import { modelSecurityClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
+import { examples } from '../examples.js';
 import {
   fail,
   type OutputFormat,
@@ -485,6 +486,14 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--search <query>', 'Search scans')
     .option('--limit <n>', 'Max results', '20')
     .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        'airs model-security scans list',
+        'airs model-security scans list --eval-outcome MALICIOUS --limit 10',
+        'airs model-security scans list --output json',
+      ),
+    )
     .action(async (opts) => {
       try {
         const fmt = opts.output as OutputFormat;

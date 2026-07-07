@@ -30,3 +30,19 @@ airs runtime bulk-scan --profile demo --input prompts.txt --output results.csv
 
 API errors include the HTTP status when available, plus a reminder that
 `--debug` captures the full (secret-redacted) request/response traffic.
+
+## Confirmation prompts
+
+Destructive commands (`runtime profiles delete`, `runtime topics delete`,
+`runtime topics revert`, `redteam targets delete`, `runtime profiles cleanup`)
+ask for interactive confirmation before deleting:
+
+- **Interactive terminal (TTY):** a Y/N confirm prompt appears (default: No).
+  Declining prints `Aborted` and exits `0` — a no-op, not a failure.
+- **`--force`:** bypasses the prompt entirely (for `profiles delete` and
+  `topics delete`, `--force` additionally performs the API force-delete and
+  pairs with `--updated-by`).
+- **Non-interactive (no TTY, e.g. CI or piped):** the command refuses without
+  `--force` and exits `2` — a script must state destructive intent explicitly.
+  Exception: `profiles cleanup` without `--force` stays a safe preview
+  (exit `0`) so agents and JSON consumers can inspect before deleting.
