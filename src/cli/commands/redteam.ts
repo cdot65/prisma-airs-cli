@@ -7,7 +7,9 @@ import { resolveOutputDir } from '../../backup/io.js';
 import type { BackupFormat } from '../../backup/types.js';
 import { redTeamClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
+import { confirmOrAbort } from '../confirm.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
+import { examples } from '../examples.js';
 import {
   buildAttackListFootnote,
   fail,
@@ -769,6 +771,14 @@ export function registerRedteamCommand(program: Command): void {
     .option('--depth <number>', 'Max conversation turns per goal (DYNAMIC scans)', '10')
     .option('--breadth <number>', 'Parallel agents per goal (DYNAMIC scans)', '6')
     .option('--no-wait', 'Submit scan without waiting for completion')
+    .addHelpText(
+      'after',
+      examples(
+        'airs redteam scan --target <target-uuid> --name "nightly-static"',
+        'airs redteam scan --target <target-uuid> --name "custom-run" --type CUSTOM --prompt-sets <set-uuid>',
+        'airs redteam scan --target <target-uuid> --name "agent-probe" --type DYNAMIC --goals goals.json --no-wait',
+      ),
+    )
     .action(async (opts) => {
       let categories: Record<string, unknown> | undefined;
       let attackGoals: string[] | undefined;
@@ -853,6 +863,14 @@ export function registerRedteamCommand(program: Command): void {
     .option('--limit <n>', 'Max results (client-side)')
     .option('--offset <n>', 'Starting offset (client-side)')
     .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        'airs redteam targets list',
+        'airs redteam targets list --output json',
+        'airs redteam targets ls --limit 5',
+      ),
+    )
     .action(async (opts) => {
       try {
         const fmt = opts.output as OutputFormat;
@@ -927,8 +945,12 @@ export function registerRedteamCommand(program: Command): void {
   targets
     .command('delete <uuid>')
     .description('Delete a red team target')
-    .action(async (uuid: string) => {
+    .option('--force', 'Skip confirmation prompt')
+    .action(async (uuid: string, opts) => {
       try {
+        await confirmOrAbort(`Delete red team target ${uuid}?`, Boolean(opts.force), {
+          action: `delete target ${uuid}`,
+        });
         renderRedteamHeader();
         const service = await createService();
         await service.deleteTarget(uuid);

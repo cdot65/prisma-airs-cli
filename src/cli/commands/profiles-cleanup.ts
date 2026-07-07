@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import type { Command } from 'commander';
 import type { SecurityProfileInfo } from '../../airs/types.js';
+import { confirmOrAbort } from '../confirm.js';
 import {
   fail,
   renderCleanupPreview,
@@ -102,10 +103,20 @@ export function registerCleanupCommand(parent: Command): void {
         renderCleanupPreview(groups, fmt);
 
         if (!opts.force) {
-          if (fmt === 'pretty') {
-            ui.dim('Pass --force to delete these revisions.');
+          // Non-interactive preview stays a safe no-op (exit 0) — agents and
+          // JSON consumers rely on it. Interactive sessions get a confirm.
+          if (!process.stdout.isTTY) {
+            if (fmt === 'pretty') {
+              ui.dim('Pass --force to delete these revisions.');
+            }
+            return;
           }
-          return;
+          const total = groups.reduce((n, g) => n + g.remove.length, 0);
+          await confirmOrAbort(
+            `Delete ${total} old profile revision${total === 1 ? '' : 's'}?`,
+            false,
+            { action: 'delete profile revisions' },
+          );
         }
 
         const updatedBy = resolveUpdatedBy(opts.updatedBy);

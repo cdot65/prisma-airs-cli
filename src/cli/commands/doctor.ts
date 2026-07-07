@@ -10,6 +10,7 @@ import {
   loadConfig,
   resolveConfigFilePath,
 } from '../../config/loader.js';
+import { examples } from '../examples.js';
 import { type BulletKind, ui, usageError } from '../renderer/index.js';
 
 export type DoctorStatus = 'pass' | 'warn' | 'fail';
@@ -408,6 +409,10 @@ export function registerDoctorCommand(program: Command): void {
     .command('doctor')
     .description('Check credentials, config, and API connectivity (preflight)')
     .option('--output <format>', 'Output format: pretty, json, or yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples('airs doctor', `airs doctor --output json | jq '.[] | select(.status != "pass")'`),
+    )
     .action(async (opts) => {
       const fmt = parseDoctorFormat(opts.output);
       const checks = await runDoctor();

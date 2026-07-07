@@ -151,3 +151,35 @@ airs runtime topics list --output json
 # Debug API traffic
 airs --debug runtime scan --profile my-profile "test prompt"
 ```
+
+## Shell Completion
+
+Generate a static completion script for your shell — subcommand names and
+flags complete with `<tab>`:
+
+```bash
+# Bash
+airs completion bash > ~/.local/share/bash-completion/completions/airs
+
+# Zsh (ensure fpath+=(~/.zfunc) before compinit in ~/.zshrc)
+mkdir -p ~/.zfunc && airs completion zsh > ~/.zfunc/_airs
+
+# Fish
+airs completion fish > ~/.config/fish/completions/airs.fish
+```
+
+Re-run after upgrading the CLI to pick up new commands.
+
+## Quiet Mode
+
+The global `--quiet` flag suppresses status and decorative output (progress
+lines, headers, hints). Data — tables, results, and `--output json|yaml|csv`
+payloads — still prints, and errors always print:
+
+```bash
+# Only the JSON payload, no banners or progress lines
+airs --quiet doctor --output json
+
+# Scan without status chatter; the result block still renders
+airs --quiet runtime scan --profile my-profile "test prompt"
+```

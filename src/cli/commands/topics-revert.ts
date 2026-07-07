@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
+import { confirmOrAbort } from '../confirm.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { fail, ui } from '../renderer/index.js';
 
@@ -41,6 +42,7 @@ export function registerRevertCommand(parent: Command): void {
     .description('Remove a custom topic from a profile and delete it')
     .requiredOption('--profile <name>', 'Security profile name')
     .requiredOption('--name <name>', 'Topic name to remove')
+    .option('--force', 'Skip confirmation prompt')
     .option('--output <format>', 'Output format: pretty or json', 'pretty');
   registerDeprecatedAlias(cmd, {
     oldFlag: '--format <format>',
@@ -51,6 +53,11 @@ export function registerRevertCommand(parent: Command): void {
   cmd.action(async (opts) => {
     resolveDeprecatedAliases(cmd, opts);
     try {
+      await confirmOrAbort(
+        `Remove topic "${opts.name}" from profile "${opts.profile}" and delete it?`,
+        Boolean(opts.force),
+        { action: `revert topic "${opts.name}"` },
+      );
       const config = await loadConfig();
       const mgmt = new SdkManagementService({
         clientId: config.mgmtClientId,
