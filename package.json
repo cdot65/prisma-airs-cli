@@ -13,7 +13,7 @@
     "airs": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "prepublishOnly": "pnpm run build",
     "dev": "tsx src/cli/index.ts",
     "test": "vitest run",
@@ -32,7 +32,8 @@
     "docs:api": "typedoc",
     "docs:install": "pnpm -C docs-site install",
     "docs:build": "pnpm docs:api && pnpm -C docs-site build",
-    "docs:serve": "pnpm docs:api && pnpm -C docs-site start"
+    "docs:serve": "pnpm docs:api && pnpm -C docs-site start",
+    "build:tsc": "tsc"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -59,6 +60,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^3.0.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.0.0",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.11.0",
