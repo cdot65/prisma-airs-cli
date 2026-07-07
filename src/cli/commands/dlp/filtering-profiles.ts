@@ -1,15 +1,20 @@
 import type { Command } from 'commander';
 import { SdkDataFilteringProfilesService } from '../../../airs/dlp/data-filtering-profiles.js';
+import { registerPageAliases, resolvePageParams } from '../../pagination.js';
 import { dlpFilteringProfiles, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildFilteringProfileBody, repeatable } from './build-body.js';
 import { parseBody } from './patch.js';
 
 function listFlags<T extends Command>(cmd: T): T {
-  return cmd
-    .option('--page <n>', 'Zero-indexed page number', (v) => Number.parseInt(v, 10))
-    .option('--size <n>', 'Page size', (v) => Number.parseInt(v, 10))
+  cmd
+    .option('--limit <n>', 'Max results per page (API page size)', (v) => Number.parseInt(v, 10))
+    .option('--offset <n>', 'Starting offset — rounds down to a page boundary', (v) =>
+      Number.parseInt(v, 10),
+    )
     .option('--sort <field,dir>', 'Sort criteria (repeatable)', repeatable)
     .option('--output <fmt>', 'Output format', 'pretty');
+  registerPageAliases(cmd, { sizeFlag: '--size', sizeKey: 'size' });
+  return cmd;
 }
 
 async function resolveReplaceBody(opts: Record<string, unknown>): Promise<unknown> {
@@ -29,10 +34,12 @@ export function register(dlp: Command): void {
         'Create, patch, and delete are not exposed by the DLP API.',
     );
 
-  listFlags(group.command('list').description('List filtering profiles')).action(async (opts) => {
+  const listCmd = listFlags(group.command('list').description('List filtering profiles'));
+  listCmd.action(async (opts) => {
     try {
+      const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataFilteringProfilesService();
-      const r = await svc.list({ page: opts.page, size: opts.size, sort: opts.sort });
+      const r = await svc.list({ page, size, sort: opts.sort });
       dlpFilteringProfiles.renderList(r, opts.output as OutputFormat);
     } catch (err) {
       fail(err);

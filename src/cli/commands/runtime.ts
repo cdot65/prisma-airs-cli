@@ -13,6 +13,8 @@ import {
   mergeProfilePolicy,
 } from '../builders/profile-builder.js';
 import { loadBulkScanState, saveBulkScanState } from '../bulk-scan-state.js';
+import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
+import { registerPageAliases, resolvePageParams } from '../pagination.js';
 import { parseInputFile } from '../parse-input.js';
 import {
   fail,
@@ -159,79 +161,92 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   // runtime bulk-scan — async bulk scanning
   // -----------------------------------------------------------------------
-  runtime
+  const bulkScan = runtime
     .command('bulk-scan')
     .description('Scan multiple prompts via the async AIRS API')
     .requiredOption('--profile <name>', 'Security profile name')
-    .requiredOption(
-      '--input <file>',
-      'Input file — .csv (extracts prompt column) or .txt (one per line)',
-    )
-    .option('--output <file>', 'Output CSV file path')
-    .option('--session-id <id>', 'Session ID for grouping scans in AIRS dashboard')
-    .action(async (opts) => {
-      try {
-        const config = await loadConfig({});
-        if (!config.airsApiKey && !config.airsApiToken) {
-          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
-        }
-
-        const raw = await readFile(opts.input, 'utf-8');
-        const prompts = parseInputFile(raw, opts.input);
-
-        if (prompts.length === 0) {
-          usageError('No prompts found in input file');
-        }
-
-        const sessionId = opts.sessionId ?? `prisma-airs-cli-bulk-${Date.now().toString(36)}`;
-
-        const service = new SdkRuntimeService(runtimeInitOptions(config));
-        ui.status('Prisma AIRS Bulk Scan');
-        ui.status(`Profile:  ${opts.profile}`);
-        ui.status(`Session:  ${sessionId}`);
-        ui.status(`Prompts:  ${prompts.length}`);
-        ui.status(`Batches:  ${Math.ceil(prompts.length / 5)}`);
-
-        ui.status('Submitting async scans...');
-        const scanIds = await service.submitBulkScan(opts.profile, prompts, sessionId);
-
-        const stateDir = config.dataDir.replace(/\/runs$/, '/bulk-scans');
-        const statePath = await saveBulkScanState(
-          { scanIds, profile: opts.profile, promptCount: prompts.length, sessionId },
-          stateDir,
-        );
-        ui.status(`Scan IDs saved: ${statePath}`);
-        ui.status(`Submitted ${scanIds.length} batch(es), polling for results...`);
-
-        const results = await service.pollResults(scanIds, undefined, {
-          onRetry: (attempt, delayMs) => {
-            ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
-          },
-        });
-
-        // Attach prompts to results
-        for (let i = 0; i < results.length && i < prompts.length; i++) {
-          results[i].prompt = prompts[i];
-        }
-
-        const outputPath = opts.output ?? `${opts.profile.replace(/\s+/g, '-')}-bulk-scan.csv`;
-        const csv = SdkRuntimeService.formatResultsCsv(results);
-        await writeFile(outputPath, csv, 'utf-8');
-
-        const blocked = results.filter((r) => r.action === 'block').length;
-        const allowed = results.filter((r) => r.action === 'allow').length;
-
-        ui.header('Bulk Scan Complete');
-        ui.keyValue([
-          ['Total', results.length],
-          ['Blocked', chalk.red(String(blocked))],
-          ['Allowed', chalk.green(String(allowed))],
-          ['Output', chalk.cyan(outputPath)],
-        ]);
-      } catch (err) {
-        fail(err);
+    .option('--file <file>', 'Input file — .csv (extracts prompt column) or .txt (one per line)')
+    .option('--output-file <file>', 'Output CSV file path')
+    .option('--session-id <id>', 'Session ID for grouping scans in AIRS dashboard');
+  registerDeprecatedAlias(bulkScan, {
+    oldFlag: '--input <file>',
+    oldKey: 'input',
+    canonicalFlag: '--file',
+    canonicalKey: 'file',
+  });
+  registerDeprecatedAlias(bulkScan, {
+    oldFlag: '--output <file>',
+    oldKey: 'output',
+    canonicalFlag: '--output-file',
+    canonicalKey: 'outputFile',
+  });
+  bulkScan.action(async (opts) => {
+    resolveDeprecatedAliases(bulkScan, opts);
+    if (!opts.file) {
+      usageError('--file <file> is required');
+    }
+    try {
+      const config = await loadConfig({});
+      if (!config.airsApiKey && !config.airsApiToken) {
+        fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
       }
-    });
+
+      const raw = await readFile(opts.file, 'utf-8');
+      const prompts = parseInputFile(raw, opts.file);
+
+      if (prompts.length === 0) {
+        usageError('No prompts found in input file');
+      }
+
+      const sessionId = opts.sessionId ?? `prisma-airs-cli-bulk-${Date.now().toString(36)}`;
+
+      const service = new SdkRuntimeService(runtimeInitOptions(config));
+      ui.status('Prisma AIRS Bulk Scan');
+      ui.status(`Profile:  ${opts.profile}`);
+      ui.status(`Session:  ${sessionId}`);
+      ui.status(`Prompts:  ${prompts.length}`);
+      ui.status(`Batches:  ${Math.ceil(prompts.length / 5)}`);
+
+      ui.status('Submitting async scans...');
+      const scanIds = await service.submitBulkScan(opts.profile, prompts, sessionId);
+
+      const stateDir = config.dataDir.replace(/\/runs$/, '/bulk-scans');
+      const statePath = await saveBulkScanState(
+        { scanIds, profile: opts.profile, promptCount: prompts.length, sessionId },
+        stateDir,
+      );
+      ui.status(`Scan IDs saved: ${statePath}`);
+      ui.status(`Submitted ${scanIds.length} batch(es), polling for results...`);
+
+      const results = await service.pollResults(scanIds, undefined, {
+        onRetry: (attempt, delayMs) => {
+          ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
+        },
+      });
+
+      // Attach prompts to results
+      for (let i = 0; i < results.length && i < prompts.length; i++) {
+        results[i].prompt = prompts[i];
+      }
+
+      const outputPath = opts.outputFile ?? `${opts.profile.replace(/\s+/g, '-')}-bulk-scan.csv`;
+      const csv = SdkRuntimeService.formatResultsCsv(results);
+      await writeFile(outputPath, csv, 'utf-8');
+
+      const blocked = results.filter((r) => r.action === 'block').length;
+      const allowed = results.filter((r) => r.action === 'allow').length;
+
+      ui.header('Bulk Scan Complete');
+      ui.keyValue([
+        ['Total', results.length],
+        ['Blocked', chalk.red(String(blocked))],
+        ['Allowed', chalk.green(String(allowed))],
+        ['Output', chalk.cyan(outputPath)],
+      ]);
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   // -----------------------------------------------------------------------
   // runtime customer-apps — customer app management subcommands
@@ -665,50 +680,57 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   // runtime resume-poll — resume polling for bulk scans
   // -----------------------------------------------------------------------
-  runtime
+  const resumePoll = runtime
     .command('resume-poll <stateFile>')
     .description('Resume polling for a previously submitted bulk scan')
-    .option('--output <file>', 'Output CSV file path')
-    .action(async (stateFile: string, opts) => {
-      try {
-        const config = await loadConfig({});
-        if (!config.airsApiKey && !config.airsApiToken) {
-          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
-        }
-
-        const state = await loadBulkScanState(stateFile);
-        const service = new SdkRuntimeService(runtimeInitOptions(config));
-
-        ui.status('Prisma AIRS Resume Poll');
-        ui.status(`Profile:  ${state.profile}`);
-        ui.status(`Scan IDs: ${state.scanIds.length}`);
-        ui.status(`Prompts:  ${state.promptCount}`);
-
-        ui.status('Polling for results...');
-        const results = await service.pollResults(state.scanIds, undefined, {
-          onRetry: (attempt, delayMs) => {
-            ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
-          },
-        });
-
-        const outputPath = opts.output ?? `${state.profile.replace(/\s+/g, '-')}-bulk-scan.csv`;
-        const csv = SdkRuntimeService.formatResultsCsv(results);
-        await writeFile(outputPath, csv, 'utf-8');
-
-        const blocked = results.filter((r) => r.action === 'block').length;
-        const allowed = results.filter((r) => r.action === 'allow').length;
-
-        ui.header('Resume Poll Complete');
-        ui.keyValue([
-          ['Total', results.length],
-          ['Blocked', chalk.red(String(blocked))],
-          ['Allowed', chalk.green(String(allowed))],
-          ['Output', chalk.cyan(outputPath)],
-        ]);
-      } catch (err) {
-        fail(err);
+    .option('--output-file <file>', 'Output CSV file path');
+  registerDeprecatedAlias(resumePoll, {
+    oldFlag: '--output <file>',
+    oldKey: 'output',
+    canonicalFlag: '--output-file',
+    canonicalKey: 'outputFile',
+  });
+  resumePoll.action(async (stateFile: string, opts) => {
+    resolveDeprecatedAliases(resumePoll, opts);
+    try {
+      const config = await loadConfig({});
+      if (!config.airsApiKey && !config.airsApiToken) {
+        fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
       }
-    });
+
+      const state = await loadBulkScanState(stateFile);
+      const service = new SdkRuntimeService(runtimeInitOptions(config));
+
+      ui.status('Prisma AIRS Resume Poll');
+      ui.status(`Profile:  ${state.profile}`);
+      ui.status(`Scan IDs: ${state.scanIds.length}`);
+      ui.status(`Prompts:  ${state.promptCount}`);
+
+      ui.status('Polling for results...');
+      const results = await service.pollResults(state.scanIds, undefined, {
+        onRetry: (attempt, delayMs) => {
+          ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
+        },
+      });
+
+      const outputPath = opts.outputFile ?? `${state.profile.replace(/\s+/g, '-')}-bulk-scan.csv`;
+      const csv = SdkRuntimeService.formatResultsCsv(results);
+      await writeFile(outputPath, csv, 'utf-8');
+
+      const blocked = results.filter((r) => r.action === 'block').length;
+      const allowed = results.filter((r) => r.action === 'allow').length;
+
+      ui.header('Resume Poll Complete');
+      ui.keyValue([
+        ['Total', results.length],
+        ['Blocked', chalk.red(String(blocked))],
+        ['Allowed', chalk.green(String(allowed))],
+        ['Output', chalk.cyan(outputPath)],
+      ]);
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   // -----------------------------------------------------------------------
   // runtime scan — single prompt scanning
@@ -742,32 +764,34 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const scanLogs = runtime.command('scan-logs').description('Query AIRS scan logs');
 
-  scanLogs
+  const scanLogsQuery = scanLogs
     .command('query')
     .description('Query scan logs')
     .requiredOption('--interval <n>', 'Time interval')
     .requiredOption('--unit <unit>', 'Time unit (hours)')
     .option('--filter <filter>', 'Filter: all, benign, threat', 'all')
-    .option('--page <n>', 'Page number', '1')
-    .option('--page-size <n>', 'Page size', '50')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
-    .action(async (opts) => {
-      try {
-        const fmt = opts.output as OutputFormat;
-        if (fmt === 'pretty') renderRuntimeConfigHeader();
-        const service = await createMgmtService();
-        const result = await service.queryScanLogs({
-          timeInterval: Number.parseInt(opts.interval, 10),
-          timeUnit: opts.unit,
-          pageNumber: Number.parseInt(opts.page, 10),
-          pageSize: Number.parseInt(opts.pageSize, 10),
-          filter: opts.filter,
-        });
-        renderScanLogList(result.results, result.pageToken, fmt);
-      } catch (err) {
-        fail(err);
-      }
-    });
+    .option('--limit <n>', 'Max results per page (API page size)', '50')
+    .option('--offset <n>', 'Starting offset — rounds down to a page boundary', '0')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty');
+  registerPageAliases(scanLogsQuery, { sizeFlag: '--page-size', sizeKey: 'pageSize' });
+  scanLogsQuery.action(async (opts) => {
+    try {
+      const { page, size } = resolvePageParams(scanLogsQuery, opts, { indexBase: 1 });
+      const fmt = opts.output as OutputFormat;
+      if (fmt === 'pretty') renderRuntimeConfigHeader();
+      const service = await createMgmtService();
+      const result = await service.queryScanLogs({
+        timeInterval: Number.parseInt(opts.interval, 10),
+        timeUnit: opts.unit,
+        pageNumber: page ?? 1,
+        pageSize: size ?? 50,
+        filter: opts.filter,
+      });
+      renderScanLogList(result.results, result.pageToken, fmt);
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   // -----------------------------------------------------------------------
   // runtime topics — custom topic CRUD + guardrail generation subcommands

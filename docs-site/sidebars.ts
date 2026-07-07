@@ -93,7 +93,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'About',
-      items: ['about/release-notes', 'about/license'],
+      items: ['about/release-notes', 'about/flag-migration', 'about/license'],
     },
   ],
 

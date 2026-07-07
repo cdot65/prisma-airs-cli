@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
+import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { fail, ui } from '../renderer/index.js';
 
 export interface RevertOutput {
@@ -35,35 +36,42 @@ export async function revertTopic(
 }
 
 export function registerRevertCommand(parent: Command): void {
-  parent
+  const cmd = parent
     .command('revert')
     .description('Remove a custom topic from a profile and delete it')
     .requiredOption('--profile <name>', 'Security profile name')
     .requiredOption('--name <name>', 'Topic name to remove')
-    .option('--format <format>', 'Output format: json or terminal', 'terminal')
-    .action(async (opts) => {
-      try {
-        const config = await loadConfig();
-        const mgmt = new SdkManagementService({
-          clientId: config.mgmtClientId,
-          clientSecret: config.mgmtClientSecret,
-          tsgId: config.mgmtTsgId,
-          tokenEndpoint: config.mgmtTokenEndpoint,
-        });
+    .option('--output <format>', 'Output format: pretty or json', 'pretty');
+  registerDeprecatedAlias(cmd, {
+    oldFlag: '--format <format>',
+    oldKey: 'format',
+    canonicalFlag: '--output',
+    canonicalKey: 'output',
+  });
+  cmd.action(async (opts) => {
+    resolveDeprecatedAliases(cmd, opts);
+    try {
+      const config = await loadConfig();
+      const mgmt = new SdkManagementService({
+        clientId: config.mgmtClientId,
+        clientSecret: config.mgmtClientSecret,
+        tsgId: config.mgmtTsgId,
+        tokenEndpoint: config.mgmtTokenEndpoint,
+      });
 
-        const result = await revertTopic(mgmt, opts.profile, opts.name);
+      const result = await revertTopic(mgmt, opts.profile, opts.name);
 
-        if (opts.format === 'json') {
-          console.log(JSON.stringify(result, null, 2));
-        } else {
-          ui.keyValue([
-            ['Reverted', opts.name],
-            ['Profile', result.profileName],
-            ['Deleted', result.deleted.join(', ')],
-          ]);
-        }
-      } catch (err) {
-        fail(err);
+      if (opts.output === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        ui.keyValue([
+          ['Reverted', opts.name],
+          ['Profile', result.profileName],
+          ['Deleted', result.deleted.join(', ')],
+        ]);
       }
-    });
+    } catch (err) {
+      fail(err);
+    }
+  });
 }
