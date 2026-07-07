@@ -8,6 +8,22 @@ Make sure [installation](installation.mdx) is complete and your credentials are 
 
 ---
 
+## Verifying your setup
+
+Run `airs doctor` to preflight your environment before doing anything else. It checks your Node.js version, config file, which credentials are set (and from where), and makes one cheap authenticated call to each API to verify connectivity.
+
+```bash
+# Pretty pass/warn/fail report with fix hints
+airs doctor
+
+# Machine-readable results (exit 0 = healthy, 1 = any check failed)
+airs doctor --output json
+```
+
+Warnings (e.g. no config file when using env vars only) do not fail the command — only hard failures like missing credentials or unreachable APIs exit non-zero.
+
+---
+
 ## Runtime Security
 
 Scan prompts against an AIRS security profile in real time.
