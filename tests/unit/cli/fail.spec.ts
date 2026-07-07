@@ -7,7 +7,14 @@ const stripAnsi = (s: string) => s.replace(/\[[0-9;]*m/g, '');
 function capture() {
   const err = vi.spyOn(console, 'error').mockImplementation(() => {});
   const exit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
-  return { text: () => err.mock.calls.flat().map((c) => stripAnsi(String(c))).join('\n'), exit };
+  return {
+    text: () =>
+      err.mock.calls
+        .flat()
+        .map((c) => stripAnsi(String(c)))
+        .join('\n'),
+    exit,
+  };
 }
 
 afterEach(() => {
