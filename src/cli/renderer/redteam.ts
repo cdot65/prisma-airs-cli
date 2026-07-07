@@ -575,7 +575,16 @@ export function renderPromptList(
     goal?: string;
     active: boolean;
   }>,
+  format: OutputFormat = 'pretty',
 ): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(prompts, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(prompts));
+    }
+    return;
+  }
   if (prompts.length === 0) {
     ui.emptyList('prompts');
     return;
@@ -592,13 +601,24 @@ export function renderPromptList(
 }
 
 /** Render prompt detail. */
-export function renderPromptDetail(p: {
-  uuid: string;
-  prompt: string;
-  goal?: string;
-  active: boolean;
-  promptSetId: string;
-}): void {
+export function renderPromptDetail(
+  p: {
+    uuid: string;
+    prompt: string;
+    goal?: string;
+    active: boolean;
+    promptSetId: string;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(p, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(p));
+    }
+    return;
+  }
   ui.section('Prompt Detail:');
   const pairs: Array<[string, unknown]> = [
     ['UUID', p.uuid],
@@ -727,12 +747,23 @@ export function renderInstanceResponse(resp: {
 }
 
 /** Render instance detail (from GET). */
-export function renderInstanceDetail(inst: {
-  tsgId: string;
-  tenantId: string;
-  appId: string;
-  region: string;
-}): void {
+export function renderInstanceDetail(
+  inst: {
+    tsgId: string;
+    tenantId: string;
+    appId: string;
+    region: string;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(inst, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(inst));
+    }
+    return;
+  }
   ui.section('Instance Detail:');
   ui.keyValue([
     ['TSG ID', inst.tsgId],
@@ -744,7 +775,18 @@ export function renderInstanceDetail(inst: {
 }
 
 /** Render registry credentials. */
-export function renderRegistryCredentials(creds: { token: string; expiry: string }): void {
+export function renderRegistryCredentials(
+  creds: { token: string; expiry: string },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    if (format === 'json') {
+      console.log(JSON.stringify(creds, null, 2));
+    } else if (format === 'yaml') {
+      console.log(yamlDump(creds));
+    }
+    return;
+  }
   ui.section('Registry Credentials:');
   ui.keyValue([
     ['Token', `${creds.token.substring(0, 20)}...`],

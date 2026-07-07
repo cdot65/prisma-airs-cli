@@ -1,15 +1,20 @@
 import type { Command } from 'commander';
 import { SdkDataPatternsService } from '../../../airs/dlp/data-patterns.js';
+import { registerPageAliases, resolvePageParams } from '../../pagination.js';
 import { dlpPatterns, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildPatternBody, repeatable } from './build-body.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
 function listFlags<T extends Command>(cmd: T): T {
-  return cmd
-    .option('--page <n>', 'Zero-indexed page number', (v) => Number.parseInt(v, 10))
-    .option('--size <n>', 'Page size', (v) => Number.parseInt(v, 10))
+  cmd
+    .option('--limit <n>', 'Max results per page (API page size)', (v) => Number.parseInt(v, 10))
+    .option('--offset <n>', 'Starting offset — rounds down to a page boundary', (v) =>
+      Number.parseInt(v, 10),
+    )
     .option('--sort <field,dir>', 'Sort criteria (repeatable)', repeatable)
     .option('--output <fmt>', 'Output format', 'pretty');
+  registerPageAliases(cmd, { sizeFlag: '--size', sizeKey: 'size' });
+  return cmd;
 }
 
 function writeFlags<T extends Command>(cmd: T): T {
@@ -42,11 +47,13 @@ async function resolveWriteBody(opts: Record<string, unknown>): Promise<unknown>
 export function register(dlp: Command): void {
   const group = dlp.command('patterns').description('DLP data patterns (full CRUD)');
 
-  listFlags(group.command('list').description('List data patterns')).action(async (opts) => {
+  const listCmd = listFlags(group.command('list').description('List data patterns'));
+  listCmd.action(async (opts) => {
     try {
+      const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataPatternsService();
       dlpPatterns.renderList(
-        await svc.list({ page: opts.page, size: opts.size, sort: opts.sort }),
+        await svc.list({ page, size, sort: opts.sort }),
         opts.output as OutputFormat,
       );
     } catch (err) {

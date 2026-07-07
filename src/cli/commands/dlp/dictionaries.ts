@@ -3,6 +3,7 @@ import { basename } from 'node:path';
 import type { Command } from 'commander';
 import { SdkDictionariesService } from '../../../airs/dlp/dictionaries.js';
 import type { DictionaryRequest } from '../../../airs/dlp/types.js';
+import { registerPageAliases, resolvePageParams } from '../../pagination.js';
 import { dlpDictionaries, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
@@ -27,31 +28,35 @@ async function buildMetadata(opts: any): Promise<DictionaryRequest> {
 export function register(dlp: Command): void {
   const group = dlp.command('dictionaries').description('DLP dictionaries (multipart upload)');
 
-  group
+  const listCmd = group
     .command('list')
     .description('List dictionaries')
-    .option('--page <n>', '', (v) => Number.parseInt(v, 10))
-    .option('--size <n>', '', (v) => Number.parseInt(v, 10))
+    .option('--limit <n>', 'Max results per page (API page size)', (v) => Number.parseInt(v, 10))
+    .option('--offset <n>', 'Starting offset — rounds down to a page boundary', (v) =>
+      Number.parseInt(v, 10),
+    )
     .option('--sort <field,dir>', '(repeatable)', (v, p: string[] = []) => [...p, v])
     .option('--keywords', 'Include keyword list in response')
     .option('--include-keywords', 'Alias for --keywords')
-    .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (opts) => {
-      try {
-        const includeKeywords = opts.keywords || opts.includeKeywords;
-        dlpDictionaries.renderList(
-          await new SdkDictionariesService().list({
-            page: opts.page,
-            size: opts.size,
-            sort: opts.sort,
-            keywords: includeKeywords ? true : undefined,
-          }),
-          opts.output as OutputFormat,
-        );
-      } catch (err) {
-        fail(err);
-      }
-    });
+    .option('--output <fmt>', 'Output format', 'pretty');
+  registerPageAliases(listCmd, { sizeFlag: '--size', sizeKey: 'size' });
+  listCmd.action(async (opts) => {
+    try {
+      const { page, size } = resolvePageParams(listCmd, opts);
+      const includeKeywords = opts.keywords || opts.includeKeywords;
+      dlpDictionaries.renderList(
+        await new SdkDictionariesService().list({
+          page,
+          size,
+          sort: opts.sort,
+          keywords: includeKeywords ? true : undefined,
+        }),
+        opts.output as OutputFormat,
+      );
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   group
     .command('create')

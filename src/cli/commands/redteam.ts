@@ -7,6 +7,7 @@ import { resolveOutputDir } from '../../backup/io.js';
 import type { BackupFormat } from '../../backup/types.js';
 import { redTeamClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
+import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import {
   buildAttackListFootnote,
   fail,
@@ -73,6 +74,13 @@ export function parseAttackGoals(input: string): string[] {
     throw new Error('--goals: expected a JSON array of non-empty strings');
   }
   return parsed;
+}
+
+/** Client-side slice for list commands whose API lacks pagination. */
+export function sliceClientSide<T>(items: T[], opts: { limit?: string; offset?: string }): T[] {
+  const offset = opts.offset !== undefined ? Number.parseInt(opts.offset, 10) : 0;
+  const limit = opts.limit !== undefined ? Number.parseInt(opts.limit, 10) : undefined;
+  return items.slice(offset, limit === undefined ? undefined : offset + limit);
 }
 
 /** Parse a string flag as a positive integer. */
@@ -186,29 +194,36 @@ export function registerRedteamCommand(program: Command): void {
       }
     });
 
-  eula
+  const eulaAccept = eula
     .command('accept')
     .description('Accept the EULA')
-    .option('--confirm', 'Skip confirmation prompt')
-    .action(async (opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const content = await service.getEulaContent();
+    .option('--force', 'Skip confirmation prompt');
+  registerDeprecatedAlias(eulaAccept, {
+    oldFlag: '--confirm',
+    oldKey: 'confirm',
+    canonicalFlag: '--force',
+    canonicalKey: 'force',
+  });
+  eulaAccept.action(async (opts) => {
+    resolveDeprecatedAliases(eulaAccept, opts);
+    try {
+      renderRedteamHeader();
+      const service = await createService();
+      const content = await service.getEulaContent();
 
-        if (!opts.confirm) {
-          renderEulaContent(content);
-          ui.dim('Pass --confirm to accept.');
-          return;
-        }
-
-        const result = await service.acceptEula(content.content);
-        renderEulaStatus(result);
-        ui.success('EULA accepted.');
-      } catch (err) {
-        fail(err);
+      if (!opts.force) {
+        renderEulaContent(content);
+        ui.dim('Pass --force to accept.');
+        return;
       }
-    });
+
+      const result = await service.acceptEula(content.content);
+      renderEulaStatus(result);
+      ui.success('EULA accepted.');
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   // -----------------------------------------------------------------------
   // redteam instances — instance CRUD subcommands
@@ -241,12 +256,14 @@ export function registerRedteamCommand(program: Command): void {
   instances
     .command('get <tenantId>')
     .description('Get instance details')
-    .action(async (tenantId: string) => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (tenantId: string, opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
         const result = await service.getInstance(tenantId);
-        renderInstanceDetail(result);
+        renderInstanceDetail(result, fmt);
       } catch (err) {
         fail(err);
       }
@@ -350,12 +367,14 @@ export function registerRedteamCommand(program: Command): void {
   redteam
     .command('registry-credentials')
     .description('Get or create registry credentials')
-    .action(async () => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
         const creds = await service.getRegistryCredentials();
-        renderRegistryCredentials(creds);
+        renderRegistryCredentials(creds, fmt);
       } catch (err) {
         fail(err);
       }
@@ -397,6 +416,8 @@ export function registerRedteamCommand(program: Command): void {
   promptSets
     .command('list')
     .description('List custom prompt sets')
+    .option('--limit <n>', 'Max results (client-side)')
+    .option('--offset <n>', 'Starting offset (client-side)')
     .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
@@ -404,7 +425,7 @@ export function registerRedteamCommand(program: Command): void {
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const sets = await service.listPromptSets();
-        renderPromptSetList(sets, fmt);
+        renderPromptSetList(sliceClientSide(sets, opts), fmt);
       } catch (err) {
         fail(err);
       }
@@ -484,22 +505,29 @@ export function registerRedteamCommand(program: Command): void {
       }
     });
 
-  promptSets
+  const promptSetsDownload = promptSets
     .command('download <uuid>')
     .description('Download CSV template for a prompt set')
-    .option('--output <path>', 'Output file path')
-    .action(async (uuid: string, opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createPromptSetService();
-        const csv = await service.downloadTemplate(uuid);
-        const outPath = opts.output || `${uuid}-template.csv`;
-        fs.writeFileSync(outPath, csv, 'utf-8');
-        ui.success(`Template saved to ${outPath}`);
-      } catch (err) {
-        fail(err);
-      }
-    });
+    .option('--output-file <path>', 'Output file path');
+  registerDeprecatedAlias(promptSetsDownload, {
+    oldFlag: '--output <path>',
+    oldKey: 'output',
+    canonicalFlag: '--output-file',
+    canonicalKey: 'outputFile',
+  });
+  promptSetsDownload.action(async (uuid: string, opts) => {
+    resolveDeprecatedAliases(promptSetsDownload, opts);
+    try {
+      renderRedteamHeader();
+      const service = await createPromptSetService();
+      const csv = await service.downloadTemplate(uuid);
+      const outPath = opts.outputFile || `${uuid}-template.csv`;
+      fs.writeFileSync(outPath, csv, 'utf-8');
+      ui.success(`Template saved to ${outPath}`);
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   promptSets
     .command('upload <uuid> <file>')
@@ -527,14 +555,16 @@ export function registerRedteamCommand(program: Command): void {
     .command('list <setUuid>')
     .description('List prompts in a prompt set')
     .option('--limit <n>', 'Max results', '50')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
     .action(async (setUuid: string, opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const list = await service.listPrompts(setUuid, {
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderPromptList(list);
+        renderPromptList(list, fmt);
       } catch (err) {
         fail(err);
       }
@@ -543,12 +573,14 @@ export function registerRedteamCommand(program: Command): void {
   prompts
     .command('get <setUuid> <promptUuid>')
     .description('Get prompt details')
-    .action(async (setUuid: string, promptUuid: string) => {
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (setUuid: string, promptUuid: string, opts) => {
       try {
-        renderRedteamHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const prompt = await service.getPrompt(setUuid, promptUuid);
-        renderPromptDetail(prompt);
+        renderPromptDetail(prompt, fmt);
       } catch (err) {
         fail(err);
       }
@@ -611,6 +643,8 @@ export function registerRedteamCommand(program: Command): void {
   properties
     .command('list')
     .description('List property names')
+    .option('--limit <n>', 'Max results (client-side)')
+    .option('--offset <n>', 'Starting offset (client-side)')
     .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
@@ -618,7 +652,7 @@ export function registerRedteamCommand(program: Command): void {
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createPromptSetService();
         const names = await service.getPropertyNames();
-        renderPropertyNames(names, fmt);
+        renderPropertyNames(sliceClientSide(names, opts), fmt);
       } catch (err) {
         fail(err);
       }
@@ -816,6 +850,8 @@ export function registerRedteamCommand(program: Command): void {
   targets
     .command('list')
     .description('List configured red team targets')
+    .option('--limit <n>', 'Max results (client-side)')
+    .option('--offset <n>', 'Starting offset (client-side)')
     .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
     .action(async (opts) => {
       try {
@@ -823,7 +859,7 @@ export function registerRedteamCommand(program: Command): void {
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
         const list = await service.listTargets();
-        renderTargetList(list, fmt);
+        renderTargetList(sliceClientSide(list, opts), fmt);
       } catch (err) {
         fail(err);
       }
@@ -986,42 +1022,51 @@ export function registerRedteamCommand(program: Command): void {
       }
     });
 
-  targets
+  const targetsInit = targets
     .command('init <provider>')
     .description('Scaffold a target config JSON from a provider template')
-    .option('--output <file>', 'Output file path')
-    .action(async (provider: string, opts) => {
-      if (
-        !VALID_TARGET_PROVIDERS.includes(
-          provider.toUpperCase() as (typeof VALID_TARGET_PROVIDERS)[number],
-        )
-      ) {
-        usageError(
-          `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
-        );
-      }
-      const filename = opts.output ?? `${provider.toLowerCase()}-target.json`;
-      const outputPath = path.resolve(filename);
-      if (fs.existsSync(outputPath)) {
-        usageError(`File already exists: ${outputPath} (use --output to specify a different path)`);
-      }
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const templates = await service.getTargetTemplates();
-        const scaffold = buildTargetScaffold(provider, templates);
-        fs.writeFileSync(outputPath, `${JSON.stringify(scaffold, null, 2)}\n`);
-        ui.success('Target config scaffolded');
-        ui.keyValue([
-          ['File', outputPath],
-          ['Provider', provider.toUpperCase()],
-        ]);
-        ui.dim('Next steps: edit the file to fill in name and credentials, then run:');
-        ui.dim(`  airs redteam targets create --config ${filename} --validate`);
-      } catch (err) {
-        fail(err);
-      }
-    });
+    .option('--output-file <file>', 'Output file path');
+  registerDeprecatedAlias(targetsInit, {
+    oldFlag: '--output <file>',
+    oldKey: 'output',
+    canonicalFlag: '--output-file',
+    canonicalKey: 'outputFile',
+  });
+  targetsInit.action(async (provider: string, opts) => {
+    resolveDeprecatedAliases(targetsInit, opts);
+    if (
+      !VALID_TARGET_PROVIDERS.includes(
+        provider.toUpperCase() as (typeof VALID_TARGET_PROVIDERS)[number],
+      )
+    ) {
+      usageError(
+        `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
+      );
+    }
+    const filename = opts.outputFile ?? `${provider.toLowerCase()}-target.json`;
+    const outputPath = path.resolve(filename);
+    if (fs.existsSync(outputPath)) {
+      usageError(
+        `File already exists: ${outputPath} (use --output-file to specify a different path)`,
+      );
+    }
+    try {
+      renderRedteamHeader();
+      const service = await createService();
+      const templates = await service.getTargetTemplates();
+      const scaffold = buildTargetScaffold(provider, templates);
+      fs.writeFileSync(outputPath, `${JSON.stringify(scaffold, null, 2)}\n`);
+      ui.success('Target config scaffolded');
+      ui.keyValue([
+        ['File', outputPath],
+        ['Provider', provider.toUpperCase()],
+      ]);
+      ui.dim('Next steps: edit the file to fill in name and credentials, then run:');
+      ui.dim(`  airs redteam targets create --config ${filename} --validate`);
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   targets
     .command('templates')
@@ -1037,28 +1082,35 @@ export function registerRedteamCommand(program: Command): void {
       }
     });
 
-  targets
+  const targetsBackup = targets
     .command('backup')
     .description('Backup red team targets to local JSON/YAML files')
     .option('--output-dir <path>', 'Output directory')
-    .option('--format <format>', 'Output format: json or yaml', 'json')
-    .option('--name <targetName>', 'Backup a single target by name')
-    .action(async (opts) => {
-      try {
-        renderBackupHeader();
-        const outputDir = resolveOutputDir(opts.outputDir, 'targets');
-        const results = await backupTargets({
-          outputDir,
-          format: (opts.format ?? 'json') as BackupFormat,
-          name: opts.name,
-        });
-        renderBackupSummary(results, outputDir);
-        const failed = results.filter((r) => r.status === 'failed').length;
-        if (failed > 0) process.exit(1);
-      } catch (err) {
-        fail(err);
-      }
-    });
+    .option('--output <format>', 'Output format: json or yaml', 'json')
+    .option('--name <targetName>', 'Backup a single target by name');
+  registerDeprecatedAlias(targetsBackup, {
+    oldFlag: '--format <format>',
+    oldKey: 'format',
+    canonicalFlag: '--output',
+    canonicalKey: 'output',
+  });
+  targetsBackup.action(async (opts) => {
+    resolveDeprecatedAliases(targetsBackup, opts);
+    try {
+      renderBackupHeader();
+      const outputDir = resolveOutputDir(opts.outputDir, 'targets');
+      const results = await backupTargets({
+        outputDir,
+        format: (opts.output ?? 'json') as BackupFormat,
+        name: opts.name,
+      });
+      renderBackupSummary(results, outputDir);
+      const failed = results.filter((r) => r.status === 'failed').length;
+      if (failed > 0) process.exit(1);
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   targets
     .command('restore')

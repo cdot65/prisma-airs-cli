@@ -3,6 +3,7 @@ import { SdkManagementService } from '../../airs/management.js';
 import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
 import { validateTopic } from '../../core/constraints.js';
+import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { fail, ui } from '../renderer/index.js';
 
 export interface CreateInput {
@@ -58,40 +59,48 @@ export async function createOrUpdateTopic(
 }
 
 export function registerCreateCommand(parent: Command): void {
-  parent
+  const cmd = parent
     .command('create')
     .description('Create or update a custom topic definition')
     .requiredOption('--name <name>', 'Topic name')
     .requiredOption('--description <desc>', 'Topic description')
     .requiredOption('--examples <examples...>', 'Example prompts (2-5 required)')
-    .option('--format <format>', 'Output format: json or terminal', 'terminal')
-    .action(async (opts) => {
-      try {
-        const config = await loadConfig();
-        const mgmt = new SdkManagementService({
-          clientId: config.mgmtClientId,
-          clientSecret: config.mgmtClientSecret,
-          tsgId: config.mgmtTsgId,
-          tokenEndpoint: config.mgmtTokenEndpoint,
-        });
+    .option('--output <format>', 'Output format: pretty or json', 'pretty');
+  registerDeprecatedAlias(cmd, {
+    oldFlag: '--format <format>',
+    oldKey: 'format',
+    canonicalFlag: '--output',
+    canonicalKey: 'output',
+  });
+  cmd.action(async (opts) => {
+    resolveDeprecatedAliases(cmd, opts);
+    try {
+      const config = await loadConfig();
+      const mgmt = new SdkManagementService({
+        clientId: config.mgmtClientId,
+        clientSecret: config.mgmtClientSecret,
+        tsgId: config.mgmtTsgId,
+        tokenEndpoint: config.mgmtTokenEndpoint,
+      });
 
-        const result = await createOrUpdateTopic(mgmt, {
-          name: opts.name,
-          description: opts.description,
-          examples: opts.examples,
-        });
+      const result = await createOrUpdateTopic(mgmt, {
+        name: opts.name,
+        description: opts.description,
+        examples: opts.examples,
+      });
 
-        if (opts.format === 'json') {
-          console.log(JSON.stringify(result, null, 2));
-        } else {
-          ui.success(`Topic ${result.created ? 'created' : 'updated'}: ${result.topicName}`);
-          ui.keyValue([
-            ['ID', result.topicId],
-            ['Revision', result.revision],
-          ]);
-        }
-      } catch (err) {
-        fail(err);
+      // 'terminal' is the legacy spelling of the default human-readable format.
+      if (opts.output === 'json') {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        ui.success(`Topic ${result.created ? 'created' : 'updated'}: ${result.topicName}`);
+        ui.keyValue([
+          ['ID', result.topicId],
+          ['Revision', result.revision],
+        ]);
       }
-    });
+    } catch (err) {
+      fail(err);
+    }
+  });
 }
