@@ -1,5 +1,9 @@
 # Release Notes
 
+## v3.0.1 (2026-07-07)
+
+- Fixed the Docker image build (v3.0.0 image never published — the tsup config was missing from the build stage). npm package was unaffected.
+
 ## v3.0.0 (2026-07-07)
 
 ### New
