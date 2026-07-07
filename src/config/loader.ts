@@ -44,11 +44,22 @@ function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== ''));
 }
 
+/**
+ * Resolve the config file path: explicit param > PRISMA_AIRS_CONFIG_PATH env
+ * var > ~/.prisma-airs/config.json.
+ */
+export function resolveConfigFilePath(configFilePath?: string): string {
+  if (configFilePath) return configFilePath;
+  const envPath = process.env.PRISMA_AIRS_CONFIG_PATH;
+  if (envPath) return expandHome(envPath);
+  return join(homedir(), '.prisma-airs', 'config.json');
+}
+
 export async function loadConfig(
   cliOverrides: Record<string, unknown> = {},
   configFilePath?: string,
 ): Promise<Config> {
-  const filePath = configFilePath ?? join(homedir(), '.prisma-airs', 'config.json');
+  const filePath = resolveConfigFilePath(configFilePath);
   const fileConfig = await fromFile(filePath);
   const envConfig = fromEnv();
 
@@ -65,4 +76,31 @@ export async function loadConfig(
     ...config,
     dataDir: expandHome(config.dataDir),
   };
+}
+
+export type ConfigSource = 'env' | 'file' | 'default';
+
+export interface ConfigEntry {
+  value: unknown;
+  source: ConfigSource;
+}
+
+/**
+ * Compute the effective config (env > file > defaults — no CLI overrides)
+ * with per-key source tracking. Keys are exactly the ConfigSchema keys.
+ */
+export async function inspectConfig(configFilePath?: string): Promise<Record<string, ConfigEntry>> {
+  const filePath = resolveConfigFilePath(configFilePath);
+  const fileConfig = stripUndefined(await fromFile(filePath));
+  const envConfig = stripUndefined(fromEnv());
+
+  const merged = { ...fileConfig, ...envConfig };
+  const config = ConfigSchema.parse(merged) as Record<string, unknown>;
+
+  const entries: Record<string, ConfigEntry> = {};
+  for (const key of Object.keys(ConfigSchema.shape)) {
+    const source: ConfigSource = key in envConfig ? 'env' : key in fileConfig ? 'file' : 'default';
+    entries[key] = { value: config[key], source };
+  }
+  return entries;
 }
