@@ -1,12 +1,12 @@
 import { execSync } from 'node:child_process';
-import chalk from 'chalk';
 import type { Command } from 'commander';
 import type { SecurityProfileInfo } from '../../airs/types.js';
 import {
+  fail,
   renderCleanupPreview,
   renderCleanupResult,
-  renderError,
   renderRuntimeConfigHeader,
+  ui,
 } from '../renderer/index.js';
 import { createMgmtService } from './runtime.js';
 
@@ -94,7 +94,7 @@ export function registerCleanupCommand(parent: Command): void {
           if (fmt === 'json') {
             console.log(JSON.stringify({ duplicates: [], summary: { deleted: 0, failed: 0 } }));
           } else {
-            console.log(chalk.green('\n  No duplicate profiles found.\n'));
+            ui.success('No duplicate profiles found.');
           }
           return;
         }
@@ -103,7 +103,7 @@ export function registerCleanupCommand(parent: Command): void {
 
         if (!opts.force) {
           if (fmt === 'pretty') {
-            console.log(`  Pass ${chalk.bold('--force')} to delete these revisions.\n`);
+            ui.dim('Pass --force to delete these revisions.');
           }
           return;
         }
@@ -117,13 +117,13 @@ export function registerCleanupCommand(parent: Command): void {
               await service.forceDeleteProfile(entry.id, updatedBy);
               results.push({ ...entry, name: group.name, status: 'ok' });
               if (fmt === 'pretty') {
-                console.log(`  ${chalk.green('✓')} ${group.name} rev ${entry.revision}`);
+                ui.bullet(`${group.name} rev ${entry.revision}`, 'success');
               }
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               results.push({ ...entry, name: group.name, status: 'failed', error: msg });
               if (fmt === 'pretty') {
-                console.log(`  ${chalk.red('✗')} ${group.name} rev ${entry.revision}: ${msg}`);
+                ui.bullet(`${group.name} rev ${entry.revision}: ${msg}`, 'error');
               }
             }
           }
@@ -134,8 +134,7 @@ export function registerCleanupCommand(parent: Command): void {
         const failed = results.filter((r) => r.status === 'failed').length;
         if (failed > 0) process.exit(1);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

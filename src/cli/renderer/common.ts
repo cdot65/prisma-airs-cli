@@ -5,6 +5,30 @@ export function renderError(message: string): void {
   console.error(chalk.red(`\n  Error: ${message}\n`));
 }
 
+/**
+ * Standard failure path for command actions: print the error (with HTTP
+ * status and a --debug hint when the error carries one) and exit 1.
+ */
+export function fail(err: unknown): never {
+  const message = err instanceof Error ? err.message : String(err);
+  const status =
+    (err as { status?: number; statusCode?: number })?.status ??
+    (err as { statusCode?: number })?.statusCode;
+  console.error(chalk.red(`\n  ✗ Error: ${message}`));
+  if (status !== undefined) {
+    console.error(chalk.red(`    HTTP ${status}`));
+    console.error(chalk.dim('    Re-run with --debug to capture full API traffic.'));
+  }
+  console.error('');
+  process.exit(1);
+}
+
+/** Validation / usage failure: print the message and exit 2. */
+export function usageError(message: string): never {
+  console.error(chalk.red(`\n  ✗ ${message}\n`));
+  process.exit(2);
+}
+
 export type OutputFormat = 'pretty' | 'table' | 'csv' | 'json' | 'yaml';
 
 export const OUTPUT_FORMATS: OutputFormat[] = ['pretty', 'table', 'csv', 'json', 'yaml'];

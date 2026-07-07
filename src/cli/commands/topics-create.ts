@@ -3,7 +3,7 @@ import { SdkManagementService } from '../../airs/management.js';
 import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
 import { validateTopic } from '../../core/constraints.js';
-import { renderError } from '../renderer/index.js';
+import { fail, ui } from '../renderer/index.js';
 
 export interface CreateInput {
   name: string;
@@ -84,13 +84,14 @@ export function registerCreateCommand(parent: Command): void {
         if (opts.format === 'json') {
           console.log(JSON.stringify(result, null, 2));
         } else {
-          console.log(`\n  Topic ${result.created ? 'created' : 'updated'}: ${result.topicName}`);
-          console.log(`  ID:       ${result.topicId}`);
-          console.log(`  Revision: ${result.revision}\n`);
+          ui.success(`Topic ${result.created ? 'created' : 'updated'}: ${result.topicName}`);
+          ui.keyValue([
+            ['ID', result.topicId],
+            ['Revision', result.revision],
+          ]);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

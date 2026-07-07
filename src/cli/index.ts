@@ -5,4 +5,4 @@ import { installProcessGuards } from './process-guards.js';
 import { buildProgram } from './program.js';
 
 installProcessGuards();
-buildProgram().parse();
+await buildProgram().parseAsync();

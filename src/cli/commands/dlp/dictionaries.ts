@@ -3,7 +3,7 @@ import { basename } from 'node:path';
 import type { Command } from 'commander';
 import { SdkDictionariesService } from '../../../airs/dlp/dictionaries.js';
 import type { DictionaryRequest } from '../../../airs/dlp/types.js';
-import { dlpDictionaries, type OutputFormat, renderError } from '../../renderer/index.js';
+import { dlpDictionaries, fail, type OutputFormat, usageError } from '../../renderer/index.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
 // biome-ignore lint/suspicious/noExplicitAny: opts object from commander
@@ -49,8 +49,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -78,8 +77,7 @@ export function register(dlp: Command): void {
         });
         dlpDictionaries.renderCreated(r, opts.output as OutputFormat);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     });
 
@@ -96,8 +94,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -132,8 +129,7 @@ export function register(dlp: Command): void {
           dlpDictionaries.renderReplaced(r, opts.output as OutputFormat);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     });
 
@@ -157,8 +153,7 @@ export function register(dlp: Command): void {
           opts.output as OutputFormat,
         );
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(2);
+        usageError(err instanceof Error ? err.message : String(err));
       }
     });
 
@@ -170,8 +165,7 @@ export function register(dlp: Command): void {
         await new SdkDictionariesService().delete(id);
         dlpDictionaries.renderDeleted(id);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

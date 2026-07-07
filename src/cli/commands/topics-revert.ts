@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import type { ManagementService } from '../../airs/types.js';
 import { loadConfig } from '../../config/loader.js';
-import { renderError } from '../renderer/index.js';
+import { fail, ui } from '../renderer/index.js';
 
 export interface RevertOutput {
   profileName: string;
@@ -56,13 +56,14 @@ export function registerRevertCommand(parent: Command): void {
         if (opts.format === 'json') {
           console.log(JSON.stringify(result, null, 2));
         } else {
-          console.log(`\n  Reverted: ${opts.name}`);
-          console.log(`  Profile:  ${result.profileName}`);
-          console.log(`  Deleted:  ${result.deleted.join(', ')}\n`);
+          ui.keyValue([
+            ['Reverted', opts.name],
+            ['Profile', result.profileName],
+            ['Deleted', result.deleted.join(', ')],
+          ]);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }

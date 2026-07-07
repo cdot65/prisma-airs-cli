@@ -7,6 +7,7 @@ import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
 import { installDebugLogger } from './debug-logger.js';
+import { ui } from './renderer/index.js';
 
 export function buildProgram(): Command {
   const here = dirname(fileURLToPath(import.meta.url));
@@ -26,7 +27,7 @@ export function buildProgram(): Command {
     if (root.debug) {
       const logPath = join(homedir(), '.prisma-airs', `debug-api-${Date.now()}.jsonl`);
       installDebugLogger(logPath);
-      console.log(`  Debug: API log → ${logPath}\n`);
+      ui.status(`Debug: API log → ${logPath}`);
     }
   });
 

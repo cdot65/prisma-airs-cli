@@ -1,6 +1,6 @@
-import chalk from 'chalk';
 import type { Command } from 'commander';
 import type { Format } from '../../../dlp/types.js';
+import { fail, ui, usageError } from '../../renderer/index.js';
 
 const ALL_FORMATS: Format[] = ['pdf', 'png', 'jpeg', 'svg', 'docx'];
 
@@ -58,10 +58,15 @@ export function register(parent: Command): void {
     .option('--seed <n>', 'Seed for reproducible payloads')
     .option('--output <format>', 'Summary format: pretty or json', 'pretty')
     .action(async (opts) => {
-      const types = parseTypes(opts.types);
+      let types: Format[];
+      try {
+        types = parseTypes(opts.types);
+      } catch (err) {
+        usageError(err instanceof Error ? err.message : String(err));
+      }
       const count = Number.parseInt(opts.count, 10);
       if (!Number.isInteger(count) || count < 1) {
-        throw new Error('--count must be a positive integer');
+        usageError('--count must be a positive integer');
       }
       const techniques =
         opts.techniques === 'all'
@@ -69,22 +74,28 @@ export function register(parent: Command): void {
           : (opts.techniques as string).split(',').map((t) => t.trim());
       const seed = opts.seed === undefined ? undefined : Number.parseInt(opts.seed, 10);
 
-      const generateCorpus = await loadGenerateCorpus();
-      const summary = await generateCorpus({ types, count, out: opts.out, techniques, seed });
+      try {
+        const generateCorpus = await loadGenerateCorpus();
+        const summary = await generateCorpus({ types, count, out: opts.out, techniques, seed });
 
-      if (opts.output === 'json') {
-        console.log(JSON.stringify(summary, null, 2));
-        return;
-      }
+        if (opts.output === 'json') {
+          console.log(JSON.stringify(summary, null, 2));
+          return;
+        }
 
-      console.log(chalk.bold('\n  DLP Test-File Generation'));
-      console.log(`  Output:   ${summary.out}`);
-      console.log(`  Seed:     ${summary.seed}`);
-      console.log(`  Clean:    ${summary.clean}    Dirty: ${summary.dirty}`);
-      console.log(`  Manifest: ${summary.manifestPath}\n`);
-      for (const [fmt, counts] of Object.entries(summary.byFormat)) {
-        console.log(`    ${fmt.padEnd(5)} clean=${counts.clean} dirty=${counts.dirty}`);
+        ui.header('DLP Test-File Generation');
+        ui.keyValue([
+          ['Output', summary.out],
+          ['Seed', summary.seed],
+          ['Clean', summary.clean],
+          ['Dirty', summary.dirty],
+          ['Manifest', summary.manifestPath],
+        ]);
+        for (const [fmt, counts] of Object.entries(summary.byFormat)) {
+          ui.dim(`${fmt.padEnd(5)} clean=${counts.clean} dirty=${counts.dirty}`);
+        }
+      } catch (err) {
+        fail(err);
       }
-      console.log('');
     });
 }

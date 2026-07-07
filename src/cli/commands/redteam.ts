@@ -1,6 +1,5 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
@@ -10,6 +9,7 @@ import { redTeamClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   buildAttackListFootnote,
+  fail,
   type OutputFormat,
   renderAttackList,
   renderAuthValidation,
@@ -19,7 +19,6 @@ import {
   renderCustomAttackList,
   renderCustomReport,
   renderDynamicReport,
-  renderError,
   renderEulaContent,
   renderEulaStatus,
   renderInstanceDetail,
@@ -42,6 +41,8 @@ import {
   renderTargetTemplates,
   renderVersionInfo,
   renderVersionInfoUnavailable,
+  ui,
+  usageError,
 } from '../renderer/index.js';
 import { backupTargets } from './backup.js';
 import { restoreTargets } from './restore.js';
@@ -129,10 +130,9 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createService();
         await service.abortScan(jobId);
-        console.log(`  Scan ${jobId} aborted.\n`);
+        ui.success(`Scan ${jobId} aborted.`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -149,8 +149,7 @@ export function registerRedteamCommand(program: Command): void {
         const categories = await service.getCategories();
         renderCategories(categories);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -169,8 +168,7 @@ export function registerRedteamCommand(program: Command): void {
         const status = await service.getEulaStatus();
         renderEulaStatus(status);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -184,8 +182,7 @@ export function registerRedteamCommand(program: Command): void {
         const content = await service.getEulaContent();
         renderEulaContent(content);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -201,16 +198,15 @@ export function registerRedteamCommand(program: Command): void {
 
         if (!opts.confirm) {
           renderEulaContent(content);
-          console.log('  Pass --confirm to accept.\n');
+          ui.dim('Pass --confirm to accept.');
           return;
         }
 
         const result = await service.acceptEula(content.content);
         renderEulaStatus(result);
-        console.log('  EULA accepted.\n');
+        ui.success('EULA accepted.');
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -238,8 +234,7 @@ export function registerRedteamCommand(program: Command): void {
         });
         renderInstanceResponse(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -253,8 +248,7 @@ export function registerRedteamCommand(program: Command): void {
         const result = await service.getInstance(tenantId);
         renderInstanceDetail(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -276,8 +270,7 @@ export function registerRedteamCommand(program: Command): void {
         });
         renderInstanceResponse(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -290,10 +283,9 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const result = await service.deleteInstance(tenantId);
         renderInstanceResponse(result);
-        console.log(`  Instance ${tenantId} deleted.\n`);
+        ui.success(`Instance ${tenantId} deleted.`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -312,11 +304,10 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const result = await service.createDevices(tenantId, config);
-        console.log('  Devices created:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+        ui.success('Devices created:');
+        console.log(JSON.stringify(result, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -330,11 +321,10 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const result = await service.updateDevices(tenantId, config);
-        console.log('  Devices updated:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+        ui.success('Devices updated:');
+        console.log(JSON.stringify(result, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -347,11 +337,10 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createService();
         const result = await service.deleteDevices(tenantId, opts.serialNumbers);
-        console.log('  Devices deleted:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+        ui.success('Devices deleted:');
+        console.log(JSON.stringify(result, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -368,8 +357,7 @@ export function registerRedteamCommand(program: Command): void {
         const creds = await service.getRegistryCredentials();
         renderRegistryCredentials(creds);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -397,8 +385,7 @@ export function registerRedteamCommand(program: Command): void {
         });
         renderScanList(scans, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -419,8 +406,7 @@ export function registerRedteamCommand(program: Command): void {
         const sets = await service.listPromptSets();
         renderPromptSetList(sets, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -442,8 +428,7 @@ export function registerRedteamCommand(program: Command): void {
           renderPromptSetDetail(ps, fmt, info);
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -457,11 +442,10 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         const result = await service.createPromptSet(opts.name, opts.description);
-        console.log(`  Prompt set created: ${result.uuid}\n`);
-        console.log(`    Name: ${result.name}\n`);
+        ui.success(`Prompt set created: ${result.uuid}`);
+        ui.keyValue([['Name', result.name]]);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -480,8 +464,7 @@ export function registerRedteamCommand(program: Command): void {
         const result = await service.updatePromptSet(uuid, request);
         renderPromptSetDetail(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -495,10 +478,9 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createPromptSetService();
         const archive = !opts.unarchive;
         await service.archivePromptSet(uuid, archive);
-        console.log(`  Prompt set ${uuid} ${archive ? 'archived' : 'unarchived'}.\n`);
+        ui.success(`Prompt set ${uuid} ${archive ? 'archived' : 'unarchived'}.`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -513,10 +495,9 @@ export function registerRedteamCommand(program: Command): void {
         const csv = await service.downloadTemplate(uuid);
         const outPath = opts.output || `${uuid}-template.csv`;
         fs.writeFileSync(outPath, csv, 'utf-8');
-        console.log(`  Template saved to ${outPath}\n`);
+        ui.success(`Template saved to ${outPath}`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -531,10 +512,9 @@ export function registerRedteamCommand(program: Command): void {
         const filename = path.basename(file);
         const blob = new File([content], filename, { type: 'text/csv' });
         const result = await service.uploadPromptsCsv(uuid, blob);
-        console.log(`  ${result.message}\n`);
+        ui.success(result.message);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -556,8 +536,7 @@ export function registerRedteamCommand(program: Command): void {
         });
         renderPromptList(list);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -571,8 +550,7 @@ export function registerRedteamCommand(program: Command): void {
         const prompt = await service.getPrompt(setUuid, promptUuid);
         renderPromptDetail(prompt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -586,10 +564,9 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         const result = await service.addPrompt(setUuid, opts.prompt, opts.goal);
-        console.log(`  Prompt added: ${result.uuid}\n`);
+        ui.success(`Prompt added: ${result.uuid}`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -608,8 +585,7 @@ export function registerRedteamCommand(program: Command): void {
         const result = await service.updatePrompt(setUuid, promptUuid, request);
         renderPromptDetail(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -621,10 +597,9 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         await service.deletePrompt(setUuid, promptUuid);
-        console.log(`  Prompt ${promptUuid} deleted.\n`);
+        ui.success(`Prompt ${promptUuid} deleted.`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -645,8 +620,7 @@ export function registerRedteamCommand(program: Command): void {
         const names = await service.getPropertyNames();
         renderPropertyNames(names, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -659,10 +633,9 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         const result = await service.createPropertyName(opts.name);
-        console.log(`  ${result.message}\n`);
+        ui.success(result.message);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -678,8 +651,7 @@ export function registerRedteamCommand(program: Command): void {
         const values = await service.getPropertyValues(name);
         renderPropertyValues(values, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -693,10 +665,9 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createPromptSetService();
         const result = await service.createPropertyValue(opts.name, opts.value);
-        console.log(`  ${result.message}\n`);
+        ui.success(result.message);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -745,8 +716,7 @@ export function registerRedteamCommand(program: Command): void {
           }
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -766,24 +736,30 @@ export function registerRedteamCommand(program: Command): void {
     .option('--breadth <number>', 'Parallel agents per goal (DYNAMIC scans)', '6')
     .option('--no-wait', 'Submit scan without waiting for completion')
     .action(async (opts) => {
+      let categories: Record<string, unknown> | undefined;
+      let attackGoals: string[] | undefined;
+      let streamDepth: number;
+      let streamBreadth: number;
+      try {
+        if (opts.categories) {
+          categories = JSON.parse(opts.categories);
+        }
+        attackGoals = opts.goals ? parseAttackGoals(opts.goals as string) : undefined;
+        streamDepth = parsePositiveInt(opts.depth as string, '--depth');
+        streamBreadth = parsePositiveInt(opts.breadth as string, '--breadth');
+      } catch (err) {
+        usageError(err instanceof Error ? err.message : String(err));
+      }
+
+      const customPromptSets = opts.promptSets
+        ? (opts.promptSets as string).split(',').map((s: string) => s.trim())
+        : undefined;
+
       try {
         renderRedteamHeader();
         const service = await createService();
 
-        let categories: Record<string, unknown> | undefined;
-        if (opts.categories) {
-          categories = JSON.parse(opts.categories);
-        }
-
-        const customPromptSets = opts.promptSets
-          ? (opts.promptSets as string).split(',').map((s: string) => s.trim())
-          : undefined;
-
-        const attackGoals = opts.goals ? parseAttackGoals(opts.goals as string) : undefined;
-        const streamDepth = parsePositiveInt(opts.depth as string, '--depth');
-        const streamBreadth = parsePositiveInt(opts.breadth as string, '--breadth');
-
-        console.log(`  Creating ${opts.type} scan "${opts.name}"...`);
+        ui.status(`Creating ${opts.type} scan "${opts.name}"...`);
         const job = await service.createScan({
           name: opts.name,
           targetUuid: opts.target,
@@ -798,21 +774,20 @@ export function registerRedteamCommand(program: Command): void {
         renderScanStatus(job);
 
         if (opts.wait !== false) {
-          console.log('  Waiting for completion...\n');
+          ui.status('Waiting for completion...');
           const completed = await service.waitForCompletion(job.uuid, (progress) =>
             renderScanProgress(progress),
           );
           console.log('\n');
           renderScanStatus(completed);
-          console.log(`  Job ID: ${completed.uuid}`);
-          console.log('  Run `airs redteam report <jobId>` to view results.\n');
+          ui.keyValue([['Job ID', completed.uuid]]);
+          ui.dim('Run `airs redteam report <jobId>` to view results.');
         } else {
-          console.log(`  Job ID: ${job.uuid}`);
-          console.log('  Run `airs redteam status <jobId>` to check progress.\n');
+          ui.keyValue([['Job ID', job.uuid]]);
+          ui.dim('Run `airs redteam status <jobId>` to check progress.');
         }
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -829,8 +804,7 @@ export function registerRedteamCommand(program: Command): void {
         const job = await service.getScan(jobId);
         renderScanStatus(job);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -851,8 +825,7 @@ export function registerRedteamCommand(program: Command): void {
         const list = await service.listTargets();
         renderTargetList(list, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -868,8 +841,7 @@ export function registerRedteamCommand(program: Command): void {
         const target = await service.getTarget(uuid);
         renderTargetDetail(target, fmt);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -887,11 +859,10 @@ export function registerRedteamCommand(program: Command): void {
           config,
           opts.validate ? { validate: true } : undefined,
         );
-        console.log(`  Target created: ${target.uuid}\n`);
+        ui.success(`Target created: ${target.uuid}`);
         renderTargetDetail(target);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -910,11 +881,10 @@ export function registerRedteamCommand(program: Command): void {
           config,
           opts.validate ? { validate: true } : undefined,
         );
-        console.log(`  Target updated: ${target.uuid}\n`);
+        ui.success(`Target updated: ${target.uuid}`);
         renderTargetDetail(target);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -926,10 +896,9 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createService();
         await service.deleteTarget(uuid);
-        console.log(`  Target ${uuid} deleted.\n`);
+        ui.success(`Target ${uuid} deleted.`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -943,11 +912,10 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const result = await service.probeTarget(config);
-        console.log('  Probe result:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+        ui.dim('Probe result:');
+        console.log(JSON.stringify(result, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -959,11 +927,10 @@ export function registerRedteamCommand(program: Command): void {
         renderRedteamHeader();
         const service = await createService();
         const profile = await service.getTargetProfile(uuid);
-        console.log('  Target Profile:');
-        console.log(`    ${JSON.stringify(profile, null, 2)}\n`);
+        ui.dim('Target Profile:');
+        console.log(JSON.stringify(profile, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -977,11 +944,10 @@ export function registerRedteamCommand(program: Command): void {
         const service = await createService();
         const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
         const result = await service.updateTargetProfile(uuid, config);
-        console.log('  Profile updated:');
-        console.log(`    ${JSON.stringify(result, null, 2)}\n`);
+        ui.success('Profile updated:');
+        console.log(JSON.stringify(result, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -1003,8 +969,7 @@ export function registerRedteamCommand(program: Command): void {
         });
         renderAuthValidation(result);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -1013,13 +978,11 @@ export function registerRedteamCommand(program: Command): void {
     .description('Get target field metadata')
     .action(async () => {
       try {
-        renderRedteamHeader();
         const service = await createService();
         const metadata = await service.getTargetMetadata();
         console.log(JSON.stringify(metadata, null, 2));
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -1028,32 +991,35 @@ export function registerRedteamCommand(program: Command): void {
     .description('Scaffold a target config JSON from a provider template')
     .option('--output <file>', 'Output file path')
     .action(async (provider: string, opts) => {
+      if (
+        !VALID_TARGET_PROVIDERS.includes(
+          provider.toUpperCase() as (typeof VALID_TARGET_PROVIDERS)[number],
+        )
+      ) {
+        usageError(
+          `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
+        );
+      }
+      const filename = opts.output ?? `${provider.toLowerCase()}-target.json`;
+      const outputPath = path.resolve(filename);
+      if (fs.existsSync(outputPath)) {
+        usageError(`File already exists: ${outputPath} (use --output to specify a different path)`);
+      }
       try {
         renderRedteamHeader();
         const service = await createService();
         const templates = await service.getTargetTemplates();
         const scaffold = buildTargetScaffold(provider, templates);
-        const filename = opts.output ?? `${provider.toLowerCase()}-target.json`;
-        const outputPath = path.resolve(filename);
-        if (fs.existsSync(outputPath)) {
-          renderError(
-            `File already exists: ${outputPath} (use --output to specify a different path)`,
-          );
-          process.exit(1);
-        }
         fs.writeFileSync(outputPath, `${JSON.stringify(scaffold, null, 2)}\n`);
-        console.log(chalk.bold('\n  Target config scaffolded:\n'));
-        console.log(`    File: ${chalk.cyan(outputPath)}`);
-        console.log(`    Provider: ${chalk.dim(provider.toUpperCase())}`);
-        console.log(
-          `\n  ${chalk.yellow('Next steps:')} Edit the file to fill in ${chalk.bold('name')} and credentials, then run:`,
-        );
-        console.log(
-          `    ${chalk.cyan(`airs redteam targets create --config ${filename} --validate`)}\n`,
-        );
+        ui.success('Target config scaffolded');
+        ui.keyValue([
+          ['File', outputPath],
+          ['Provider', provider.toUpperCase()],
+        ]);
+        ui.dim('Next steps: edit the file to fill in name and credentials, then run:');
+        ui.dim(`  airs redteam targets create --config ${filename} --validate`);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -1067,8 +1033,7 @@ export function registerRedteamCommand(program: Command): void {
         const templates = await service.getTargetTemplates();
         renderTargetTemplates(templates);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -1091,8 +1056,7 @@ export function registerRedteamCommand(program: Command): void {
         const failed = results.filter((r) => r.status === 'failed').length;
         if (failed > 0) process.exit(1);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 
@@ -1104,11 +1068,11 @@ export function registerRedteamCommand(program: Command): void {
     .option('--overwrite', 'Update existing targets with same name (default: skip)')
     .option('--validate', 'Validate target connection before saving')
     .action(async (opts) => {
+      if (!opts.file && !opts.inputDir) {
+        usageError('Specify --file <path> or --input-dir <path>');
+      }
       try {
         renderBackupHeader();
-        if (!opts.file && !opts.inputDir) {
-          throw new Error('Specify --file <path> or --input-dir <path>');
-        }
         const results = await restoreTargets({
           file: opts.file,
           inputDir: opts.inputDir,
@@ -1119,8 +1083,7 @@ export function registerRedteamCommand(program: Command): void {
         const failed = results.filter((r) => r.action === 'failed').length;
         if (failed > 0) process.exit(1);
       } catch (err) {
-        renderError(err instanceof Error ? err.message : String(err));
-        process.exit(1);
+        fail(err);
       }
     });
 }
