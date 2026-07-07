@@ -16,8 +16,8 @@ airs runtime dlp patterns list [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--page <n>` | No | — | Zero-indexed page number |
-| `--size <n>` | No | — | Page size |
+| `--limit <n>` | No | — | Max results per page (API page size) |
+| `--offset <n>` | No | — | Starting offset — rounds down to a page boundary |
 | `--sort <field,dir>` | No | — | Sort criteria (repeatable) |
 | `--output <fmt>` | No | `pretty` | Output format |
 
@@ -26,7 +26,7 @@ airs runtime dlp patterns list [options]
 *Pretty output (default)*
 
 ```bash
-airs runtime dlp patterns list --size 2 --sort name,asc
+airs runtime dlp patterns list --limit 2 --sort name,asc
 ```
 
 ```text
@@ -43,7 +43,7 @@ page=0 size=2 returned=2 total=1126
 *JSON output*
 
 ```bash
-airs runtime dlp patterns list --size 2 --sort name,asc --output json
+airs runtime dlp patterns list --limit 2 --sort name,asc --output json
 ```
 
 ```text
@@ -78,7 +78,7 @@ airs runtime dlp patterns list --size 2 --sort name,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp patterns list --size 2 --sort name,asc --output yaml
+airs runtime dlp patterns list --limit 2 --sort name,asc --output yaml
 ```
 
 ```text

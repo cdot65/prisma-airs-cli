@@ -56,13 +56,13 @@ airs redteam targets backup --name "truffles - dev - langgraph agent"
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--output-dir <path>` | `./airs-backup/targets/` | Directory to write backup files |
-| `--format <format>` | `json` | Output format: `json` or `yaml` |
+| `--output <format>` | `json` | Output format: `json` or `yaml` |
 | `--name <targetName>` | _(all targets)_ | Backup a single target by name |
 
 ### YAML Format
 
 ```bash
-airs redteam targets backup --format yaml --output-dir ./my-backups
+airs redteam targets backup --output yaml --output-dir ./my-backups
 ```
 
 ---
@@ -192,11 +192,11 @@ PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./airs-backup
 Store target configurations in git for audit trails:
 
 ```bash
-airs redteam targets backup --output-dir ./infra/airs-targets/ --format yaml
+airs redteam targets backup --output-dir ./infra/airs-targets/ --output yaml
 git add infra/airs-targets/
 git commit -m "snapshot: AIRS red team targets"
 ```
 
 :::tip
-YAML format is more readable in diffs and code reviews. Use `--format yaml` for version-controlled backups.
+YAML format is more readable in diffs and code reviews. Use `--output yaml` for version-controlled backups.
 :::

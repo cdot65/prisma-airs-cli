@@ -39,11 +39,11 @@ airs runtime topics update <topicId> --config <json-file>
 airs runtime topics delete <topicId> [--force --updated-by <email>]
 
 # Guardrail optimization (atomic commands for agent loops)
-airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--format json]
-airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--format json]
-airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--format json]
-airs runtime topics revert --profile <name> --name <name> [--format json]
-airs runtime topics sample [--output <path>]
+airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
+airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
+airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
+airs runtime topics revert --profile <name> --name <name> [--output json]
+airs runtime topics sample [--output-file <path>]
 ```
 
 See [Guardrail Optimization](guardrails/overview.md) for details on the optimization loop and [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) for the agent protocol.
@@ -84,7 +84,7 @@ airs runtime dlp profiles list
 ```bash
 airs runtime scan-logs query --interval 24 --unit hours
 airs runtime scan-logs query --interval 168 --unit hours --filter threat
-airs runtime scan-logs query --interval 720 --unit hours --page-size 100
+airs runtime scan-logs query --interval 720 --unit hours --limit 100
 ```
 
 ## Environment Variables

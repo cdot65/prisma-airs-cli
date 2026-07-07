@@ -20,7 +20,16 @@ Same as Step 1 of [smoke-tests.md](smoke-tests.md#step-1-install-and-version-ver
 npm install -g @cdot65/prisma-airs-cli@latest
 which airs && airs --version
 npm ls -g @cdot65/prisma-airs-sdk 2>/dev/null || cat "$(npm root -g)/@cdot65/prisma-airs-cli/node_modules/@cdot65/prisma-airs-sdk/package.json" | grep '"version"'
+airs doctor                # credential + connectivity preflight (pass/warn/fail report)
 airs runtime profiles list
+```
+
+Local utility commands (no tenant state touched):
+
+```bash
+airs config list           # effective config with per-key source (env/file/default)
+airs config path           # where the config file lives
+airs completion zsh        # print shell completion script (bash|zsh|fish)
 ```
 
 ## Section B — Read-only sweep
@@ -135,10 +144,10 @@ Read-only sweep of the four DLP resources exposed by `airs runtime dlp`.
 
 ```bash
 # Lists (Spring Page<> envelopes; totalElements/totalPages emit as null)
-airs runtime dlp patterns list --size 3 --output json
-airs runtime dlp profiles list --size 3 --output json
-airs runtime dlp dictionaries list --size 3 --output json
-airs runtime dlp filtering-profiles list --size 3 --output json
+airs runtime dlp patterns list --limit 3 --output json
+airs runtime dlp profiles list --limit 3 --output json
+airs runtime dlp dictionaries list --limit 3 --output json
+airs runtime dlp filtering-profiles list --limit 3 --output json
 
 # Gets that work
 airs runtime dlp dictionaries get <dictionaryId> --keywords --output json
@@ -274,7 +283,7 @@ EOF
 airs runtime topics update <topicId> --config topic-update.json
 
 # Print a sample CSV showing the eval prompt format (use as the input to `topics eval`)
-airs runtime topics sample --output sample-prompts.csv
+airs runtime topics sample --output-file sample-prompts.csv
 
 # Apply to a profile (note: --name and --intent, NOT --topic)
 airs runtime topics apply --profile "<profileName>" --name "smoke-test-topic" --intent block
@@ -362,7 +371,7 @@ Almost all target write commands take a JSON config file.
 
 ```bash
 # Scaffold a target config JSON from a provider template
-airs redteam targets init openai --output target.json     # or anthropic, vertex, bedrock, generic
+airs redteam targets init openai --output-file target.json     # or anthropic, vertex, bedrock, generic
 airs redteam targets templates                            # list all available providers
 
 # Test the connection without saving (uses a JSON config)
@@ -539,10 +548,10 @@ These tie multiple commands together. Each subsection is one end-to-end flow.
 
 ```bash
 # Submit (returns the state file path; polls inline by default)
-airs runtime bulk-scan --profile "<profileName>" --input prompts.csv --output results.csv
+airs runtime bulk-scan --profile "<profileName>" --file prompts.csv --output-file results.csv
 
 # If polling crashes for any reason (rate limit etc.), resume:
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/<stateFile>.json --output results.csv
+airs runtime resume-poll ~/.prisma-airs/bulk-scans/<stateFile>.json --output-file results.csv
 ```
 
 ### E.2 — Scan logs query
@@ -591,7 +600,7 @@ File-only operations; no destructive change to AIRS state. Always safe.
 
 ```bash
 # Backup all targets to local files
-airs redteam targets backup --output-dir ./airs-backup --format yaml
+airs redteam targets backup --output-dir ./airs-backup --output yaml
 
 # Backup a single target
 airs redteam targets backup --output-dir ./airs-backup --name "<targetName>"

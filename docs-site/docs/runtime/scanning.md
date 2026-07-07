@@ -72,8 +72,8 @@ Use `airs runtime bulk-scan` to scan many prompts at once using the async AIRS A
 ```bash
 airs runtime bulk-scan \
   --profile my-security-profile \
-  --input prompts.txt \
-  --output results.csv
+  --file prompts.txt \
+  --output-file results.csv
 ```
 
 ### Input File Format
@@ -100,8 +100,8 @@ iteration,prompt,category,result
 | Flag | Required | Description |
 |------|:--------:|-------------|
 | `--profile <name>` | Yes | Security profile to scan against |
-| `--input <file>` | Yes | `.csv` (extracts prompt column) or `.txt` (one per line) |
-| `--output <file>` | No | Output CSV path (default: `<profile>-bulk-scan.csv`) |
+| `--file <file>` | Yes | `.csv` (extracts prompt column) or `.txt` (one per line) |
+| `--output-file <file>` | No | Output CSV path (default: `<profile>-bulk-scan.csv`) |
 | `--session-id <id>` | No | Session ID for grouping scans in AIRS dashboard (auto-generated if omitted) |
 
 ### How It Works
@@ -127,7 +127,7 @@ If the AIRS API returns a rate limit error during polling, Prisma AIRS CLI retri
 To capture the raw API traffic for troubleshooting, use the global `--debug` flag:
 
 ```bash
-airs --debug runtime bulk-scan --profile my-profile --input prompts.txt
+airs --debug runtime bulk-scan --profile my-profile --file prompts.txt
 ```
 
 This writes every request/response to `~/.prisma-airs/debug-api-<timestamp>.jsonl` — useful for sharing with Palo Alto Networks support. Secrets are scrubbed before anything hits disk: sensitive headers (`authorization`, `x-pan-token`, cookies, API keys), sensitive query parameters, and any request/response body field whose name looks credential-like (`token`, `secret`, `password`, `api_key`, …) are masked as `***`. Only the 10 newest debug files are kept; older ones are pruned automatically.
@@ -143,13 +143,13 @@ airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
 Resume polling for a previously submitted bulk scan (e.g., after a rate limit crash):
 
 ```bash
-airs runtime resume-poll <stateFile> [--output results.csv]
+airs runtime resume-poll <stateFile> [--output-file results.csv]
 ```
 
 | Flag | Required | Description |
 |------|:--------:|-------------|
 | `<stateFile>` | Yes | Path to saved `.bulk-scan.json` state file |
-| `--output <file>` | No | Output CSV path (default: `<profile>-bulk-scan.csv`) |
+| `--output-file <file>` | No | Output CSV path (default: `<profile>-bulk-scan.csv`) |
 
 ### CSV Output Format
 

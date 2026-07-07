@@ -538,7 +538,7 @@ airs redteam targets init [options] <provider>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <file>` | No | — | Output file path |
+| `--output-file <file>` | No | — | Output file path |
 
 #### Examples
 
@@ -565,7 +565,7 @@ Next steps: Edit the file to fill in name and credentials, then run:
 *Scaffold to a custom path*
 
 ```bash
-airs redteam targets init BEDROCK --output configs/bedrock.json
+airs redteam targets init BEDROCK --output-file configs/bedrock.json
 ```
 
 ---
@@ -665,7 +665,7 @@ airs redteam targets backup [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--output-dir <path>` | No | — | Output directory |
-| `--format <format>` | No | `json` | Output format: json or yaml |
+| `--output <format>` | No | `json` | Output format: json or yaml |
 | `--name <targetName>` | No | — | Backup a single target by name |
 
 #### Examples
@@ -688,7 +688,7 @@ Backed up 1 target(s) to ./backups:
 *Back up all targets in YAML format*
 
 ```bash
-airs redteam targets backup --output-dir ./backups --format yaml
+airs redteam targets backup --output-dir ./backups --output yaml
 ```
 
 ---

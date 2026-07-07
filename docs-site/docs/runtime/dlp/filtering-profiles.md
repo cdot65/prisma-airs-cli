@@ -20,7 +20,7 @@ List all filtering profiles. Supports pagination and sorting.
 
 ```bash
 airs runtime dlp filtering-profiles list
-airs runtime dlp filtering-profiles list --page 0 --size 20
+airs runtime dlp filtering-profiles list --limit 20 --offset 0
 airs runtime dlp filtering-profiles list --sort name,asc --output json
 ```
 

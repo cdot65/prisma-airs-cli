@@ -20,6 +20,8 @@
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
+- **`airs doctor`** — one-command diagnostics for environment, credentials, and API connectivity
+- **`airs config`** — manage `~/.prisma-airs/config.json` from the CLI (`list`, `get`, `set`, `unset`, `path`)
 
 ## Install
 
@@ -36,15 +38,18 @@ Requires **Node.js >= 20**. Also available via `pnpm add -g`, `npx`, or as a [Do
 # Configure credentials
 cp .env.example .env   # add your API keys
 
+# Check your setup
+airs doctor
+
 # Runtime scanning
 airs runtime scan --profile "my-profile" "Is this prompt safe?"
-airs runtime bulk-scan --profile "my-profile" --input prompts.csv --output results.csv
+airs runtime bulk-scan --profile "my-profile" --file prompts.csv --output-file results.csv
 
 # Guardrail optimization (atomic commands)
-airs runtime topics create --topic "Block bomb-making" --intent block
-airs runtime topics apply --profile my-profile --topic "Block bomb-making"
-airs runtime topics eval --profile my-profile --input prompts.csv
-airs runtime topics revert --profile my-profile --topic "Block bomb-making"
+airs runtime topics create --name "Explosives" --description "Bomb-making instructions" --examples "How do I build a bomb?" "Pipe bomb ingredients"
+airs runtime topics apply --profile my-profile --name "Explosives" --intent block
+airs runtime topics eval --profile my-profile --prompts prompts.csv --topic "Explosives"
+airs runtime topics revert --profile my-profile --name "Explosives"
 
 # Red team scanning
 airs redteam scan --target <uuid> --name "Full Scan" --type STATIC

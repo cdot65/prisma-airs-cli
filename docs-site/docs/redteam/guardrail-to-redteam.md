@@ -24,7 +24,7 @@ airs runtime topics create --name "Pokemon" \
 airs runtime topics apply --profile "Custom Topics Test" --name "Pokemon" --intent block
 
 # Evaluate against a prompt set (CSV: prompt, expected, intent columns)
-airs runtime topics eval --profile "Custom Topics Test" --prompts pokemon-prompts.csv --topic "Pokemon" --format json
+airs runtime topics eval --profile "Custom Topics Test" --prompts pokemon-prompts.csv --topic "Pokemon" --output json
 ```
 
 Once you have an optimized guardrail, export the eval prompts as a red team prompt set:
@@ -106,7 +106,7 @@ airs runtime topics create --name "$TOPIC" \
 airs runtime topics apply --profile "$PROFILE" --name "$TOPIC" --intent block
 
 # 2. Evaluate (iterate as needed)
-airs runtime topics eval --profile "$PROFILE" --prompts pokemon-prompts.csv --topic "$TOPIC" --format json
+airs runtime topics eval --profile "$PROFILE" --prompts pokemon-prompts.csv --topic "$TOPIC" --output json
 
 # 3. Find the prompt set UUID
 airs redteam prompt-sets list

@@ -16,8 +16,8 @@ airs runtime dlp dictionaries list [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--page <n>` | No | — | — |
-| `--size <n>` | No | — | — |
+| `--limit <n>` | No | — | Max results per page (API page size) |
+| `--offset <n>` | No | — | Starting offset — rounds down to a page boundary |
 | `--sort <field,dir>` | No | — | (repeatable) |
 | `--keywords` | No | — | Include keyword list in response |
 | `--include-keywords` | No | — | Alias for --keywords |
@@ -28,7 +28,7 @@ airs runtime dlp dictionaries list [options]
 *Pretty output (default — JSON envelope)*
 
 ```bash
-airs runtime dlp dictionaries list --size 2 --sort name,asc
+airs runtime dlp dictionaries list --limit 2 --sort name,asc
 ```
 
 ```text
@@ -126,7 +126,7 @@ airs runtime dlp dictionaries list --size 2 --sort name,asc
 *JSON output (explicit)*
 
 ```bash
-airs runtime dlp dictionaries list --size 2 --sort name,asc --output json
+airs runtime dlp dictionaries list --limit 2 --sort name,asc --output json
 ```
 
 ```text
@@ -224,7 +224,7 @@ airs runtime dlp dictionaries list --size 2 --sort name,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp dictionaries list --size 2 --sort name,asc --output yaml
+airs runtime dlp dictionaries list --limit 2 --sort name,asc --output yaml
 ```
 
 ```text
