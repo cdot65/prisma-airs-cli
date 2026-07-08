@@ -168,13 +168,13 @@ interface BulkScanState {
 ```
 
 - `saveBulkScanState` writes after each submit and after each batch completes.
-- `loadBulkScanState` tolerant of legacy v1 (`{scanIds, promptCount}`): loads with empty prompts, warns that resumed rows will lack prompt text.
+- `loadBulkScanState` detects legacy v1 (`{scanIds, promptCount}`, no `version`/`batches`) and throws a clear usage error: legacy state predates prompt persistence and cannot be resumed by the new path — re-run `bulk-scan`. (Legacy files are short-lived crash-recovery artifacts, so honest rejection beats silently emitting rows without prompt/detection data.)
 
 ### resume-poll
 
 `airs runtime resume-poll <stateFile> [--output-file <file>]`
 
-- Loads state; default output = `state.outputFile`, overridable by `--output-file`.
+- Loads state (v2 only; legacy rejected as above); default output = `state.outputFile`, overridable by `--output-file`.
 - Writes header, iterates `batches` where `!done`, calls `pollBatch`, appends full rows (prompt column populated from persisted `entries`), marks done, re-saves.
 
 ### Interface drift fix (`src/airs/types.ts`)
