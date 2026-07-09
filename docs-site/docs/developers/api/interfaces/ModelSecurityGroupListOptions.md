@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupListOptions
 
-Defined in: [src/airs/types.ts:569](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L569)
+Defined in: [src/airs/types.ts:667](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L667)
 
 Filter options for listing security groups.
 
@@ -10,7 +10,7 @@ Filter options for listing security groups.
 
 > `optional` **enabledRules?**: `string`[]
 
-Defined in: [src/airs/types.ts:574](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L574)
+Defined in: [src/airs/types.ts:672](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L672)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:574](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **limit?**: `number`
 
-Defined in: [src/airs/types.ts:576](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L576)
+Defined in: [src/airs/types.ts:674](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L674)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:576](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **searchQuery?**: `string`
 
-Defined in: [src/airs/types.ts:571](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L571)
+Defined in: [src/airs/types.ts:669](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L669)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:571](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **skip?**: `number`
 
-Defined in: [src/airs/types.ts:575](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L575)
+Defined in: [src/airs/types.ts:673](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L673)
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:575](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **sortDir?**: `string`
 
-Defined in: [src/airs/types.ts:573](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L573)
+Defined in: [src/airs/types.ts:671](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L671)
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:573](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **sortField?**: `string`
 
-Defined in: [src/airs/types.ts:572](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L572)
+Defined in: [src/airs/types.ts:670](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L670)
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: [src/airs/types.ts:572](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **sourceTypes?**: `string`[]
 
-Defined in: [src/airs/types.ts:570](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L570)
+Defined in: [src/airs/types.ts:668](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L668)

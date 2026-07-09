@@ -39,6 +39,7 @@ All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy 
 | `PANW_RED_TEAM_DATA_ENDPOINT` | -- | Custom Red Team data-plane endpoint |
 | `PANW_RED_TEAM_MGMT_ENDPOINT` | -- | Custom Red Team management-plane endpoint |
 | `PANW_RED_TEAM_TOKEN_ENDPOINT` | -- | Custom Red Team OAuth2 token endpoint |
+| `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` | -- | Custom Red Team network-broker data-plane endpoint (`redteam network-broker` commands) |
 
 :::note
 Red Team commands reuse `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `PANW_MGMT_TSG_ID` from the Management API section. The variables above are optional overrides for dedicated Red Team endpoints.
@@ -55,7 +56,7 @@ Red Team commands reuse `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, and `P
 | `PANW_MODEL_SEC_TOKEN_ENDPOINT` | -- | Custom Model Security OAuth2 token endpoint |
 
 :::note
-Model Security commands also reuse the `PANW_MGMT_*` credentials. All endpoint overrides above (and their Red Team counterparts) can equally be set in `~/.prisma-airs/config.json` via the matching config keys (`airsApiToken`, `airsApiEndpoint`, `airsNumRetries`, `redTeamDataEndpoint`, `redTeamMgmtEndpoint`, `redTeamTokenEndpoint`, `modelSecDataEndpoint`, `modelSecMgmtEndpoint`, `modelSecTokenEndpoint`). Precedence: CLI > environment > config file.
+Model Security commands also reuse the `PANW_MGMT_*` credentials. All endpoint overrides above (and their Red Team counterparts) can equally be set in `~/.prisma-airs/config.json` via the matching config keys (`airsApiToken`, `airsApiEndpoint`, `airsNumRetries`, `redTeamDataEndpoint`, `redTeamMgmtEndpoint`, `redTeamTokenEndpoint`, `redTeamNetworkBrokerEndpoint`, `modelSecDataEndpoint`, `modelSecMgmtEndpoint`, `modelSecTokenEndpoint`). Precedence: CLI > environment > config file.
 :::
 
 ---

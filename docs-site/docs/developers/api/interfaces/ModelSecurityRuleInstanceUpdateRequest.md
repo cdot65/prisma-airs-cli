@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleInstanceUpdateRequest
 
-Defined in: [src/airs/types.ts:636](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L636)
+Defined in: [src/airs/types.ts:734](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L734)
 
 Request to update a rule instance.
 
@@ -10,7 +10,7 @@ Request to update a rule instance.
 
 > `optional` **fieldValues?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:638](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L638)
+Defined in: [src/airs/types.ts:736](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L736)
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: [src/airs/types.ts:638](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **state?**: `string`
 
-Defined in: [src/airs/types.ts:637](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L637)
+Defined in: [src/airs/types.ts:735](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L735)

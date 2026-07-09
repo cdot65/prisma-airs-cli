@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFileListOptions
 
-Defined in: [src/airs/types.ts:702](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L702)
+Defined in: [src/airs/types.ts:800](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L800)
 
 Filter options for listing scanned files.
 
@@ -10,7 +10,7 @@ Filter options for listing scanned files.
 
 > `optional` **limit?**: `number`
 
-Defined in: [src/airs/types.ts:706](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L706)
+Defined in: [src/airs/types.ts:804](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L804)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:706](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **result?**: `string`
 
-Defined in: [src/airs/types.ts:704](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L704)
+Defined in: [src/airs/types.ts:802](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L802)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:704](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **skip?**: `number`
 
-Defined in: [src/airs/types.ts:705](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L705)
+Defined in: [src/airs/types.ts:803](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L803)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [src/airs/types.ts:705](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **type?**: `string`
 
-Defined in: [src/airs/types.ts:703](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L703)
+Defined in: [src/airs/types.ts:801](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L801)
