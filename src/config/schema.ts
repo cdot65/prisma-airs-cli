@@ -19,6 +19,7 @@ export const ConfigSchema = z.object({
   redTeamDataEndpoint: z.string().optional(),
   redTeamMgmtEndpoint: z.string().optional(),
   redTeamTokenEndpoint: z.string().optional(),
+  redTeamNetworkBrokerEndpoint: z.string().optional(),
 
   // Model Security (endpoints only; creds shared with mgmt*)
   modelSecDataEndpoint: z.string().optional(),

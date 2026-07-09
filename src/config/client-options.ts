@@ -24,6 +24,7 @@ export function redTeamClientOptions(config: Config): RedTeamClientOptions {
     dataEndpoint: config.redTeamDataEndpoint,
     mgmtEndpoint: config.redTeamMgmtEndpoint,
     tokenEndpoint: config.redTeamTokenEndpoint ?? config.mgmtTokenEndpoint,
+    networkBrokerEndpoint: config.redTeamNetworkBrokerEndpoint,
   };
 }
 

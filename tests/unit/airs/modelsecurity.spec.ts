@@ -30,8 +30,21 @@ const mockRulesGet = vi.fn();
 
 const mockGetPyPIAuth = vi.fn();
 
+const mockModelsListModels = vi.fn();
+const mockModelsGetModel = vi.fn();
+const mockModelsListModelVersions = vi.fn();
+const mockModelsGetModelVersion = vi.fn();
+const mockModelsListModelVersionFiles = vi.fn();
+
 function makeMockClient() {
   return {
+    models: {
+      listModels: mockModelsListModels,
+      getModel: mockModelsGetModel,
+      listModelVersions: mockModelsListModelVersions,
+      getModelVersion: mockModelsGetModelVersion,
+      listModelVersionFiles: mockModelsListModelVersionFiles,
+    },
     scans: {
       create: mockScansCreate,
       list: mockScansList,
@@ -786,6 +799,193 @@ describe('SdkModelSecurityService', () => {
         url: 'https://pypi.example.com',
         expiresAt: '2026-01-01T01:00:00Z',
       });
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Models (read-only catalog)
+  // -----------------------------------------------------------------------
+  describe('listModels', () => {
+    it('returns normalized models with total and passes filters', async () => {
+      mockModelsListModels.mockResolvedValue({
+        pagination: { total_items: 2 },
+        models: [
+          {
+            uuid: 'm-1',
+            tsg_id: 'tsg-123',
+            name: 'Model 1',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-02T00:00:00Z',
+            latest_version_uuid: 'v-1',
+            latest_version_outcome: 'PASS',
+            latest_version_formats: ['safetensors'],
+            latest_version_source_types: ['HUGGING_FACE'],
+            latest_version_scan_time: '2026-01-03T00:00:00Z',
+          },
+          {
+            uuid: 'm-2',
+            tsg_id: 'tsg-123',
+            name: 'Model 2',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-02T00:00:00Z',
+          },
+        ],
+      });
+
+      const result = await service.listModels({
+        searchQuery: 'llama',
+        sortField: 'created_at',
+        sortOrder: 'desc',
+        skip: 5,
+        limit: 10,
+      });
+
+      expect(mockModelsListModels).toHaveBeenCalledWith({
+        search_query: 'llama',
+        sort_field: 'created_at',
+        sort_order: 'desc',
+        skip: 5,
+        limit: 10,
+      });
+      expect(result.totalItems).toBe(2);
+      expect(result.models[0]).toEqual({
+        uuid: 'm-1',
+        tsgId: 'tsg-123',
+        name: 'Model 1',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-02T00:00:00Z',
+        latestVersionUuid: 'v-1',
+        latestVersionFingerprint: undefined,
+        latestVersionRevision: undefined,
+        latestVersionHfCommitSha: undefined,
+        latestVersionOutcome: 'PASS',
+        latestVersionFormats: ['safetensors'],
+        latestVersionSourceTypes: ['HUGGING_FACE'],
+        latestVersionScanTime: '2026-01-03T00:00:00Z',
+      });
+    });
+
+    it('defaults total to 0 and omits unset filters', async () => {
+      mockModelsListModels.mockResolvedValue({ pagination: {}, models: [] });
+      const result = await service.listModels();
+      expect(mockModelsListModels).toHaveBeenCalledWith({});
+      expect(result).toEqual({ totalItems: 0, models: [] });
+    });
+  });
+
+  describe('getModel', () => {
+    it('returns a normalized model', async () => {
+      mockModelsGetModel.mockResolvedValue({
+        uuid: 'm-1',
+        tsg_id: 'tsg-123',
+        name: 'Model 1',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-02T00:00:00Z',
+      });
+      const result = await service.getModel('m-1');
+      expect(mockModelsGetModel).toHaveBeenCalledWith('m-1');
+      expect(result).toMatchObject({ uuid: 'm-1', name: 'Model 1', tsgId: 'tsg-123' });
+    });
+  });
+
+  describe('listModelVersions', () => {
+    it('returns normalized versions with total and passes sortOrder', async () => {
+      mockModelsListModelVersions.mockResolvedValue({
+        pagination: { total_items: 1 },
+        model_versions: [
+          {
+            uuid: 'v-1',
+            tsg_id: 'tsg-123',
+            model_uuid: 'm-1',
+            revision: 'main',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-02T00:00:00Z',
+            file_count: 4,
+            model_formats: ['safetensors'],
+            last_eval_outcome: 'PASS',
+            last_eval_summary: { rules_failed: 0, rules_passed: 5, total_rules: 5 },
+          },
+        ],
+      });
+
+      const result = await service.listModelVersions('m-1', { sortOrder: 'asc', skip: 2, limit: 20 });
+      expect(mockModelsListModelVersions).toHaveBeenCalledWith('m-1', {
+        sort_order: 'asc',
+        skip: 2,
+        limit: 20,
+      });
+      expect(result.totalItems).toBe(1);
+      expect(result.versions[0]).toMatchObject({
+        uuid: 'v-1',
+        modelUuid: 'm-1',
+        revision: 'main',
+        fileCount: 4,
+        modelFormats: ['safetensors'],
+        lastEvalOutcome: 'PASS',
+        lastEvalSummary: { rulesFailed: 0, rulesPassed: 5, totalRules: 5 },
+      });
+    });
+
+    it('defaults total to 0, empty versions, and omits unset filters', async () => {
+      mockModelsListModelVersions.mockResolvedValue({ pagination: {}, model_versions: [] });
+      const result = await service.listModelVersions('m-1');
+      expect(mockModelsListModelVersions).toHaveBeenCalledWith('m-1', {});
+      expect(result).toEqual({ totalItems: 0, versions: [] });
+    });
+  });
+
+  describe('getModelVersion', () => {
+    it('returns a normalized version with null eval summary', async () => {
+      mockModelsGetModelVersion.mockResolvedValue({
+        uuid: 'v-1',
+        tsg_id: 'tsg-123',
+        model_uuid: 'm-1',
+        revision: 'main',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-02T00:00:00Z',
+        last_eval_summary: null,
+      });
+      const result = await service.getModelVersion('v-1');
+      expect(mockModelsGetModelVersion).toHaveBeenCalledWith('v-1');
+      expect(result).toMatchObject({ uuid: 'v-1', revision: 'main', lastEvalSummary: null });
+    });
+  });
+
+  describe('listModelVersionFiles', () => {
+    it('returns normalized files with total and passes pagination', async () => {
+      mockModelsListModelVersionFiles.mockResolvedValue({
+        pagination: { total_items: 1 },
+        files: [
+          {
+            uuid: 'f-1',
+            path: 'model.safetensors',
+            type: 'FILE',
+            formats: ['safetensors'],
+            result: 'SUCCESS',
+          },
+        ],
+      });
+      const result = await service.listModelVersionFiles('v-1', { skip: 0, limit: 50 });
+      expect(mockModelsListModelVersionFiles).toHaveBeenCalledWith('v-1', { skip: 0, limit: 50 });
+      expect(result).toEqual({
+        totalItems: 1,
+        files: [
+          {
+            uuid: 'f-1',
+            path: 'model.safetensors',
+            type: 'FILE',
+            formats: ['safetensors'],
+            result: 'SUCCESS',
+          },
+        ],
+      });
+    });
+
+    it('defaults total to 0 and empty files', async () => {
+      mockModelsListModelVersionFiles.mockResolvedValue({ pagination: {}, files: [] });
+      const result = await service.listModelVersionFiles('v-1');
+      expect(mockModelsListModelVersionFiles).toHaveBeenCalledWith('v-1', {});
+      expect(result).toEqual({ totalItems: 0, files: [] });
     });
   });
 });

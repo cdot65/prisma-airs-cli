@@ -33,6 +33,14 @@ const mockInstancesCreateDevices = vi.fn();
 const mockInstancesUpdateDevices = vi.fn();
 const mockInstancesDeleteDevices = vi.fn();
 const mockInstancesGetRegistryCredentials = vi.fn();
+const mockNbListChannels = vi.fn();
+const mockNbCreateChannel = vi.fn();
+const mockNbGetChannel = vi.fn();
+const mockNbUpdateChannel = vi.fn();
+const mockNbGetChannelStats = vi.fn();
+const mockGetLanguages = vi.fn();
+const mockGetManagementLanguages = vi.fn();
+const mockGetTargetProfileErrorLogs = vi.fn();
 
 function makeMockClient() {
   return {
@@ -80,6 +88,16 @@ function makeMockClient() {
       deleteDevices: mockInstancesDeleteDevices,
       getRegistryCredentials: mockInstancesGetRegistryCredentials,
     },
+    networkBroker: {
+      listChannels: mockNbListChannels,
+      createChannel: mockNbCreateChannel,
+      getChannel: mockNbGetChannel,
+      updateChannel: mockNbUpdateChannel,
+      getChannelStats: mockNbGetChannelStats,
+    },
+    getLanguages: mockGetLanguages,
+    getManagementLanguages: mockGetManagementLanguages,
+    getTargetProfileErrorLogs: mockGetTargetProfileErrorLogs,
   };
 }
 
@@ -1419,6 +1437,231 @@ describe('SdkRedTeamService', () => {
         token: 'jwt-token-here',
         expiry: '2026-04-01T00:00:00Z',
       });
+    });
+  });
+
+  describe('listChannels', () => {
+    it('returns normalized channels with total and passes filters', async () => {
+      mockNbListChannels.mockResolvedValue({
+        pagination: { total_items: 2 },
+        data: [
+          {
+            uuid: 'c-1',
+            name: 'Channel 1',
+            description: null,
+            status: 'ONLINE',
+            added_by: 'user@x.io',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-02T00:00:00Z',
+            last_online_at: '2026-01-03T00:00:00Z',
+            connected_clients_count: 3,
+            outdated_clients_count: 1,
+            features: { a: true },
+          },
+          { uuid: 'c-2', name: 'Channel 2', status: 'DRAFT' },
+        ],
+      });
+
+      const result = await service.listChannels({
+        limit: 10,
+        offset: 5,
+        search: 'foo',
+        status: ['ONLINE', 'DRAFT'],
+      });
+
+      expect(mockNbListChannels).toHaveBeenCalledWith({
+        limit: 10,
+        skip: 5,
+        search: 'foo',
+        status: ['ONLINE', 'DRAFT'],
+      });
+      expect(result.totalItems).toBe(2);
+      expect(result.channels).toEqual([
+        {
+          uuid: 'c-1',
+          name: 'Channel 1',
+          description: null,
+          status: 'ONLINE',
+          addedBy: 'user@x.io',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-02T00:00:00Z',
+          lastOnlineAt: '2026-01-03T00:00:00Z',
+          connectedClientsCount: 3,
+          outdatedClientsCount: 1,
+          features: { a: true },
+        },
+        {
+          uuid: 'c-2',
+          name: 'Channel 2',
+          description: undefined,
+          status: 'DRAFT',
+          addedBy: undefined,
+          createdAt: undefined,
+          updatedAt: undefined,
+          lastOnlineAt: undefined,
+          connectedClientsCount: undefined,
+          outdatedClientsCount: undefined,
+          features: undefined,
+        },
+      ]);
+    });
+
+    it('omits unset filters and defaults empty data', async () => {
+      mockNbListChannels.mockResolvedValue({ data: [] });
+      const result = await service.listChannels();
+      expect(mockNbListChannels).toHaveBeenCalledWith({});
+      expect(result).toEqual({ channels: [], totalItems: undefined });
+    });
+  });
+
+  describe('getChannel', () => {
+    it('returns a normalized channel', async () => {
+      mockNbGetChannel.mockResolvedValue({ uuid: 'c-1', name: 'Channel 1', status: 'OFFLINE' });
+      const result = await service.getChannel('c-1');
+      expect(mockNbGetChannel).toHaveBeenCalledWith('c-1');
+      expect(result).toMatchObject({ uuid: 'c-1', name: 'Channel 1', status: 'OFFLINE' });
+    });
+  });
+
+  describe('createChannel', () => {
+    it('creates and returns a normalized channel', async () => {
+      mockNbCreateChannel.mockResolvedValue({ uuid: 'c-9', name: 'New', status: 'DRAFT' });
+      const result = await service.createChannel({ name: 'New', description: 'desc' });
+      expect(mockNbCreateChannel).toHaveBeenCalledWith({ name: 'New', description: 'desc' });
+      expect(result).toMatchObject({ uuid: 'c-9', name: 'New', status: 'DRAFT' });
+    });
+  });
+
+  describe('updateChannel', () => {
+    it('updates and returns a normalized channel', async () => {
+      mockNbUpdateChannel.mockResolvedValue({ uuid: 'c-9', name: 'Renamed', status: 'DRAFT' });
+      const result = await service.updateChannel('c-9', { name: 'Renamed' });
+      expect(mockNbUpdateChannel).toHaveBeenCalledWith('c-9', { name: 'Renamed' });
+      expect(result).toMatchObject({ uuid: 'c-9', name: 'Renamed' });
+    });
+  });
+
+  describe('getChannelStats', () => {
+    it('returns normalized channel stats', async () => {
+      mockNbGetChannelStats.mockResolvedValue({
+        network_channels_server_domain: 'nb.example.com',
+        docker_registry: 'registry.example.com',
+        helm_chart: 'chart-1.0.0',
+        docker_image: 'image:1.0.0',
+        online_channels: 4,
+        total_channels: 7,
+        client_version: '1.2.3',
+      });
+      const result = await service.getChannelStats();
+      expect(result).toEqual({
+        serverDomain: 'nb.example.com',
+        dockerRegistry: 'registry.example.com',
+        helmChart: 'chart-1.0.0',
+        dockerImage: 'image:1.0.0',
+        onlineChannels: 4,
+        totalChannels: 7,
+        clientVersion: '1.2.3',
+      });
+    });
+  });
+
+  describe('getLanguages', () => {
+    it('returns normalized data-plane languages', async () => {
+      mockGetLanguages.mockResolvedValue({
+        multilingual_enabled: true,
+        supported_job_types: ['STATIC', 'DYNAMIC'],
+        languages: [
+          { code: 'en', name: 'English' },
+          { code: 'es', name: 'Spanish' },
+        ],
+      });
+      const result = await service.getLanguages();
+      expect(mockGetLanguages).toHaveBeenCalled();
+      expect(mockGetManagementLanguages).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        multilingualEnabled: true,
+        supportedJobTypes: ['STATIC', 'DYNAMIC'],
+        languages: [
+          { code: 'en', name: 'English' },
+          { code: 'es', name: 'Spanish' },
+        ],
+      });
+    });
+
+    it('uses the management endpoint when management=true', async () => {
+      mockGetManagementLanguages.mockResolvedValue({
+        multilingual_enabled: false,
+        supported_job_types: [],
+        languages: [],
+      });
+      const result = await service.getLanguages(true);
+      expect(mockGetManagementLanguages).toHaveBeenCalled();
+      expect(mockGetLanguages).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        multilingualEnabled: false,
+        supportedJobTypes: [],
+        languages: [],
+      });
+    });
+  });
+
+  describe('getTargetProfileErrorLogs', () => {
+    it('returns normalized error logs with total and passes filters', async () => {
+      mockGetTargetProfileErrorLogs.mockResolvedValue({
+        pagination: { total_items: 1 },
+        data: [
+          {
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T01:00:00Z',
+            job_id: 'j-1',
+            target_id: 't-1',
+            target_version: 2,
+            attack_id: 'a-1',
+            error_type: 'TIMEOUT',
+            error_source: 'target',
+            error_message: 'timed out',
+            target_object: { k: 'v' },
+            extra_info: { retries: 3 },
+            version: 1,
+          },
+        ],
+      });
+
+      const result = await service.getTargetProfileErrorLogs('t-1', {
+        limit: 20,
+        offset: 10,
+        search: 'timeout',
+      });
+
+      expect(mockGetTargetProfileErrorLogs).toHaveBeenCalledWith('t-1', {
+        limit: 20,
+        skip: 10,
+        search: 'timeout',
+      });
+      expect(result.totalItems).toBe(1);
+      expect(result.logs).toEqual([
+        {
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T01:00:00Z',
+          jobId: 'j-1',
+          targetId: 't-1',
+          targetVersion: 2,
+          attackId: 'a-1',
+          errorType: 'TIMEOUT',
+          errorSource: 'target',
+          errorMessage: 'timed out',
+          targetObject: { k: 'v' },
+          extraInfo: { retries: 3 },
+          version: 1,
+        },
+      ]);
+    });
+
+    it('omits unset filters and defaults empty data', async () => {
+      mockGetTargetProfileErrorLogs.mockResolvedValue({ data: [] });
+      const result = await service.getTargetProfileErrorLogs('t-1');
+      expect(mockGetTargetProfileErrorLogs).toHaveBeenCalledWith('t-1', {});
+      expect(result).toEqual({ logs: [], totalItems: undefined });
     });
   });
 });
