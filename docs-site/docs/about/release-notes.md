@@ -1,5 +1,18 @@
 # Release Notes
 
+## v3.1.0 (2026-07-09)
+
+### New
+
+- **Red Team Network Broker** — manage the data-plane relays that connect red team clients to targets behind a private network. `airs redteam network-broker channels {list,get,create,update}` plus `airs redteam network-broker stats` (server domain, container image/registry, helm chart, client version, online/total channel counts). Channels live on a distinct endpoint, overridable via `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` (config key `redTeamNetworkBrokerEndpoint`); OAuth credentials are shared with the other Red Team commands.
+- **`airs redteam languages`** — list the tenant's supported languages and job types for multilingual scans. `--management` queries the management plane instead of the data plane.
+- **`airs redteam targets error-logs <targetId>`** — list target-profile error logs (timeouts, auth failures, malformed responses captured while a target was exercised).
+- **`airs model-security models {list,get,versions,version,files}`** — read-only browsing of the scanned model catalog: models, their versions, and the files within each version, with latest eval outcome, detected formats, source type, and per-file results.
+
+### Changed
+
+- **SDK upgraded to `@cdot65/prisma-airs-sdk` 0.13.0.** Drop-in upgrade (no breaking changes). Also picks up upstream fixes: `customerApps.list()` now percent-encodes the TSG ID, and network-broker `ChannelStats` field names match the live API.
+
 ## v3.0.1 (2026-07-07)
 
 - Fixed the Docker image build (v3.0.0 image never published — the tsup config was missing from the build stage). npm package was unaffected.
