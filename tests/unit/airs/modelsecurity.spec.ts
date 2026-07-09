@@ -908,7 +908,11 @@ describe('SdkModelSecurityService', () => {
         ],
       });
 
-      const result = await service.listModelVersions('m-1', { sortOrder: 'asc', skip: 2, limit: 20 });
+      const result = await service.listModelVersions('m-1', {
+        sortOrder: 'asc',
+        skip: 2,
+        limit: 20,
+      });
       expect(mockModelsListModelVersions).toHaveBeenCalledWith('m-1', {
         sort_order: 'asc',
         skip: 2,

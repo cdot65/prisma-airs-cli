@@ -19,13 +19,18 @@ import {
   renderBackupHeader,
   renderBackupSummary,
   renderCategories,
+  renderChannelDetail,
+  renderChannelList,
+  renderChannelStats,
   renderCustomAttackList,
   renderCustomReport,
   renderDynamicReport,
+  renderErrorLogs,
   renderEulaContent,
   renderEulaStatus,
   renderInstanceDetail,
   renderInstanceResponse,
+  renderLanguages,
   renderPromptDetail,
   renderPromptList,
   renderPromptSetDetail,
@@ -1156,6 +1161,159 @@ export function registerRedteamCommand(program: Command): void {
         renderRestoreSummary(results);
         const failed = results.filter((r) => r.action === 'failed').length;
         if (failed > 0) process.exit(1);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  targets
+    .command('error-logs <targetId>')
+    .description('List target-profile error logs')
+    .option('--limit <n>', 'Max results')
+    .option('--offset <n>', 'Starting offset')
+    .option('--search <text>', 'Filter by search text')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .addHelpText('after', examples('airs redteam targets error-logs <targetId>'))
+    .action(async (targetId: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        const { logs } = await service.getTargetProfileErrorLogs(targetId, {
+          limit: opts.limit ? parsePositiveInt(opts.limit, '--limit') : undefined,
+          offset: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
+          search: opts.search,
+        });
+        renderErrorLogs(logs, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  // -------------------------------------------------------------------------
+  // Network Broker
+  // -------------------------------------------------------------------------
+  const networkBroker = redteam
+    .command('network-broker')
+    .description('Manage red team network broker channels');
+
+  const channels = networkBroker.command('channels').description('Manage network broker channels');
+
+  channels
+    .command('list')
+    .description('List network broker channels')
+    .option('--limit <n>', 'Max results')
+    .option('--offset <n>', 'Starting offset')
+    .option('--search <text>', 'Filter by search text')
+    .option('--status <status...>', 'Filter by status (ONLINE, OFFLINE, DRAFT)')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        const { channels: list } = await service.listChannels({
+          limit: opts.limit ? parsePositiveInt(opts.limit, '--limit') : undefined,
+          offset: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
+          search: opts.search,
+          status: opts.status,
+        });
+        renderChannelList(list, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  channels
+    .command('get <channelId>')
+    .description('Get a network broker channel')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (channelId: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        const channel = await service.getChannel(channelId);
+        renderChannelDetail(channel, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  channels
+    .command('create')
+    .description('Create a network broker channel')
+    .requiredOption('--name <name>', 'Channel name')
+    .option('--description <text>', 'Channel description')
+    .action(async (opts) => {
+      try {
+        renderRedteamHeader();
+        const service = await createService();
+        const channel = await service.createChannel({
+          name: opts.name,
+          description: opts.description,
+        });
+        ui.success(`Channel created: ${channel.uuid}`);
+        renderChannelDetail(channel);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  channels
+    .command('update <channelId>')
+    .description('Update a network broker channel')
+    .option('--name <name>', 'New channel name')
+    .option('--description <text>', 'New channel description')
+    .action(async (channelId: string, opts) => {
+      try {
+        if (opts.name === undefined && opts.description === undefined) {
+          usageError('Specify --name and/or --description to update');
+        }
+        renderRedteamHeader();
+        const service = await createService();
+        const channel = await service.updateChannel(channelId, {
+          name: opts.name,
+          description: opts.description,
+        });
+        ui.success(`Channel updated: ${channel.uuid}`);
+        renderChannelDetail(channel);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  networkBroker
+    .command('stats')
+    .description('Show network broker channel statistics')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        const stats = await service.getChannelStats();
+        renderChannelStats(stats, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  // -------------------------------------------------------------------------
+  // Languages
+  // -------------------------------------------------------------------------
+  redteam
+    .command('languages')
+    .description('List tenant languages and supported job types')
+    .option('--management', 'Query the management-plane endpoint instead of the data plane')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        const data = await service.getLanguages(Boolean(opts.management));
+        renderLanguages(data, fmt);
       } catch (err) {
         fail(err);
       }
