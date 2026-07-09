@@ -38,6 +38,14 @@ When a group is created, AIRS automatically provisions rule instances for all co
 | `ALLOWING` | Rule evaluates but doesn't block |
 | `DISABLED` | Rule is skipped entirely |
 
+### Model Catalog
+
+Every model AIRS has scanned is recorded in a read-only **catalog**. A **model** (e.g.
+`nvidia/LocateAnything-3B`) has one or more **versions**, and each version has the **files**
+that were scanned. The catalog surfaces the latest eval outcome (`ALLOWED` / `BLOCKED`),
+detected formats, source type, and per-file results — useful for auditing supply-chain
+posture without re-running a scan.
+
 ## Workflow
 
 ### 0. Install the Python SDK
@@ -107,6 +115,19 @@ airs model-security labels add <scanUuid> --labels '[{"key":"env","value":"prod"
 airs model-security labels keys
 ```
 
+### 7. Browse the model catalog
+
+```bash
+# List scanned models
+airs model-security models list
+
+# Drill into a model → its versions → the files in a version
+airs model-security models get <modelUuid>
+airs model-security models versions <modelUuid>
+airs model-security models version <modelVersionUuid>
+airs model-security models files <modelVersionUuid>
+```
+
 :::tip[Exact command syntax]
 Every model-security command with options and example output lives in the
 [CLI Reference](../cli/model-security/groups.md).
@@ -118,4 +139,5 @@ Every model-security command with options and example output lives in the
 - [Rules & Instances](rules.md) — browsing rules and configuring rule instances
 - [Scans & Results](scans.md) — listing scans, evaluations, violations, and files
 - [Labels](labels.md) — organizing scans with key-value metadata
+- [Model Catalog](../cli/model-security/models.md) — read-only browsing of models, versions, and files
 - [Python SDK](install.md) — installing the model-security-client and PyPI authentication
