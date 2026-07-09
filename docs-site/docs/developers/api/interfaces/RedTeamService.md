@@ -1,6 +1,6 @@
 # Interface: RedTeamService
 
-Defined in: [src/airs/types.ts:412](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L412)
+Defined in: [src/airs/types.ts:489](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L489)
 
 Contract for AI Red Team scan operations.
 
@@ -10,7 +10,7 @@ Contract for AI Red Team scan operations.
 
 > **abortScan**(`jobId`): `Promise`\<`void`\>
 
-Defined in: [src/airs/types.ts:508](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L508)
+Defined in: [src/airs/types.ts:585](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L585)
 
 Abort a running scan.
 
@@ -30,7 +30,7 @@ Abort a running scan.
 
 > **acceptEula**(`eulaContent`): `Promise`\<`EulaStatus`\>
 
-Defined in: [src/airs/types.ts:418](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L418)
+Defined in: [src/airs/types.ts:495](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L495)
 
 Accept the EULA.
 
@@ -46,11 +46,31 @@ Accept the EULA.
 
 ***
 
+### createChannel()
+
+> **createChannel**(`request`): `Promise`\<`RedTeamChannel`\>
+
+Defined in: [src/airs/types.ts:622](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L622)
+
+Create a network broker channel.
+
+#### Parameters
+
+##### request
+
+`RedTeamChannelCreateRequest`
+
+#### Returns
+
+`Promise`\<`RedTeamChannel`\>
+
+***
+
 ### createDevices()
 
 > **createDevices**(`tenantId`, `request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:429](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L429)
+Defined in: [src/airs/types.ts:506](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L506)
 
 Create devices for an instance.
 
@@ -74,7 +94,7 @@ Create devices for an instance.
 
 > **createInstance**(`request`): `Promise`\<`InstanceResponse`\>
 
-Defined in: [src/airs/types.ts:421](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L421)
+Defined in: [src/airs/types.ts:498](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L498)
 
 Create an instance.
 
@@ -94,7 +114,7 @@ Create an instance.
 
 > **createScan**(`request`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)\>
 
-Defined in: [src/airs/types.ts:485](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L485)
+Defined in: [src/airs/types.ts:562](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L562)
 
 Create a red team scan job.
 
@@ -144,7 +164,7 @@ Create a red team scan job.
 
 > **createTarget**(`request`, `opts?`): `Promise`\<[`RedTeamTargetDetail`](RedTeamTargetDetail.md)\>
 
-Defined in: [src/airs/types.ts:457](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L457)
+Defined in: [src/airs/types.ts:534](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L534)
 
 Create a red team target.
 
@@ -168,7 +188,7 @@ Create a red team target.
 
 > **deleteDevices**(`tenantId`, `serialNumbers`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:439](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L439)
+Defined in: [src/airs/types.ts:516](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L516)
 
 Delete devices by serial numbers.
 
@@ -192,7 +212,7 @@ Delete devices by serial numbers.
 
 > **deleteInstance**(`tenantId`): `Promise`\<`InstanceResponse`\>
 
-Defined in: [src/airs/types.ts:427](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L427)
+Defined in: [src/airs/types.ts:504](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L504)
 
 Delete an instance.
 
@@ -212,7 +232,7 @@ Delete an instance.
 
 > **deleteTarget**(`uuid`): `Promise`\<`void`\>
 
-Defined in: [src/airs/types.ts:470](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L470)
+Defined in: [src/airs/types.ts:547](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L547)
 
 Delete a red team target.
 
@@ -232,7 +252,7 @@ Delete a red team target.
 
 > **getCategories**(): `Promise`\<[`RedTeamCategory`](RedTeamCategory.md)[]\>
 
-Defined in: [src/airs/types.ts:529](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L529)
+Defined in: [src/airs/types.ts:606](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L606)
 
 List available attack categories.
 
@@ -242,11 +262,45 @@ List available attack categories.
 
 ***
 
+### getChannel()
+
+> **getChannel**(`channelId`): `Promise`\<`RedTeamChannel`\>
+
+Defined in: [src/airs/types.ts:620](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L620)
+
+Get a network broker channel by ID.
+
+#### Parameters
+
+##### channelId
+
+`string`
+
+#### Returns
+
+`Promise`\<`RedTeamChannel`\>
+
+***
+
+### getChannelStats()
+
+> **getChannelStats**(): `Promise`\<`RedTeamChannelStats`\>
+
+Defined in: [src/airs/types.ts:626](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L626)
+
+Get network broker channel statistics.
+
+#### Returns
+
+`Promise`\<`RedTeamChannelStats`\>
+
+***
+
 ### getCustomReport()
 
 > **getCustomReport**(`jobId`): `Promise`\<[`RedTeamCustomReport`](RedTeamCustomReport.md)\>
 
-Defined in: [src/airs/types.ts:517](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L517)
+Defined in: [src/airs/types.ts:594](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L594)
 
 Get custom attack report.
 
@@ -266,7 +320,7 @@ Get custom attack report.
 
 > **getDynamicReport**(`jobId`): `Promise`\<`RedTeamDynamicReport`\>
 
-Defined in: [src/airs/types.ts:514](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L514)
+Defined in: [src/airs/types.ts:591](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L591)
 
 Get dynamic scan report.
 
@@ -286,7 +340,7 @@ Get dynamic scan report.
 
 > **getEulaContent**(): `Promise`\<`EulaContent`\>
 
-Defined in: [src/airs/types.ts:414](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L414)
+Defined in: [src/airs/types.ts:491](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L491)
 
 Get EULA content.
 
@@ -300,7 +354,7 @@ Get EULA content.
 
 > **getEulaStatus**(): `Promise`\<`EulaStatus`\>
 
-Defined in: [src/airs/types.ts:416](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L416)
+Defined in: [src/airs/types.ts:493](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L493)
 
 Get EULA acceptance status.
 
@@ -314,7 +368,7 @@ Get EULA acceptance status.
 
 > **getInstance**(`tenantId`): `Promise`\<`InstanceDetail`\>
 
-Defined in: [src/airs/types.ts:423](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L423)
+Defined in: [src/airs/types.ts:500](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L500)
 
 Get instance details.
 
@@ -330,11 +384,31 @@ Get instance details.
 
 ***
 
+### getLanguages()
+
+> **getLanguages**(`management?`): `Promise`\<`RedTeamLanguages`\>
+
+Defined in: [src/airs/types.ts:629](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L629)
+
+List tenant languages (data plane, or management plane when `management`).
+
+#### Parameters
+
+##### management?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`RedTeamLanguages`\>
+
+***
+
 ### getRegistryCredentials()
 
 > **getRegistryCredentials**(): `Promise`\<`RegistryCredentials`\>
 
-Defined in: [src/airs/types.ts:441](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L441)
+Defined in: [src/airs/types.ts:518](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L518)
 
 Get or create registry credentials.
 
@@ -348,7 +422,7 @@ Get or create registry credentials.
 
 > **getScan**(`jobId`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)\>
 
-Defined in: [src/airs/types.ts:497](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L497)
+Defined in: [src/airs/types.ts:574](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L574)
 
 Get scan status by job ID.
 
@@ -368,7 +442,7 @@ Get scan status by job ID.
 
 > **getStaticReport**(`jobId`): `Promise`\<[`RedTeamStaticReport`](RedTeamStaticReport.md)\>
 
-Defined in: [src/airs/types.ts:511](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L511)
+Defined in: [src/airs/types.ts:588](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L588)
 
 Get static scan report.
 
@@ -388,7 +462,7 @@ Get static scan report.
 
 > **getTarget**(`uuid`): `Promise`\<[`RedTeamTargetDetail`](RedTeamTargetDetail.md)\>
 
-Defined in: [src/airs/types.ts:454](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L454)
+Defined in: [src/airs/types.ts:531](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L531)
 
 Get target details.
 
@@ -408,7 +482,7 @@ Get target details.
 
 > **getTargetMetadata**(): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:446](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L446)
+Defined in: [src/airs/types.ts:523](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L523)
 
 Get target field metadata.
 
@@ -422,7 +496,7 @@ Get target field metadata.
 
 > **getTargetProfile**(`uuid`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:476](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L476)
+Defined in: [src/airs/types.ts:553](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L553)
 
 Get target profile.
 
@@ -438,11 +512,45 @@ Get target profile.
 
 ***
 
+### getTargetProfileErrorLogs()
+
+> **getTargetProfileErrorLogs**(`targetId`, `opts?`): `Promise`\<\{ `logs`: `RedTeamErrorLog`[]; `totalItems?`: `number`; \}\>
+
+Defined in: [src/airs/types.ts:631](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L631)
+
+List target-profile error logs.
+
+#### Parameters
+
+##### targetId
+
+`string`
+
+##### opts?
+
+###### limit?
+
+`number`
+
+###### offset?
+
+`number`
+
+###### search?
+
+`string`
+
+#### Returns
+
+`Promise`\<\{ `logs`: `RedTeamErrorLog`[]; `totalItems?`: `number`; \}\>
+
+***
+
 ### getTargetTemplates()
 
 > **getTargetTemplates**(): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:448](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L448)
+Defined in: [src/airs/types.ts:525](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L525)
 
 Get provider-specific target templates.
 
@@ -456,7 +564,7 @@ Get provider-specific target templates.
 
 > **listAttacks**(`jobId`, `opts?`): `Promise`\<\{ `attacks`: [`RedTeamAttack`](RedTeamAttack.md)[]; `totalItems?`: `number`; \}\>
 
-Defined in: [src/airs/types.ts:520](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L520)
+Defined in: [src/airs/types.ts:597](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L597)
 
 List attacks from a static/dynamic scan.
 
@@ -482,11 +590,31 @@ List attacks from a static/dynamic scan.
 
 ***
 
+### listChannels()
+
+> **listChannels**(`opts?`): `Promise`\<\{ `channels`: `RedTeamChannel`[]; `totalItems?`: `number`; \}\>
+
+Defined in: [src/airs/types.ts:616](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L616)
+
+List network broker channels.
+
+#### Parameters
+
+##### opts?
+
+`RedTeamChannelListOptions`
+
+#### Returns
+
+`Promise`\<\{ `channels`: `RedTeamChannel`[]; `totalItems?`: `number`; \}\>
+
+***
+
 ### listCustomAttacks()
 
 > **listCustomAttacks**(`jobId`, `opts?`): `Promise`\<[`RedTeamCustomAttack`](RedTeamCustomAttack.md)[]\>
 
-Defined in: [src/airs/types.ts:526](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L526)
+Defined in: [src/airs/types.ts:603](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L603)
 
 List attacks from a custom prompt set scan.
 
@@ -512,7 +640,7 @@ List attacks from a custom prompt set scan.
 
 > **listScans**(`opts?`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)[]\>
 
-Defined in: [src/airs/types.ts:500](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L500)
+Defined in: [src/airs/types.ts:577](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L577)
 
 List recent scans with optional filters.
 
@@ -546,7 +674,7 @@ List recent scans with optional filters.
 
 > **listTargets**(): `Promise`\<[`RedTeamTarget`](RedTeamTarget.md)[]\>
 
-Defined in: [src/airs/types.ts:451](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L451)
+Defined in: [src/airs/types.ts:528](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L528)
 
 List configured red team targets.
 
@@ -560,7 +688,7 @@ List configured red team targets.
 
 > **probeTarget**(`request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:473](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L473)
+Defined in: [src/airs/types.ts:550](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L550)
 
 Probe a target connection.
 
@@ -576,11 +704,35 @@ Probe a target connection.
 
 ***
 
+### updateChannel()
+
+> **updateChannel**(`channelId`, `request`): `Promise`\<`RedTeamChannel`\>
+
+Defined in: [src/airs/types.ts:624](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L624)
+
+Update a network broker channel.
+
+#### Parameters
+
+##### channelId
+
+`string`
+
+##### request
+
+`RedTeamChannelUpdateRequest`
+
+#### Returns
+
+`Promise`\<`RedTeamChannel`\>
+
+***
+
 ### updateDevices()
 
 > **updateDevices**(`tenantId`, `request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:434](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L434)
+Defined in: [src/airs/types.ts:511](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L511)
 
 Update devices (PATCH).
 
@@ -604,7 +756,7 @@ Update devices (PATCH).
 
 > **updateInstance**(`tenantId`, `request`): `Promise`\<`InstanceResponse`\>
 
-Defined in: [src/airs/types.ts:425](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L425)
+Defined in: [src/airs/types.ts:502](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L502)
 
 Update an instance.
 
@@ -628,7 +780,7 @@ Update an instance.
 
 > **updateTarget**(`uuid`, `request`, `opts?`): `Promise`\<[`RedTeamTargetDetail`](RedTeamTargetDetail.md)\>
 
-Defined in: [src/airs/types.ts:463](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L463)
+Defined in: [src/airs/types.ts:540](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L540)
 
 Update a red team target.
 
@@ -656,7 +808,7 @@ Update a red team target.
 
 > **updateTargetProfile**(`uuid`, `request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/airs/types.ts:479](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L479)
+Defined in: [src/airs/types.ts:556](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L556)
 
 Update target profile.
 
@@ -680,7 +832,7 @@ Update target profile.
 
 > **validateTargetAuth**(`request`): `Promise`\<`TargetAuthValidationResult`\>
 
-Defined in: [src/airs/types.ts:444](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L444)
+Defined in: [src/airs/types.ts:521](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L521)
 
 Validate target auth credentials.
 
@@ -700,7 +852,7 @@ Validate target auth credentials.
 
 > **waitForCompletion**(`jobId`, `onProgress?`, `intervalMs?`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)\>
 
-Defined in: [src/airs/types.ts:532](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L532)
+Defined in: [src/airs/types.ts:609](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L609)
 
 Poll until scan completes. Calls onProgress for status updates.
 

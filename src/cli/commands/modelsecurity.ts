@@ -15,7 +15,12 @@ import {
   renderGroupList,
   renderLabelKeys,
   renderLabelValues,
+  renderModelDetail,
+  renderModelFileList,
+  renderModelList,
   renderModelSecurityHeader,
+  renderModelVersionDetail,
+  renderModelVersionList,
   renderMsScanDetail,
   renderMsScanList,
   renderRuleDetail,
@@ -621,6 +626,117 @@ export function registerModelSecurityCommand(program: Command): void {
           limit: Number.parseInt(opts.limit, 10),
         });
         renderFileList(result.files);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  // -----------------------------------------------------------------------
+  // model-security models — read-only model catalog
+  // -----------------------------------------------------------------------
+  const models = ms.command('models').description('Browse the scanned model catalog (read-only)');
+
+  models
+    .command('list')
+    .description('List models in the catalog')
+    .option('--search <text>', 'Filter by search text')
+    .option('--search-query <text>', 'Filter by model UUID or name')
+    .option('--sort-field <field>', 'Sort field: created_at, updated_at')
+    .option('--sort-order <order>', 'Sort order: asc, desc')
+    .option('--limit <n>', 'Max results')
+    .option('--offset <n>', 'Starting offset')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .addHelpText('after', examples('airs model-security models list'))
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
+        const service = await createService();
+        const result = await service.listModels({
+          search: opts.search,
+          searchQuery: opts.searchQuery,
+          sortField: opts.sortField,
+          sortOrder: opts.sortOrder,
+          limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
+          skip: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
+        });
+        renderModelList(result.models, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  models
+    .command('get <uuid>')
+    .description('Get a model by UUID')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (uuid: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
+        const service = await createService();
+        const model = await service.getModel(uuid);
+        renderModelDetail(model, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  models
+    .command('versions <modelUuid>')
+    .description('List versions of a model')
+    .option('--sort-order <order>', 'Sort order: asc, desc')
+    .option('--limit <n>', 'Max results')
+    .option('--offset <n>', 'Starting offset')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (modelUuid: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
+        const service = await createService();
+        const result = await service.listModelVersions(modelUuid, {
+          sortOrder: opts.sortOrder,
+          limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
+          skip: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
+        });
+        renderModelVersionList(result.versions, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  models
+    .command('version <uuid>')
+    .description('Get a model version by UUID')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (uuid: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
+        const service = await createService();
+        const version = await service.getModelVersion(uuid);
+        renderModelVersionDetail(version, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  models
+    .command('files <modelVersionUuid>')
+    .description('List files in a model version')
+    .option('--limit <n>', 'Max results')
+    .option('--offset <n>', 'Starting offset')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (modelVersionUuid: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
+        const service = await createService();
+        const result = await service.listModelVersionFiles(modelVersionUuid, {
+          limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
+          skip: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
+        });
+        renderModelFileList(result.files, fmt);
       } catch (err) {
         fail(err);
       }

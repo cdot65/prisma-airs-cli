@@ -23,6 +23,7 @@ function fromEnv(): Record<string, unknown> {
     redTeamDataEndpoint: env.PANW_RED_TEAM_DATA_ENDPOINT,
     redTeamMgmtEndpoint: env.PANW_RED_TEAM_MGMT_ENDPOINT,
     redTeamTokenEndpoint: env.PANW_RED_TEAM_TOKEN_ENDPOINT,
+    redTeamNetworkBrokerEndpoint: env.PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT,
     modelSecDataEndpoint: env.PANW_MODEL_SEC_DATA_ENDPOINT,
     modelSecMgmtEndpoint: env.PANW_MODEL_SEC_MGMT_ENDPOINT,
     modelSecTokenEndpoint: env.PANW_MODEL_SEC_TOKEN_ENDPOINT,

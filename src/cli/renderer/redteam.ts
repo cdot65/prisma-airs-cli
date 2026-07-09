@@ -794,3 +794,231 @@ export function renderRegistryCredentials(
   ]);
   console.log();
 }
+
+/** Channel status → chalk color. */
+function channelStatusColor(status: string): ChalkFn {
+  switch (status.toUpperCase()) {
+    case 'ONLINE':
+      return chalk.green;
+    case 'DRAFT':
+      return chalk.yellow;
+    case 'OFFLINE':
+      return chalk.red;
+    default:
+      return chalk.white;
+  }
+}
+
+/** Render a list of network broker channels. */
+export function renderChannelList(
+  channels: Array<{
+    uuid?: string;
+    name?: string | null;
+    status?: string | null;
+    connectedClientsCount?: number | null;
+    lastOnlineAt?: string | null;
+  }>,
+  format: OutputFormat = 'pretty',
+): void {
+  if (channels.length === 0) {
+    ui.emptyList('channels');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = channels.map((c) => ({
+      id: c.uuid ?? '',
+      name: c.name ?? '',
+      status: c.status ?? '',
+      clients: c.connectedClientsCount ?? '',
+      lastOnline: c.lastOnlineAt ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+          { key: 'clients', label: 'Clients' },
+          { key: 'lastOnline', label: 'Last Online' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('Network Broker Channels:');
+  for (const c of channels) {
+    if (c.uuid) ui.dim(c.uuid);
+    const status = c.status ? channelStatusColor(c.status)(c.status) : chalk.dim('unknown');
+    const clients = c.connectedClientsCount != null ? `  clients: ${c.connectedClientsCount}` : '';
+    console.log(`    ${c.name ?? '(unnamed)'}  ${status}${clients}`);
+    console.log();
+  }
+}
+
+/** Render a single channel's detail. */
+export function renderChannelDetail(
+  channel: {
+    uuid?: string;
+    name?: string | null;
+    description?: string | null;
+    status?: string | null;
+    addedBy?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    lastOnlineAt?: string | null;
+    connectedClientsCount?: number | null;
+    outdatedClientsCount?: number | null;
+    features?: Record<string, boolean> | null;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(channel, null, 2) : yamlDump(channel));
+    return;
+  }
+  ui.section('Channel Detail:');
+  const pairs: Array<[string, unknown]> = [['UUID', channel.uuid]];
+  if (channel.name != null) pairs.push(['Name', channel.name]);
+  if (channel.description != null) pairs.push(['Description', channel.description]);
+  if (channel.status != null)
+    pairs.push(['Status', channelStatusColor(channel.status)(channel.status)]);
+  if (channel.connectedClientsCount != null)
+    pairs.push(['Connected Clients', channel.connectedClientsCount]);
+  if (channel.outdatedClientsCount != null)
+    pairs.push(['Outdated Clients', channel.outdatedClientsCount]);
+  if (channel.lastOnlineAt != null) pairs.push(['Last Online', channel.lastOnlineAt]);
+  if (channel.addedBy != null) pairs.push(['Added By', channel.addedBy]);
+  if (channel.createdAt != null) pairs.push(['Created', channel.createdAt]);
+  if (channel.updatedAt != null) pairs.push(['Updated', channel.updatedAt]);
+  ui.keyValue(pairs);
+  if (channel.features && Object.keys(channel.features).length > 0) {
+    ui.section('Features:');
+    ui.keyValue(Object.entries(channel.features).map(([k, v]) => [k, v]));
+  }
+  console.log();
+}
+
+/** Render network broker channel statistics. */
+export function renderChannelStats(
+  stats: {
+    serverDomain?: string | null;
+    dockerRegistry?: string | null;
+    helmChart?: string | null;
+    dockerImage?: string | null;
+    onlineChannels?: number | null;
+    totalChannels?: number | null;
+    clientVersion?: string | null;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(stats, null, 2) : yamlDump(stats));
+    return;
+  }
+  ui.section('Network Broker Stats:');
+  const pairs: Array<[string, unknown]> = [];
+  if (stats.onlineChannels != null) pairs.push(['Online Channels', stats.onlineChannels]);
+  if (stats.totalChannels != null) pairs.push(['Total Channels', stats.totalChannels]);
+  if (stats.serverDomain != null) pairs.push(['Server Domain', stats.serverDomain]);
+  if (stats.dockerRegistry != null) pairs.push(['Docker Registry', stats.dockerRegistry]);
+  if (stats.dockerImage != null) pairs.push(['Docker Image', stats.dockerImage]);
+  if (stats.helmChart != null) pairs.push(['Helm Chart', stats.helmChart]);
+  if (stats.clientVersion != null) pairs.push(['Client Version', stats.clientVersion]);
+  ui.keyValue(pairs);
+  console.log();
+}
+
+/** Render tenant language configuration. */
+export function renderLanguages(
+  data: {
+    multilingualEnabled: boolean;
+    supportedJobTypes: string[];
+    languages: Array<{ code: string; name: string }>;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    if (format === 'json' || format === 'yaml') {
+      console.log(format === 'json' ? JSON.stringify(data, null, 2) : yamlDump(data));
+      return;
+    }
+    console.log(
+      formatOutput(
+        data.languages.map((l) => ({ code: l.code, name: l.name })),
+        [
+          { key: 'code', label: 'Code' },
+          { key: 'name', label: 'Name' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('Tenant Languages:');
+  ui.keyValue([
+    ['Multilingual', data.multilingualEnabled ? activeState(true) : activeState(false)],
+    ['Supported Job Types', data.supportedJobTypes.join(', ') || '(none)'],
+  ]);
+  if (data.languages.length === 0) {
+    ui.emptyList('languages');
+    return;
+  }
+  ui.section('Languages:');
+  for (const l of data.languages) {
+    console.log(`    ${chalk.dim(l.code)}  ${l.name}`);
+  }
+  console.log();
+}
+
+/** Render target-profile error logs. */
+export function renderErrorLogs(
+  logs: Array<{
+    createdAt: string;
+    jobId?: string | null;
+    attackId?: string | null;
+    errorType?: string | null;
+    errorSource?: string | null;
+    errorMessage?: string | null;
+  }>,
+  format: OutputFormat = 'pretty',
+): void {
+  if (logs.length === 0) {
+    ui.emptyList('error logs');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = logs.map((l) => ({
+      createdAt: l.createdAt,
+      errorType: l.errorType ?? '',
+      errorSource: l.errorSource ?? '',
+      jobId: l.jobId ?? '',
+      message: l.errorMessage ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'createdAt', label: 'Created' },
+          { key: 'errorType', label: 'Type' },
+          { key: 'errorSource', label: 'Source' },
+          { key: 'jobId', label: 'Job' },
+          { key: 'message', label: 'Message' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('Target-Profile Error Logs:');
+  for (const l of logs) {
+    const type = l.errorType ? chalk.red(l.errorType) : chalk.dim('error');
+    console.log(
+      `    ${chalk.dim(l.createdAt)}  ${type}${l.errorSource ? `  (${l.errorSource})` : ''}`,
+    );
+    if (l.errorMessage) console.log(`      ${l.errorMessage}`);
+    if (l.jobId) console.log(`      ${chalk.dim(`job: ${l.jobId}`)}`);
+    console.log();
+  }
+}

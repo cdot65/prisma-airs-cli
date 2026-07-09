@@ -1,6 +1,6 @@
 # Interface: ModelSecurityScan
 
-Defined in: [src/airs/types.ts:642](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L642)
+Defined in: [src/airs/types.ts:740](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L740)
 
 Normalized model security scan.
 
@@ -10,7 +10,7 @@ Normalized model security scan.
 
 > **createdAt**: `string`
 
-Defined in: [src/airs/types.ts:654](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L654)
+Defined in: [src/airs/types.ts:752](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L752)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:654](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **evalOutcome**: `string`
 
-Defined in: [src/airs/types.ts:644](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L644)
+Defined in: [src/airs/types.ts:742](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L742)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:644](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **evalSummary**: \{ `rulesFailed`: `number`; `rulesPassed`: `number`; `totalRules`: `number`; \} \| `null`
 
-Defined in: [src/airs/types.ts:649](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L649)
+Defined in: [src/airs/types.ts:747](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L747)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:649](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **labels**: `object`[]
 
-Defined in: [src/airs/types.ts:656](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L656)
+Defined in: [src/airs/types.ts:754](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L754)
 
 #### key
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:656](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **modelUri**: `string`
 
-Defined in: [src/airs/types.ts:645](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L645)
+Defined in: [src/airs/types.ts:743](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L743)
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [src/airs/types.ts:645](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **scanOrigin**: `string`
 
-Defined in: [src/airs/types.ts:646](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L646)
+Defined in: [src/airs/types.ts:744](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L744)
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/airs/types.ts:646](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **securityGroupName**: `string`
 
-Defined in: [src/airs/types.ts:648](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L648)
+Defined in: [src/airs/types.ts:746](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L746)
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [src/airs/types.ts:648](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **sourceType**: `string`
 
-Defined in: [src/airs/types.ts:647](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L647)
+Defined in: [src/airs/types.ts:745](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L745)
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: [src/airs/types.ts:647](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **updatedAt**: `string`
 
-Defined in: [src/airs/types.ts:655](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L655)
+Defined in: [src/airs/types.ts:753](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L753)
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: [src/airs/types.ts:655](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:643](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L643)
+Defined in: [src/airs/types.ts:741](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L741)

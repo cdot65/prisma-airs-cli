@@ -734,3 +734,28 @@ Total: 1 skipped
 ```bash
 airs redteam targets restore --file ./backups/example-target.json --overwrite
 ```
+
+### redteam targets error-logs
+
+List target-profile error logs — errors captured while a target was exercised
+during scans (timeouts, auth failures, malformed responses).
+
+```text
+airs redteam targets error-logs <targetId> [options]
+```
+
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--limit <n>` | No | — | Max results |
+| `--offset <n>` | No | — | Starting offset |
+| `--search <text>` | No | — | Filter by search text |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+
+#### Examples
+
+```bash
+airs redteam targets error-logs 550e8400-e29b-41d4-a716-446655440000
+airs redteam targets error-logs <targetId> --output json
+```

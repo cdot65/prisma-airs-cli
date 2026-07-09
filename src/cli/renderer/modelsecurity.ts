@@ -4,6 +4,8 @@ import type {
   ModelSecurityEvaluation,
   ModelSecurityFile,
   ModelSecurityGroup,
+  ModelSecurityModel,
+  ModelSecurityModelVersion,
   ModelSecurityRule,
   ModelSecurityRuleInstance,
   ModelSecurityScan,
@@ -424,4 +426,205 @@ export function renderLabelValues(key: string, values: string[]): void {
     console.log(`  ${v}`);
   }
   console.log();
+}
+
+// ---------------------------------------------------------------------------
+// Model Security — Model catalog (read-only)
+// ---------------------------------------------------------------------------
+
+/** Render a list of catalog models. */
+export function renderModelList(
+  models: ModelSecurityModel[],
+  format: OutputFormat = 'pretty',
+): void {
+  if (models.length === 0) {
+    ui.emptyList('models');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = models.map((m) => ({
+      id: m.uuid,
+      name: m.name,
+      outcome: m.latestVersionOutcome ?? '',
+      formats: (m.latestVersionFormats ?? []).join(', '),
+      scanned: m.latestVersionScanTime ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'name', label: 'Name' },
+          { key: 'outcome', label: 'Outcome' },
+          { key: 'formats', label: 'Formats' },
+          { key: 'scanned', label: 'Last Scan' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('Models:');
+  for (const m of models) {
+    ui.dim(m.uuid);
+    const outcome = m.latestVersionOutcome
+      ? stateColor(m.latestVersionOutcome)(m.latestVersionOutcome)
+      : chalk.dim('unscanned');
+    const formats =
+      m.latestVersionFormats && m.latestVersionFormats.length > 0
+        ? chalk.dim(` [${m.latestVersionFormats.join(', ')}]`)
+        : '';
+    console.log(`    ${m.name}  ${outcome}${formats}`);
+    console.log();
+  }
+}
+
+/** Render a single model's detail. */
+export function renderModelDetail(
+  model: ModelSecurityModel,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(model, null, 2) : yamlDump(model));
+    return;
+  }
+  ui.section('Model Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', model.uuid],
+    ['Name', model.name],
+    ['Created', model.createdAt],
+    ['Updated', model.updatedAt],
+  ];
+  if (model.latestVersionUuid != null) pairs.push(['Latest Version', model.latestVersionUuid]);
+  if (model.latestVersionRevision != null)
+    pairs.push(['Latest Revision', model.latestVersionRevision]);
+  if (model.latestVersionOutcome != null)
+    pairs.push([
+      'Latest Outcome',
+      stateColor(model.latestVersionOutcome)(model.latestVersionOutcome),
+    ]);
+  if (model.latestVersionFormats?.length)
+    pairs.push(['Formats', model.latestVersionFormats.join(', ')]);
+  if (model.latestVersionSourceTypes?.length)
+    pairs.push(['Source Types', model.latestVersionSourceTypes.join(', ')]);
+  if (model.latestVersionScanTime != null) pairs.push(['Last Scan', model.latestVersionScanTime]);
+  ui.keyValue(pairs);
+  console.log();
+}
+
+/** Render a list of model versions. */
+export function renderModelVersionList(
+  versions: ModelSecurityModelVersion[],
+  format: OutputFormat = 'pretty',
+): void {
+  if (versions.length === 0) {
+    ui.emptyList('versions');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = versions.map((v) => ({
+      id: v.uuid,
+      revision: v.revision,
+      files: v.fileCount ?? '',
+      outcome: v.lastEvalOutcome ?? '',
+      scanned: v.latestScanTime ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'revision', label: 'Revision' },
+          { key: 'files', label: 'Files' },
+          { key: 'outcome', label: 'Outcome' },
+          { key: 'scanned', label: 'Last Scan' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('Model Versions:');
+  for (const v of versions) {
+    ui.dim(v.uuid);
+    const outcome = v.lastEvalOutcome
+      ? stateColor(v.lastEvalOutcome)(v.lastEvalOutcome)
+      : chalk.dim('unscanned');
+    const files = v.fileCount != null ? `  files: ${v.fileCount}` : '';
+    console.log(`    ${v.revision}  ${outcome}${files}`);
+    console.log();
+  }
+}
+
+/** Render a single model version's detail. */
+export function renderModelVersionDetail(
+  version: ModelSecurityModelVersion,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(version, null, 2) : yamlDump(version));
+    return;
+  }
+  ui.section('Model Version Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', version.uuid],
+    ['Model', version.modelUuid],
+    ['Revision', version.revision],
+    ['Created', version.createdAt],
+    ['Updated', version.updatedAt],
+  ];
+  if (version.fileCount != null) pairs.push(['File Count', version.fileCount]);
+  if (version.license != null) pairs.push(['License', version.license]);
+  if (version.modelFormats?.length) pairs.push(['Formats', version.modelFormats.join(', ')]);
+  if (version.sourceTypes?.length) pairs.push(['Source Types', version.sourceTypes.join(', ')]);
+  if (version.hfModelName != null) pairs.push(['HF Model', version.hfModelName]);
+  if (version.hfOrganization != null) pairs.push(['HF Organization', version.hfOrganization]);
+  if (version.lastEvalOutcome != null)
+    pairs.push(['Last Outcome', stateColor(version.lastEvalOutcome)(version.lastEvalOutcome)]);
+  if (version.latestScanTime != null) pairs.push(['Last Scan', version.latestScanTime]);
+  ui.keyValue(pairs);
+  if (version.lastEvalSummary) {
+    ui.section('Last Eval Summary:');
+    ui.keyValue([
+      ['Passed', version.lastEvalSummary.rulesPassed],
+      ['Failed', version.lastEvalSummary.rulesFailed],
+      ['Total', version.lastEvalSummary.totalRules],
+    ]);
+  }
+  console.log();
+}
+
+/** Render a list of model-version files (format-aware). */
+export function renderModelFileList(
+  files: ModelSecurityFile[],
+  format: OutputFormat = 'pretty',
+): void {
+  if (files.length === 0) {
+    ui.emptyList('files');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = files.map((f) => ({
+      id: f.uuid,
+      path: f.path,
+      type: f.type,
+      formats: f.formats.join(', '),
+      result: f.result,
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'id', label: 'ID' },
+          { key: 'path', label: 'Path' },
+          { key: 'type', label: 'Type' },
+          { key: 'formats', label: 'Formats' },
+          { key: 'result', label: 'Result' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  renderFileList(files);
 }

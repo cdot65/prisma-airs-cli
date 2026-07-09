@@ -7,10 +7,17 @@ import type {
   InstanceResponse,
   RedTeamAttack,
   RedTeamCategory,
+  RedTeamChannel,
+  RedTeamChannelCreateRequest,
+  RedTeamChannelListOptions,
+  RedTeamChannelStats,
+  RedTeamChannelUpdateRequest,
   RedTeamCustomAttack,
   RedTeamCustomReport,
   RedTeamDynamicReport,
+  RedTeamErrorLog,
   RedTeamJob,
+  RedTeamLanguages,
   RedTeamService,
   RedTeamStaticReport,
   RedTeamTarget,
@@ -84,6 +91,41 @@ export function sanitizeTargetMetadata<T extends Record<string, unknown> | undef
     return rest as T;
   }
   return metadata;
+}
+
+/** Normalize an SDK network broker channel into a RedTeamChannel. */
+function normalizeChannel(raw: Record<string, unknown>): RedTeamChannel {
+  return {
+    uuid: raw.uuid as string | undefined,
+    name: raw.name as string | null | undefined,
+    description: raw.description as string | null | undefined,
+    status: raw.status as string | null | undefined,
+    addedBy: raw.added_by as string | null | undefined,
+    createdAt: raw.created_at as string | null | undefined,
+    updatedAt: raw.updated_at as string | null | undefined,
+    lastOnlineAt: raw.last_online_at as string | null | undefined,
+    connectedClientsCount: raw.connected_clients_count as number | null | undefined,
+    outdatedClientsCount: raw.outdated_clients_count as number | null | undefined,
+    features: raw.features as Record<string, boolean> | null | undefined,
+  };
+}
+
+/** Normalize an SDK target-profile error log into a RedTeamErrorLog. */
+function normalizeErrorLog(raw: Record<string, unknown>): RedTeamErrorLog {
+  return {
+    createdAt: raw.created_at as string,
+    updatedAt: raw.updated_at as string,
+    jobId: raw.job_id as string | null | undefined,
+    targetId: raw.target_id as string | null | undefined,
+    targetVersion: raw.target_version as number | null | undefined,
+    attackId: raw.attack_id as string | null | undefined,
+    errorType: raw.error_type as string | null | undefined,
+    errorSource: raw.error_source as string | null | undefined,
+    errorMessage: raw.error_message as string | null | undefined,
+    targetObject: raw.target_object as Record<string, unknown> | null | undefined,
+    extraInfo: raw.extra_info as Record<string, unknown> | null | undefined,
+    version: raw.version as number | undefined,
+  };
 }
 
 /** Normalize an SDK target response into a RedTeamTargetDetail. */
@@ -540,5 +582,97 @@ export class SdkRedTeamService implements RedTeamService {
       }
       await delay(intervalMs);
     }
+  }
+
+  async listChannels(
+    opts?: RedTeamChannelListOptions,
+  ): Promise<{ channels: RedTeamChannel[]; totalItems?: number }> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.limit != null) sdkOpts.limit = opts.limit;
+    if (opts?.offset != null) sdkOpts.skip = opts.offset;
+    if (opts?.search) sdkOpts.search = opts.search;
+    if (opts?.status) sdkOpts.status = opts.status;
+
+    const raw = (await this.client.networkBroker.listChannels(sdkOpts)) as Record<string, unknown>;
+    const pagination = raw.pagination as Record<string, unknown> | undefined;
+    return {
+      channels: ((raw.data ?? []) as Array<Record<string, unknown>>).map(normalizeChannel),
+      totalItems: pagination?.total_items as number | undefined,
+    };
+  }
+
+  async getChannel(channelId: string): Promise<RedTeamChannel> {
+    const raw = (await this.client.networkBroker.getChannel(channelId)) as Record<string, unknown>;
+    return normalizeChannel(raw);
+  }
+
+  async createChannel(request: RedTeamChannelCreateRequest): Promise<RedTeamChannel> {
+    const body: Record<string, unknown> = { name: request.name };
+    if (request.description !== undefined) body.description = request.description;
+    const raw = (await this.client.networkBroker.createChannel(
+      body as unknown as Parameters<RedTeamClient['networkBroker']['createChannel']>[0],
+    )) as Record<string, unknown>;
+    return normalizeChannel(raw);
+  }
+
+  async updateChannel(
+    channelId: string,
+    request: RedTeamChannelUpdateRequest,
+  ): Promise<RedTeamChannel> {
+    const body: Record<string, unknown> = {};
+    if (request.name !== undefined) body.name = request.name;
+    if (request.description !== undefined) body.description = request.description;
+    const raw = (await this.client.networkBroker.updateChannel(
+      channelId,
+      body as unknown as Parameters<RedTeamClient['networkBroker']['updateChannel']>[1],
+    )) as Record<string, unknown>;
+    return normalizeChannel(raw);
+  }
+
+  async getChannelStats(): Promise<RedTeamChannelStats> {
+    const raw = (await this.client.networkBroker.getChannelStats()) as Record<string, unknown>;
+    return {
+      serverDomain: raw.network_channels_server_domain as string | null | undefined,
+      dockerRegistry: raw.docker_registry as string | null | undefined,
+      helmChart: raw.helm_chart as string | null | undefined,
+      dockerImage: raw.docker_image as string | null | undefined,
+      onlineChannels: raw.online_channels as number | null | undefined,
+      totalChannels: raw.total_channels as number | null | undefined,
+      clientVersion: raw.client_version as string | null | undefined,
+    };
+  }
+
+  async getLanguages(management = false): Promise<RedTeamLanguages> {
+    const raw = (await (management
+      ? this.client.getManagementLanguages()
+      : this.client.getLanguages())) as Record<string, unknown>;
+    return {
+      multilingualEnabled: Boolean(raw.multilingual_enabled),
+      supportedJobTypes: (raw.supported_job_types ?? []) as string[],
+      languages: ((raw.languages ?? []) as Array<Record<string, unknown>>).map((l) => ({
+        code: l.code as string,
+        name: l.name as string,
+      })),
+    };
+  }
+
+  async getTargetProfileErrorLogs(
+    targetId: string,
+    opts?: { limit?: number; offset?: number; search?: string },
+  ): Promise<{ logs: RedTeamErrorLog[]; totalItems?: number }> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.limit != null) sdkOpts.limit = opts.limit;
+    if (opts?.offset != null) sdkOpts.skip = opts.offset;
+    if (opts?.search) sdkOpts.search = opts.search;
+
+    const raw = (await this.client.getTargetProfileErrorLogs(targetId, sdkOpts)) as Record<
+      string,
+      unknown
+    >;
+    const pagination = raw.pagination as Record<string, unknown> | undefined;
+    return {
+      logs: ((raw.data ?? []) as Array<Record<string, unknown>>).map(normalizeErrorLog),
+      totalItems: pagination?.total_items as number | undefined,
+    };
   }
 }

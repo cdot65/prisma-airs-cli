@@ -408,6 +408,83 @@ export interface RegistryCredentials {
   expiry: string;
 }
 
+// ---------------------------------------------------------------------------
+// Network Broker types — normalized shapes for red team network channels
+// ---------------------------------------------------------------------------
+
+/** Normalized network broker channel. */
+export interface RedTeamChannel {
+  uuid?: string;
+  name?: string | null;
+  description?: string | null;
+  status?: string | null;
+  addedBy?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  lastOnlineAt?: string | null;
+  connectedClientsCount?: number | null;
+  outdatedClientsCount?: number | null;
+  features?: Record<string, boolean> | null;
+}
+
+/** Filters for listing network broker channels. */
+export interface RedTeamChannelListOptions {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  status?: string | string[];
+}
+
+/** Request to create a network broker channel. */
+export interface RedTeamChannelCreateRequest {
+  name: string;
+  description?: string;
+}
+
+/** Request to update a network broker channel. */
+export interface RedTeamChannelUpdateRequest {
+  name?: string;
+  description?: string;
+}
+
+/** Normalized network broker channel statistics. */
+export interface RedTeamChannelStats {
+  serverDomain?: string | null;
+  dockerRegistry?: string | null;
+  helmChart?: string | null;
+  dockerImage?: string | null;
+  onlineChannels?: number | null;
+  totalChannels?: number | null;
+  clientVersion?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Language & error-log types — normalized shapes for red team tenant data
+// ---------------------------------------------------------------------------
+
+/** Normalized tenant language configuration. */
+export interface RedTeamLanguages {
+  multilingualEnabled: boolean;
+  supportedJobTypes: string[];
+  languages: Array<{ code: string; name: string }>;
+}
+
+/** Normalized target-profile error log entry. */
+export interface RedTeamErrorLog {
+  createdAt: string;
+  updatedAt: string;
+  jobId?: string | null;
+  targetId?: string | null;
+  targetVersion?: number | null;
+  attackId?: string | null;
+  errorType?: string | null;
+  errorSource?: string | null;
+  errorMessage?: string | null;
+  targetObject?: Record<string, unknown> | null;
+  extraInfo?: Record<string, unknown> | null;
+  version?: number;
+}
+
 /** Contract for AI Red Team scan operations. */
 export interface RedTeamService {
   /** Get EULA content. */
@@ -534,6 +611,27 @@ export interface RedTeamService {
     onProgress?: (job: RedTeamJob) => void,
     intervalMs?: number,
   ): Promise<RedTeamJob>;
+
+  /** List network broker channels. */
+  listChannels(
+    opts?: RedTeamChannelListOptions,
+  ): Promise<{ channels: RedTeamChannel[]; totalItems?: number }>;
+  /** Get a network broker channel by ID. */
+  getChannel(channelId: string): Promise<RedTeamChannel>;
+  /** Create a network broker channel. */
+  createChannel(request: RedTeamChannelCreateRequest): Promise<RedTeamChannel>;
+  /** Update a network broker channel. */
+  updateChannel(channelId: string, request: RedTeamChannelUpdateRequest): Promise<RedTeamChannel>;
+  /** Get network broker channel statistics. */
+  getChannelStats(): Promise<RedTeamChannelStats>;
+
+  /** List tenant languages (data plane, or management plane when `management`). */
+  getLanguages(management?: boolean): Promise<RedTeamLanguages>;
+  /** List target-profile error logs. */
+  getTargetProfileErrorLogs(
+    targetId: string,
+    opts?: { limit?: number; offset?: number; search?: string },
+  ): Promise<{ logs: RedTeamErrorLog[]; totalItems?: number }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -718,6 +816,67 @@ export interface ModelSecurityPyPIAuth {
   expiresAt: string;
 }
 
+// ---------------------------------------------------------------------------
+// Model catalog types — normalized shapes for read-only model browsing
+// ---------------------------------------------------------------------------
+
+/** Normalized model catalog entry. */
+export interface ModelSecurityModel {
+  uuid: string;
+  tsgId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  latestVersionUuid?: string | null;
+  latestVersionFingerprint?: string | null;
+  latestVersionRevision?: string | null;
+  latestVersionHfCommitSha?: string | null;
+  latestVersionOutcome?: string | null;
+  latestVersionFormats?: string[] | null;
+  latestVersionSourceTypes?: string[] | null;
+  latestVersionScanTime?: string | null;
+}
+
+/** Filter options for listing models. */
+export interface ModelSecurityModelListOptions {
+  search?: string;
+  searchQuery?: string;
+  sortField?: string;
+  sortOrder?: string;
+  skip?: number;
+  limit?: number;
+}
+
+/** Normalized model version. */
+export interface ModelSecurityModelVersion {
+  uuid: string;
+  tsgId: string;
+  modelUuid: string;
+  revision: string;
+  createdAt: string;
+  updatedAt: string;
+  fingerprint?: string | null;
+  fileCount?: number | null;
+  license?: string | null;
+  latestScanTime?: string | null;
+  hfCommitSha?: string | null;
+  hfCommitTitle?: string | null;
+  hfCommitAuthors?: string[] | null;
+  hfModelName?: string | null;
+  hfOrganization?: string | null;
+  modelFormats?: string[] | null;
+  sourceTypes?: string[] | null;
+  lastEvalOutcome?: string | null;
+  lastEvalSummary?: { rulesFailed: number; rulesPassed: number; totalRules: number } | null;
+}
+
+/** Filter options for listing model versions. */
+export interface ModelSecurityModelVersionListOptions {
+  sortOrder?: string;
+  skip?: number;
+  limit?: number;
+}
+
 /** Paginated list result. */
 export interface PaginatedResult<T> {
   totalItems: number;
@@ -786,6 +945,20 @@ export interface ModelSecurityService {
   ): Promise<{ totalItems: number; values: string[] }>;
 
   getPyPIAuth(): Promise<ModelSecurityPyPIAuth>;
+
+  listModels(
+    opts?: ModelSecurityModelListOptions,
+  ): Promise<{ totalItems: number; models: ModelSecurityModel[] }>;
+  getModel(uuid: string): Promise<ModelSecurityModel>;
+  listModelVersions(
+    modelUuid: string,
+    opts?: ModelSecurityModelVersionListOptions,
+  ): Promise<{ totalItems: number; versions: ModelSecurityModelVersion[] }>;
+  getModelVersion(uuid: string): Promise<ModelSecurityModelVersion>;
+  listModelVersionFiles(
+    modelVersionUuid: string,
+    opts?: { skip?: number; limit?: number },
+  ): Promise<{ totalItems: number; files: ModelSecurityFile[] }>;
 }
 
 // ---------------------------------------------------------------------------

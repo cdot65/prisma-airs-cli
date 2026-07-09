@@ -8,6 +8,10 @@ import type {
   ModelSecurityGroupListOptions,
   ModelSecurityGroupUpdateRequest,
   ModelSecurityLabel,
+  ModelSecurityModel,
+  ModelSecurityModelListOptions,
+  ModelSecurityModelVersion,
+  ModelSecurityModelVersionListOptions,
   ModelSecurityPyPIAuth,
   ModelSecurityRule,
   ModelSecurityRuleEditableField,
@@ -133,6 +137,57 @@ function normalizeFile(raw: Record<string, unknown>): ModelSecurityFile {
     type: raw.type as string,
     formats: (raw.formats ?? []) as string[],
     result: raw.result as string,
+  };
+}
+
+/** Normalize an SDK model catalog entry. */
+function normalizeModel(raw: Record<string, unknown>): ModelSecurityModel {
+  return {
+    uuid: raw.uuid as string,
+    tsgId: raw.tsg_id as string,
+    name: raw.name as string,
+    createdAt: raw.created_at as string,
+    updatedAt: raw.updated_at as string,
+    latestVersionUuid: raw.latest_version_uuid as string | null | undefined,
+    latestVersionFingerprint: raw.latest_version_fingerprint as string | null | undefined,
+    latestVersionRevision: raw.latest_version_revision as string | null | undefined,
+    latestVersionHfCommitSha: raw.latest_version_hf_commit_sha as string | null | undefined,
+    latestVersionOutcome: raw.latest_version_outcome as string | null | undefined,
+    latestVersionFormats: raw.latest_version_formats as string[] | null | undefined,
+    latestVersionSourceTypes: raw.latest_version_source_types as string[] | null | undefined,
+    latestVersionScanTime: raw.latest_version_scan_time as string | null | undefined,
+  };
+}
+
+/** Normalize an SDK model version response. */
+function normalizeModelVersion(raw: Record<string, unknown>): ModelSecurityModelVersion {
+  const summary = raw.last_eval_summary as Record<string, unknown> | null | undefined;
+  return {
+    uuid: raw.uuid as string,
+    tsgId: raw.tsg_id as string,
+    modelUuid: raw.model_uuid as string,
+    revision: raw.revision as string,
+    createdAt: raw.created_at as string,
+    updatedAt: raw.updated_at as string,
+    fingerprint: raw.fingerprint as string | null | undefined,
+    fileCount: raw.file_count as number | null | undefined,
+    license: raw.license as string | null | undefined,
+    latestScanTime: raw.latest_scan_time as string | null | undefined,
+    hfCommitSha: raw.hf_commit_sha as string | null | undefined,
+    hfCommitTitle: raw.hf_commit_title as string | null | undefined,
+    hfCommitAuthors: raw.hf_commit_authors as string[] | null | undefined,
+    hfModelName: raw.hf_model_name as string | null | undefined,
+    hfOrganization: raw.hf_organization as string | null | undefined,
+    modelFormats: raw.model_formats as string[] | null | undefined,
+    sourceTypes: raw.source_types as string[] | null | undefined,
+    lastEvalOutcome: raw.last_eval_outcome as string | null | undefined,
+    lastEvalSummary: summary
+      ? {
+          rulesFailed: (summary.rules_failed ?? 0) as number,
+          rulesPassed: (summary.rules_passed ?? 0) as number,
+          totalRules: (summary.total_rules ?? 0) as number,
+        }
+      : (summary as null | undefined),
   };
 }
 
@@ -464,6 +519,84 @@ export class SdkModelSecurityService implements ModelSecurityService {
     return {
       url: raw.url as string,
       expiresAt: raw.expires_at as string,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // Models (read-only catalog)
+  // -----------------------------------------------------------------------
+
+  async listModels(
+    opts?: ModelSecurityModelListOptions,
+  ): Promise<{ totalItems: number; models: ModelSecurityModel[] }> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.search) sdkOpts.search = opts.search;
+    if (opts?.searchQuery) sdkOpts.search_query = opts.searchQuery;
+    if (opts?.sortField) sdkOpts.sort_field = opts.sortField;
+    if (opts?.sortOrder) sdkOpts.sort_order = opts.sortOrder;
+    if (opts?.skip !== undefined) sdkOpts.skip = opts.skip;
+    if (opts?.limit !== undefined) sdkOpts.limit = opts.limit;
+
+    const response = await this.client.models.listModels(sdkOpts as never);
+    const raw = response as unknown as {
+      pagination: { total_items?: number };
+      models: Array<Record<string, unknown>>;
+    };
+    return {
+      totalItems: raw.pagination.total_items ?? 0,
+      models: raw.models.map(normalizeModel),
+    };
+  }
+
+  async getModel(uuid: string): Promise<ModelSecurityModel> {
+    const response = await this.client.models.getModel(uuid);
+    return normalizeModel(response as unknown as Record<string, unknown>);
+  }
+
+  async listModelVersions(
+    modelUuid: string,
+    opts?: ModelSecurityModelVersionListOptions,
+  ): Promise<{ totalItems: number; versions: ModelSecurityModelVersion[] }> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.sortOrder) sdkOpts.sort_order = opts.sortOrder;
+    if (opts?.skip !== undefined) sdkOpts.skip = opts.skip;
+    if (opts?.limit !== undefined) sdkOpts.limit = opts.limit;
+
+    const response = await this.client.models.listModelVersions(modelUuid, sdkOpts as never);
+    const raw = response as unknown as {
+      pagination: { total_items?: number };
+      model_versions: Array<Record<string, unknown>>;
+    };
+    return {
+      totalItems: raw.pagination.total_items ?? 0,
+      versions: raw.model_versions.map(normalizeModelVersion),
+    };
+  }
+
+  async getModelVersion(uuid: string): Promise<ModelSecurityModelVersion> {
+    const response = await this.client.models.getModelVersion(uuid);
+    return normalizeModelVersion(response as unknown as Record<string, unknown>);
+  }
+
+  async listModelVersionFiles(
+    modelVersionUuid: string,
+    opts?: { skip?: number; limit?: number },
+  ): Promise<{ totalItems: number; files: ModelSecurityFile[] }> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.skip !== undefined) sdkOpts.skip = opts.skip;
+    if (opts?.limit !== undefined) sdkOpts.limit = opts.limit;
+
+    const response = await this.client.models.listModelVersionFiles(
+      modelVersionUuid,
+      sdkOpts as never,
+    );
+    const raw = response as unknown as {
+      pagination: { total_items?: number };
+      files: Array<Record<string, unknown>>;
+    };
+    return {
+      totalItems: raw.pagination.total_items ?? 0,
+      files: raw.files.map(normalizeFile),
     };
   }
 }

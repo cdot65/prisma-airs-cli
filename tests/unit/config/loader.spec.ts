@@ -80,6 +80,7 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_RED_TEAM_DATA_ENDPOINT', 'https://rt-data.example.com');
     vi.stubEnv('PANW_RED_TEAM_MGMT_ENDPOINT', 'https://rt-mgmt.example.com');
     vi.stubEnv('PANW_RED_TEAM_TOKEN_ENDPOINT', 'https://rt-token.example.com');
+    vi.stubEnv('PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT', 'https://rt-nb.example.com');
     vi.stubEnv('PANW_MODEL_SEC_DATA_ENDPOINT', 'https://ms-data.example.com');
     vi.stubEnv('PANW_MODEL_SEC_MGMT_ENDPOINT', 'https://ms-mgmt.example.com');
     vi.stubEnv('PANW_MODEL_SEC_TOKEN_ENDPOINT', 'https://ms-token.example.com');
@@ -91,6 +92,7 @@ describe('loadConfig', () => {
     expect(config.redTeamDataEndpoint).toBe('https://rt-data.example.com');
     expect(config.redTeamMgmtEndpoint).toBe('https://rt-mgmt.example.com');
     expect(config.redTeamTokenEndpoint).toBe('https://rt-token.example.com');
+    expect(config.redTeamNetworkBrokerEndpoint).toBe('https://rt-nb.example.com');
     expect(config.modelSecDataEndpoint).toBe('https://ms-data.example.com');
     expect(config.modelSecMgmtEndpoint).toBe('https://ms-mgmt.example.com');
     expect(config.modelSecTokenEndpoint).toBe('https://ms-token.example.com');

@@ -241,8 +241,8 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `listCustomAttacks()` uses `customAttackReports.listCustomAttacks()` for prompt-level results on CUSTOM scans
 - `waitForCompletion()` polls with configurable interval, throws on FAILED
 - Target create/update accept `{ validate: true }` to validate connection before saving (SDK v0.6.0)
-- CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`
-- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
+- CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`, `languages` (tenant languages; `--management` for mgmt plane)
+- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore,error-logs}`, `network-broker {channels {list,get,create,update}, stats}` (channels on distinct `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT`), `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
 
 ### DLP (`src/airs/dlp/`)
 - **Shape**: thin SDK wrappers; one class per resource (filtering-profiles, patterns, profiles, dictionaries); all instantiate via `getOrCreateManagementClient()` for shared OAuth token cache
@@ -254,7 +254,8 @@ These four commands compose into an autoresearch-style optimization loop: an age
 ### Model Security (`src/airs/modelsecurity.ts`)
 - `SdkModelSecurityService` wraps `ModelSecurityClient` for security groups, rules, scans, labels, PyPI auth
 - snake_case (SDK) → camelCase normalization via `normalizeGroup()`, `normalizeRule()`, etc.
-- CLI: `airs model-security {groups,install,labels,pypi-auth,rule-instances,rules,scans}`
+- CLI: `airs model-security {groups,install,labels,models,pypi-auth,rule-instances,rules,scans}`
+- Models: read-only catalog browsing — `models {list,get,versions <modelUuid>,version <uuid>,files <modelVersionUuid>}`
 - `install` auto-detects uv (uses `uv init` + `uv add`) or falls back to `python3 -m venv` + `pip install`
 - Groups: CRUD per source type (LOCAL, S3, GCS, AZURE, HUGGING_FACE)
 - Rule instances: state = BLOCKING | ALLOWING | DISABLED
