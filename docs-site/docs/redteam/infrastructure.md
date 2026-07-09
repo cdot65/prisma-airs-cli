@@ -4,7 +4,7 @@ title: EULA & Infrastructure
 
 # EULA & Infrastructure
 
-Manage the Red Team end-user license agreement, compute instances, devices, and container registry credentials.
+Manage the Red Team end-user license agreement, compute instances, devices, container registry credentials, and network broker channels.
 
 ## Prerequisites
 
@@ -131,3 +131,60 @@ airs redteam registry-credentials
 ```
 
 Returns a token and its expiry timestamp.
+
+---
+
+## Network Broker
+
+The **network broker** relays traffic between Red Team clients and targets that aren't
+directly reachable from the AIRS data plane — for example, a model served inside a
+private Kubernetes cluster or homelab. Each relay is a **channel**; a broker client
+running next to the target connects to its channel and forwards scan traffic.
+
+Channels live on a **distinct data-plane endpoint** from the rest of the Red Team API.
+Override it with `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` (or `redTeamNetworkBrokerEndpoint`
+in `~/.prisma-airs/config.json`); OAuth credentials are shared with the other Red Team
+commands (`PANW_MGMT_*`).
+
+### Channel Statistics
+
+See the broker server domain, container image/registry, helm chart, client version, and
+online/total channel counts:
+
+```bash
+airs redteam network-broker stats
+```
+
+### List Channels
+
+```bash
+airs redteam network-broker channels list
+# Filter by status; structured output
+airs redteam network-broker channels list --status ONLINE DRAFT --output json
+```
+
+Each channel reports a status — `ONLINE`, `OFFLINE`, or `DRAFT` — plus its connected-client
+count and last-online timestamp.
+
+### Create & Inspect a Channel
+
+```bash
+airs redteam network-broker channels create --name "prod-relay" --description "Production broker"
+airs redteam network-broker channels get <channelId>
+```
+
+A newly created channel starts in `DRAFT` with all features disabled; it becomes usable once
+a broker client connects to it.
+
+### Update a Channel
+
+```bash
+airs redteam network-broker channels update <channelId> --name "renamed" --description "…"
+```
+
+:::note
+The API authorizes channel updates server-side. A `DRAFT` channel created via the API but not
+yet claimed by a connected broker client may return `403 Access denied` on update — this is a
+platform authorization decision, not a CLI error. There is no channel-delete endpoint; remove
+unwanted channels from the Strata/SCM console.
+:::

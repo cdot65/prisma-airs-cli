@@ -16,6 +16,23 @@ All output shown below is from real commands run against Prisma AIRS.
 
 ---
 
+## Supported Languages
+
+Before launching multilingual scans, check which languages and job types your tenant
+supports:
+
+```bash
+airs redteam languages
+# Structured output (table, csv, json, yaml)
+airs redteam languages --output json
+```
+
+The response reports whether multilingual scanning is enabled, which job types support it,
+and the list of available language codes. Add `--management` to query the management-plane
+endpoint instead of the data plane.
+
+---
+
 ## Browse Attack Categories
 
 Before launching a STATIC scan, review the available attack categories:
