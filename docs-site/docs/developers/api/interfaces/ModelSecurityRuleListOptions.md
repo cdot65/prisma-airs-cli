@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleListOptions
 
-Defined in: [src/airs/types.ts:706](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L706)
+Defined in: [src/airs/types.ts:765](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L765)
 
 Filter options for listing security rules.
 
@@ -10,7 +10,7 @@ Filter options for listing security rules.
 
 > `optional` **limit?**: `number`
 
-Defined in: [src/airs/types.ts:710](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L710)
+Defined in: [src/airs/types.ts:769](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L769)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:710](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **searchQuery?**: `string`
 
-Defined in: [src/airs/types.ts:708](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L708)
+Defined in: [src/airs/types.ts:767](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L767)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:708](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **skip?**: `number`
 
-Defined in: [src/airs/types.ts:709](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L709)
+Defined in: [src/airs/types.ts:768](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L768)
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [src/airs/types.ts:709](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **sourceType?**: `string`
 
-Defined in: [src/airs/types.ts:707](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L707)
+Defined in: [src/airs/types.ts:766](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L766)

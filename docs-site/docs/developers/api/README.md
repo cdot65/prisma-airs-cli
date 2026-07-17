@@ -14,9 +14,12 @@
 - [AnalysisReport](interfaces/AnalysisReport.md)
 - [BackupEnvelope](interfaces/BackupEnvelope.md)
 - [BackupResult](interfaces/BackupResult.md)
+- [BatchEntry](interfaces/BatchEntry.md)
+- [BulkScanResult](interfaces/BulkScanResult.md)
 - [CategoryBreakdown](interfaces/CategoryBreakdown.md)
 - [CustomTopic](interfaces/CustomTopic.md)
 - [EfficacyMetrics](interfaces/EfficacyMetrics.md)
+- [IndexedPrompt](interfaces/IndexedPrompt.md)
 - [IterationResult](interfaces/IterationResult.md)
 - [ModelSecurityEvaluation](interfaces/ModelSecurityEvaluation.md)
 - [ModelSecurityFile](interfaces/ModelSecurityFile.md)
@@ -38,6 +41,7 @@
 - [ModelSecurityService](interfaces/ModelSecurityService.md)
 - [ModelSecurityViolation](interfaces/ModelSecurityViolation.md)
 - [MutationResponse](interfaces/MutationResponse.md)
+- [PollRetryOptions](interfaces/PollRetryOptions.md)
 - [ProfileTopic](interfaces/ProfileTopic.md)
 - [PromptDetail](interfaces/PromptDetail.md)
 - [PromptSetDetail](interfaces/PromptSetDetail.md)
@@ -55,10 +59,12 @@
 - [RedTeamTargetCreateRequest](interfaces/RedTeamTargetCreateRequest.md)
 - [RedTeamTargetDetail](interfaces/RedTeamTargetDetail.md)
 - [RedTeamTargetUpdateRequest](interfaces/RedTeamTargetUpdateRequest.md)
+- [ReliableRuntimeService](interfaces/ReliableRuntimeService.md)
 - [RestoreResult](interfaces/RestoreResult.md)
 - [RunState](interfaces/RunState.md)
 - [RuntimeScanResult](interfaces/RuntimeScanResult.md)
 - [RuntimeService](interfaces/RuntimeService.md)
+- [SubmittedBatch](interfaces/SubmittedBatch.md)
 - [TargetOperationOptions](interfaces/TargetOperationOptions.md)
 - [TestCase](interfaces/TestCase.md)
 - [TestResult](interfaces/TestResult.md)
@@ -68,7 +74,12 @@
 ## Type Aliases
 
 - [BackupFormat](type-aliases/BackupFormat.md)
+- [BulkScanAction](type-aliases/BulkScanAction.md)
 - [ResourceType](type-aliases/ResourceType.md)
+
+## Variables
+
+- [SDK\_ASYNC\_BATCH\_SIZE](variables/SDK_ASYNC_BATCH_SIZE.md)
 
 ## Functions
 

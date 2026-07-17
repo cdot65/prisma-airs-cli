@@ -30,6 +30,14 @@ Defined in: [src/airs/types.ts:53](https://github.com/cdot65/prisma-airs-cli/blo
 
 ***
 
+### error?
+
+> `optional` **error?**: `string`
+
+Defined in: [src/airs/types.ts:54](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L54)
+
+***
+
 ### prompt
 
 > **prompt**: `string`

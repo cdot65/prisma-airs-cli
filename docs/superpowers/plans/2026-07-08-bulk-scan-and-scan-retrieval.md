@@ -1,5 +1,13 @@
 # Bulk Async Scan Rewrite + Scan/Report Retrieval — Implementation Plan
 
+> [!WARNING]
+> **Historical plan — superseded.** This task-by-task plan preserves the original implementation
+> history, but its batch-centric state, append-only CSV, six-detector list, fail-open error handling,
+> and retry assumptions are unsafe and no longer normative. Use the corrected approved design in
+> `docs/superpowers/specs/2026-07-08-bulk-scan-and-scan-retrieval-design.md` and the current tests/code
+> as the source of truth. In particular, SDK 0.13.2 accepts 20 async objects and current bulk
+> actions are `allow`, `block`, or `failed`. Do not execute the snippets below verbatim.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Fix the broken `runtime bulk-scan` (correct per-prompt mapping, full detection data, incremental output, resumable) and add `runtime get-scan <id...>` to retrieve scan results / threat reports by ID.

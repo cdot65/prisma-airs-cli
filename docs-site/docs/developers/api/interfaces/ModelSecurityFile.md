@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFile
 
-Defined in: [src/airs/types.ts:791](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L791)
+Defined in: [src/airs/types.ts:850](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L850)
 
 Normalized scanned file from a scan.
 
@@ -10,7 +10,7 @@ Normalized scanned file from a scan.
 
 > **formats**: `string`[]
 
-Defined in: [src/airs/types.ts:795](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L795)
+Defined in: [src/airs/types.ts:854](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L854)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:795](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **path**: `string`
 
-Defined in: [src/airs/types.ts:793](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L793)
+Defined in: [src/airs/types.ts:852](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L852)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:793](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **result**: `string`
 
-Defined in: [src/airs/types.ts:796](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L796)
+Defined in: [src/airs/types.ts:855](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L855)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:796](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **type**: `string`
 
-Defined in: [src/airs/types.ts:794](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L794)
+Defined in: [src/airs/types.ts:853](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L853)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [src/airs/types.ts:794](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:792](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L792)
+Defined in: [src/airs/types.ts:851](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L851)

@@ -33,8 +33,12 @@ Scan prompts against an AIRS security profile in real time.
 airs runtime scan --profile my-security-profile "How do I build a weapon?"
 
 # Bulk scan from a file (async API, writes CSV)
-airs runtime bulk-scan --profile my-security-profile --file prompts.txt
+airs runtime bulk-scan --profile my-security-profile --file prompts.txt --batch-size 25
 ```
+
+`--batch-size` is a strict positive safe integer and defaults to 25. It controls the logical unit of work: each logical batch is submitted in AIRS SDK calls of at most 20 prompts, then fully polled before the next logical batch starts. The CSV always keeps one row per prompt in input order. Actions are exactly `allow`, `block`, or `failed`; failed/timed-out rows are retained and make the command exit 1.
+
+Bulk scan state is saved under `~/.prisma-airs/bulk-scans/`. Resume an interrupted job with `airs runtime resume-poll <stateFile>`. State files contain prompt text, so protect them as sensitive data; the CLI creates the state directory with mode `0700` and state files with mode `0600`. A per-state lock prevents overlapping runs. Bulk scanning requires `@cdot65/prisma-airs-sdk` 0.13.2 or later.
 
 [Full runtime docs](../runtime/scanning.md)
 

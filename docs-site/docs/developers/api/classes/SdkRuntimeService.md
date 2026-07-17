@@ -1,12 +1,12 @@
 # Class: SdkRuntimeService
 
-Defined in: [src/airs/runtime.ts:26](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L26)
+Defined in: [src/airs/runtime.ts:203](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L203)
 
-Contract for runtime scanning operations (sync + async).
+Runtime scanning contract with item-correlated, resumable bulk operations.
 
 ## Implements
 
-- [`RuntimeService`](../interfaces/RuntimeService.md)
+- [`ReliableRuntimeService`](../interfaces/ReliableRuntimeService.md)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Contract for runtime scanning operations (sync + async).
 
 > **new SdkRuntimeService**(`opts`): `SdkRuntimeService`
 
-Defined in: [src/airs/runtime.ts:29](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L29)
+Defined in: [src/airs/runtime.ts:206](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L206)
 
 #### Parameters
 
@@ -28,18 +28,47 @@ Defined in: [src/airs/runtime.ts:29](https://github.com/cdot65/prisma-airs-cli/b
 
 ## Methods
 
-### pollResults()
+### pollBatch()
+
+> **pollBatch**(`batch`, `intervalMs?`, `retryOpts?`): `Promise`\<[`BulkScanResult`](../interfaces/BulkScanResult.md)[]\>
+
+Defined in: [src/airs/runtime.ts:291](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L291)
+
+Poll one async submission and return one result per prompt, ordered by input index.
+
+#### Parameters
+
+##### batch
+
+[`SubmittedBatch`](../interfaces/SubmittedBatch.md)
+
+##### intervalMs?
+
+`number` = `DEFAULT_POLL_INTERVAL_MS`
+
+##### retryOpts?
+
+[`PollRetryOptions`](../interfaces/PollRetryOptions.md)
+
+#### Returns
+
+`Promise`\<[`BulkScanResult`](../interfaces/BulkScanResult.md)[]\>
+
+#### Implementation of
+
+[`ReliableRuntimeService`](../interfaces/ReliableRuntimeService.md).[`pollBatch`](../interfaces/ReliableRuntimeService.md#pollbatch)
+
+***
+
+### ~~pollResults()~~
 
 > **pollResults**(`scanIds`, `intervalMs?`, `retryOpts?`): `Promise`\<[`RuntimeScanResult`](../interfaces/RuntimeScanResult.md)[]\>
 
-Defined in: [src/airs/runtime.ts:103](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L103)
+Defined in: [src/airs/runtime.ts:500](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L500)
 
-Poll async scan results until all complete or fail.
-
-Note: The async query API (`queryByScanIds`) does not return `prompt`,
-`response`, `triggered`, or `detections` fields. These are set to
-defaults (`''`, `undefined`, `false`, `{}`) in the returned results.
-Use `scanPrompt()` (sync API) when these fields are needed.
+Compatibility poller for callers that retained only batch scan IDs.
+Nested detection data is preserved, but prompt text and per-request fan-out
+cannot be reconstructed from scan IDs alone.
 
 #### Parameters
 
@@ -53,15 +82,19 @@ Use `scanPrompt()` (sync API) when these fields are needed.
 
 ##### retryOpts?
 
-`PollRetryOptions`
+[`PollRetryOptions`](../interfaces/PollRetryOptions.md)
 
 #### Returns
 
 `Promise`\<[`RuntimeScanResult`](../interfaces/RuntimeScanResult.md)[]\>
 
+#### Deprecated
+
+Use pollBatch to preserve `(scan_id, req_id)` correlation and prompt text.
+
 #### Implementation of
 
-[`RuntimeService`](../interfaces/RuntimeService.md).[`pollResults`](../interfaces/RuntimeService.md#pollresults)
+[`ReliableRuntimeService`](../interfaces/ReliableRuntimeService.md).[`pollResults`](../interfaces/ReliableRuntimeService.md#pollresults)
 
 ***
 
@@ -69,7 +102,7 @@ Use `scanPrompt()` (sync API) when these fields are needed.
 
 > **scanPrompt**(`profileName`, `prompt`, `response?`): `Promise`\<[`RuntimeScanResult`](../interfaces/RuntimeScanResult.md)\>
 
-Defined in: [src/airs/runtime.ts:34](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L34)
+Defined in: [src/airs/runtime.ts:211](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L211)
 
 Scan a single prompt (and optional response) synchronously.
 
@@ -93,17 +126,51 @@ Scan a single prompt (and optional response) synchronously.
 
 #### Implementation of
 
-[`RuntimeService`](../interfaces/RuntimeService.md).[`scanPrompt`](../interfaces/RuntimeService.md#scanprompt)
+[`ReliableRuntimeService`](../interfaces/ReliableRuntimeService.md).[`scanPrompt`](../interfaces/ReliableRuntimeService.md#scanprompt)
 
 ***
 
-### submitBulkScan()
+### submitBatch()
+
+> **submitBatch**(`profileName`, `prompts`, `sessionId?`, `retryOpts?`): `Promise`\<[`SubmittedBatch`](../interfaces/SubmittedBatch.md)\>
+
+Defined in: [src/airs/runtime.ts:229](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L229)
+
+Submit one SDK-sized group of indexed prompts for async scanning.
+
+#### Parameters
+
+##### profileName
+
+`string`
+
+##### prompts
+
+[`IndexedPrompt`](../interfaces/IndexedPrompt.md)[]
+
+##### sessionId?
+
+`string`
+
+##### retryOpts?
+
+[`PollRetryOptions`](../interfaces/PollRetryOptions.md)
+
+#### Returns
+
+`Promise`\<[`SubmittedBatch`](../interfaces/SubmittedBatch.md)\>
+
+#### Implementation of
+
+[`ReliableRuntimeService`](../interfaces/ReliableRuntimeService.md).[`submitBatch`](../interfaces/ReliableRuntimeService.md#submitbatch)
+
+***
+
+### ~~submitBulkScan()~~
 
 > **submitBulkScan**(`profileName`, `prompts`, `sessionId?`): `Promise`\<`string`[]\>
 
-Defined in: [src/airs/runtime.ts:70](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L70)
-
-Submit prompts for async bulk scanning, returns scan IDs.
+Defined in: [src/airs/runtime.ts:469](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L469)
 
 #### Parameters
 
@@ -123,9 +190,13 @@ Submit prompts for async bulk scanning, returns scan IDs.
 
 `Promise`\<`string`[]\>
 
+#### Deprecated
+
+Use submitBatch to preserve per-prompt request correlation.
+
 #### Implementation of
 
-[`RuntimeService`](../interfaces/RuntimeService.md).[`submitBulkScan`](../interfaces/RuntimeService.md#submitbulkscan)
+[`ReliableRuntimeService`](../interfaces/ReliableRuntimeService.md).[`submitBulkScan`](../interfaces/ReliableRuntimeService.md#submitbulkscan)
 
 ***
 
@@ -133,13 +204,13 @@ Submit prompts for async bulk scanning, returns scan IDs.
 
 > `static` **formatResultsCsv**(`results`): `string`
 
-Defined in: [src/airs/runtime.ts:198](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L198)
+Defined in: [src/airs/runtime.ts:597](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L597)
 
 #### Parameters
 
 ##### results
 
-[`RuntimeScanResult`](../interfaces/RuntimeScanResult.md)[]
+([`RuntimeScanResult`](../interfaces/RuntimeScanResult.md) \| [`BulkScanResult`](../interfaces/BulkScanResult.md))[]
 
 #### Returns
 

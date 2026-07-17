@@ -98,20 +98,39 @@ airs runtime scan --profile <profile-name> --response "<response>" "<prompt>"
 **Optional:** `--response` (scan prompt+response pair)
 **Auth:** Scanner API key
 
-**Output fields:** Action (block/allow), Category, Triggered (yes/no), Scan ID, Report ID, Detections list
+**Output fields:** Action (allow/block), Category, Triggered (yes/no), Scan ID,
+Report ID, Detections list
 
 #### Bulk scan from file
 
 ```bash
-airs runtime bulk-scan --profile <profile-name> --file <file> [--output-file <csv>] [--session-id <id>]
+airs runtime bulk-scan --profile <profile-name> --file <file> [--output-file <csv>] [--session-id <id>] [--batch-size <n>]
 ```
 
-**Required:** `--profile`, `--input`
+**Required:** `--profile`, `--file`
 **Input formats:** `.csv` (extracts `prompt` column by header), `.txt` (one prompt per line)
 **Output:** CSV file with results (default: `<profile>-bulk-scan.csv`)
 **Auth:** Scanner API key
 
-**Behavior:** Batches prompts in groups of 5, submits async, polls with exponential backoff on rate limit. Saves scan IDs to `~/.prisma-airs/bulk-scans/` for crash recovery.
+**Behavior:** Processes sequential logical batches (`--batch-size`, default 25), splitting each
+into SDK submissions of exactly 1–20 prompts. Every prompt is correlated by
+`(scan_id, req_id)` (with report lookup as a fallback) and rendered with all eight runtime
+detections: `topic_violation`, `injection`, `toxic_content`, `dlp`, `url_cats`,
+`malicious_code`, `source_code`, and `agent`.
+
+The CLI requires `@cdot65/prisma-airs-sdk` 0.13.2 or newer. SDK retries are disabled for each
+async submission so the CLI owns the retry boundary. Only confirmed HTTP 429 responses are
+retried automatically, honoring `Retry-After`; a final definite 4xx leaves prompts `pending`,
+while a network error or 5xx marks them `ambiguous` and prevents unsafe automatic resubmission.
+Polling is bounded and terminal API failures are written as `action=failed`, preserving completed
+rows and producing exit code 1.
+
+Before the first POST, an item-centric v2 state file is created under
+`~/.prisma-airs/bulk-scans/`. It contains the batch size, prompt text, lifecycle status, receipts,
+and completed results. The directory is mode `0700` and state files are mode `0600`; treat them as
+sensitive. State and the full CSV projection are replaced atomically after checkpoints, so resume
+does not append duplicate rows. A per-state lock rejects overlapping jobs and recovers locks left
+by dead local processes.
 
 #### Resume polling
 
@@ -119,7 +138,9 @@ airs runtime bulk-scan --profile <profile-name> --file <file> [--output-file <cs
 airs runtime resume-poll <stateFile> [--output-file <csv>]
 ```
 
-Resumes polling from saved bulk scan state file after a crash or rate limit failure.
+Resumes submitted items, safely resubmits only definitely unaccepted `pending` items, restores
+prompt/result correlation, and atomically rebuilds the CSV. It refuses to resubmit `submitting` or
+`ambiguous` items because the service may already have accepted them.
 
 #### Generate DLP test files
 
@@ -725,7 +746,7 @@ echo -e "How do I hack a server?\nWhat is the weather?\nHow to make a weapon?" >
 # 2. Run bulk scan
 airs runtime bulk-scan --profile my-profile --file prompts.txt --output-file results.csv
 
-# 3. If rate-limited, resume
+# 3. If the process was interrupted, resume from its v2 state file
 airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output-file results.csv
 ```
 

@@ -5,10 +5,12 @@ const mockScannerInstance = {
   syncScan: vi.fn(),
   asyncScan: vi.fn(),
   queryByScanIds: vi.fn(),
+  queryByReportIds: vi.fn(),
 };
 
 vi.mock('@cdot65/prisma-airs-sdk', () => ({
   init: vi.fn(),
+  MAX_NUMBER_OF_BATCH_SCAN_OBJECTS: 20,
   Scanner: vi.fn(() => mockScannerInstance),
   Content: vi.fn((opts: Record<string, string>) => opts),
 }));
@@ -18,6 +20,10 @@ describe('SdkRuntimeService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockScannerInstance.syncScan.mockReset();
+    mockScannerInstance.asyncScan.mockReset();
+    mockScannerInstance.queryByScanIds.mockReset();
+    mockScannerInstance.queryByReportIds.mockReset();
     service = new SdkRuntimeService({ apiKey: 'test-api-key' });
   });
 
@@ -106,32 +112,54 @@ describe('SdkRuntimeService', () => {
       expect(result.triggered).toBe(false);
       expect(result.detections).toEqual({});
     });
+
+    it('includes source-code and agent detectors on the compatibility result', async () => {
+      mockScannerInstance.syncScan.mockResolvedValue({
+        scan_id: 'scan-new-detectors',
+        report_id: 'report-new-detectors',
+        action: 'block',
+        category: 'suspicious',
+        timeout: false,
+        error: false,
+        errors: [],
+        prompt_detected: { source_code: true, agent: true },
+      });
+
+      const result = await service.scanPrompt('profile', 'prompt');
+
+      expect(result.action).toBe('block');
+      expect(result.triggered).toBe(true);
+      expect(result.detections).toEqual({ source_code: true, agent: true });
+    });
   });
 
   describe('submitBulkScan', () => {
-    it('batches prompts into groups of 5 async scan objects', async () => {
+    it('batches prompts into groups of 20 async scan objects', async () => {
       mockScannerInstance.asyncScan.mockResolvedValue({
         received: '2026-03-09T00:00:00Z',
         scan_id: 'batch-scan-1',
       });
 
-      const prompts = Array.from({ length: 7 }, (_, i) => `prompt ${i}`);
+      const prompts = Array.from({ length: 21 }, (_, i) => `prompt ${i}`);
       const scanIds = await service.submitBulkScan('my-profile', prompts);
 
-      // 7 prompts → 2 batches (5 + 2)
+      // 21 prompts → 2 batches (20 + 1)
       expect(mockScannerInstance.asyncScan).toHaveBeenCalledTimes(2);
       expect(scanIds).toHaveLength(2);
 
-      // First batch: 5 items
+      // First batch: 20 items
       const firstCall = mockScannerInstance.asyncScan.mock.calls[0][0];
-      expect(firstCall).toHaveLength(5);
+      expect(firstCall).toHaveLength(20);
       expect(firstCall[0].req_id).toBe(0);
       expect(firstCall[0].scan_req.ai_profile).toEqual({ profile_name: 'my-profile' });
       expect(firstCall[0].scan_req.contents).toEqual([{ prompt: 'prompt 0' }]);
 
-      // Second batch: 2 items
+      // Second batch: 1 item
       const secondCall = mockScannerInstance.asyncScan.mock.calls[1][0];
-      expect(secondCall).toHaveLength(2);
+      expect(secondCall).toHaveLength(1);
+      expect(
+        mockScannerInstance.asyncScan.mock.calls.every((call) => call[1]?.numRetries === 0),
+      ).toBe(true);
     });
 
     it('passes session_id in scan_req when provided', async () => {
@@ -180,7 +208,439 @@ describe('SdkRuntimeService', () => {
     });
   });
 
+  describe('submitBatch', () => {
+    it('rejects duplicate prompt indices before submitting', async () => {
+      await expect(
+        service.submitBatch('profile', [
+          { index: 0, prompt: 'first' },
+          { index: 0, prompt: 'duplicate' },
+        ]),
+      ).rejects.toThrow(/unique.*index/i);
+      expect(mockScannerInstance.asyncScan).not.toHaveBeenCalled();
+    });
+
+    it('accepts 20 prompts and rejects 21 before submitting', async () => {
+      mockScannerInstance.asyncScan.mockResolvedValueOnce({
+        received: '2026-07-17T00:00:00Z',
+        scan_id: 'batch-20',
+      });
+      const twenty = Array.from({ length: 20 }, (_, index) => ({
+        index,
+        prompt: `prompt ${index}`,
+      }));
+
+      const receipt = await service.submitBatch('profile', twenty);
+      expect(receipt.entries).toHaveLength(20);
+      expect(mockScannerInstance.asyncScan.mock.calls[0][0]).toHaveLength(20);
+
+      await expect(
+        service.submitBatch('profile', [...twenty, { index: 20, prompt: 'one too many' }]),
+      ).rejects.toThrow(/between 1 and 20 prompts/i);
+      expect(mockScannerInstance.asyncScan).toHaveBeenCalledOnce();
+    });
+
+    it('disables hidden SDK retries for the ambiguous async POST', async () => {
+      mockScannerInstance.asyncScan.mockResolvedValueOnce({
+        received: '2026-07-17T00:00:00Z',
+        scan_id: 'single-attempt',
+      });
+
+      await service.submitBatch('profile', [{ index: 0, prompt: 'one prompt' }]);
+
+      expect(mockScannerInstance.asyncScan).toHaveBeenCalledWith(
+        [
+          {
+            req_id: 0,
+            scan_req: {
+              ai_profile: { profile_name: 'profile' },
+              contents: [{ prompt: 'one prompt' }],
+            },
+          },
+        ],
+        { numRetries: 0 },
+      );
+    });
+
+    it('retries a definite 429 using the SDK retry delay without enabling POST retries', async () => {
+      const rateLimit = Object.assign(new Error('rate limited'), {
+        failureKind: 'http',
+        statusCode: 429,
+        retryAfterMs: 0,
+      });
+      const onRetry = vi.fn();
+      mockScannerInstance.asyncScan.mockRejectedValueOnce(rateLimit).mockResolvedValueOnce({
+        received: '2026-07-17T00:00:00Z',
+        scan_id: 'after-rate-limit',
+      });
+
+      const receipt = await service.submitBatch(
+        'profile',
+        [{ index: 0, prompt: 'one prompt' }],
+        undefined,
+        { baseDelayMs: 1, onRetry },
+      );
+
+      expect(receipt.scanId).toBe('after-rate-limit');
+      expect(mockScannerInstance.asyncScan).toHaveBeenCalledTimes(2);
+      expect(
+        mockScannerInstance.asyncScan.mock.calls.every((call) => call[1].numRetries === 0),
+      ).toBe(true);
+      expect(onRetry).toHaveBeenCalledWith(1, 0);
+    });
+
+    it('does not retry an ambiguous network failure even when its message mentions 429', async () => {
+      const networkFailure = Object.assign(new Error('socket closed after upstream 429'), {
+        failureKind: 'network',
+      });
+      mockScannerInstance.asyncScan.mockRejectedValueOnce(networkFailure).mockResolvedValueOnce({
+        received: '2026-07-17T00:00:00Z',
+        scan_id: 'unsafe-retry',
+      });
+
+      await expect(
+        service.submitBatch('profile', [{ index: 0, prompt: 'one prompt' }], undefined, {
+          baseDelayMs: 0,
+        }),
+      ).rejects.toBe(networkFailure);
+      expect(mockScannerInstance.asyncScan).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('pollBatch', () => {
+    it('rejects receipt entries that do not belong to the batch scan ID', async () => {
+      await expect(
+        service.pollBatch(
+          {
+            scanId: 'expected-scan',
+            entries: [{ scanId: 'different-scan', reqId: 0, index: 0, prompt: 'prompt' }],
+          },
+          0,
+        ),
+      ).rejects.toThrow(/entry.*scan ID/i);
+      expect(mockScannerInstance.queryByScanIds).not.toHaveBeenCalled();
+    });
+
+    it('falls back to report rows when a terminal scan row has no request ID', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 'batch-fallback',
+          status: 'complete',
+          result: { scan_id: 'batch-fallback', report_id: 'report-fallback' },
+        },
+      ]);
+      mockScannerInstance.queryByReportIds.mockResolvedValueOnce([
+        {
+          scan_id: 'batch-fallback',
+          report_id: 'report-fallback',
+          req_id: 1,
+          detection_results: [{ detection_service: 'pi', verdict: 'benign', action: 'allow' }],
+        },
+        {
+          scan_id: 'batch-fallback',
+          report_id: 'report-fallback',
+          req_id: 0,
+          detection_results: [
+            { detection_service: 'source_code', verdict: 'malicious', action: 'block' },
+          ],
+        },
+      ]);
+
+      const results = await service.pollBatch(
+        {
+          scanId: 'batch-fallback',
+          reportId: 'report-fallback',
+          entries: [
+            { scanId: 'batch-fallback', reqId: 0, index: 0, prompt: 'blocked prompt' },
+            { scanId: 'batch-fallback', reqId: 1, index: 1, prompt: 'allowed prompt' },
+          ],
+        },
+        0,
+      );
+
+      expect(mockScannerInstance.queryByReportIds).toHaveBeenCalledWith(['report-fallback'], {
+        numRetries: 0,
+      });
+      expect(results).toHaveLength(2);
+      expect(results[0]).toMatchObject({
+        index: 0,
+        prompt: 'blocked prompt',
+        action: 'block',
+        triggered: true,
+        detections: { source_code: true },
+      });
+      expect(results[1]).toMatchObject({
+        index: 1,
+        prompt: 'allowed prompt',
+        action: 'allow',
+        triggered: false,
+        detections: { injection: false },
+      });
+    });
+
+    it('fails closed when AIRS returns an unknown action', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 'scan-unknown-action',
+          req_id: 0,
+          status: 'complete',
+          result: {
+            scan_id: 'scan-unknown-action',
+            report_id: 'report-unknown-action',
+            action: 'unexpected-new-action',
+            category: 'unknown',
+            timeout: false,
+            error: false,
+            errors: [],
+          },
+        },
+      ]);
+
+      const [result] = await service.pollBatch(
+        {
+          scanId: 'scan-unknown-action',
+          entries: [{ scanId: 'scan-unknown-action', reqId: 0, index: 0, prompt: 'prompt' }],
+        },
+        0,
+      );
+
+      expect(result.action).toBe('failed');
+      expect(result.category).toBe('error');
+      expect(result.error).toMatch(/unknown AIRS action/i);
+    });
+
+    it('does not ignore a blocking detector introduced by AIRS', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 'batch-future-detector',
+          status: 'complete',
+          result: { scan_id: 'batch-future-detector', report_id: 'report-future-detector' },
+        },
+      ]);
+      mockScannerInstance.queryByReportIds.mockResolvedValueOnce([
+        {
+          scan_id: 'batch-future-detector',
+          report_id: 'report-future-detector',
+          req_id: 0,
+          detection_results: [
+            { detection_service: 'future_detector', verdict: 'malicious', action: 'block' },
+          ],
+        },
+      ]);
+
+      const [result] = await service.pollBatch(
+        {
+          scanId: 'batch-future-detector',
+          reportId: 'report-future-detector',
+          entries: [{ scanId: 'batch-future-detector', reqId: 0, index: 0, prompt: 'prompt' }],
+        },
+        0,
+      );
+
+      expect(result).toMatchObject({
+        action: 'block',
+        category: 'malicious',
+        triggered: true,
+        detections: { future_detector: true },
+      });
+    });
+
+    it('does not ignore a blocking report row whose detector name is missing', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 'batch-unnamed-detector',
+          status: 'complete',
+          result: { scan_id: 'batch-unnamed-detector', report_id: 'report-unnamed-detector' },
+        },
+      ]);
+      mockScannerInstance.queryByReportIds.mockResolvedValueOnce([
+        {
+          scan_id: 'batch-unnamed-detector',
+          report_id: 'report-unnamed-detector',
+          req_id: 0,
+          detection_results: [{ verdict: 'malicious', action: 'block' }],
+        },
+      ]);
+
+      const [result] = await service.pollBatch(
+        {
+          scanId: 'batch-unnamed-detector',
+          reportId: 'report-unnamed-detector',
+          entries: [{ scanId: 'batch-unnamed-detector', reqId: 0, index: 0, prompt: 'prompt' }],
+        },
+        0,
+      );
+
+      expect(result).toMatchObject({
+        action: 'block',
+        category: 'malicious',
+        triggered: true,
+        detections: { unknown: true },
+      });
+    });
+
+    it('fails every unresolved prompt when AIRS reports a batch-level failure', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        { scan_id: 'batch-level-failure', status: 'failed' },
+      ]);
+
+      const results = await service.pollBatch(
+        {
+          scanId: 'batch-level-failure',
+          entries: [
+            { scanId: 'batch-level-failure', reqId: 0, index: 0, prompt: 'first' },
+            { scanId: 'batch-level-failure', reqId: 1, index: 1, prompt: 'second' },
+          ],
+        },
+        0,
+      );
+
+      expect(results.map((result) => result.action)).toEqual(['failed', 'failed']);
+      expect(results.map((result) => result.prompt)).toEqual(['first', 'second']);
+      expect(mockScannerInstance.queryByReportIds).not.toHaveBeenCalled();
+    });
+
+    it('rejects a nested result whose scan ID conflicts with the correlated row', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 'outer-scan',
+          req_id: 0,
+          status: 'complete',
+          result: {
+            scan_id: 'different-inner-scan',
+            report_id: 'report-mismatch',
+            action: 'allow',
+            category: 'benign',
+          },
+        },
+      ]);
+
+      await expect(
+        service.pollBatch(
+          {
+            scanId: 'outer-scan',
+            entries: [{ scanId: 'outer-scan', reqId: 0, index: 0, prompt: 'prompt' }],
+          },
+          0,
+        ),
+      ).rejects.toThrow(/correlation.*scan id/i);
+    });
+
+    it('reports failed and timed-out prompts as failed instead of allowed results', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        { scan_id: 'batch-errors', req_id: 0, status: 'failed' },
+        {
+          scan_id: 'batch-errors',
+          req_id: 1,
+          status: 'complete',
+          result: {
+            scan_id: 'batch-errors',
+            report_id: 'report-errors',
+            action: 'allow',
+            category: 'benign',
+            timeout: true,
+            error: true,
+            errors: [{ feature: 'source_code', status: 'timeout' }],
+          },
+        },
+      ]);
+
+      const results = await service.pollBatch(
+        {
+          scanId: 'batch-errors',
+          entries: [
+            { scanId: 'batch-errors', reqId: 0, index: 0, prompt: 'failed prompt' },
+            { scanId: 'batch-errors', reqId: 1, index: 1, prompt: 'timed out prompt' },
+          ],
+        },
+        0,
+      );
+
+      expect(results.map((result) => result.action)).toEqual(['failed', 'failed']);
+      expect(results.map((result) => result.category)).toEqual(['error', 'error']);
+      expect(results[1].error).toContain('source_code');
+      expect(results[1].error).toContain('timeout');
+    });
+
+    it('stops after a bounded number of polls without progress', async () => {
+      mockScannerInstance.queryByScanIds
+        .mockResolvedValueOnce([{ scan_id: 'stalled', req_id: 0, status: 'pending' }])
+        .mockResolvedValueOnce([{ scan_id: 'stalled', req_id: 0, status: 'pending' }])
+        .mockRejectedValueOnce(new Error('polling was not bounded'));
+
+      await expect(
+        service.pollBatch(
+          {
+            scanId: 'stalled',
+            entries: [{ scanId: 'stalled', reqId: 0, index: 0, prompt: 'waiting' }],
+          },
+          0,
+          { maxNoProgressPolls: 2 },
+        ),
+      ).rejects.toThrow(/no progress after 2 polls/i);
+      expect(mockScannerInstance.queryByScanIds).toHaveBeenCalledTimes(2);
+    });
+
+    it('uses Retry-After when a polling GET receives 429', async () => {
+      const rateLimit = Object.assign(new Error('rate limited'), {
+        failureKind: 'http',
+        statusCode: 429,
+        retryAfterMs: 0,
+      });
+      const onRetry = vi.fn();
+      mockScannerInstance.queryByScanIds.mockRejectedValueOnce(rateLimit).mockResolvedValueOnce([
+        {
+          scan_id: 'poll-rate-limit',
+          req_id: 0,
+          status: 'complete',
+          result: {
+            scan_id: 'poll-rate-limit',
+            report_id: 'report-poll',
+            action: 'allow',
+            category: 'benign',
+          },
+        },
+      ]);
+
+      await service.pollBatch(
+        {
+          scanId: 'poll-rate-limit',
+          entries: [{ scanId: 'poll-rate-limit', reqId: 0, index: 0, prompt: 'prompt' }],
+        },
+        0,
+        { baseDelayMs: 1, onRetry },
+      );
+
+      expect(onRetry).toHaveBeenCalledWith(1, 0);
+      expect(mockScannerInstance.queryByScanIds.mock.calls).toEqual([
+        [['poll-rate-limit'], { numRetries: 0 }],
+        [['poll-rate-limit'], { numRetries: 0 }],
+      ]);
+    });
+  });
+
   describe('pollResults', () => {
+    it('preserves detections on the deprecated compatibility path', async () => {
+      mockScannerInstance.queryByScanIds.mockResolvedValueOnce([
+        {
+          scan_id: 's-detection',
+          status: 'complete',
+          result: {
+            scan_id: 's-detection',
+            report_id: 'r-detection',
+            action: 'block',
+            category: 'suspicious',
+            prompt_detected: { source_code: true },
+          },
+        },
+      ]);
+
+      const [result] = await service.pollResults(['s-detection'], 0);
+
+      expect(result.action).toBe('block');
+      expect(result.triggered).toBe(true);
+      expect(result.detections).toEqual({ source_code: true });
+    });
+
     it('polls until all scans complete', async () => {
       mockScannerInstance.queryByScanIds
         .mockResolvedValueOnce([
@@ -258,6 +718,7 @@ describe('SdkRuntimeService', () => {
       const results = await service.pollResults(['s1', 's2'], 10);
       expect(results).toHaveLength(2);
       expect(results[0].action).toBe('block');
+      expect(results[1].action).toBe('allow');
       expect(results[1].category).toBe('error');
     });
 
@@ -299,17 +760,17 @@ describe('SdkRuntimeService', () => {
       expect(mockScannerInstance.asyncScan.mock.calls[0][0]).toHaveLength(5);
     });
 
-    it('6 prompts creates 2 batches (5 + 1)', async () => {
-      mockScannerInstance.asyncScan
-        .mockResolvedValueOnce({ received: '2026-03-09T00:00:00Z', scan_id: 'batch-a' })
-        .mockResolvedValueOnce({ received: '2026-03-09T00:00:00Z', scan_id: 'batch-b' });
+    it('6 prompts creates 1 batch', async () => {
+      mockScannerInstance.asyncScan.mockResolvedValueOnce({
+        received: '2026-03-09T00:00:00Z',
+        scan_id: 'batch-a',
+      });
 
       const prompts = Array.from({ length: 6 }, (_, i) => `p${i}`);
       const scanIds = await service.submitBulkScan('profile', prompts);
-      expect(mockScannerInstance.asyncScan).toHaveBeenCalledTimes(2);
-      expect(scanIds).toEqual(['batch-a', 'batch-b']);
-      expect(mockScannerInstance.asyncScan.mock.calls[0][0]).toHaveLength(5);
-      expect(mockScannerInstance.asyncScan.mock.calls[1][0]).toHaveLength(1);
+      expect(mockScannerInstance.asyncScan).toHaveBeenCalledOnce();
+      expect(scanIds).toEqual(['batch-a']);
+      expect(mockScannerInstance.asyncScan.mock.calls[0][0]).toHaveLength(6);
     });
   });
 
@@ -498,6 +959,25 @@ describe('SdkRuntimeService', () => {
   });
 
   describe('formatResultsCsv', () => {
+    it('preserves operational failure details in the CSV', () => {
+      const csv = SdkRuntimeService.formatResultsCsv([
+        {
+          prompt: 'timed out prompt',
+          scanId: 's-error',
+          reportId: '',
+          action: 'failed',
+          category: 'error',
+          triggered: false,
+          detections: {},
+          error: 'source_code: timeout',
+        },
+      ]);
+
+      const [header, row] = csv.split('\n');
+      expect(header.endsWith(',error')).toBe(true);
+      expect(row.endsWith('"source_code: timeout"')).toBe(true);
+    });
+
     it('produces CSV with header and data rows', () => {
       const results = [
         {
@@ -524,9 +1004,15 @@ describe('SdkRuntimeService', () => {
 
       const csv = SdkRuntimeService.formatResultsCsv(results);
       const lines = csv.split('\n');
-      expect(lines[0]).toBe('prompt,action,category,triggered,scan_id,report_id');
-      expect(lines[1]).toBe('"hello","allow","benign","false","s1","r1"');
-      expect(lines[2]).toBe('"hack it","block","malicious","true","s2","r2"');
+      expect(lines[0]).toBe(
+        'prompt,action,category,triggered,topic_violation,injection,toxic_content,dlp,url_cats,malicious_code,source_code,agent,scan_id,report_id,error',
+      );
+      expect(lines[1]).toBe(
+        '"hello","allow","benign","false","false","false","false","false","false","false","false","false","s1","r1",""',
+      );
+      expect(lines[2]).toBe(
+        '"hack it","block","malicious","true","false","true","false","false","false","false","false","false","s2","r2",""',
+      );
     });
 
     it('escapes quotes in prompt text', () => {
@@ -564,12 +1050,16 @@ describe('SdkRuntimeService', () => {
       const csv = SdkRuntimeService.formatResultsCsv(results);
       const lines = csv.split('\n');
       // prompt is wrapped in quotes so commas don't break CSV parsing
-      expect(lines[1]).toBe('"hello, world, test","allow","benign","false","s1","r1"');
+      expect(lines[1]).toBe(
+        '"hello, world, test","allow","benign","false","false","false","false","false","false","false","false","false","s1","r1",""',
+      );
     });
 
     it('returns header only for empty results array', () => {
       const csv = SdkRuntimeService.formatResultsCsv([]);
-      expect(csv).toBe('prompt,action,category,triggered,scan_id,report_id');
+      expect(csv).toBe(
+        'prompt,action,category,triggered,topic_violation,injection,toxic_content,dlp,url_cats,malicious_code,source_code,agent,scan_id,report_id,error',
+      );
     });
   });
 });
