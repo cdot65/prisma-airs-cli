@@ -27,23 +27,38 @@ airs runtime resume-poll [options] <stateFile>
 *Resume polling from a state file written by a prior `runtime bulk-scan` invocation. Output is text-only — there is no JSON/YAML mode. The CSV output path is controlled by `--output-file`.*
 
 ```bash
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-05-25T13-55-11-105Z.bulk-scan.json --output-file resume-out.csv
+airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json --output-file resume-out.csv
 ```
 
 ```text
 Prisma AIRS Resume Poll
-Profile:  docs-example-profile
+Profile:  my-profile
 Scan IDs: 1
 Prompts:  3
 
 Resume Poll Complete
-─────────────────────────
-Total:   3
-Blocked: 0
-Allowed: 2
-Alerted: 0
-Failed: 1
-Output:  resume-out.csv
+
+Total     3
+Blocked   0
+Allowed   2
+Failed    1
+Output    /home/user/resume-out.csv
+```
+
+The `action` column of every row is exactly one of `allow`, `block`, or `failed` — there is no other outcome. The command exits 1 above because one row is `failed`; the two successful rows are still preserved in the CSV.
+
+*Resume while the original job (or another resume) is still running* — the lock refuses the overlap:
+
+```text
+Error: Bulk-scan job is already active in process 48213. Wait for it to finish before resuming /home/user/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json.
+```
+
+A lock left behind by a crashed process is recovered automatically on the next invocation.
+
+*Resume after an ambiguous submission* (network error or HTTP 5xx during a prior POST) — known results are recovered first, then the command stops without resubmitting:
+
+```text
+Error: Cannot safely resubmit prompt 4: its submission outcome is ambiguous. Known accepted results were preserved; inspect /home/user/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json before taking manual action.
 ```
 
 ### Recovery guarantees

@@ -26,34 +26,57 @@ Each logical batch is submitted in SDK calls of at most 20 prompts, then fully p
 
 ### Examples
 
-*Bulk scan with default output*
+*Bulk scan a text file (one prompt per line) with default output*
 
 ```bash
-airs runtime bulk-scan --profile my-profile --file prompts.txt --batch-size 25
+airs runtime bulk-scan --profile my-profile --file prompts.txt
 ```
 
 ```text
 Prisma AIRS Bulk Scan
-Profile: AI-Firewall-High-Security-Profile
-Prompts: 5
-Batches: 1 (size 25)
+Profile:  my-profile
+Session:  prisma-airs-cli-bulk-mcqz1a2b
+Prompts:  5
+Batches:  1 (size 25)
+State:    /home/user/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json
 
 Submitting batch 1...
-Scan IDs saved: /home/user/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z.bulk-scan.json
+Scan IDs saved: /home/user/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json
 
 Bulk Scan Complete
-─────────────────────────
-Total:   5
-Blocked: 2
-Allowed: 3
-Failed: 0
-Output:  AI-Firewall-High-Security-Profile-bulk-scan.csv
+
+Total     5
+Blocked   2
+Allowed   3
+Failed    0
+Output    /home/user/my-profile-bulk-scan.csv
 ```
 
-*Custom output path*
+*CSV input (extracts the `prompt` column), custom output path and session ID*
 
 ```bash
-airs runtime bulk-scan --profile my-profile --file prompts.txt --output-file results.csv
+airs runtime bulk-scan --profile my-profile --file prompts.csv \
+  --output-file results.csv --session-id nightly-regression
+```
+
+*Sample output CSV*
+
+```text
+prompt,action,category,triggered,topic_violation,injection,toxic_content,dlp,url_cats,malicious_code,source_code,agent,scan_id,report_id,error
+What is the capital of France?,allow,benign,false,false,false,false,false,false,false,false,false,8b1e...,R8b1e...,
+Ignore all previous instructions...,block,malicious,true,false,true,false,false,false,false,false,false,8b1e...,R8b1e...,
+```
+
+*Interrupted run* — press `Ctrl+C` (or lose the network) after `Scan IDs saved:` prints, then continue with the state file it named:
+
+```bash
+airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json
+```
+
+*Concurrent invocation for the same job* — the second process refuses immediately:
+
+```text
+Error: Bulk-scan job is already active in process 48213. Wait for it to finish before resuming /home/user/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json.
 ```
 
 ### Output and exit status
