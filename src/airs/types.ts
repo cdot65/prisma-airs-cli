@@ -51,16 +51,75 @@ export interface RuntimeScanResult {
   category: string;
   triggered: boolean;
   detections: Record<string, boolean>;
+  error?: string;
 }
 
-/** Contract for runtime scanning operations (sync + async). */
+/** Terminal action emitted by the reliable bulk-scan path. */
+export type BulkScanAction = RuntimeScanResult['action'] | 'failed';
+
+/** A prompt paired with its stable position and AIRS request ID. */
+export interface IndexedPrompt {
+  index: number;
+  prompt: string;
+}
+
+/** Correlation data for one prompt accepted in an async AIRS submission. */
+export interface BatchEntry extends IndexedPrompt {
+  scanId: string;
+  reqId: number;
+}
+
+/** Receipt for exactly one SDK async submission (at most twenty prompts). */
+export interface SubmittedBatch {
+  scanId: string;
+  reportId?: string;
+  entries: BatchEntry[];
+}
+
+/** A normalized async result with its stable input position and AIRS request ID. */
+export interface BulkScanResult extends Omit<RuntimeScanResult, 'action'> {
+  index: number;
+  reqId: number;
+  action: BulkScanAction;
+}
+
+/** Backwards-compatible contract for the original runtime scanning operations. */
 export interface RuntimeService {
   /** Scan a single prompt (and optional response) synchronously. */
   scanPrompt(profileName: string, prompt: string, response?: string): Promise<RuntimeScanResult>;
-  /** Submit prompts for async bulk scanning, returns scan IDs. */
-  submitBulkScan(profileName: string, prompts: string[]): Promise<string[]>;
-  /** Poll async scan results until all complete. */
+  /** @deprecated Use ReliableRuntimeService.submitBatch to preserve per-prompt correlation. */
+  submitBulkScan(profileName: string, prompts: string[], sessionId?: string): Promise<string[]>;
+  /** @deprecated Use ReliableRuntimeService.pollBatch to preserve per-prompt correlation. */
   pollResults(scanIds: string[], intervalMs?: number): Promise<RuntimeScanResult[]>;
+}
+
+/** Runtime scanning contract with item-correlated, resumable bulk operations. */
+export interface ReliableRuntimeService extends RuntimeService {
+  /** Submit one SDK-sized group of indexed prompts for async scanning. */
+  submitBatch(
+    profileName: string,
+    prompts: IndexedPrompt[],
+    sessionId?: string,
+    retryOpts?: {
+      maxRetries?: number;
+      baseDelayMs?: number;
+      maxNoProgressPolls?: number;
+      onRetry?: (attempt: number, delayMs: number) => void;
+      onProgress?: (results: BulkScanResult[]) => void | Promise<void>;
+    },
+  ): Promise<SubmittedBatch>;
+  /** Poll one async submission and return one result per prompt, ordered by input index. */
+  pollBatch(
+    batch: SubmittedBatch,
+    intervalMs?: number,
+    retryOpts?: {
+      maxRetries?: number;
+      baseDelayMs?: number;
+      maxNoProgressPolls?: number;
+      onRetry?: (attempt: number, delayMs: number) => void;
+      onProgress?: (results: BulkScanResult[]) => void | Promise<void>;
+    },
+  ): Promise<BulkScanResult[]>;
 }
 
 // ---------------------------------------------------------------------------

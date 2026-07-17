@@ -44,7 +44,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@cdot65/prisma-airs-sdk": "^0.13.0",
+    "@cdot65/prisma-airs-sdk": "^0.13.2",
     "@inquirer/prompts": "^8.3.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",

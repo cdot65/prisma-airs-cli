@@ -1,6 +1,6 @@
 # Interface: RedTeamCustomReport
 
-Defined in: [src/airs/types.ts:305](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L305)
+Defined in: [src/airs/types.ts:364](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L364)
 
 Normalized custom attack report summary.
 
@@ -10,7 +10,7 @@ Normalized custom attack report summary.
 
 > **asr**: `number`
 
-Defined in: [src/airs/types.ts:311](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L311)
+Defined in: [src/airs/types.ts:370](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L370)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:311](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **failedAttacks**: `number`
 
-Defined in: [src/airs/types.ts:309](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L309)
+Defined in: [src/airs/types.ts:368](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L368)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:309](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **promptSets**: `object`[]
 
-Defined in: [src/airs/types.ts:312](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L312)
+Defined in: [src/airs/types.ts:371](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L371)
 
 #### promptSetId
 
@@ -58,7 +58,7 @@ Defined in: [src/airs/types.ts:312](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **score**: `number`
 
-Defined in: [src/airs/types.ts:310](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L310)
+Defined in: [src/airs/types.ts:369](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L369)
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/airs/types.ts:310](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **totalAttacks**: `number`
 
-Defined in: [src/airs/types.ts:307](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L307)
+Defined in: [src/airs/types.ts:366](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L366)
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [src/airs/types.ts:307](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **totalPrompts**: `number`
 
-Defined in: [src/airs/types.ts:306](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L306)
+Defined in: [src/airs/types.ts:365](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L365)
 
 ***
 
@@ -82,4 +82,4 @@ Defined in: [src/airs/types.ts:306](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **totalThreats**: `number`
 
-Defined in: [src/airs/types.ts:308](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L308)
+Defined in: [src/airs/types.ts:367](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L367)

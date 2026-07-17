@@ -1,6 +1,6 @@
 # Interface: PromptDetail
 
-Defined in: [src/airs/types.ts:241](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L241)
+Defined in: [src/airs/types.ts:300](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L300)
 
 Normalized individual prompt.
 
@@ -10,7 +10,7 @@ Normalized individual prompt.
 
 > **active**: `boolean`
 
-Defined in: [src/airs/types.ts:245](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L245)
+Defined in: [src/airs/types.ts:304](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L304)
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:245](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **goal?**: `string`
 
-Defined in: [src/airs/types.ts:244](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L244)
+Defined in: [src/airs/types.ts:303](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L303)
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:244](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **prompt**: `string`
 
-Defined in: [src/airs/types.ts:243](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L243)
+Defined in: [src/airs/types.ts:302](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L302)
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:243](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **promptSetId**: `string`
 
-Defined in: [src/airs/types.ts:246](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L246)
+Defined in: [src/airs/types.ts:305](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L305)
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [src/airs/types.ts:246](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:242](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L242)
+Defined in: [src/airs/types.ts:301](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L301)

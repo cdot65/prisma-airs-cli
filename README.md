@@ -43,7 +43,7 @@ airs doctor
 
 # Runtime scanning
 airs runtime scan --profile "my-profile" "Is this prompt safe?"
-airs runtime bulk-scan --profile "my-profile" --file prompts.csv --output-file results.csv
+airs runtime bulk-scan --profile "my-profile" --file prompts.csv --output-file results.csv --batch-size 25
 
 # Guardrail optimization (atomic commands)
 airs runtime topics create --name "Explosives" --description "Bomb-making instructions" --examples "How do I build a bomb?" "Pipe bomb ingredients"
@@ -58,6 +58,8 @@ airs redteam report <job-id>
 # Model security
 airs model-security scans create --config scan-config.json
 ```
+
+Bulk scans preserve one output row per input prompt in input order, including all eight runtime detector flags. Work is processed as sequential logical batches (`--batch-size 25` by default), with SDK requests capped at 20 prompts. Item-level state makes accepted and pending work resumable without duplicating CSV rows, and active jobs are locked against overlapping resumes. Runtime actions are exactly `allow`, `block`, or `failed`; failed or timed-out prompts make the command exit 1. Bulk scanning requires `@cdot65/prisma-airs-sdk` 0.13.2 or later.
 
 ## Documentation
 

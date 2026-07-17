@@ -1,10 +1,17 @@
+import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { basename, dirname, join, resolve as resolvePath } from 'node:path';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
-import { SdkRuntimeService } from '../../airs/runtime.js';
-import type { RuntimeScanResult, SecurityProfileInfo } from '../../airs/types.js';
+import { SDK_ASYNC_BATCH_SIZE, SdkRuntimeService } from '../../airs/runtime.js';
+import type {
+  BulkScanResult,
+  RuntimeScanResult,
+  SecurityProfileInfo,
+  SubmittedBatch,
+} from '../../airs/types.js';
 import { runtimeInitOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
@@ -12,7 +19,13 @@ import {
   buildProfileRequest,
   mergeProfilePolicy,
 } from '../builders/profile-builder.js';
-import { loadBulkScanState, saveBulkScanState } from '../bulk-scan-state.js';
+import { acquireBulkScanLock } from '../bulk-scan-lock.js';
+import {
+  type BulkScanItemState,
+  type BulkScanState,
+  loadBulkScanState,
+  saveBulkScanState,
+} from '../bulk-scan-state.js';
 import { confirmOrAbort } from '../confirm.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { examples } from '../examples.js';
@@ -63,6 +76,93 @@ function renderScanResult(result: RuntimeScanResult): void {
       ui.bullet(key, 'flag');
     }
   }
+}
+
+function submittedBatches(items: BulkScanItemState[]): SubmittedBatch[] {
+  const grouped = new Map<string, BulkScanItemState[]>();
+  for (const item of items) {
+    if (item.status !== 'submitted' || !item.scanId) continue;
+    const group = grouped.get(item.scanId) ?? [];
+    group.push(item);
+    grouped.set(item.scanId, group);
+  }
+
+  return [...grouped.entries()].map(([scanId, group]) => ({
+    scanId,
+    reportId: group[0]?.receiptReportId,
+    entries: group
+      .sort((left, right) => left.index - right.index)
+      .map((item) => ({
+        scanId,
+        reqId: item.reqId,
+        index: item.index,
+        prompt: item.prompt,
+      })),
+  }));
+}
+
+function recordBulkResults(state: BulkScanState, results: BulkScanResult[]): void {
+  const byIdentity = new Map(
+    state.items.flatMap((item) =>
+      item.scanId ? [[`${item.scanId}\u0000${item.reqId}`, item] as const] : [],
+    ),
+  );
+  for (const result of results) {
+    const item = byIdentity.get(`${result.scanId}\u0000${result.reqId}`);
+    if (!item || item.index !== result.index || item.prompt !== result.prompt) {
+      throw new Error(
+        `Bulk-scan result correlation mismatch for scan ${result.scanId}, request ${result.reqId}`,
+      );
+    }
+    item.result = result;
+    item.status = result.action === 'failed' ? 'failed' : 'complete';
+  }
+}
+
+function bulkItemAtIndex(state: BulkScanState, index: number): BulkScanItemState {
+  const item = state.items.find((candidate) => candidate.index === index);
+  if (!item) throw new Error(`Bulk-scan state is missing input index ${index}`);
+  return item;
+}
+
+function completedBulkResults(state: BulkScanState): BulkScanResult[] {
+  return state.items
+    .flatMap((item) => (item.result ? [item.result] : []))
+    .sort((left, right) => left.index - right.index);
+}
+
+async function writeBulkResults(outputPath: string, results: BulkScanResult[]): Promise<void> {
+  await fs.promises.mkdir(dirname(outputPath), { recursive: true });
+  const temporary = `${outputPath}.tmp-${process.pid}-${randomUUID()}`;
+  try {
+    await fs.promises.writeFile(temporary, SdkRuntimeService.formatResultsCsv(results), {
+      encoding: 'utf-8',
+      flag: 'wx',
+      mode: 0o600,
+    });
+    await fs.promises.rename(temporary, outputPath);
+  } catch (error) {
+    await fs.promises.rm(temporary, { force: true });
+    throw error;
+  }
+}
+
+function isDefiniteSubmissionRejection(error: unknown): boolean {
+  const metadata = error as { failureKind?: string; statusCode?: number } | undefined;
+  return (
+    metadata?.failureKind === 'http' &&
+    typeof metadata.statusCode === 'number' &&
+    metadata.statusCode >= 400 &&
+    metadata.statusCode < 500
+  );
+}
+
+function parsePositiveInteger(value: string, optionName: string): number {
+  const parsed = Number(value);
+  if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(parsed)) {
+    usageError(`${optionName} must be a positive integer`);
+  }
+  return parsed;
 }
 
 /** Create a management service from config. */
@@ -170,6 +270,7 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--file <file>', 'Input file — .csv (extracts prompt column) or .txt (one per line)')
     .option('--output-file <file>', 'Output CSV file path')
     .option('--session-id <id>', 'Session ID for grouping scans in AIRS dashboard')
+    .option('--batch-size <n>', 'Prompts per sequential submit/poll batch', '25')
     .addHelpText(
       'after',
       examples(
@@ -195,6 +296,8 @@ export function registerRuntimeCommand(program: Command): void {
     if (!opts.file) {
       usageError('--file <file> is required');
     }
+    const batchSize = parsePositiveInteger(opts.batchSize, '--batch-size');
+    let releaseJobLock: (() => Promise<void>) | undefined;
     try {
       const config = await loadConfig({});
       if (!config.airsApiKey && !config.airsApiToken) {
@@ -209,52 +312,119 @@ export function registerRuntimeCommand(program: Command): void {
       }
 
       const sessionId = opts.sessionId ?? `prisma-airs-cli-bulk-${Date.now().toString(36)}`;
+      const outputPath = resolvePath(
+        opts.outputFile ?? `${opts.profile.replace(/\s+/g, '-')}-bulk-scan.csv`,
+      );
+      const stateDir = resolvePath(
+        basename(config.dataDir) === 'runs'
+          ? join(dirname(config.dataDir), 'bulk-scans')
+          : join(config.dataDir, 'bulk-scans'),
+      );
+      const createdAt = new Date().toISOString();
+      const state: BulkScanState = {
+        version: 2,
+        profile: opts.profile,
+        sessionId,
+        outputFile: outputPath,
+        batchSize,
+        createdAt,
+        updatedAt: createdAt,
+        items: prompts.map((prompt, index) => ({
+          index,
+          reqId: index,
+          prompt,
+          status: 'pending',
+        })),
+      };
+      let statePath = await saveBulkScanState(state, stateDir);
+      releaseJobLock = await acquireBulkScanLock(statePath);
+      await writeBulkResults(outputPath, completedBulkResults(state));
 
       const service = new SdkRuntimeService(runtimeInitOptions(config));
       ui.status('Prisma AIRS Bulk Scan');
       ui.status(`Profile:  ${opts.profile}`);
       ui.status(`Session:  ${sessionId}`);
       ui.status(`Prompts:  ${prompts.length}`);
-      ui.status(`Batches:  ${Math.ceil(prompts.length / 5)}`);
+      ui.status(`Batches:  ${Math.ceil(prompts.length / batchSize)} (size ${batchSize})`);
+      ui.status(`State:    ${statePath}`);
 
-      ui.status('Submitting async scans...');
-      const scanIds = await service.submitBulkScan(opts.profile, prompts, sessionId);
+      for (let logicalStart = 0; logicalStart < state.items.length; logicalStart += batchSize) {
+        const logicalBatch = state.items.slice(logicalStart, logicalStart + batchSize);
+        ui.status(`Submitting batch ${Math.floor(logicalStart / batchSize) + 1}...`);
 
-      const stateDir = config.dataDir.replace(/\/runs$/, '/bulk-scans');
-      const statePath = await saveBulkScanState(
-        { scanIds, profile: opts.profile, promptCount: prompts.length, sessionId },
-        stateDir,
-      );
-      ui.status(`Scan IDs saved: ${statePath}`);
-      ui.status(`Submitted ${scanIds.length} batch(es), polling for results...`);
+        for (let sdkStart = 0; sdkStart < logicalBatch.length; sdkStart += SDK_ASYNC_BATCH_SIZE) {
+          const chunk = logicalBatch.slice(sdkStart, sdkStart + SDK_ASYNC_BATCH_SIZE);
+          for (const item of chunk) item.status = 'submitting';
+          statePath = await saveBulkScanState(state, stateDir, statePath);
 
-      const results = await service.pollResults(scanIds, undefined, {
-        onRetry: (attempt, delayMs) => {
-          ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
-        },
-      });
+          try {
+            const batch = await service.submitBatch(opts.profile, chunk, sessionId, {
+              onRetry: (attempt, delayMs) => {
+                ui.status(
+                  `⚠ Rate limited while submitting — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`,
+                );
+              },
+            });
+            for (const entry of batch.entries) {
+              const item = bulkItemAtIndex(state, entry.index);
+              item.status = 'submitted';
+              item.scanId = entry.scanId;
+              item.receiptReportId = batch.reportId;
+            }
+            statePath = await saveBulkScanState(state, stateDir, statePath);
+          } catch (err) {
+            for (const item of chunk) {
+              item.status = isDefiniteSubmissionRejection(err) ? 'pending' : 'ambiguous';
+              item.error = err instanceof Error ? err.message : String(err);
+            }
+            await saveBulkScanState(state, stateDir, statePath);
+            throw err;
+          }
+        }
 
-      // Attach prompts to results
-      for (let i = 0; i < results.length && i < prompts.length; i++) {
-        results[i].prompt = prompts[i];
+        ui.status(`Scan IDs saved: ${statePath}`);
+        for (const batch of submittedBatches(logicalBatch)) {
+          const batchResults = await service.pollBatch(batch, undefined, {
+            onRetry: (attempt, delayMs) => {
+              ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
+            },
+            onProgress: async (results) => {
+              recordBulkResults(state, results);
+              statePath = await saveBulkScanState(state, stateDir, statePath);
+              await writeBulkResults(outputPath, completedBulkResults(state));
+            },
+          });
+          recordBulkResults(state, batchResults);
+          statePath = await saveBulkScanState(state, stateDir, statePath);
+          await writeBulkResults(outputPath, completedBulkResults(state));
+        }
       }
+      const results = completedBulkResults(state);
 
-      const outputPath = opts.outputFile ?? `${opts.profile.replace(/\s+/g, '-')}-bulk-scan.csv`;
-      const csv = SdkRuntimeService.formatResultsCsv(results);
-      await writeFile(outputPath, csv, 'utf-8');
+      await writeBulkResults(outputPath, results);
 
       const blocked = results.filter((r) => r.action === 'block').length;
       const allowed = results.filter((r) => r.action === 'allow').length;
+      const failed = results.filter((r) => r.action === 'failed').length;
 
       ui.header('Bulk Scan Complete');
       ui.keyValue([
         ['Total', results.length],
         ['Blocked', chalk.red(String(blocked))],
         ['Allowed', chalk.green(String(allowed))],
+        ['Failed', chalk.red(String(failed))],
         ['Output', chalk.cyan(outputPath)],
       ]);
+      if (failed > 0) {
+        ui.error(`${failed} prompt(s) failed; successful results were preserved.`);
+        process.exitCode = 1;
+      }
     } catch (err) {
+      await releaseJobLock?.();
+      releaseJobLock = undefined;
       fail(err);
+    } finally {
+      await releaseJobLock?.();
     }
   });
 
@@ -713,7 +883,10 @@ export function registerRuntimeCommand(program: Command): void {
   });
   resumePoll.action(async (stateFile: string, opts) => {
     resolveDeprecatedAliases(resumePoll, opts);
+    let releaseJobLock: (() => Promise<void>) | undefined;
     try {
+      stateFile = await fs.promises.realpath(stateFile);
+      releaseJobLock = await acquireBulkScanLock(stateFile);
       const config = await loadConfig({});
       if (!config.airsApiKey && !config.airsApiToken) {
         fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
@@ -721,35 +894,116 @@ export function registerRuntimeCommand(program: Command): void {
 
       const state = await loadBulkScanState(stateFile);
       const service = new SdkRuntimeService(runtimeInitOptions(config));
+      const unresolvedSubmission = state.items.find(
+        (item) => item.status === 'submitting' || item.status === 'ambiguous',
+      );
+      const outputPath = resolvePath(opts.outputFile ?? state.outputFile);
+      state.outputFile = outputPath;
+      await saveBulkScanState(state, dirname(stateFile), stateFile);
+
+      const pollSubmitted = async (items: BulkScanItemState[]): Promise<void> => {
+        for (const batch of submittedBatches(items)) {
+          const results = await service.pollBatch(batch, undefined, {
+            onRetry: (attempt, delayMs) => {
+              ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
+            },
+            onProgress: async (progress) => {
+              recordBulkResults(state, progress);
+              await saveBulkScanState(state, dirname(stateFile), stateFile);
+              await writeBulkResults(outputPath, completedBulkResults(state));
+            },
+          });
+          recordBulkResults(state, results);
+          await saveBulkScanState(state, dirname(stateFile), stateFile);
+          await writeBulkResults(outputPath, completedBulkResults(state));
+        }
+      };
+
+      if (unresolvedSubmission) {
+        await pollSubmitted(state.items);
+        await writeBulkResults(outputPath, completedBulkResults(state));
+        throw new Error(
+          `Cannot safely resubmit prompt ${unresolvedSubmission.index}: its submission outcome is ambiguous. Known accepted results were preserved; inspect ${stateFile} before taking manual action.`,
+        );
+      }
 
       ui.status('Prisma AIRS Resume Poll');
       ui.status(`Profile:  ${state.profile}`);
-      ui.status(`Scan IDs: ${state.scanIds.length}`);
-      ui.status(`Prompts:  ${state.promptCount}`);
+      ui.status(
+        `Scan IDs: ${new Set(state.items.flatMap((item) => (item.scanId ? [item.scanId] : []))).size}`,
+      );
+      ui.status(`Prompts:  ${state.items.length}`);
 
-      ui.status('Polling for results...');
-      const results = await service.pollResults(state.scanIds, undefined, {
-        onRetry: (attempt, delayMs) => {
-          ui.status(`⚠ Rate limited — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`);
-        },
-      });
+      for (
+        let logicalStart = 0;
+        logicalStart < state.items.length;
+        logicalStart += state.batchSize
+      ) {
+        const logicalBatch = state.items.slice(logicalStart, logicalStart + state.batchSize);
+        await pollSubmitted(logicalBatch);
+        const pendingItems = logicalBatch
+          .filter((item) => item.status === 'pending')
+          .sort((left, right) => left.index - right.index);
 
-      const outputPath = opts.outputFile ?? `${state.profile.replace(/\s+/g, '-')}-bulk-scan.csv`;
-      const csv = SdkRuntimeService.formatResultsCsv(results);
-      await writeFile(outputPath, csv, 'utf-8');
+        for (let start = 0; start < pendingItems.length; start += SDK_ASYNC_BATCH_SIZE) {
+          const chunk = pendingItems.slice(start, start + SDK_ASYNC_BATCH_SIZE);
+          for (const item of chunk) item.status = 'submitting';
+          await saveBulkScanState(state, dirname(stateFile), stateFile);
+          try {
+            const batch = await service.submitBatch(state.profile, chunk, state.sessionId, {
+              onRetry: (attempt, delayMs) => {
+                ui.status(
+                  `⚠ Rate limited while submitting — retry ${attempt} in ${(delayMs / 1000).toFixed(0)}s...`,
+                );
+              },
+            });
+            for (const entry of batch.entries) {
+              const item = bulkItemAtIndex(state, entry.index);
+              item.status = 'submitted';
+              item.scanId = entry.scanId;
+              item.receiptReportId = batch.reportId;
+              item.error = undefined;
+            }
+            await saveBulkScanState(state, dirname(stateFile), stateFile);
+          } catch (error) {
+            for (const item of chunk) {
+              item.status = isDefiniteSubmissionRejection(error) ? 'pending' : 'ambiguous';
+              item.error = error instanceof Error ? error.message : String(error);
+            }
+            await saveBulkScanState(state, dirname(stateFile), stateFile);
+            throw error;
+          }
+        }
+
+        await pollSubmitted(logicalBatch);
+      }
+
+      await saveBulkScanState(state, dirname(stateFile), stateFile);
+      const results = completedBulkResults(state);
+      await writeBulkResults(outputPath, results);
 
       const blocked = results.filter((r) => r.action === 'block').length;
       const allowed = results.filter((r) => r.action === 'allow').length;
+      const failed = results.filter((r) => r.action === 'failed').length;
 
       ui.header('Resume Poll Complete');
       ui.keyValue([
         ['Total', results.length],
         ['Blocked', chalk.red(String(blocked))],
         ['Allowed', chalk.green(String(allowed))],
+        ['Failed', chalk.red(String(failed))],
         ['Output', chalk.cyan(outputPath)],
       ]);
+      if (failed > 0) {
+        ui.error(`${failed} prompt(s) failed; successful results were preserved.`);
+        process.exitCode = 1;
+      }
     } catch (err) {
+      await releaseJobLock?.();
+      releaseJobLock = undefined;
       fail(err);
+    } finally {
+      await releaseJobLock?.();
     }
   });
 

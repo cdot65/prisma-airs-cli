@@ -102,7 +102,7 @@ src/
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
-│   ├── bulk-scan-state.ts # Save/load bulk scan IDs for resume after poll failure
+│   ├── bulk-scan-state.ts # Validated item-centric v2 bulk state; atomic 0600 checkpoints for safe resume
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
 │   └── renderer/          # Terminal output, split by command group — renderers compose ui.ts primitives (no direct chalk)
 │       ├── index.ts       # Barrel re-exports
@@ -125,7 +125,7 @@ src/
 │   └── constraints.ts     # AIRS topic limits: 100 name, 250 desc, 250/example, 5 max, 1000 combined
 ├── airs/
 │   ├── scanner.ts         # AirsScanService + DebugScanService + RateLimitedScanService — syncScan + scanBatch
-│   ├── runtime.ts         # SdkRuntimeService — sync scan, async bulk scan, poll results, CSV export
+│   ├── runtime.ts         # SdkRuntimeService — sync scan, correlated async batches, bounded polling, CSV export
 │   ├── management.ts      # SdkManagementService — topic CRUD, profile CRUD, API keys, customer apps, deployment profile listing, scan logs
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
@@ -147,6 +147,7 @@ src/
 └── index.ts               # Library exports
 
 tests/
+├── integration/           # Public CLI bulk-scan and installed SDK runtime-contract tests
 ├── unit/                  # spec files
 │   ├── airs/              # scanner.spec.ts, management.spec.ts, modelsecurity.spec.ts, promptsets.spec.ts, redteam.spec.ts, runtime.spec.ts
 │   ├── backup/            # io.spec.ts
@@ -202,17 +203,42 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - **Platform ceilings**: Topics in high-sensitivity domains (explosives, weapons) trigger built-in AIRS safety that overrides custom definitions. Shorter descriptions generally outperform longer ones with exclusion clauses.
 
 ### Runtime Scanning (`src/airs/runtime.ts`)
-- `SdkRuntimeService` wraps SDK `Scanner` for sync and async scanning
-- `scanPrompt()` — sync scan via `syncScan()`, normalizes to `RuntimeScanResult`
-- **Detection scope**: `scanPrompt()` aggregates 6 detection types via OR (`topic_violation`, `injection`, `toxic_content`, `dlp`, `url_cats`, `malicious_code`). This is intentionally broader than the guardrail loop's `topic_violation`-only signal — runtime scanning is a general-purpose firewall check, not topic-specific evaluation.
-- `submitBulkScan()` — batches prompts into groups of 5 `AsyncScanObject` items, calls `asyncScan()` per batch; optional `sessionId` for AIRS Sessions UI grouping
-- `pollResults()` — sweeps all pending scan IDs in batches of 5 per cycle; retries on rate limit with exponential backoff (10s base); retry level decays by 1 after a full successful sweep (not per-batch); inter-batch and inter-sweep delays scale with rate limit pressure
-- `formatResultsCsv()` — static method producing CSV from results
+- `SdkRuntimeService` wraps SDK `Scanner` for sync and async scanning; async reliability depends
+  on `@cdot65/prisma-airs-sdk` **0.13.2 or newer** for 20-item async submissions, per-call retry control, and structured failure
+  metadata (`failureKind`, `statusCode`, `retryAfterMs`)
+- `scanPrompt()` — sync scan via `syncScan()`, normalizes to the backward-compatible
+  `RuntimeScanResult` (`allow`/`block`); richer bulk outcomes use `BulkScanResult`
+- **Detection scope**: runtime results aggregate 8 detection types via OR (`topic_violation`,
+  `injection`, `toxic_content`, `dlp`, `url_cats`, `malicious_code`, `source_code`, `agent`).
+  This is intentionally broader than the guardrail loop's `topic_violation`-only signal — runtime
+  scanning is a general-purpose firewall check, not topic-specific evaluation.
+- `submitBatch()` — accepts exactly 1–20 indexed prompts and makes one `asyncScan()` call. It passes
+  `{ numRetries: 0 }` to the SDK, then performs its own bounded retries only for confirmed HTTP 429
+  failures, honoring `retryAfterMs`/`Retry-After`.
+- `pollBatch()` — polls one receipt until every prompt resolves, mapping by `(scan_id, req_id)` and
+  falling back to `queryByReportIds()` if a terminal scan row lacks `req_id`. Polling uses SDK
+  retries 0, honors rate-limit metadata, and fails after a bounded number of no-progress polls.
+- On the reliable bulk path, the only actions are `allow`, `block`, and `failed`; failed/timeout
+  responses become explicit `action: 'failed'` results. They are never normalized to `allow`;
+  partial successes remain in state/output and the CLI exits 1 when any prompt failed.
+- `formatResultsCsv()` — deterministic CSV projection with all eight detector columns and an
+  operational `error` column
 - CLI: `airs runtime scan --profile <name> [--response <text>] <prompt>`
-- CLI: `airs runtime bulk-scan --profile <name> --file <file> [--output-file <file>] [--session-id <id>]`
+- CLI: `airs runtime bulk-scan --profile <name> --file <file> [--output-file <file>] [--session-id <id>] [--batch-size <n>]`
 - Input file parsing: `.csv` files extract the `prompt` column by header; `.txt`/extensionless use line-per-prompt
-- Bulk scan IDs are saved to `~/.prisma-airs/bulk-scans/` before polling — survives rate limit crashes
-- CLI: `airs runtime resume-poll <stateFile> [--output-file <file>]` — resume polling from saved scan IDs
+- The command saves item-centric v2 state **before the first POST** and around each submission.
+  State includes `batchSize`, prompt text, per-item status/receipt/result, and timestamps. Default
+  state directories are `0700`; state files are atomically replaced with mode `0600` because prompt
+  text is sensitive.
+- Submission outcome policy: a definite HTTP 4xx leaves an item `pending` (429 is first retried by
+  the CLI); network and HTTP 5xx failures are `ambiguous`. Ambiguous/submitting items are never
+  automatically resubmitted because the POST may have been accepted.
+- The CSV is a full, ordered projection of completed state, atomically replaced after each completed
+  SDK batch. Resume is idempotent and cannot duplicate rows by appending.
+- Bulk and resume invocations hold a per-state lock, reject overlapping processes, and recover a
+  stale lock when its local owner process no longer exists.
+- CLI: `airs runtime resume-poll <stateFile> [--output-file <file>]` — polls accepted receipts,
+  resubmits only definitely unaccepted `pending` items, and fails closed on ambiguous submissions
 - CLI config management subcommand groups (all via `ManagementClient` OAuth2):
   - `airs runtime profiles {list,get,create,update,delete,cleanup}` — security profile CRUD + revision cleanup
     - `get` accepts name or UUID, supports `--output pretty|json|yaml`

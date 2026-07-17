@@ -1,5 +1,25 @@
 # Release Notes
 
+## Unreleased
+
+### New
+
+- **Reliable, configurable bulk scanning** — `airs runtime bulk-scan` now accepts `--batch-size <n>` (default `25`, validated as a positive safe integer). Logical batches run sequentially, while each AIRS SDK 0.13.2 call is capped at 20 prompts.
+- **Item-level resumable state** — every prompt retains its input index, AIRS `req_id`, status, accepted receipt, and result. State is written before submission and checkpointed throughout the job. Because state contains prompt text, the default directory and files are restricted to modes `0700` and `0600` respectively.
+
+### Fixed
+
+- **One input prompt now produces exactly one correctly correlated output row.** Results are matched by `(scan_id, req_id)` and sorted back into input order, fixing lost, overwritten, or misattributed rows when one scan ID represents several prompts or AIRS returns rows out of order.
+- **All runtime outcomes are preserved.** CSV output now includes `topic_violation`, `injection`, `toxic_content`, `dlp`, `url_cats`, `malicious_code`, `source_code`, and `agent`; actions are exactly `allow`, `block`, or `failed`. Failed and timed-out prompts produce failed rows, successful partial results remain available, and the process exits 1 when any prompt failed.
+- **Resume is idempotent for known work.** Accepted receipts are polled, only definitely pending items are submitted, and the entire CSV projection is atomically replaced after each completed batch. Repeated resumes no longer append duplicate rows.
+- **Overlapping jobs are rejected.** Each state file has an owner lock while bulk/resume work is active, with dead-local-process lock recovery.
+- **Ambiguous POST outcomes fail closed.** SDK retries are disabled for async submissions; only confirmed HTTP 429 responses are retried, with `Retry-After` support. Definitive 4xx rejections remain pending, while network and 5xx outcomes are recorded as ambiguous and are never automatically resubmitted. Resume recovers known accepted results before reporting an ambiguity. Exact-once submission cannot be guaranteed after an ambiguous acceptance.
+- **Polling is bounded.** The CLI stops after 120 consecutive polls without a newly resolved prompt instead of waiting forever.
+
+### Dependencies
+
+- **`@cdot65/prisma-airs-sdk` 0.13.2 or later is required** for 20-item async submissions, per-call retry control, and structured HTTP/network failure metadata.
+
 ## v3.1.0 (2026-07-09)
 
 ### New

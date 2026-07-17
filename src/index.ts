@@ -12,12 +12,17 @@ export { SdkManagementService } from './airs/management.js';
 export { SdkModelSecurityService } from './airs/modelsecurity.js';
 export { SdkPromptSetService } from './airs/promptsets.js';
 export { SdkRedTeamService } from './airs/redteam.js';
-export { SdkRuntimeService } from './airs/runtime.js';
+export type { PollRetryOptions } from './airs/runtime.js';
+export { SDK_ASYNC_BATCH_SIZE, SdkRuntimeService } from './airs/runtime.js';
 export { AirsScanService } from './airs/scanner.js';
 // ---------------------------------------------------------------------------
 // Core loop & metrics — the main generate→test→evaluate→improve cycle
 // ---------------------------------------------------------------------------
 export type {
+  BatchEntry,
+  BulkScanAction,
+  BulkScanResult,
+  IndexedPrompt,
   ModelSecurityEvaluation,
   ModelSecurityFile,
   ModelSecurityFileListOptions,
@@ -55,8 +60,10 @@ export type {
   RedTeamTargetCreateRequest,
   RedTeamTargetDetail,
   RedTeamTargetUpdateRequest,
+  ReliableRuntimeService,
   RuntimeScanResult,
   RuntimeService,
+  SubmittedBatch,
   TargetOperationOptions,
 } from './airs/types.js';
 // ---------------------------------------------------------------------------
