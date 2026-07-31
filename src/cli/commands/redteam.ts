@@ -107,7 +107,16 @@ export const VALID_TARGET_PROVIDERS = [
   'BEDROCK',
   'REST',
   'STREAMING',
+  'WEBSOCKET',
+  'CUSTOM_TARGET_ADAPTER',
 ] as const;
+
+/**
+ * Providers whose connection goes through a REST HTTP endpoint.
+ * These use RestConnectionParamsBase (api_endpoint / response_key)
+ * rather than a native SDK provider config.
+ */
+const REST_PROVIDERS = new Set(['REST', 'STREAMING', 'WEBSOCKET', 'HUGGING_FACE']);
 
 /** Build a target config scaffold from a provider template. */
 export function buildTargetScaffold(
@@ -120,13 +129,66 @@ export function buildTargetScaffold(
       `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
     );
   }
+
+  // Custom target adapter — drives via an in-cluster Python sidecar.
+  if (key === 'CUSTOM_TARGET_ADAPTER') {
+    return {
+      name: '',
+      target_type: 'AGENT',
+      connection_type: 'CUSTOM_TARGET_ADAPTER',
+      api_endpoint_type: 'NETWORK_BROKER',
+      network_broker_channel_uuid: '<channel-uuid>',
+      adapter_uuid: '<adapter-uuid>',
+      // adapter_variable_overrides is an ARRAY of {key, value, type} objects.
+      adapter_variable_overrides: [],
+      target_background: { use_case: '' },
+      additional_context: {},
+    };
+  }
+
+  // REST-family providers: use RestConnectionParamsBase schema.
+  // The API expects api_endpoint / response_key, not the legacy url field
+  // that getTargetTemplates() returns.
+  if (REST_PROVIDERS.has(key)) {
+    const tpl = (templates[key] ?? {}) as Record<string, unknown>;
+    return {
+      name: '',
+      target_type: 'APPLICATION',
+      connection_type: 'CUSTOM',
+      api_endpoint_type: 'PUBLIC',
+      response_mode: key === 'STREAMING' ? 'STREAMING' : key === 'WEBSOCKET' ? 'WEBSOCKET' : 'REST',
+      auth_type: 'HEADERS',
+      auth_config: {
+        auth_header: { Authorization: 'Bearer <token>' },
+      },
+      connection_params: {
+        api_endpoint: (tpl.url as string | undefined) ?? '',
+        request_headers: { 'Content-Type': 'application/json' },
+        request_json: tpl.request_json ?? { messages: [{ role: 'user', content: '{INPUT}' }] },
+        response_json: tpl.response_json ?? { choices: [{ message: { content: '{RESPONSE}' } }] },
+        response_key: 'choices.0.message.content',
+      },
+      target_background: {},
+      additional_context: {},
+    };
+  }
+
+  // Native SDK providers (OPENAI, BEDROCK, DATABRICKS): use NativeConnectionParamsBase.
   return {
     name: '',
     target_type: 'APPLICATION',
-    connection_params: templates[key] ?? {},
+    connection_type: key,
+    api_endpoint_type: 'PUBLIC',
+    response_mode: 'REST',
+    auth_type: 'HEADERS',
+    auth_config: {
+      auth_header: { Authorization: 'Bearer <token>' },
+    },
+    connection_params: {
+      target_connection_config: templates[key] ?? {},
+    },
     target_background: {},
     additional_context: {},
-    target_metadata: {},
   };
 }
 

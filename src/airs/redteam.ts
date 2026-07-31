@@ -389,8 +389,12 @@ export class SdkRedTeamService implements RedTeamService {
     streamBreadth?: number;
   }): Promise<RedTeamJob> {
     let jobMetadata: Record<string, unknown> = {};
-    if (request.jobType === 'STATIC' && request.categories) {
-      jobMetadata = { categories: request.categories };
+    if (request.jobType === 'STATIC') {
+      // The API requires categories in job_metadata for STATIC scans — an empty
+      // object causes a 422. Default to all available categories when the caller
+      // does not specify any so that `airs redteam scan` works without --categories.
+      const categories = request.categories ?? (await this._defaultCategories());
+      jobMetadata = { categories };
     } else if (request.jobType === 'CUSTOM' && request.customPromptSets) {
       jobMetadata = {
         custom_prompt_sets: request.customPromptSets,
@@ -560,6 +564,24 @@ export class SdkRedTeamService implements RedTeamService {
         description: sc.description as string | undefined,
       })),
     }));
+  }
+
+  /** Build a categories object covering every available category and sub-category.
+   *
+   * MULTI_TURN is excluded from the defaults because it requires the target to
+   * have multi_turn_supported: true — most targets don't, and the API returns 400
+   * if the category is requested for an unsupported target. Users who need
+   * multi-turn testing should pass it explicitly via --categories.
+   */
+  private async _defaultCategories(): Promise<Record<string, string[]>> {
+    const EXCLUDED = new Set(['MULTI_TURN']);
+    const all = await this.getCategories();
+    return Object.fromEntries(
+      all.map((cat) => [
+        cat.id,
+        cat.subCategories.map((sc) => sc.id).filter((id) => !EXCLUDED.has(id)),
+      ]),
+    );
   }
 
   async waitForCompletion(
