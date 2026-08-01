@@ -101,6 +101,7 @@ src/
 │   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
+│   │   ├── aigateway.ts   # AI Gateway operations (workspace list/get; two-plane routing, --all merge)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Validated item-centric v2 bulk state; atomic 0600 checkpoints for safe resume
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
@@ -130,6 +131,7 @@ src/
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
+│   ├── aigateway.ts       # SdkAiGatewayService — AI Gateway workspace reads + 403 grant hints
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ProfileTopic, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
 ├── backup/
@@ -322,6 +324,9 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 |----------|---------|---------|
 | `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
 | `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
+| `PANW_AI_GW_DATA_ENDPOINT` | SDK default | AI Gateway data-plane endpoint (`/ai_gw/v2`) |
+| `PANW_AI_GW_ADMIN_ENDPOINT` | SDK default | AI Gateway admin-plane endpoint (`/ai_gw/admin/v2`) |
+| `PANW_AI_GW_TOKEN_ENDPOINT` | mgmt token endpoint | AI Gateway token endpoint override |
 | `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
 | `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
 
