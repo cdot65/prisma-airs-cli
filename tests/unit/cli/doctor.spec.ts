@@ -229,11 +229,18 @@ describe('doctor command', () => {
       expect(check.detail).toContain('3');
     });
 
-    it('fails on a 403 with a grant hint', async () => {
+    it('warns (not fails) on a 403 — permission boundary, endpoint reachable', async () => {
       const err = Object.assign(new Error('Forbidden: errorCode AB03'), { statusCode: 403 });
       const check = await checkAiGatewayApi(() => Promise.reject(err), true, 50);
-      expect(check.status).toBe('fail');
+      expect(check.status).toBe('warn');
+      expect(check.detail).toContain('reachable');
       expect(check.hint).toContain('workspace-scope');
+    });
+
+    it('still fails on non-403 HTTP errors', async () => {
+      const err = Object.assign(new Error('boom'), { statusCode: 500 });
+      const check = await checkAiGatewayApi(() => Promise.reject(err), true, 50);
+      expect(check.status).toBe('fail');
     });
 
     it('fails when the probe hangs past the timeout', async () => {

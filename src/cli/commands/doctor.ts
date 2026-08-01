@@ -311,7 +311,18 @@ export async function checkAiGatewayApi(
   } catch (err) {
     const status = httpStatus(err);
     const message = errMessage(err);
-    const grantHint = aiGatewayGrantHint(err);
+    if (status === 403) {
+      // Permission boundary, not a broken environment: the endpoint answered
+      // and OAuth succeeded — the account just lacks an AI Gateway grant.
+      // Warn (exit 0) so preflights don't fail for setups not using the
+      // AI Gateway, and say exactly which grant is missing.
+      return {
+        name,
+        status: 'warn',
+        detail: `endpoint reachable, but access denied (HTTP 403): ${message}`,
+        hint: aiGatewayGrantHint(err),
+      };
+    }
     return {
       name,
       status: 'fail',
@@ -319,7 +330,7 @@ export async function checkAiGatewayApi(
         status !== undefined
           ? `AI Gateway API error (HTTP ${status}): ${message}`
           : `network unreachable: ${message}`,
-      hint: grantHint ?? 'Verify credentials and PANW_AI_GW_DATA_ENDPOINT',
+      hint: 'Verify credentials and PANW_AI_GW_DATA_ENDPOINT',
     };
   }
 }
