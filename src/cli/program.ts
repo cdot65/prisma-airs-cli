@@ -3,6 +3,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
+import { registerAiGatewayCommand } from './commands/aigateway.js';
 import { registerCompletionCommand } from './commands/completion.js';
 import { registerConfigCommand } from './commands/config.js';
 import { registerDoctorCommand } from './commands/doctor.js';
@@ -48,6 +49,7 @@ export function buildProgram(): Command {
   registerRuntimeCommand(program);
   registerRedteamCommand(program);
   registerModelSecurityCommand(program);
+  registerAiGatewayCommand(program);
   registerConfigCommand(program);
   registerDoctorCommand(program);
   registerCompletionCommand(program);

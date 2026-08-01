@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AiGatewayWorkspace, AiGatewayWorkspaceDetail } from '../../../src/airs/types.js';
-import {
-  renderWorkspaceDetail,
-  renderWorkspaceList,
-} from '../../../src/cli/renderer/aigateway.js';
+import { renderWorkspaceDetail, renderWorkspaceList } from '../../../src/cli/renderer/aigateway.js';
 
 const workspace: AiGatewayWorkspace = {
   id: 'ws-uuid-1',

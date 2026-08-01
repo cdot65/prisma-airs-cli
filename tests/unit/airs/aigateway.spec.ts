@@ -141,7 +141,9 @@ describe('SdkAiGatewayService', () => {
 
 describe('aiGatewayGrantHint', () => {
   it('returns undefined for non-403 errors', () => {
-    expect(aiGatewayGrantHint(Object.assign(new Error('boom'), { statusCode: 500 }))).toBeUndefined();
+    expect(
+      aiGatewayGrantHint(Object.assign(new Error('boom'), { statusCode: 500 })),
+    ).toBeUndefined();
     expect(aiGatewayGrantHint(new Error('plain'))).toBeUndefined();
   });
 

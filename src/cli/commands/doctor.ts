@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { init, Scanner } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
+import { aiGatewayGrantHint, SdkAiGatewayService } from '../../airs/aigateway.js';
 import { SdkManagementService } from '../../airs/management.js';
-import { runtimeInitOptions } from '../../config/client-options.js';
+import { aiGatewayClientOptions, runtimeInitOptions } from '../../config/client-options.js';
 import {
   type ConfigEntry,
   inspectConfig,
@@ -272,6 +273,57 @@ export async function checkManagementAuth(
   }
 }
 
+/**
+ * Check 6: AI Gateway reachability via the cheapest authenticated data-plane
+ * read (workspace list). Shares management credentials, so it is skipped when
+ * those are missing. A 403 is a grant problem — surface which grant via
+ * {@link aiGatewayGrantHint}.
+ */
+export async function checkAiGatewayApi(
+  probe: () => Promise<number>,
+  hasCreds: boolean,
+  timeoutMs: number = DOCTOR_TIMEOUT_MS,
+): Promise<DoctorCheck> {
+  const name = 'AI Gateway API';
+  if (!hasCreds) {
+    return {
+      name,
+      status: 'warn',
+      detail: 'skipped — management credentials not configured',
+      hint: 'Set PANW_MGMT_CLIENT_ID, PANW_MGMT_CLIENT_SECRET, PANW_MGMT_TSG_ID',
+    };
+  }
+  try {
+    const result = await withTimeout(probe(), timeoutMs);
+    if (result === TIMED_OUT) {
+      return {
+        name,
+        status: 'fail',
+        detail: `timed out after ${timeoutMs}ms — network unreachable or endpoint not responding`,
+        hint: 'Check network connectivity and PANW_AI_GW_DATA_ENDPOINT',
+      };
+    }
+    return {
+      name,
+      status: 'pass',
+      detail: `endpoint reachable (${result} workspace${result === 1 ? '' : 's'} in scope)`,
+    };
+  } catch (err) {
+    const status = httpStatus(err);
+    const message = errMessage(err);
+    const grantHint = aiGatewayGrantHint(err);
+    return {
+      name,
+      status: 'fail',
+      detail:
+        status !== undefined
+          ? `AI Gateway API error (HTTP ${status}): ${message}`
+          : `network unreachable: ${message}`,
+      hint: grantHint ?? 'Verify credentials and PANW_AI_GW_DATA_ENDPOINT',
+    };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Orchestration
 // ---------------------------------------------------------------------------
@@ -284,6 +336,8 @@ export interface DoctorDeps {
   scannerProbe?: () => Promise<unknown>;
   /** Minimal management call returning a count; built from config when omitted. */
   mgmtProbe?: () => Promise<number>;
+  /** Minimal AI Gateway call returning a workspace count; built from config when omitted. */
+  aiGwProbe?: () => Promise<number>;
   timeoutMs?: number;
 }
 
@@ -316,6 +370,14 @@ async function defaultMgmtProbe(): Promise<number> {
   return topics.length;
 }
 
+/** Default AI Gateway probe: data-plane workspace list — smallest authenticated GET. */
+async function defaultAiGwProbe(): Promise<number> {
+  const config = await loadConfig();
+  const service = new SdkAiGatewayService(aiGatewayClientOptions(config));
+  const workspaces = await service.listWorkspaces();
+  return workspaces.length;
+}
+
 /** Run all checks in order. Never throws. */
 export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
   const configFilePath = deps.configFilePath ?? resolveConfigFilePath();
@@ -346,8 +408,13 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
     mgmtCreds.status === 'pass',
     timeoutMs,
   );
+  const aiGwApi = await checkAiGatewayApi(
+    deps.aiGwProbe ?? defaultAiGwProbe,
+    mgmtCreds.status === 'pass',
+    timeoutMs,
+  );
 
-  return [node, configFile, scannerCreds, mgmtCreds, scannerApi, mgmtAuth];
+  return [node, configFile, scannerCreds, mgmtCreds, scannerApi, mgmtAuth, aiGwApi];
 }
 
 /** Exit-code logic: warns are fine, any fail means exit 1. */

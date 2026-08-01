@@ -1,4 +1,5 @@
 import type {
+  AIGatewayClientOptions,
   InitOptions,
   ModelSecurityClientOptions,
   RedTeamClientOptions,
@@ -25,6 +26,18 @@ export function redTeamClientOptions(config: Config): RedTeamClientOptions {
     mgmtEndpoint: config.redTeamMgmtEndpoint,
     tokenEndpoint: config.redTeamTokenEndpoint ?? config.mgmtTokenEndpoint,
     networkBrokerEndpoint: config.redTeamNetworkBrokerEndpoint,
+  };
+}
+
+/** Build AIGatewayClient options from CLI config. Creds are shared with mgmt*. */
+export function aiGatewayClientOptions(config: Config): AIGatewayClientOptions {
+  return {
+    clientId: config.mgmtClientId,
+    clientSecret: config.mgmtClientSecret,
+    tsgId: config.mgmtTsgId,
+    dataEndpoint: config.aiGwDataEndpoint,
+    adminEndpoint: config.aiGwAdminEndpoint,
+    tokenEndpoint: config.aiGwTokenEndpoint ?? config.mgmtTokenEndpoint,
   };
 }
 
