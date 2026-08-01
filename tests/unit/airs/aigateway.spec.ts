@@ -3,12 +3,18 @@ import { aiGatewayGrantHint, SdkAiGatewayService } from '../../../src/airs/aigat
 
 const mockWorkspacesList = vi.fn();
 const mockWorkspacesGet = vi.fn();
+const mockWorkspacesCreate = vi.fn();
+const mockWorkspacesUpdate = vi.fn();
+const mockWorkspacesDelete = vi.fn();
 
 function makeMockClient() {
   return {
     workspaces: {
       list: mockWorkspacesList,
       get: mockWorkspacesGet,
+      create: mockWorkspacesCreate,
+      update: mockWorkspacesUpdate,
+      delete: mockWorkspacesDelete,
     },
   };
 }
@@ -135,6 +141,101 @@ describe('SdkAiGatewayService', () => {
       const ws = await service.getWorkspace('ws-uuid-1');
       expect(ws.usageLimits).toEqual([{ type: 'cost', credit_limit: 5 }]);
       expect(ws.rateLimits).toEqual([{ type: 'requests', unit: 'rpm', value: 100 }]);
+    });
+  });
+});
+
+describe('workspace writes', () => {
+  let service: SdkAiGatewayService;
+
+  const detail = {
+    id: 'ws-uuid-9',
+    name: 'Production',
+    description: 'All production applications',
+    created_at: '2026-08-01T00:00:00Z',
+    last_updated_at: '2026-08-01T00:00:00Z',
+    is_default: 0,
+    slug: 'ws-produc-985697',
+    icon: null,
+    defaults: null,
+    usage_limits: null,
+    rate_limits: [{ type: 'requests', unit: 'rpm', value: 100 }],
+    status: 'active',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new SdkAiGatewayService();
+  });
+
+  describe('createWorkspace', () => {
+    it('sends snake_case body and renders from a follow-up admin-plane get, not the write response', async () => {
+      mockWorkspacesCreate.mockResolvedValue({ id: 'ws-uuid-9', slug: 'ws-produc-985697' });
+      mockWorkspacesGet.mockResolvedValue(detail);
+      const ws = await service.createWorkspace({
+        name: 'Production',
+        scopeName: 'ws_production_bx7qw0',
+        description: 'All production applications',
+        rateLimits: [{ type: 'requests', unit: 'rpm', value: 100 }],
+      });
+      expect(mockWorkspacesCreate).toHaveBeenCalledWith({
+        name: 'Production',
+        scope_name: 'ws_production_bx7qw0',
+        description: 'All production applications',
+        rate_limits: [{ type: 'requests', unit: 'rpm', value: 100 }],
+      });
+      expect(mockWorkspacesGet).toHaveBeenCalledWith('ws-uuid-9', { plane: 'admin' });
+      expect(ws.rateLimits).toEqual([{ type: 'requests', unit: 'rpm', value: 100 }]);
+    });
+
+    it('falls back to the normalized create response when the follow-up get fails', async () => {
+      mockWorkspacesCreate.mockResolvedValue({
+        id: 'ws-uuid-9',
+        slug: 'ws-produc-985697',
+        name: 'Production',
+        is_default: 0,
+      });
+      mockWorkspacesGet.mockRejectedValue(Object.assign(new Error('boom'), { statusCode: 500 }));
+      const ws = await service.createWorkspace({ name: 'Production', scopeName: 'ws_p' });
+      expect(ws.id).toBe('ws-uuid-9');
+      expect(ws.name).toBe('Production');
+    });
+  });
+
+  describe('updateWorkspace', () => {
+    it('sends a partial snake_case patch and re-reads via admin-plane get (update returns {})', async () => {
+      mockWorkspacesUpdate.mockResolvedValue({});
+      mockWorkspacesGet.mockResolvedValue(detail);
+      const ws = await service.updateWorkspace('ws-produc-985697', {
+        description: 'Production workloads, us-east',
+      });
+      expect(mockWorkspacesUpdate).toHaveBeenCalledWith('ws-produc-985697', {
+        description: 'Production workloads, us-east',
+      });
+      expect(mockWorkspacesGet).toHaveBeenCalledWith('ws-produc-985697', { plane: 'admin' });
+      expect(ws.id).toBe('ws-uuid-9');
+    });
+
+    it('maps camelCase limit fields to snake_case', async () => {
+      mockWorkspacesUpdate.mockResolvedValue({});
+      mockWorkspacesGet.mockResolvedValue(detail);
+      await service.updateWorkspace('ws-uuid-9', {
+        usageLimits: [{ type: 'cost', credit_limit: 5 }],
+        rateLimits: [{ type: 'requests', unit: 'rpm', value: 10 }],
+      });
+      expect(mockWorkspacesUpdate).toHaveBeenCalledWith('ws-uuid-9', {
+        usage_limits: [{ type: 'cost', credit_limit: 5 }],
+        rate_limits: [{ type: 'requests', unit: 'rpm', value: 10 }],
+      });
+    });
+  });
+
+  describe('deleteWorkspace', () => {
+    it('calls delete and does not verify via get (archived workspaces 404)', async () => {
+      mockWorkspacesDelete.mockResolvedValue(undefined);
+      await service.deleteWorkspace('ws-produc-985697');
+      expect(mockWorkspacesDelete).toHaveBeenCalledWith('ws-produc-985697');
+      expect(mockWorkspacesGet).not.toHaveBeenCalled();
     });
   });
 });
