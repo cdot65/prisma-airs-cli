@@ -6,6 +6,7 @@ const mockWorkspacesGet = vi.fn();
 const mockWorkspacesCreate = vi.fn();
 const mockWorkspacesUpdate = vi.fn();
 const mockWorkspacesDelete = vi.fn();
+const mockTelemetryCost = vi.fn();
 
 function makeMockClient() {
   return {
@@ -15,6 +16,9 @@ function makeMockClient() {
       create: mockWorkspacesCreate,
       update: mockWorkspacesUpdate,
       delete: mockWorkspacesDelete,
+    },
+    telemetry: {
+      cost: mockTelemetryCost,
     },
   };
 }
@@ -237,6 +241,53 @@ describe('workspace writes', () => {
       expect(mockWorkspacesDelete).toHaveBeenCalledWith('ws-produc-985697');
       expect(mockWorkspacesGet).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('getTelemetryCost', () => {
+  let service: SdkAiGatewayService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new SdkAiGatewayService();
+  });
+
+  it('normalizes the cost chart keeping raw cents', async () => {
+    mockTelemetryCost.mockResolvedValue({
+      success: true,
+      data: {
+        isQuotaExceeded: false,
+        records: [
+          { x: '2026-07-30', y: 123456.78 },
+          { x: '2026-07-31', y: 100 },
+        ],
+        total: 123556.78,
+        avg: 61778.39,
+      },
+    });
+    const report = await service.getTelemetryCost({ workspaceSlug: 'ws-main-a-349e0e', days: 7 });
+    expect(mockTelemetryCost).toHaveBeenCalledWith({ workspaceSlug: 'ws-main-a-349e0e', days: 7 });
+    expect(report).toEqual({
+      workspaceSlug: 'ws-main-a-349e0e',
+      days: 7,
+      totalCents: 123556.78,
+      avgCents: 61778.39,
+      quotaExceeded: false,
+      records: [
+        { date: '2026-07-30', costCents: 123456.78 },
+        { date: '2026-07-31', costCents: 100 },
+      ],
+    });
+  });
+
+  it('defaults days to 7', async () => {
+    mockTelemetryCost.mockResolvedValue({
+      success: true,
+      data: { isQuotaExceeded: false, records: [], total: 0, avg: 0 },
+    });
+    const report = await service.getTelemetryCost({ workspaceSlug: 'ws-x' });
+    expect(mockTelemetryCost).toHaveBeenCalledWith({ workspaceSlug: 'ws-x', days: 7 });
+    expect(report.days).toBe(7);
   });
 });
 
