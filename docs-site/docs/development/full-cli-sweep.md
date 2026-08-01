@@ -100,6 +100,15 @@ airs redteam properties values <propertyName>
 # EULA
 airs redteam eula status
 airs redteam eula content
+
+# Custom target adapters (list rows carry no script/variables — get for the full record;
+# secret variable values render as "(redacted)", keyed off is_redacted)
+airs redteam adapter list
+airs redteam adapter get <adapterUuid>
+airs redteam adapter get <adapterUuid> --output json
+
+# Network broker channels (adapters run through these; validate needs one ONLINE)
+airs redteam network-broker channels list
 ```
 
 :::note[`redteam instances` and `redteam devices` have no `list` subcommand]
@@ -465,6 +474,44 @@ airs redteam prompt-sets download <promptSetUuid>
 
 # Archive (soft-delete; reversible from the AIRS UI)
 airs redteam prompt-sets archive <promptSetUuid>
+```
+
+### D.6b — Custom target adapter CRUD + validate
+
+Adapters are user-supplied scripts run through a network broker channel. Self-cleaning: the
+section ends by deleting what it created. `validate` requires the channel **ONLINE** — the CLI
+preflights this and fails with a clear message otherwise. Reads verified live 2026-08-01.
+
+```bash
+# A minimal adapter script to exercise the flow
+cat > /tmp/sweep-adapter.py <<'PY'
+def call_target(prompt, variables):
+    return {"response": f"echo: {prompt}"}
+PY
+
+# Create as DRAFT (no validation run, channel optional)
+airs redteam adapter create --name sweep-test-adapter --script-file /tmp/sweep-adapter.py \
+  --prompt 'Hello' --draft \
+  --variables '[{"key":"endpoint","value":"http://example.internal:8080","type":"VAR"},{"key":"api_key","value":"test-secret","type":"SECRET"}]'
+
+airs redteam adapter get <adapterUuid>          # secret shows "(redacted)"
+
+# Update is read-modify-write: only --description changes here — the CLI resends the
+# stored variables (secrets as null = keep) so the upstream full-replacement PUT
+# cannot silently wipe them. --prompt is required every time (upstream never stores it).
+airs redteam adapter update <adapterUuid> --description "updated by sweep" --prompt 'Hello' --draft
+airs redteam adapter get <adapterUuid>          # variables still intact
+
+# Validate end-to-end through an ONLINE broker channel (skip if none is ONLINE);
+# --adapter resolves the stored secrets and supplies the full variables array
+airs redteam network-broker channels list --status ONLINE
+airs redteam adapter validate --script-file /tmp/sweep-adapter.py \
+  --channel <onlineChannelUuid> --prompt 'Hello' --adapter <adapterUuid>
+# On failure the useful part is stderr/traceback (printed; exit code 1)
+
+# Clean up
+airs redteam adapter delete <adapterUuid> --force
+rm /tmp/sweep-adapter.py
 ```
 
 ### D.7 — Model Security group + rule instances + scans
