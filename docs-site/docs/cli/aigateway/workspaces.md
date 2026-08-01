@@ -62,8 +62,10 @@ airs aigateway workspace list --all --output json
 
 ### aigateway workspace get
 
-Get one workspace by UUID **or** slug, including the settings blocks list rows
-do not carry.
+Get one workspace by UUID, slug, **or display name**, including the settings
+blocks list rows do not carry. (The API itself accepts only UUID/slug; the CLI
+resolves display names against the workspace list — an ambiguous name errors
+with the matching slugs.)
 
 ```text
 airs aigateway workspace get <ref> [options]
@@ -143,7 +145,9 @@ airs aigateway workspace create --name Production --scope-name ws_production_bx7
 
 ### aigateway workspace update
 
-Partial update — send only what changes. **Admin plane.**
+Partial update — send only what changes. **Admin plane.** `<ref>` accepts
+UUID, slug, or display name (a raw name sent to the API yields a misleading
+`400 AB01 "No update fields provided"` — the CLI resolves it for you).
 
 ```text
 airs aigateway workspace update <ref> [options]

@@ -248,20 +248,49 @@ describe('workspace ref resolution (name | slug | uuid)', () => {
   let service: SdkAiGatewayService;
 
   const rows = [
-    { ...{
-      id: 'ws-uuid-dev', slug: 'ws-develo-71f8d8', name: 'Development', icon: null,
-      description: null, created_at: '', last_updated_at: '', is_default: 0,
-      status: 'active', scope_name: 's', object: 'workspace',
-    } },
-    { id: 'ws-uuid-prod', slug: 'ws-produc-985697', name: 'Production', icon: null,
-      description: null, created_at: '', last_updated_at: '', is_default: 0,
-      status: 'active', scope_name: 's2', object: 'workspace' },
+    {
+      ...{
+        id: 'ws-uuid-dev',
+        slug: 'ws-develo-71f8d8',
+        name: 'Development',
+        icon: null,
+        description: null,
+        created_at: '',
+        last_updated_at: '',
+        is_default: 0,
+        status: 'active',
+        scope_name: 's',
+        object: 'workspace',
+      },
+    },
+    {
+      id: 'ws-uuid-prod',
+      slug: 'ws-produc-985697',
+      name: 'Production',
+      icon: null,
+      description: null,
+      created_at: '',
+      last_updated_at: '',
+      is_default: 0,
+      status: 'active',
+      scope_name: 's2',
+      object: 'workspace',
+    },
   ];
 
   const detail = {
-    id: 'ws-uuid-dev', name: 'Development', description: 'd', created_at: '',
-    last_updated_at: '', is_default: 0, slug: 'ws-develo-71f8d8', icon: null,
-    defaults: null, usage_limits: null, rate_limits: null, status: 'active',
+    id: 'ws-uuid-dev',
+    name: 'Development',
+    description: 'd',
+    created_at: '',
+    last_updated_at: '',
+    is_default: 0,
+    slug: 'ws-develo-71f8d8',
+    icon: null,
+    defaults: null,
+    usage_limits: null,
+    rate_limits: null,
+    status: 'active',
   };
 
   beforeEach(() => {

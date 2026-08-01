@@ -19,7 +19,7 @@ airs aigateway telemetry cost --workspace <slug> [--days <n>] [--output <format>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--workspace <slug>` | Yes | — | Workspace slug (e.g. `ws-main-a-349e0e`) |
+| `--workspace <ref>` | Yes | — | Workspace slug (e.g. `ws-main-a-349e0e`); UUID or display name also accepted (CLI resolves to the slug) |
 | `--days <n>` | No | `7` | Rolling window in days, counted back from now |
 | `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
 
