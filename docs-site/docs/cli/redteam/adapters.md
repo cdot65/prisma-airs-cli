@@ -17,10 +17,24 @@ airs redteam adapter list [--limit <n>] [--offset <n>] [--search <text>] [--outp
 List rows carry no script, description, or variables — use `get` for the full
 record.
 
+#### Examples
+
+```bash
+airs redteam adapter list
+airs redteam adapter list --search keycloak --output json
+```
+
 ### redteam adapter get
 
 ```text
 airs redteam adapter get <uuid> [--output pretty|json|yaml]
+```
+
+#### Examples
+
+```bash
+airs redteam adapter get 3073d369-12e2-46c9-a45a-5697041fcbbf
+airs redteam adapter get 3073d369-12e2-46c9-a45a-5697041fcbbf --output json
 ```
 
 :::note Secrets are masked, not null
@@ -49,6 +63,17 @@ airs redteam adapter create --name <name> --prompt <text> \
 | `--variables <json>` | No | JSON array of `{ "key", "value", "type": "VAR"\|"SECRET" }` |
 | `--draft` | No | Save as DRAFT without running the validation script |
 
+#### Examples
+
+```bash
+airs redteam adapter create --name my-adapter --script-file ./adapter.py \
+  --channel 550e8400-... --prompt 'Hello' \
+  --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"},{"key":"api_key","value":"s3cret","type":"SECRET"}]'
+
+# Draft first, activate later via update
+airs redteam adapter create --name my-adapter --script-file ./adapter.py --prompt Hello --draft
+```
+
 ### redteam adapter update
 
 ```text
@@ -68,6 +93,17 @@ every key you want to keep.
 
 :::
 
+#### Examples
+
+```bash
+# Change only the description — stored variables (incl. secrets) are preserved
+airs redteam adapter update 3073d369-... --description 'points at staging now' --prompt 'Hello'
+
+# Swap the script and replace the variable set wholesale
+airs redteam adapter update 3073d369-... --script-file ./adapter-v2.py --prompt 'Hello' \
+  --variables '[{"key":"endpoint","value":"http://staging.svc:8080","type":"VAR"},{"key":"api_key","value":null,"type":"SECRET"}]'
+```
+
 ### redteam adapter delete
 
 ```text
@@ -75,6 +111,13 @@ airs redteam adapter delete <uuid> [--force]
 ```
 
 Alias: `rm`. Prompts for confirmation unless `--force`.
+
+#### Examples
+
+```bash
+airs redteam adapter delete 3073d369-...
+airs redteam adapter delete 3073d369-... --force
+```
 
 ### redteam adapter validate
 
