@@ -14,6 +14,9 @@ import {
   buildAttackListFootnote,
   fail,
   type OutputFormat,
+  renderAdapterDetail,
+  renderAdapterList,
+  renderAdapterValidation,
   renderAttackList,
   renderAuthValidation,
   renderBackupHeader,
@@ -128,6 +131,45 @@ export function buildTargetScaffold(
     additional_context: {},
     target_metadata: {},
   };
+}
+
+/** Resolve --script-file / --script-b64 into a base64 script string. */
+export function resolveScriptB64(opts: { scriptFile?: string; scriptB64?: string }): string {
+  if (opts.scriptFile !== undefined && opts.scriptB64 !== undefined) {
+    throw new Error('--script-file and --script-b64 are mutually exclusive');
+  }
+  if (opts.scriptB64 !== undefined) return opts.scriptB64;
+  if (opts.scriptFile !== undefined) {
+    return Buffer.from(fs.readFileSync(opts.scriptFile, 'utf-8')).toString('base64');
+  }
+  throw new Error('one of --script-file or --script-b64 is required');
+}
+
+/** Parse --variables as a JSON array of { key, value?, type: VAR|SECRET }. */
+export function parseAdapterVariables(
+  input: string,
+): Array<{ key: string; value?: string | null; type: 'VAR' | 'SECRET' }> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(input);
+  } catch (err) {
+    throw new Error(`--variables: invalid JSON (${err instanceof Error ? err.message : err})`);
+  }
+  if (
+    !Array.isArray(parsed) ||
+    !parsed.every(
+      (v) =>
+        v !== null &&
+        typeof v === 'object' &&
+        typeof (v as { key?: unknown }).key === 'string' &&
+        ((v as { type?: unknown }).type === 'VAR' || (v as { type?: unknown }).type === 'SECRET'),
+    )
+  ) {
+    throw new Error(
+      '--variables: expected a JSON array of { "key": string, "value"?: string|null, "type": "VAR"|"SECRET" }',
+    );
+  }
+  return parsed as Array<{ key: string; value?: string | null; type: 'VAR' | 'SECRET' }>;
 }
 
 /** Register the `redteam` command group. */
@@ -1193,6 +1235,238 @@ export function registerRedteamCommand(program: Command): void {
   // -------------------------------------------------------------------------
   // Network Broker
   // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // redteam adapter — custom target adapters (SDK 0.16.0)
+  // -------------------------------------------------------------------------
+  const adapter = redteam
+    .command('adapter')
+    .description('Manage custom target adapters (scripted targets run via the network broker)');
+
+  /** Fail early with a clear message when the broker channel is not ONLINE. */
+  async function assertChannelOnline(
+    service: Awaited<ReturnType<typeof createService>>,
+    channelUuid: string,
+  ): Promise<void> {
+    let status: string | null | undefined;
+    try {
+      status = (await service.getChannel(channelUuid)).status;
+    } catch {
+      return; // channel lookup failing shouldn't mask the real operation's error
+    }
+    if (status && status !== 'ONLINE') {
+      fail(
+        new Error(
+          `network broker channel ${channelUuid} is ${status} — adapter validation requires an ONLINE channel (network broker v1.4.0+). Check 'airs redteam network-broker channels list'.`,
+        ),
+      );
+    }
+  }
+
+  adapter
+    .command('list')
+    .description('List custom target adapters')
+    .option('--limit <n>', 'Max results')
+    .option('--offset <n>', 'Starting offset')
+    .option('--search <text>', 'Filter by search text')
+    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        const { adapters, totalItems } = await service.listAdapters({
+          limit: opts.limit ? parsePositiveInt(opts.limit, '--limit') : undefined,
+          offset: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
+          search: opts.search,
+        });
+        renderAdapterList(adapters, fmt, totalItems);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  adapter
+    .command('get <uuid>')
+    .description('Get a custom target adapter')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .action(async (uuid: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const service = await createService();
+        renderAdapterDetail(await service.getAdapter(uuid), fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  adapter
+    .command('create')
+    .description('Create a custom target adapter')
+    .requiredOption('--name <name>', 'Adapter name')
+    .requiredOption(
+      '--prompt <text>',
+      'Sample prompt used to exercise the adapter during validation (not stored)',
+    )
+    .option('--script-file <path>', 'Path to the adapter script (encoded to base64 for you)')
+    .option('--script-b64 <b64>', 'Adapter script, already base64-encoded')
+    .option('--description <text>', 'Adapter description')
+    .option('--channel <uuid>', 'Network broker channel UUID (required to activate)')
+    .option('--variables <json>', 'JSON array of { key, value, type: VAR|SECRET }')
+    .option('--draft', 'Save as DRAFT without running the validation script')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        `airs redteam adapter create --name my-adapter --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'`,
+        'airs redteam adapter create --name my-adapter --script-file ./adapter.py --prompt Hello --draft',
+      ),
+    )
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const scriptB64 = resolveScriptB64(opts);
+        const variables = opts.variables ? parseAdapterVariables(opts.variables) : undefined;
+        const service = await createService();
+        if (!opts.draft && opts.channel) await assertChannelOnline(service, opts.channel);
+        const created = await service.createAdapter(
+          {
+            name: opts.name,
+            scriptB64,
+            prompt: opts.prompt,
+            description: opts.description,
+            networkBrokerChannelUuid: opts.channel,
+            variables,
+          },
+          opts.draft ? false : undefined,
+        );
+        ui.success(`Adapter created: ${created.uuid}`);
+        renderAdapterDetail(created, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  adapter
+    .command('update <uuid>')
+    .description(
+      'Update a custom target adapter (read-modify-write; variables preserved unless --variables)',
+    )
+    .requiredOption(
+      '--prompt <text>',
+      'Sample validation prompt — required on every update because upstream never stores it',
+    )
+    .option('--name <name>', 'New adapter name')
+    .option('--script-file <path>', 'New adapter script file (encoded to base64 for you)')
+    .option('--script-b64 <b64>', 'New adapter script, already base64-encoded')
+    .option('--description <text>', 'New description')
+    .option('--channel <uuid>', 'New network broker channel UUID')
+    .option(
+      '--variables <json>',
+      'REPLACES the whole variable set — omitted keys are deleted upstream. Omit this flag to preserve stored variables.',
+    )
+    .option('--draft', 'Save as DRAFT without re-running the validation script')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        `airs redteam adapter update 550e8400-... --description 'new description' --prompt 'Hello'`,
+      ),
+    )
+    .action(async (uuid: string, opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const scriptB64 =
+          opts.scriptFile !== undefined || opts.scriptB64 !== undefined
+            ? resolveScriptB64(opts)
+            : undefined;
+        const variables = opts.variables ? parseAdapterVariables(opts.variables) : undefined;
+        const service = await createService();
+        if (!opts.draft && opts.channel) await assertChannelOnline(service, opts.channel);
+        const updated = await service.updateAdapter(
+          uuid,
+          {
+            prompt: opts.prompt,
+            name: opts.name,
+            scriptB64,
+            description: opts.description,
+            networkBrokerChannelUuid: opts.channel,
+            variables,
+          },
+          opts.draft ? false : undefined,
+        );
+        ui.success(`Adapter updated: ${updated.uuid}`);
+        renderAdapterDetail(updated, fmt);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  adapter
+    .command('delete <uuid>')
+    .description('Delete a custom target adapter')
+    .option('--force', 'Skip confirmation prompt')
+    .action(async (uuid: string, opts) => {
+      try {
+        renderRedteamHeader();
+        await confirmOrAbort(`Delete adapter ${uuid}?`, Boolean(opts.force), {
+          action: `delete adapter ${uuid}`,
+        });
+        const service = await createService();
+        await service.deleteAdapter(uuid);
+        ui.success(`Adapter ${uuid} deleted.`);
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  adapter
+    .command('validate')
+    .description('Run an adapter script end-to-end through the broker channel without saving')
+    .requiredOption('--channel <uuid>', 'Network broker channel UUID (must be ONLINE)')
+    .requiredOption('--prompt <text>', 'Sample prompt to send through the adapter')
+    .option('--script-file <path>', 'Path to the adapter script (encoded to base64 for you)')
+    .option('--script-b64 <b64>', 'Adapter script, already base64-encoded')
+    .option(
+      '--variables <json>',
+      'JSON array of { key, value, type } — the FULL set the script needs',
+    )
+    .option(
+      '--adapter <uuid>',
+      'Existing adapter: resolves redacted/null variable values from its stored secrets (and supplies its variable set when --variables is omitted)',
+    )
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        `airs redteam adapter validate --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'`,
+        `airs redteam adapter validate --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --adapter 660e8400-...`,
+      ),
+    )
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderRedteamHeader();
+        const scriptB64 = resolveScriptB64(opts);
+        const variables = opts.variables ? parseAdapterVariables(opts.variables) : undefined;
+        const service = await createService();
+        await assertChannelOnline(service, opts.channel);
+        const result = await service.validateAdapter({
+          scriptB64,
+          networkBrokerChannelUuid: opts.channel,
+          prompt: opts.prompt,
+          variables,
+          adapterUuid: opts.adapter,
+        });
+        renderAdapterValidation(result, fmt);
+        if (!result.validated) process.exitCode = 1;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
   const networkBroker = redteam
     .command('network-broker')
     .description('Manage red team network broker channels');

@@ -18,6 +18,7 @@ Auto-generated from the `airs` command tree. Every command below lists its synop
 - [`airs model-security rules`](model-security/rules.md)
 - [`airs model-security scans`](model-security/scans.md)
 - [`airs redteam abort`](redteam/abort.md)
+- [`airs redteam adapter`](redteam/adapters.md)
 - [`airs redteam categories`](redteam/categories.md)
 - [`airs redteam devices`](redteam/devices.md)
 - [`airs redteam eula`](redteam/eula.md)

@@ -691,6 +691,25 @@ export interface RedTeamService {
     targetId: string,
     opts?: { limit?: number; offset?: number; search?: string },
   ): Promise<{ logs: RedTeamErrorLog[]; totalItems?: number }>;
+
+  // Custom target adapters (SDK 0.16.0)
+  listAdapters(
+    opts?: RedTeamAdapterListOptions,
+  ): Promise<{ adapters: RedTeamAdapterListItem[]; totalItems?: number }>;
+  getAdapter(uuid: string): Promise<RedTeamAdapterDetail>;
+  createAdapter(
+    request: RedTeamAdapterCreateRequest,
+    validate?: boolean,
+  ): Promise<RedTeamAdapterDetail>;
+  /** Read-modify-write: merges overrides onto the current record (upstream PUT is full-replacement). */
+  updateAdapter(
+    uuid: string,
+    overrides: RedTeamAdapterUpdateOverrides,
+    validate?: boolean,
+  ): Promise<RedTeamAdapterDetail>;
+  deleteAdapter(uuid: string): Promise<void>;
+  /** Run a script end-to-end through the broker channel; returns an execution outcome. */
+  validateAdapter(request: RedTeamAdapterValidateRequest): Promise<RedTeamAdapterValidationResult>;
 }
 
 // ---------------------------------------------------------------------------
@@ -1393,4 +1412,93 @@ export interface AiGatewayCostReport {
   avgCents: number;
   quotaExceeded: boolean;
   records: Array<{ date: string; costCents: number }>;
+}
+
+// ---------------------------------------------------------------------------
+// Red Team custom target adapters (SDK 0.16.0)
+// ---------------------------------------------------------------------------
+
+/** An adapter configuration variable. Secrets are masked; key off `isRedacted`, not the value. */
+export interface RedTeamAdapterVar {
+  key: string;
+  value?: string | null;
+  type: 'VAR' | 'SECRET';
+  isRedacted?: boolean;
+}
+
+/** Adapter list row — no script, description, or variables; `get` for the full record. */
+export interface RedTeamAdapterListItem {
+  uuid: string;
+  name: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdByUserId?: string | null;
+  targetCount?: number | null;
+}
+
+/** Full adapter record. */
+export interface RedTeamAdapterDetail {
+  uuid: string;
+  tsgId?: string;
+  name: string;
+  scriptB64: string;
+  status: string;
+  description?: string | null;
+  networkBrokerChannelUuid?: string | null;
+  variables: RedTeamAdapterVar[];
+  targetCount?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdByUserId?: string | null;
+  updatedByUserId?: string | null;
+}
+
+export interface RedTeamAdapterListOptions {
+  limit?: number;
+  offset?: number;
+  search?: string;
+}
+
+export interface RedTeamAdapterCreateRequest {
+  name: string;
+  scriptB64: string;
+  /** Sample prompt used to exercise the adapter during validation. Not stored. */
+  prompt: string;
+  description?: string;
+  /** Optional while DRAFT; required to activate (validate: true). */
+  networkBrokerChannelUuid?: string;
+  variables?: RedTeamAdapterVar[];
+}
+
+/**
+ * CLI-side overrides for adapter update. The upstream PUT is a full
+ * replacement, so the service merges these onto the current record —
+ * `prompt` is the only always-required field because it is never stored.
+ */
+export interface RedTeamAdapterUpdateOverrides {
+  prompt: string;
+  name?: string;
+  scriptB64?: string;
+  description?: string;
+  networkBrokerChannelUuid?: string;
+  /** Replaces the WHOLE variable set when given; omitted keys are deleted upstream. */
+  variables?: RedTeamAdapterVar[];
+}
+
+export interface RedTeamAdapterValidateRequest {
+  scriptB64: string;
+  networkBrokerChannelUuid: string;
+  prompt: string;
+  variables?: RedTeamAdapterVar[];
+  /** Resolve redacted/null variable values from this stored adapter before the run. */
+  adapterUuid?: string;
+}
+
+/** Execution outcome of a validation run — not an adapter record. */
+export interface RedTeamAdapterValidationResult {
+  validated: boolean;
+  stdout?: string | null;
+  stderr?: string | null;
+  traceback?: string | null;
 }
