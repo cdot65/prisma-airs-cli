@@ -1346,6 +1346,8 @@ export interface AiGatewayService {
   ): Promise<AiGatewayWorkspaceDetail>;
   /** Soft delete — archives the workspace; there is no hard delete. */
   deleteWorkspace(workspaceRef: string): Promise<void>;
+  /** Total and per-day spend for a workspace. Values are CENTS. */
+  getTelemetryCost(opts: AiGatewayCostOptions): Promise<AiGatewayCostReport>;
 }
 
 /** Request to create an AI Gateway workspace. */
@@ -1373,4 +1375,22 @@ export interface AiGatewayWorkspaceUpdateRequest {
   defaults?: Record<string, unknown>;
   usageLimits?: Array<Record<string, unknown>>;
   rateLimits?: Array<Record<string, unknown>>;
+}
+
+/** Options for the AI Gateway telemetry cost query. */
+export interface AiGatewayCostOptions {
+  /** Workspace slug (not UUID) — required by every telemetry endpoint. */
+  workspaceSlug: string;
+  /** Rolling window in days, counted back from now. Defaults to 7. */
+  days?: number;
+}
+
+/** Normalized AI Gateway cost report. All monetary values are CENTS — the API never converts. */
+export interface AiGatewayCostReport {
+  workspaceSlug: string;
+  days: number;
+  totalCents: number;
+  avgCents: number;
+  quotaExceeded: boolean;
+  records: Array<{ date: string; costCents: number }>;
 }

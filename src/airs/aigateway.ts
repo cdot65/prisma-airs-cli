@@ -5,6 +5,8 @@ import {
   type GatewayWorkspaceUpdateRequest,
 } from '@cdot65/prisma-airs-sdk';
 import type {
+  AiGatewayCostOptions,
+  AiGatewayCostReport,
   AiGatewayService,
   AiGatewayWorkspace,
   AiGatewayWorkspaceCreateRequest,
@@ -157,6 +159,31 @@ export class SdkAiGatewayService implements AiGatewayService {
     // answers 404 AB08 on both planes even though list --status archived
     // still shows it.
     await this.client.workspaces.delete(workspaceRef);
+  }
+
+  async getTelemetryCost(opts: AiGatewayCostOptions): Promise<AiGatewayCostReport> {
+    const days = opts.days ?? 7;
+    const raw = (await this.client.telemetry.cost({
+      workspaceSlug: opts.workspaceSlug,
+      days,
+    })) as {
+      data: {
+        isQuotaExceeded: boolean;
+        records: Array<{ x: string; y: number }>;
+        total: number;
+        avg: number;
+      };
+    };
+    // Every cost value is CENTS — the SDK never converts; conversion is a
+    // display concern (renderer divides by 100).
+    return {
+      workspaceSlug: opts.workspaceSlug,
+      days,
+      totalCents: raw.data.total,
+      avgCents: raw.data.avg,
+      quotaExceeded: raw.data.isQuotaExceeded,
+      records: raw.data.records.map((r) => ({ date: r.x, costCents: r.y })),
+    };
   }
 
   /** Re-read after a write, falling back to the (partial) write response if the get fails. */
