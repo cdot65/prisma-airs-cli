@@ -2,7 +2,11 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { parseAttackGoals, parsePositiveInt } from '../../../src/cli/commands/redteam.js';
+import {
+  buildDefaultCategories,
+  parseAttackGoals,
+  parsePositiveInt,
+} from '../../../src/cli/commands/redteam.js';
 
 describe('parseAttackGoals', () => {
   let tmpDir: string;
@@ -63,5 +67,49 @@ describe('parsePositiveInt', () => {
     expect(() => parsePositiveInt('-5', '--depth')).toThrow(
       /--depth: expected a positive integer, got "-5"/,
     );
+  });
+});
+
+describe('buildDefaultCategories', () => {
+  it('maps category and subcategory IDs into the scan payload', () => {
+    expect(
+      buildDefaultCategories([
+        {
+          id: 'prompt-injection',
+          displayName: 'Prompt Injection',
+          subCategories: [
+            { id: 'direct', displayName: 'Direct' },
+            { id: 'indirect', displayName: 'Indirect' },
+          ],
+        },
+        {
+          id: 'malicious-code',
+          displayName: 'Malicious Code',
+          subCategories: [{ id: 'code-generation', displayName: 'Code Generation' }],
+        },
+      ]),
+    ).toEqual({
+      'prompt-injection': ['direct', 'indirect'],
+      'malicious-code': ['code-generation'],
+    });
+  });
+
+  it('excludes MULTI_TURN from the default payload', () => {
+    expect(
+      buildDefaultCategories([
+        {
+          id: 'agent-security',
+          displayName: 'Agent Security',
+          subCategories: [
+            { id: 'TOOL_MISUSE', displayName: 'Tool Misuse' },
+            { id: 'MULTI_TURN', displayName: 'Multi-turn' },
+          ],
+        },
+      ]),
+    ).toEqual({ 'agent-security': ['TOOL_MISUSE'] });
+  });
+
+  it('returns an empty payload when AIRS has no categories', () => {
+    expect(buildDefaultCategories([])).toEqual({});
   });
 });

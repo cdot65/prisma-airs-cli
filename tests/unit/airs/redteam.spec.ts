@@ -174,6 +174,19 @@ describe('SdkRedTeamService', () => {
       });
     });
 
+    it('rejects a STATIC scan without categories before calling AIRS', async () => {
+      await expect(
+        service.createScan({
+          name: 'Missing Categories',
+          targetUuid: 't-1',
+          jobType: 'STATIC',
+        }),
+      ).rejects.toThrow('STATIC scans require categories');
+
+      expect(mockScansGetCategories).not.toHaveBeenCalled();
+      expect(mockScansCreate).not.toHaveBeenCalled();
+    });
+
     it('creates a CUSTOM scan with prompt sets', async () => {
       mockScansCreate.mockResolvedValue({
         uuid: 'job-2',

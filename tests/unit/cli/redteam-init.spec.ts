@@ -4,7 +4,11 @@ import { buildTargetScaffold } from '../../../src/cli/commands/redteam.js';
 describe('buildTargetScaffold', () => {
   const mockTemplates: Record<string, unknown> = {
     OPENAI: { api_key: '', model: 'gpt-4', endpoint: 'https://api.openai.com/v1' },
-    HUGGING_FACE: { url: 'https://router.huggingface.co/v1/chat/completions', request_json: {}, response_json: {} },
+    HUGGING_FACE: {
+      url: 'https://router.huggingface.co/v1/chat/completions',
+      request_json: {},
+      response_json: {},
+    },
     DATABRICKS: { host: '', token: '' },
     BEDROCK: { region: '', model_id: '' },
     REST: { url: 'https://api.example.com', method: 'POST' },
@@ -20,7 +24,9 @@ describe('buildTargetScaffold', () => {
     expect(result.response_mode).toBe('REST');
     expect(result.auth_type).toBe('HEADERS');
     // native providers use target_connection_config inside connection_params
-    expect((result.connection_params as Record<string, unknown>).target_connection_config).toEqual(mockTemplates.OPENAI);
+    expect((result.connection_params as Record<string, unknown>).target_connection_config).toEqual(
+      mockTemplates.OPENAI,
+    );
   });
 
   it('REST provider scaffold uses api_endpoint and response_key (not url)', () => {

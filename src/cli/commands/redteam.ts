@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import type { Command } from 'commander';
 import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
+import type { RedTeamCategory } from '../../airs/types.js';
 import { resolveOutputDir } from '../../backup/io.js';
 import type { BackupFormat } from '../../backup/types.js';
 import { redTeamClientOptions } from '../../config/client-options.js';
@@ -65,6 +66,18 @@ async function createService() {
 async function createPromptSetService() {
   const config = await loadConfig();
   return new SdkPromptSetService(redTeamClientOptions(config));
+}
+
+/** Build the STATIC scan category payload from the available AIRS categories. */
+export function buildDefaultCategories(categories: RedTeamCategory[]): Record<string, string[]> {
+  return Object.fromEntries(
+    categories.map((category) => [
+      category.id,
+      category.subCategories
+        .map((subCategory) => subCategory.id)
+        .filter((id) => id !== 'MULTI_TURN'),
+    ]),
+  );
 }
 
 /** Parse `--goals` arg as inline JSON array (starts with `[`) or path to a JSON file. */
@@ -869,6 +882,18 @@ export function registerRedteamCommand(program: Command): void {
       try {
         renderRedteamHeader();
         const service = await createService();
+
+        if (opts.type === 'STATIC' && !categories) {
+          const defaultCategories = buildDefaultCategories(await service.getCategories());
+          const categoryCount = Object.values(defaultCategories).reduce(
+            (total, subCategories) => total + subCategories.length,
+            0,
+          );
+          categories = defaultCategories;
+          ui.status(
+            `No --categories given — defaulting to all ${categoryCount} categories (MULTI_TURN excluded). Pass --categories to narrow the scan.`,
+          );
+        }
 
         ui.status(`Creating ${opts.type} scan "${opts.name}"...`);
         const job = await service.createScan({
