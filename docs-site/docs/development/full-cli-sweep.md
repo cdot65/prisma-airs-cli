@@ -100,6 +100,15 @@ airs redteam properties values <propertyName>
 # EULA
 airs redteam eula status
 airs redteam eula content
+
+# Custom target adapters (list rows carry no script/variables — get for the full record;
+# secret variable values render as "(redacted)", keyed off is_redacted)
+airs redteam adapter list
+airs redteam adapter get <adapterUuid>
+airs redteam adapter get <adapterUuid> --output json
+
+# Network broker channels (adapters run through these; validate needs one ONLINE)
+airs redteam network-broker channels list
 ```
 
 :::note[`redteam instances` and `redteam devices` have no `list` subcommand]
@@ -243,6 +252,40 @@ Expected output (pretty):
 Produces `temp/clean/<type>/`, `temp/dirty/<type>/<base>__<technique>.<ext>`, and
 `temp/manifest.json` (each dirty file → technique + embedded synthetic values). All values are
 synthetic / reserved-for-testing.
+
+### B.6 — AI Gateway
+
+Two planes, two grants (see [aigateway workspace](../cli/aigateway/workspaces.md)): the data
+plane needs a **workspace-scope** grant, the admin plane a **tenant-root admin** grant. A `403`
+with `errorCode: AB03` on the data-plane commands means the workspace-scope grant is missing —
+the CLI prints the exact fix. Reads verified live 2026-08-01 (admin plane; the reference
+service account holds only the tenant-root grant, so the bare data-plane `list` 403s with the
+documented AB03 hint).
+
+```bash
+# Workspaces — bare list is data-plane and shows only ACTIVE workspaces you are SCOPED to
+airs aigateway workspace list
+airs aigateway workspace list --plane admin                      # whole tenant
+airs aigateway workspace list --plane admin --status archived    # archived rows only
+airs aigateway workspace list --all                              # admin active + archived merged
+airs aigateway workspace get <slugOrUuid> --plane admin --output json
+
+# Telemetry (data plane; workspace SLUG, not UUID; costs are cents — pretty output shows dollars)
+airs aigateway telemetry cost --workspace <workspaceSlug>
+airs aigateway telemetry cost --workspace <workspaceSlug> --days 30 --output json
+```
+
+Expected `list --plane admin` output (pretty):
+
+```
+  16f7e90d-382a-4e78-b577-1b01eb5f8297
+    talos_k8s_cluster  ws-main-a-349e0e  active
+    scope: main_airs_workspace_1852583913
+
+  ff9a513e-2625-4677-9c41-eecdab839f7c
+    Production  ws-produc-985697  active
+    scope: ws_production_bx7qw0
+```
 
 ## Section C — Synchronous scan
 
@@ -433,6 +476,44 @@ airs redteam prompt-sets download <promptSetUuid>
 airs redteam prompt-sets archive <promptSetUuid>
 ```
 
+### D.6b — Custom target adapter CRUD + validate
+
+Adapters are user-supplied scripts run through a network broker channel. Self-cleaning: the
+section ends by deleting what it created. `validate` requires the channel **ONLINE** — the CLI
+preflights this and fails with a clear message otherwise. Reads verified live 2026-08-01.
+
+```bash
+# A minimal adapter script to exercise the flow
+cat > /tmp/sweep-adapter.py <<'PY'
+def call_target(prompt, variables):
+    return {"response": f"echo: {prompt}"}
+PY
+
+# Create as DRAFT (no validation run, channel optional)
+airs redteam adapter create --name sweep-test-adapter --script-file /tmp/sweep-adapter.py \
+  --prompt 'Hello' --draft \
+  --variables '[{"key":"endpoint","value":"http://example.internal:8080","type":"VAR"},{"key":"api_key","value":"test-secret","type":"SECRET"}]'
+
+airs redteam adapter get <adapterUuid>          # secret shows "(redacted)"
+
+# Update is read-modify-write: only --description changes here — the CLI resends the
+# stored variables (secrets as null = keep) so the upstream full-replacement PUT
+# cannot silently wipe them. --prompt is required every time (upstream never stores it).
+airs redteam adapter update <adapterUuid> --description "updated by sweep" --prompt 'Hello' --draft
+airs redteam adapter get <adapterUuid>          # variables still intact
+
+# Validate end-to-end through an ONLINE broker channel (skip if none is ONLINE);
+# --adapter resolves the stored secrets and supplies the full variables array
+airs redteam network-broker channels list --status ONLINE
+airs redteam adapter validate --script-file /tmp/sweep-adapter.py \
+  --channel <onlineChannelUuid> --prompt 'Hello' --adapter <adapterUuid>
+# On failure the useful part is stderr/traceback (printed; exit code 1)
+
+# Clean up
+airs redteam adapter delete <adapterUuid> --force
+rm /tmp/sweep-adapter.py
+```
+
 ### D.7 — Model Security group + rule instances + scans
 
 All create/update commands take a JSON config file. Refer to the [CLI Reference — Model Security Groups](../cli/model-security/groups.md) for full JSON schemas.
@@ -540,6 +621,34 @@ Once the upstream is fixed, the full CRUD shape is documented in the per-resourc
 - [Data Dictionaries](../runtime/dlp/dictionaries.md) — multipart `create` / `replace`
 - [Data Filtering Profiles](../runtime/dlp/filtering-profiles.md) — `replace` body shape
 
+### D.9 — AI Gateway workspace CRUD
+
+Admin plane throughout — needs the tenant-root admin grant. **`delete` archives; there is no
+hard delete**, so unlike every other section this one cannot be fully torn down: the archived
+row remains under `--status archived` forever. Use a throwaway name.
+
+```bash
+# Create — scope_name is the SCM role scope, NOT derived from the name.
+# A scope nobody holds makes the workspace invisible to data-plane lists.
+airs aigateway workspace create --name sweep-test --scope-name ws_sweeptest_000000 \
+  --description "full-cli-sweep test workspace" \
+  --rate-limits '[{"type":"requests","unit":"rpm","value":10}]'
+
+# The CLI renders from a follow-up get (create's response omits half the record)
+airs aigateway workspace get <newSlug> --plane admin
+
+# Update is a partial patch; the API answers {} and the CLI re-reads for you
+airs aigateway workspace update <newSlug> --description "updated by sweep"
+
+# Delete = archive (confirm prompt; --force for non-TTY)
+airs aigateway workspace delete <newSlug> --force
+
+# Verify: gone from the default list, present under archived…
+airs aigateway workspace list --plane admin --status archived
+# …and get now answers 404 AB08 on both planes — EXPECTED, not a bug
+airs aigateway workspace get <newSlug> --plane admin
+```
+
 ## Section E — Long-running workflows
 
 These tie multiple commands together. Each subsection is one end-to-end flow.
@@ -636,6 +745,10 @@ airs runtime api-keys delete "smoke-test-key"
 
 # 5. DLP — soft-archive any patterns created in D.8
 airs runtime dlp patterns delete <patternId>
+
+# 6. AI Gateway — workspaces can only be ARCHIVED, never destroyed (D.9's row
+#    stays under --status archived; nothing further to clean up)
+airs aigateway workspace delete <workspaceSlug> --force
 ```
 
 ## Section H — Interpretation guide

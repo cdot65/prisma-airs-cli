@@ -8,6 +8,8 @@ slug: /cli/
 
 Auto-generated from the `airs` command tree. Every command below lists its synopsis, options, and at least one input/output example.
 
+- [`airs aigateway telemetry`](aigateway/telemetry.md)
+- [`airs aigateway workspace`](aigateway/workspaces.md)
 - [`airs model-security groups`](model-security/groups.md)
 - [`airs model-security install`](model-security/install.md)
 - [`airs model-security labels`](model-security/labels.md)
@@ -16,6 +18,7 @@ Auto-generated from the `airs` command tree. Every command below lists its synop
 - [`airs model-security rules`](model-security/rules.md)
 - [`airs model-security scans`](model-security/scans.md)
 - [`airs redteam abort`](redteam/abort.md)
+- [`airs redteam adapter`](redteam/adapters.md)
 - [`airs redteam categories`](redteam/categories.md)
 - [`airs redteam devices`](redteam/devices.md)
 - [`airs redteam eula`](redteam/eula.md)

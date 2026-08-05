@@ -27,6 +27,9 @@ function fromEnv(): Record<string, unknown> {
     modelSecDataEndpoint: env.PANW_MODEL_SEC_DATA_ENDPOINT,
     modelSecMgmtEndpoint: env.PANW_MODEL_SEC_MGMT_ENDPOINT,
     modelSecTokenEndpoint: env.PANW_MODEL_SEC_TOKEN_ENDPOINT,
+    aiGwDataEndpoint: env.PANW_AI_GW_DATA_ENDPOINT,
+    aiGwAdminEndpoint: env.PANW_AI_GW_ADMIN_ENDPOINT,
+    aiGwTokenEndpoint: env.PANW_AI_GW_TOKEN_ENDPOINT,
     scanConcurrency: env.SCAN_CONCURRENCY,
     dataDir: env.DATA_DIR,
   };

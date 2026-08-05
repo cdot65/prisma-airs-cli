@@ -100,7 +100,8 @@ src/
 │   │   ├── doctor.ts      # airs doctor — environment/credential/connectivity diagnostics
 │   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
-│   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties)
+│   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties, adapters CRUD+validate)
+│   │   ├── aigateway.ts   # AI Gateway operations (workspace list/get; two-plane routing, --all merge)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Validated item-centric v2 bulk state; atomic 0600 checkpoints for safe resume
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
@@ -130,6 +131,7 @@ src/
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
+│   ├── aigateway.ts       # SdkAiGatewayService — AI Gateway workspace reads + 403 grant hints
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ProfileTopic, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
 ├── backup/
@@ -268,7 +270,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `waitForCompletion()` polls with configurable interval, throws on FAILED
 - Target create/update accept `{ validate: true }` to validate connection before saving (SDK v0.6.0)
 - CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`, `languages` (tenant languages; `--management` for mgmt plane)
-- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore,error-logs}`, `network-broker {channels {list,get,create,update}, stats}` (channels on distinct `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT`), `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
+- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore,error-logs}`, `network-broker {channels {list,get,create,update}, stats}` (channels on distinct `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT`), `adapter {list,get,create,update,delete,validate}` (custom target adapters; update is read-modify-write, validate needs an ONLINE broker channel), `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
 
 ### DLP (`src/airs/dlp/`)
 - **Shape**: thin SDK wrappers; one class per resource (filtering-profiles, patterns, profiles, dictionaries); all instantiate via `getOrCreateManagementClient()` for shared OAuth token cache
@@ -322,6 +324,9 @@ See `.env.example` for the full list. Config priority: CLI flags > env vars > `~
 |----------|---------|---------|
 | `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
 | `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
+| `PANW_AI_GW_DATA_ENDPOINT` | SDK default | AI Gateway data-plane endpoint (`/ai_gw/v2`) |
+| `PANW_AI_GW_ADMIN_ENDPOINT` | SDK default | AI Gateway admin-plane endpoint (`/ai_gw/admin/v2`) |
+| `PANW_AI_GW_TOKEN_ENDPOINT` | mgmt token endpoint | AI Gateway token endpoint override |
 | `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
 | `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
 

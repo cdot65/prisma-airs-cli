@@ -5,6 +5,14 @@ import type {
   InstanceDetail,
   InstanceRequest,
   InstanceResponse,
+  RedTeamAdapterCreateRequest,
+  RedTeamAdapterDetail,
+  RedTeamAdapterListItem,
+  RedTeamAdapterListOptions,
+  RedTeamAdapterUpdateOverrides,
+  RedTeamAdapterValidateRequest,
+  RedTeamAdapterValidationResult,
+  RedTeamAdapterVar,
   RedTeamAttack,
   RedTeamCategory,
   RedTeamChannel,
@@ -156,6 +164,73 @@ function normalizeTargetDetail(raw: Record<string, unknown>): RedTeamTargetDetai
  * Wraps the SDK's RedTeamClient to implement RedTeamService.
  * Provides scan creation, status polling, report retrieval, and target/category listing.
  */
+/** Normalize an SDK adapter list row. */
+function normalizeAdapterListItem(raw: Record<string, unknown>): RedTeamAdapterListItem {
+  return {
+    uuid: raw.uuid as string,
+    name: raw.name as string,
+    status: raw.status as string,
+    createdAt: raw.created_at as string | undefined,
+    updatedAt: raw.updated_at as string | undefined,
+    createdByUserId: raw.created_by_user_id as string | null | undefined,
+    targetCount: raw.target_count as number | null | undefined,
+  };
+}
+
+/** Normalize an SDK adapter variable, keeping the redaction flag. */
+function normalizeAdapterVar(raw: Record<string, unknown>): RedTeamAdapterVar {
+  return {
+    key: raw.key as string,
+    value: raw.value as string | null | undefined,
+    type: raw.type as 'VAR' | 'SECRET',
+    isRedacted: raw.is_redacted as boolean | undefined,
+  };
+}
+
+/** Normalize a full SDK adapter record. */
+function normalizeAdapterDetail(raw: Record<string, unknown>): RedTeamAdapterDetail {
+  return {
+    uuid: raw.uuid as string,
+    tsgId: raw.tsg_id as string | undefined,
+    name: raw.name as string,
+    scriptB64: raw.script_b64 as string,
+    status: raw.status as string,
+    description: raw.description as string | null | undefined,
+    networkBrokerChannelUuid: raw.network_broker_channel_uuid as string | null | undefined,
+    variables: ((raw.variables ?? []) as Array<Record<string, unknown>>).map(normalizeAdapterVar),
+    targetCount: raw.target_count as number | null | undefined,
+    createdAt: raw.created_at as string | null | undefined,
+    updatedAt: raw.updated_at as string | null | undefined,
+    createdByUserId: raw.created_by_user_id as string | null | undefined,
+    updatedByUserId: raw.updated_by_user_id as string | null | undefined,
+  };
+}
+
+/**
+ * Map stored variables into a resend-safe array: a redacted (or valueless)
+ * variable becomes `value: null`, which upstream reads as "keep the stored
+ * value". Used so update's full-replacement PUT never silently wipes
+ * variables, and so validate can send the full key set it requires.
+ */
+export function preserveVariablesForUpdate(variables: RedTeamAdapterVar[]): Array<{
+  key: string;
+  value: string | null;
+  type: 'VAR' | 'SECRET';
+}> {
+  return variables.map((v) => ({
+    key: v.key,
+    value: v.isRedacted ? null : (v.value ?? null),
+    type: v.type,
+  }));
+}
+
+/** Map CLI-side adapter variables to the SDK wire shape (drops isRedacted). */
+function toWireVariables(
+  variables: RedTeamAdapterVar[],
+): Array<{ key: string; value?: string | null; type: 'VAR' | 'SECRET' }> {
+  return variables.map((v) => ({ key: v.key, value: v.value, type: v.type }));
+}
+
 export class SdkRedTeamService implements RedTeamService {
   private client: RedTeamClient;
 
@@ -678,6 +753,118 @@ export class SdkRedTeamService implements RedTeamService {
     return {
       logs: ((raw.data ?? []) as Array<Record<string, unknown>>).map(normalizeErrorLog),
       totalItems: pagination?.total_items as number | undefined,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // Custom target adapters (SDK 0.16.0)
+  // -------------------------------------------------------------------------
+
+  async listAdapters(
+    opts?: RedTeamAdapterListOptions,
+  ): Promise<{ adapters: RedTeamAdapterListItem[]; totalItems?: number }> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.limit != null) sdkOpts.limit = opts.limit;
+    if (opts?.offset != null) sdkOpts.skip = opts.offset;
+    if (opts?.search) sdkOpts.search = opts.search;
+
+    const raw = (await this.client.adapters.list(sdkOpts)) as Record<string, unknown>;
+    const pagination = raw.pagination as Record<string, unknown> | undefined;
+    return {
+      adapters: ((raw.data ?? []) as Array<Record<string, unknown>>).map(normalizeAdapterListItem),
+      totalItems: pagination?.total_items as number | undefined,
+    };
+  }
+
+  async getAdapter(uuid: string): Promise<RedTeamAdapterDetail> {
+    const raw = (await this.client.adapters.get(uuid)) as Record<string, unknown>;
+    return normalizeAdapterDetail(raw);
+  }
+
+  async createAdapter(
+    request: RedTeamAdapterCreateRequest,
+    validate?: boolean,
+  ): Promise<RedTeamAdapterDetail> {
+    const body: Record<string, unknown> = {
+      name: request.name,
+      script_b64: request.scriptB64,
+      prompt: request.prompt,
+    };
+    if (request.description !== undefined) body.description = request.description;
+    if (request.networkBrokerChannelUuid !== undefined) {
+      body.network_broker_channel_uuid = request.networkBrokerChannelUuid;
+    }
+    if (request.variables !== undefined) body.variables = toWireVariables(request.variables);
+
+    const raw = (await this.client.adapters.create(
+      // biome-ignore lint/suspicious/noExplicitAny: body is assembled dynamically; SDK validates the shape
+      body as any,
+      validate === undefined ? undefined : { validate },
+    )) as Record<string, unknown>;
+    return normalizeAdapterDetail(raw);
+  }
+
+  async updateAdapter(
+    uuid: string,
+    overrides: RedTeamAdapterUpdateOverrides,
+    validate?: boolean,
+  ): Promise<RedTeamAdapterDetail> {
+    // Upstream update is a full-replacement PUT and omitting a variable key
+    // DELETES it — read-modify-write so a partial CLI update cannot silently
+    // wipe state. `prompt` is never stored, so the caller must supply it.
+    const current = await this.getAdapter(uuid);
+    const body: Record<string, unknown> = {
+      name: overrides.name ?? current.name,
+      script_b64: overrides.scriptB64 ?? current.scriptB64,
+      prompt: overrides.prompt,
+      variables: overrides.variables
+        ? toWireVariables(overrides.variables)
+        : preserveVariablesForUpdate(current.variables),
+    };
+    const description = overrides.description ?? current.description;
+    if (description != null) body.description = description;
+    const channel = overrides.networkBrokerChannelUuid ?? current.networkBrokerChannelUuid;
+    if (channel != null) body.network_broker_channel_uuid = channel;
+
+    const raw = (await this.client.adapters.update(
+      uuid,
+      // biome-ignore lint/suspicious/noExplicitAny: body is assembled dynamically; SDK validates the shape
+      body as any,
+      validate === undefined ? undefined : { validate },
+    )) as Record<string, unknown>;
+    return normalizeAdapterDetail(raw);
+  }
+
+  async deleteAdapter(uuid: string): Promise<void> {
+    await this.client.adapters.delete(uuid);
+  }
+
+  async validateAdapter(
+    request: RedTeamAdapterValidateRequest,
+  ): Promise<RedTeamAdapterValidationResult> {
+    let variables = request.variables ? toWireVariables(request.variables) : undefined;
+    if (variables === undefined && request.adapterUuid) {
+      // validate() requires the FULL variables array — adapter_uuid only
+      // resolves redacted values within what is sent; it does not supply the
+      // list. Omitting it fails upstream with a bare KeyError.
+      const adapter = await this.getAdapter(request.adapterUuid);
+      variables = preserveVariablesForUpdate(adapter.variables);
+    }
+    const body: Record<string, unknown> = {
+      script_b64: request.scriptB64,
+      network_broker_channel_uuid: request.networkBrokerChannelUuid,
+      prompt: request.prompt,
+    };
+    if (variables !== undefined) body.variables = variables;
+    if (request.adapterUuid !== undefined) body.adapter_uuid = request.adapterUuid;
+
+    // biome-ignore lint/suspicious/noExplicitAny: body is assembled dynamically; SDK validates the shape
+    const raw = (await this.client.adapters.validate(body as any)) as Record<string, unknown>;
+    return {
+      validated: raw.validated as boolean,
+      stdout: raw.stdout as string | null | undefined,
+      stderr: raw.stderr as string | null | undefined,
+      traceback: raw.traceback as string | null | undefined,
     };
   }
 }

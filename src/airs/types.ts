@@ -691,6 +691,25 @@ export interface RedTeamService {
     targetId: string,
     opts?: { limit?: number; offset?: number; search?: string },
   ): Promise<{ logs: RedTeamErrorLog[]; totalItems?: number }>;
+
+  // Custom target adapters (SDK 0.16.0)
+  listAdapters(
+    opts?: RedTeamAdapterListOptions,
+  ): Promise<{ adapters: RedTeamAdapterListItem[]; totalItems?: number }>;
+  getAdapter(uuid: string): Promise<RedTeamAdapterDetail>;
+  createAdapter(
+    request: RedTeamAdapterCreateRequest,
+    validate?: boolean,
+  ): Promise<RedTeamAdapterDetail>;
+  /** Read-modify-write: merges overrides onto the current record (upstream PUT is full-replacement). */
+  updateAdapter(
+    uuid: string,
+    overrides: RedTeamAdapterUpdateOverrides,
+    validate?: boolean,
+  ): Promise<RedTeamAdapterDetail>;
+  deleteAdapter(uuid: string): Promise<void>;
+  /** Run a script end-to-end through the broker channel; returns an execution outcome. */
+  validateAdapter(request: RedTeamAdapterValidateRequest): Promise<RedTeamAdapterValidationResult>;
 }
 
 // ---------------------------------------------------------------------------
@@ -1274,4 +1293,212 @@ export interface ManagementService {
 
   // Scan logs
   queryScanLogs(opts: ScanLogQueryOptions): Promise<ScanLogQueryResult>;
+}
+
+// ---------------------------------------------------------------------------
+// AI Gateway
+// ---------------------------------------------------------------------------
+
+/**
+ * Which plane to route an AI Gateway workspace read through.
+ * `data` returns only workspaces the service account holds a workspace-scope
+ * grant on; `admin` returns every workspace in the tenant.
+ */
+export type AiGatewayPlane = 'data' | 'admin';
+
+/** Normalized AI Gateway workspace list row. */
+export interface AiGatewayWorkspace {
+  id: string;
+  slug: string;
+  name: string;
+  icon?: string | null;
+  description?: string | null;
+  createdAt?: string;
+  lastUpdatedAt?: string;
+  isDefault: boolean;
+  /**
+   * Lifecycle state. `get` can report `null` for a workspace `list` calls
+   * `active` — treat `null` as "unknown", never "inactive".
+   */
+  status?: string | null;
+  /** SCM role scope granting data-plane access to this workspace. */
+  scopeName?: string;
+}
+
+/** Normalized AI Gateway workspace detail (list row + settings blocks). */
+export interface AiGatewayWorkspaceDetail extends AiGatewayWorkspace {
+  defaults?: Record<string, unknown> | null;
+  /** Usage-limit policies, always an array (legacy single-object form is wrapped). */
+  usageLimits: Array<Record<string, unknown>>;
+  /** Rate-limit policies, always an array (legacy single-object form is wrapped). */
+  rateLimits: Array<Record<string, unknown>>;
+  securitySettings?: Record<string, boolean>;
+  dataPlaneSecuritySettings?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+}
+
+export interface AiGatewayWorkspaceListOptions {
+  plane?: AiGatewayPlane;
+  /** Omitting this returns active workspaces only — archived rows are hidden. */
+  status?: 'active' | 'archived';
+}
+
+export interface AiGatewayWorkspaceGetOptions {
+  plane?: AiGatewayPlane;
+}
+
+/** Service interface for AI Gateway operations used by the CLI. */
+export interface AiGatewayService {
+  listWorkspaces(opts?: AiGatewayWorkspaceListOptions): Promise<AiGatewayWorkspace[]>;
+  /** Merge an active and an archived admin-plane read — no single call returns both. */
+  listAllWorkspaces(): Promise<AiGatewayWorkspace[]>;
+  getWorkspace(
+    workspaceRef: string,
+    opts?: AiGatewayWorkspaceGetOptions,
+  ): Promise<AiGatewayWorkspaceDetail>;
+  /** Create a workspace (admin plane); renders from a follow-up get, not the write response. */
+  createWorkspace(request: AiGatewayWorkspaceCreateRequest): Promise<AiGatewayWorkspaceDetail>;
+  /** Partial update (admin plane); the API returns `{}`, so the result comes from a re-read. */
+  updateWorkspace(
+    workspaceRef: string,
+    request: AiGatewayWorkspaceUpdateRequest,
+  ): Promise<AiGatewayWorkspaceDetail>;
+  /** Soft delete — archives the workspace; there is no hard delete. */
+  deleteWorkspace(workspaceRef: string): Promise<void>;
+  /** Total and per-day spend for a workspace. Values are CENTS. */
+  getTelemetryCost(opts: AiGatewayCostOptions): Promise<AiGatewayCostReport>;
+}
+
+/** Request to create an AI Gateway workspace. */
+export interface AiGatewayWorkspaceCreateRequest {
+  name: string;
+  /**
+   * SCM role scope granting data-plane access, e.g. `ws_production_bx7qw0`.
+   * Required and not derived from `name` — a workspace created with a scope
+   * nobody holds is invisible to data-plane lists.
+   */
+  scopeName: string;
+  description?: string;
+  icon?: string;
+  defaults?: Record<string, unknown>;
+  users?: string[];
+  usageLimits?: Array<Record<string, unknown>>;
+  rateLimits?: Array<Record<string, unknown>>;
+}
+
+/** Partial update for an AI Gateway workspace — send only what changes. */
+export interface AiGatewayWorkspaceUpdateRequest {
+  name?: string;
+  description?: string;
+  icon?: string;
+  defaults?: Record<string, unknown>;
+  usageLimits?: Array<Record<string, unknown>>;
+  rateLimits?: Array<Record<string, unknown>>;
+}
+
+/** Options for the AI Gateway telemetry cost query. */
+export interface AiGatewayCostOptions {
+  /** Workspace slug (not UUID) — required by every telemetry endpoint. */
+  workspaceSlug: string;
+  /** Rolling window in days, counted back from now. Defaults to 7. */
+  days?: number;
+}
+
+/** Normalized AI Gateway cost report. All monetary values are CENTS — the API never converts. */
+export interface AiGatewayCostReport {
+  workspaceSlug: string;
+  days: number;
+  totalCents: number;
+  avgCents: number;
+  quotaExceeded: boolean;
+  records: Array<{ date: string; costCents: number }>;
+}
+
+// ---------------------------------------------------------------------------
+// Red Team custom target adapters (SDK 0.16.0)
+// ---------------------------------------------------------------------------
+
+/** An adapter configuration variable. Secrets are masked; key off `isRedacted`, not the value. */
+export interface RedTeamAdapterVar {
+  key: string;
+  value?: string | null;
+  type: 'VAR' | 'SECRET';
+  isRedacted?: boolean;
+}
+
+/** Adapter list row — no script, description, or variables; `get` for the full record. */
+export interface RedTeamAdapterListItem {
+  uuid: string;
+  name: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdByUserId?: string | null;
+  targetCount?: number | null;
+}
+
+/** Full adapter record. */
+export interface RedTeamAdapterDetail {
+  uuid: string;
+  tsgId?: string;
+  name: string;
+  scriptB64: string;
+  status: string;
+  description?: string | null;
+  networkBrokerChannelUuid?: string | null;
+  variables: RedTeamAdapterVar[];
+  targetCount?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdByUserId?: string | null;
+  updatedByUserId?: string | null;
+}
+
+export interface RedTeamAdapterListOptions {
+  limit?: number;
+  offset?: number;
+  search?: string;
+}
+
+export interface RedTeamAdapterCreateRequest {
+  name: string;
+  scriptB64: string;
+  /** Sample prompt used to exercise the adapter during validation. Not stored. */
+  prompt: string;
+  description?: string;
+  /** Optional while DRAFT; required to activate (validate: true). */
+  networkBrokerChannelUuid?: string;
+  variables?: RedTeamAdapterVar[];
+}
+
+/**
+ * CLI-side overrides for adapter update. The upstream PUT is a full
+ * replacement, so the service merges these onto the current record —
+ * `prompt` is the only always-required field because it is never stored.
+ */
+export interface RedTeamAdapterUpdateOverrides {
+  prompt: string;
+  name?: string;
+  scriptB64?: string;
+  description?: string;
+  networkBrokerChannelUuid?: string;
+  /** Replaces the WHOLE variable set when given; omitted keys are deleted upstream. */
+  variables?: RedTeamAdapterVar[];
+}
+
+export interface RedTeamAdapterValidateRequest {
+  scriptB64: string;
+  networkBrokerChannelUuid: string;
+  prompt: string;
+  variables?: RedTeamAdapterVar[];
+  /** Resolve redacted/null variable values from this stored adapter before the run. */
+  adapterUuid?: string;
+}
+
+/** Execution outcome of a validation run — not an adapter record. */
+export interface RedTeamAdapterValidationResult {
+  validated: boolean;
+  stdout?: string | null;
+  stderr?: string | null;
+  traceback?: string | null;
 }

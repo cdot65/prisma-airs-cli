@@ -29,6 +29,9 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_MODEL_SEC_DATA_ENDPOINT', '');
     vi.stubEnv('PANW_MODEL_SEC_MGMT_ENDPOINT', '');
     vi.stubEnv('PANW_MODEL_SEC_TOKEN_ENDPOINT', '');
+    vi.stubEnv('PANW_AI_GW_DATA_ENDPOINT', '');
+    vi.stubEnv('PANW_AI_GW_ADMIN_ENDPOINT', '');
+    vi.stubEnv('PANW_AI_GW_TOKEN_ENDPOINT', '');
   });
 
   afterEach(async () => {
@@ -85,7 +88,14 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_MODEL_SEC_MGMT_ENDPOINT', 'https://ms-mgmt.example.com');
     vi.stubEnv('PANW_MODEL_SEC_TOKEN_ENDPOINT', 'https://ms-token.example.com');
 
+    vi.stubEnv('PANW_AI_GW_DATA_ENDPOINT', 'https://gw-data.example.com/ai_gw/v2');
+    vi.stubEnv('PANW_AI_GW_ADMIN_ENDPOINT', 'https://gw-admin.example.com/ai_gw/admin/v2');
+    vi.stubEnv('PANW_AI_GW_TOKEN_ENDPOINT', 'https://gw-token.example.com');
+
     const config = await loadConfig({}, configPath);
+    expect(config.aiGwDataEndpoint).toBe('https://gw-data.example.com/ai_gw/v2');
+    expect(config.aiGwAdminEndpoint).toBe('https://gw-admin.example.com/ai_gw/admin/v2');
+    expect(config.aiGwTokenEndpoint).toBe('https://gw-token.example.com');
     expect(config.airsApiToken).toBe('tok-env');
     expect(config.airsApiEndpoint).toBe('https://airs.example.com');
     expect(config.airsNumRetries).toBe(2);

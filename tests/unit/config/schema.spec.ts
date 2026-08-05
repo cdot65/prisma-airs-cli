@@ -72,4 +72,22 @@ describe('ConfigSchema', () => {
     expect(config.mgmtClientId).toBe('client-1');
     expect(config.mgmtTsgId).toBe('tsg-1');
   });
+
+  it('preserves AI Gateway endpoint fields when provided', () => {
+    const config = ConfigSchema.parse({
+      aiGwDataEndpoint: 'https://gw-data.example.com/ai_gw/v2',
+      aiGwAdminEndpoint: 'https://gw-admin.example.com/ai_gw/admin/v2',
+      aiGwTokenEndpoint: 'https://gw-token.example.com',
+    });
+    expect(config.aiGwDataEndpoint).toBe('https://gw-data.example.com/ai_gw/v2');
+    expect(config.aiGwAdminEndpoint).toBe('https://gw-admin.example.com/ai_gw/admin/v2');
+    expect(config.aiGwTokenEndpoint).toBe('https://gw-token.example.com');
+  });
+
+  it('defaults AI Gateway endpoint fields to undefined (SDK falls back to env/defaults)', () => {
+    const config = ConfigSchema.parse({});
+    expect(config.aiGwDataEndpoint).toBeUndefined();
+    expect(config.aiGwAdminEndpoint).toBeUndefined();
+    expect(config.aiGwTokenEndpoint).toBeUndefined();
+  });
 });

@@ -46,6 +46,28 @@ Accept the EULA.
 
 ***
 
+### createAdapter()
+
+> **createAdapter**(`request`, `validate?`): `Promise`\<`RedTeamAdapterDetail`\>
+
+Defined in: [src/airs/types.ts:700](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L700)
+
+#### Parameters
+
+##### request
+
+`RedTeamAdapterCreateRequest`
+
+##### validate?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`RedTeamAdapterDetail`\>
+
+***
+
 ### createChannel()
 
 > **createChannel**(`request`): `Promise`\<`RedTeamChannel`\>
@@ -184,6 +206,24 @@ Create a red team target.
 
 ***
 
+### deleteAdapter()
+
+> **deleteAdapter**(`uuid`): `Promise`\<`void`\>
+
+Defined in: [src/airs/types.ts:710](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L710)
+
+#### Parameters
+
+##### uuid
+
+`string`
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
 ### deleteDevices()
 
 > **deleteDevices**(`tenantId`, `serialNumbers`): `Promise`\<`Record`\<`string`, `unknown`\>\>
@@ -245,6 +285,24 @@ Delete a red team target.
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### getAdapter()
+
+> **getAdapter**(`uuid`): `Promise`\<`RedTeamAdapterDetail`\>
+
+Defined in: [src/airs/types.ts:699](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L699)
+
+#### Parameters
+
+##### uuid
+
+`string`
+
+#### Returns
+
+`Promise`\<`RedTeamAdapterDetail`\>
 
 ***
 
@@ -560,6 +618,24 @@ Get provider-specific target templates.
 
 ***
 
+### listAdapters()
+
+> **listAdapters**(`opts?`): `Promise`\<\{ `adapters`: `RedTeamAdapterListItem`[]; `totalItems?`: `number`; \}\>
+
+Defined in: [src/airs/types.ts:696](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L696)
+
+#### Parameters
+
+##### opts?
+
+`RedTeamAdapterListOptions`
+
+#### Returns
+
+`Promise`\<\{ `adapters`: `RedTeamAdapterListItem`[]; `totalItems?`: `number`; \}\>
+
+***
+
 ### listAttacks()
 
 > **listAttacks**(`jobId`, `opts?`): `Promise`\<\{ `attacks`: [`RedTeamAttack`](RedTeamAttack.md)[]; `totalItems?`: `number`; \}\>
@@ -704,6 +780,34 @@ Probe a target connection.
 
 ***
 
+### updateAdapter()
+
+> **updateAdapter**(`uuid`, `overrides`, `validate?`): `Promise`\<`RedTeamAdapterDetail`\>
+
+Defined in: [src/airs/types.ts:705](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L705)
+
+Read-modify-write: merges overrides onto the current record (upstream PUT is full-replacement).
+
+#### Parameters
+
+##### uuid
+
+`string`
+
+##### overrides
+
+`RedTeamAdapterUpdateOverrides`
+
+##### validate?
+
+`boolean`
+
+#### Returns
+
+`Promise`\<`RedTeamAdapterDetail`\>
+
+***
+
 ### updateChannel()
 
 > **updateChannel**(`channelId`, `request`): `Promise`\<`RedTeamChannel`\>
@@ -825,6 +929,26 @@ Update target profile.
 #### Returns
 
 `Promise`\<`Record`\<`string`, `unknown`\>\>
+
+***
+
+### validateAdapter()
+
+> **validateAdapter**(`request`): `Promise`\<`RedTeamAdapterValidationResult`\>
+
+Defined in: [src/airs/types.ts:712](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L712)
+
+Run a script end-to-end through the broker channel; returns an execution outcome.
+
+#### Parameters
+
+##### request
+
+`RedTeamAdapterValidateRequest`
+
+#### Returns
+
+`Promise`\<`RedTeamAdapterValidationResult`\>
 
 ***
 
