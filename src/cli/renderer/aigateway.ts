@@ -115,3 +115,37 @@ export function renderWorkspaceDetail(
   }
   console.log();
 }
+
+/**
+ * Render a telemetry cost report. Every `*Cents` value is CENTS — the API
+ * never converts. Pretty output shows dollars; structured output keeps the
+ * raw cents fields so consumers are never handed a silently-scaled number.
+ */
+export function renderCostReport(
+  report: {
+    workspaceSlug: string;
+    days: number;
+    totalCents: number;
+    avgCents: number;
+    quotaExceeded: boolean;
+    records: Array<{ date: string; costCents: number }>;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(report, null, 2) : yamlDump(report));
+    return;
+  }
+  const dollars = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
+  ui.section(`Cost — ${report.workspaceSlug} (last ${report.days}d):`);
+  ui.keyValue([
+    ['Total', dollars(report.totalCents)],
+    ['Daily average', dollars(report.avgCents)],
+  ]);
+  if (report.quotaExceeded) ui.warn('Telemetry quota exceeded — data may be truncated');
+  if (report.records.length > 0) {
+    ui.section('Per day:');
+    ui.keyValue(report.records.map((r) => [r.date, dollars(r.costCents)]));
+  }
+  console.log();
+}

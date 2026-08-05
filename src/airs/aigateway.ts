@@ -5,6 +5,9 @@ import {
   type GatewayWorkspaceUpdateRequest,
 } from '@cdot65/prisma-airs-sdk';
 import type {
+  AiGatewayCostOptions,
+  AiGatewayCostReport,
+  AiGatewayPlane,
   AiGatewayService,
   AiGatewayWorkspace,
   AiGatewayWorkspaceCreateRequest,
@@ -107,11 +110,24 @@ export class SdkAiGatewayService implements AiGatewayService {
     workspaceRef: string,
     options?: AiGatewayWorkspaceGetOptions,
   ): Promise<AiGatewayWorkspaceDetail> {
-    const raw = (await this.client.workspaces.get(workspaceRef, options)) as Record<
-      string,
-      unknown
-    >;
-    return normalizeWorkspaceDetail(raw);
+    try {
+      const raw = (await this.client.workspaces.get(workspaceRef, options)) as Record<
+        string,
+        unknown
+      >;
+      return normalizeWorkspaceDetail(raw);
+    } catch (err) {
+      // A display name 404s — resolve it against the list and retry once.
+      const status = (err as { statusCode?: number }).statusCode;
+      if (status !== 404) throw err;
+      const resolved = await this.resolveWorkspaceRef(workspaceRef, [
+        options?.plane ?? 'data',
+        'admin',
+      ]);
+      if (resolved === workspaceRef) throw err;
+      const raw = (await this.client.workspaces.get(resolved, options)) as Record<string, unknown>;
+      return normalizeWorkspaceDetail(raw);
+    }
   }
 
   async createWorkspace(
@@ -139,6 +155,7 @@ export class SdkAiGatewayService implements AiGatewayService {
     workspaceRef: string,
     request: AiGatewayWorkspaceUpdateRequest,
   ): Promise<AiGatewayWorkspaceDetail> {
+    const ref = await this.resolveWorkspaceRef(workspaceRef, ['admin']);
     const body: GatewayWorkspaceUpdateRequest = {};
     if (request.name !== undefined) body.name = request.name;
     if (request.description !== undefined) body.description = request.description;
@@ -147,16 +164,69 @@ export class SdkAiGatewayService implements AiGatewayService {
     if (request.usageLimits !== undefined) body.usage_limits = request.usageLimits;
     if (request.rateLimits !== undefined) body.rate_limits = request.rateLimits;
 
-    await this.client.workspaces.update(workspaceRef, body);
+    await this.client.workspaces.update(ref, body);
     // update returns a literal `{}` — the write lands; re-read to display anything.
-    return this.getWorkspace(workspaceRef, { plane: 'admin' });
+    return this.getWorkspace(ref, { plane: 'admin' });
   }
 
   async deleteWorkspace(workspaceRef: string): Promise<void> {
+    const ref = await this.resolveWorkspaceRef(workspaceRef, ['admin']);
     // Soft delete. Deliberately no verify-by-get: an archived workspace
     // answers 404 AB08 on both planes even though list --status archived
     // still shows it.
-    await this.client.workspaces.delete(workspaceRef);
+    await this.client.workspaces.delete(ref);
+  }
+
+  /**
+   * The API accepts only a UUID or slug as a workspace ref — a display name
+   * gets a misleading 400 AB01 ("No update fields provided") on writes.
+   * Match a user-supplied ref against the workspace list so name | slug |
+   * uuid all work. Unmatched refs pass through so the API's own error stands.
+   */
+  private async resolveWorkspaceRef(ref: string, planes: AiGatewayPlane[]): Promise<string> {
+    for (const plane of planes) {
+      let rows: AiGatewayWorkspace[];
+      try {
+        rows = await this.listWorkspaces({ plane });
+      } catch {
+        continue; // e.g. missing grant on this plane — try the next one
+      }
+      if (rows.some((w) => w.id === ref || w.slug === ref)) return ref;
+      const byName = rows.filter((w) => w.name === ref);
+      if (byName.length > 1) {
+        throw new Error(
+          `workspace name '${ref}' is ambiguous (${byName.map((w) => w.slug).join(', ')}) — use a slug or UUID`,
+        );
+      }
+      if (byName.length === 1) return byName[0].slug;
+    }
+    return ref;
+  }
+
+  async getTelemetryCost(opts: AiGatewayCostOptions): Promise<AiGatewayCostReport> {
+    const days = opts.days ?? 7;
+    const workspaceSlug = await this.resolveWorkspaceRef(opts.workspaceSlug, ['data', 'admin']);
+    const raw = (await this.client.telemetry.cost({
+      workspaceSlug,
+      days,
+    })) as {
+      data: {
+        isQuotaExceeded: boolean;
+        records: Array<{ x: string; y: number }>;
+        total: number;
+        avg: number;
+      };
+    };
+    // Every cost value is CENTS — the SDK never converts; conversion is a
+    // display concern (renderer divides by 100).
+    return {
+      workspaceSlug,
+      days,
+      totalCents: raw.data.total,
+      avgCents: raw.data.avg,
+      quotaExceeded: raw.data.isQuotaExceeded,
+      records: raw.data.records.map((r) => ({ date: r.x, costCents: r.y })),
+    };
   }
 
   /** Re-read after a write, falling back to the (partial) write response if the get fails. */

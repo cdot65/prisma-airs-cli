@@ -6,6 +6,7 @@ const mockWorkspacesGet = vi.fn();
 const mockWorkspacesCreate = vi.fn();
 const mockWorkspacesUpdate = vi.fn();
 const mockWorkspacesDelete = vi.fn();
+const mockTelemetryCost = vi.fn();
 
 function makeMockClient() {
   return {
@@ -15,6 +16,9 @@ function makeMockClient() {
       create: mockWorkspacesCreate,
       update: mockWorkspacesUpdate,
       delete: mockWorkspacesDelete,
+    },
+    telemetry: {
+      cost: mockTelemetryCost,
     },
   };
 }
@@ -237,6 +241,172 @@ describe('workspace writes', () => {
       expect(mockWorkspacesDelete).toHaveBeenCalledWith('ws-produc-985697');
       expect(mockWorkspacesGet).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('workspace ref resolution (name | slug | uuid)', () => {
+  let service: SdkAiGatewayService;
+
+  const rows = [
+    {
+      ...{
+        id: 'ws-uuid-dev',
+        slug: 'ws-develo-71f8d8',
+        name: 'Development',
+        icon: null,
+        description: null,
+        created_at: '',
+        last_updated_at: '',
+        is_default: 0,
+        status: 'active',
+        scope_name: 's',
+        object: 'workspace',
+      },
+    },
+    {
+      id: 'ws-uuid-prod',
+      slug: 'ws-produc-985697',
+      name: 'Production',
+      icon: null,
+      description: null,
+      created_at: '',
+      last_updated_at: '',
+      is_default: 0,
+      status: 'active',
+      scope_name: 's2',
+      object: 'workspace',
+    },
+  ];
+
+  const detail = {
+    id: 'ws-uuid-dev',
+    name: 'Development',
+    description: 'd',
+    created_at: '',
+    last_updated_at: '',
+    is_default: 0,
+    slug: 'ws-develo-71f8d8',
+    icon: null,
+    defaults: null,
+    usage_limits: null,
+    rate_limits: null,
+    status: 'active',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new SdkAiGatewayService();
+  });
+
+  it('update resolves a display name to the slug via an admin-plane list', async () => {
+    mockWorkspacesList.mockResolvedValue({ data: rows });
+    mockWorkspacesUpdate.mockResolvedValue({});
+    mockWorkspacesGet.mockResolvedValue(detail);
+    await service.updateWorkspace('Development', { description: 'x' });
+    expect(mockWorkspacesList).toHaveBeenCalledWith({ plane: 'admin' });
+    expect(mockWorkspacesUpdate).toHaveBeenCalledWith('ws-develo-71f8d8', { description: 'x' });
+  });
+
+  it('update passes a slug straight through', async () => {
+    mockWorkspacesList.mockResolvedValue({ data: rows });
+    mockWorkspacesUpdate.mockResolvedValue({});
+    mockWorkspacesGet.mockResolvedValue(detail);
+    await service.updateWorkspace('ws-develo-71f8d8', { description: 'x' });
+    expect(mockWorkspacesUpdate).toHaveBeenCalledWith('ws-develo-71f8d8', { description: 'x' });
+  });
+
+  it('update passes an unmatched ref through unchanged (API produces the error)', async () => {
+    mockWorkspacesList.mockResolvedValue({ data: rows });
+    mockWorkspacesUpdate.mockResolvedValue({});
+    mockWorkspacesGet.mockResolvedValue(detail);
+    await service.updateWorkspace('nope', { description: 'x' });
+    expect(mockWorkspacesUpdate).toHaveBeenCalledWith('nope', { description: 'x' });
+  });
+
+  it('throws a clear error when a display name matches multiple workspaces', async () => {
+    mockWorkspacesList.mockResolvedValue({
+      data: [rows[0], { ...rows[1], name: 'Development' }],
+    });
+    await expect(service.updateWorkspace('Development', { description: 'x' })).rejects.toThrow(
+      /ambiguous/,
+    );
+    expect(mockWorkspacesUpdate).not.toHaveBeenCalled();
+  });
+
+  it('delete resolves a display name too', async () => {
+    mockWorkspacesList.mockResolvedValue({ data: rows });
+    mockWorkspacesDelete.mockResolvedValue(undefined);
+    await service.deleteWorkspace('Production');
+    expect(mockWorkspacesDelete).toHaveBeenCalledWith('ws-produc-985697');
+  });
+
+  it('telemetry cost resolves a display name to the slug, falling back to the admin plane', async () => {
+    mockWorkspacesList
+      .mockRejectedValueOnce(Object.assign(new Error('AB03'), { statusCode: 403 }))
+      .mockResolvedValueOnce({ data: rows });
+    mockTelemetryCost.mockResolvedValue({
+      success: true,
+      data: { isQuotaExceeded: false, records: [], total: 0, avg: 0 },
+    });
+    await service.getTelemetryCost({ workspaceSlug: 'Development' });
+    expect(mockTelemetryCost).toHaveBeenCalledWith({ workspaceSlug: 'ws-develo-71f8d8', days: 7 });
+  });
+
+  it('get retries once with a resolved ref after a 404', async () => {
+    mockWorkspacesGet
+      .mockRejectedValueOnce(Object.assign(new Error('not found'), { statusCode: 404 }))
+      .mockResolvedValueOnce(detail);
+    mockWorkspacesList.mockResolvedValue({ data: rows });
+    const ws = await service.getWorkspace('Development');
+    expect(mockWorkspacesGet).toHaveBeenLastCalledWith('ws-develo-71f8d8', undefined);
+    expect(ws.id).toBe('ws-uuid-dev');
+  });
+});
+
+describe('getTelemetryCost', () => {
+  let service: SdkAiGatewayService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new SdkAiGatewayService();
+  });
+
+  it('normalizes the cost chart keeping raw cents', async () => {
+    mockTelemetryCost.mockResolvedValue({
+      success: true,
+      data: {
+        isQuotaExceeded: false,
+        records: [
+          { x: '2026-07-30', y: 123456.78 },
+          { x: '2026-07-31', y: 100 },
+        ],
+        total: 123556.78,
+        avg: 61778.39,
+      },
+    });
+    const report = await service.getTelemetryCost({ workspaceSlug: 'ws-main-a-349e0e', days: 7 });
+    expect(mockTelemetryCost).toHaveBeenCalledWith({ workspaceSlug: 'ws-main-a-349e0e', days: 7 });
+    expect(report).toEqual({
+      workspaceSlug: 'ws-main-a-349e0e',
+      days: 7,
+      totalCents: 123556.78,
+      avgCents: 61778.39,
+      quotaExceeded: false,
+      records: [
+        { date: '2026-07-30', costCents: 123456.78 },
+        { date: '2026-07-31', costCents: 100 },
+      ],
+    });
+  });
+
+  it('defaults days to 7', async () => {
+    mockTelemetryCost.mockResolvedValue({
+      success: true,
+      data: { isQuotaExceeded: false, records: [], total: 0, avg: 0 },
+    });
+    const report = await service.getTelemetryCost({ workspaceSlug: 'ws-x' });
+    expect(mockTelemetryCost).toHaveBeenCalledWith({ workspaceSlug: 'ws-x', days: 7 });
+    expect(report.days).toBe(7);
   });
 });
 

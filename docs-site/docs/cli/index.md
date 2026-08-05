@@ -8,6 +8,7 @@ slug: /cli/
 
 Auto-generated from the `airs` command tree. Every command below lists its synopsis, options, and at least one input/output example.
 
+- [`airs aigateway telemetry`](aigateway/telemetry.md)
 - [`airs aigateway workspace`](aigateway/workspaces.md)
 - [`airs model-security groups`](model-security/groups.md)
 - [`airs model-security install`](model-security/install.md)

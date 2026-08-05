@@ -9,6 +9,7 @@ import {
   fail,
   type OutputFormat,
   renderAiGatewayHeader,
+  renderCostReport,
   renderWorkspaceDetail,
   renderWorkspaceList,
   ui,
@@ -289,6 +290,41 @@ export function registerAiGatewayCommand(program: Command): void {
         ui.status(
           'This is a soft delete — the workspace remains visible via `workspace list --plane admin --status archived`. A `get` on it now answers 404; that is expected.',
         );
+      } catch (err) {
+        failWithGrantHint(err);
+      }
+    });
+
+  const telemetry = aigateway
+    .command('telemetry')
+    .description('AI Gateway runtime telemetry (data plane)');
+
+  telemetry
+    .command('cost')
+    .description(
+      'Total and per-day spend for a workspace (API reports cents; pretty output shows dollars)',
+    )
+    .requiredOption('--workspace <slug>', 'Workspace slug (not UUID), e.g. ws-main-a-349e0e')
+    .option('--days <n>', 'Rolling window in days, counted back from now', '7')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        'airs aigateway telemetry cost --workspace ws-main-a-349e0e',
+        'airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
+      ),
+    )
+    .action(async (opts) => {
+      try {
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderAiGatewayHeader();
+        const days = Number.parseInt(opts.days, 10);
+        if (!Number.isFinite(days) || days <= 0) {
+          usageError(`Invalid --days '${opts.days}'. Expected a positive integer`);
+        }
+        const service = await createService();
+        const report = await service.getTelemetryCost({ workspaceSlug: opts.workspace, days });
+        renderCostReport(report, fmt);
       } catch (err) {
         failWithGrantHint(err);
       }
