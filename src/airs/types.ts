@@ -1275,3 +1275,66 @@ export interface ManagementService {
   // Scan logs
   queryScanLogs(opts: ScanLogQueryOptions): Promise<ScanLogQueryResult>;
 }
+
+// ---------------------------------------------------------------------------
+// AI Gateway
+// ---------------------------------------------------------------------------
+
+/**
+ * Which plane to route an AI Gateway workspace read through.
+ * `data` returns only workspaces the service account holds a workspace-scope
+ * grant on; `admin` returns every workspace in the tenant.
+ */
+export type AiGatewayPlane = 'data' | 'admin';
+
+/** Normalized AI Gateway workspace list row. */
+export interface AiGatewayWorkspace {
+  id: string;
+  slug: string;
+  name: string;
+  icon?: string | null;
+  description?: string | null;
+  createdAt?: string;
+  lastUpdatedAt?: string;
+  isDefault: boolean;
+  /**
+   * Lifecycle state. `get` can report `null` for a workspace `list` calls
+   * `active` — treat `null` as "unknown", never "inactive".
+   */
+  status?: string | null;
+  /** SCM role scope granting data-plane access to this workspace. */
+  scopeName?: string;
+}
+
+/** Normalized AI Gateway workspace detail (list row + settings blocks). */
+export interface AiGatewayWorkspaceDetail extends AiGatewayWorkspace {
+  defaults?: Record<string, unknown> | null;
+  /** Usage-limit policies, always an array (legacy single-object form is wrapped). */
+  usageLimits: Array<Record<string, unknown>>;
+  /** Rate-limit policies, always an array (legacy single-object form is wrapped). */
+  rateLimits: Array<Record<string, unknown>>;
+  securitySettings?: Record<string, boolean>;
+  dataPlaneSecuritySettings?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+}
+
+export interface AiGatewayWorkspaceListOptions {
+  plane?: AiGatewayPlane;
+  /** Omitting this returns active workspaces only — archived rows are hidden. */
+  status?: 'active' | 'archived';
+}
+
+export interface AiGatewayWorkspaceGetOptions {
+  plane?: AiGatewayPlane;
+}
+
+/** Service interface for AI Gateway operations used by the CLI. */
+export interface AiGatewayService {
+  listWorkspaces(opts?: AiGatewayWorkspaceListOptions): Promise<AiGatewayWorkspace[]>;
+  /** Merge an active and an archived admin-plane read — no single call returns both. */
+  listAllWorkspaces(): Promise<AiGatewayWorkspace[]>;
+  getWorkspace(
+    workspaceRef: string,
+    opts?: AiGatewayWorkspaceGetOptions,
+  ): Promise<AiGatewayWorkspaceDetail>;
+}

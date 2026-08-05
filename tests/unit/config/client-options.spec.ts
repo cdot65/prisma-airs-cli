@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aiGatewayClientOptions,
   modelSecurityClientOptions,
   redTeamClientOptions,
   runtimeInitOptions,
@@ -94,5 +95,41 @@ describe('modelSecurityClientOptions', () => {
       mgmtTokenEndpoint: 'https://mgmt-token.example.com',
     });
     expect(modelSecurityClientOptions(config).tokenEndpoint).toBe('https://mgmt-token.example.com');
+  });
+});
+
+describe('aiGatewayClientOptions', () => {
+  it('maps mgmt creds and aiGw* endpoints', () => {
+    const config = ConfigSchema.parse({
+      mgmtClientId: 'cid',
+      mgmtClientSecret: 'sec',
+      mgmtTsgId: 'tsg',
+      aiGwDataEndpoint: 'https://gw-data.example.com/ai_gw/v2',
+      aiGwAdminEndpoint: 'https://gw-admin.example.com/ai_gw/admin/v2',
+      aiGwTokenEndpoint: 'https://gw-token.example.com',
+    });
+    expect(aiGatewayClientOptions(config)).toEqual({
+      clientId: 'cid',
+      clientSecret: 'sec',
+      tsgId: 'tsg',
+      dataEndpoint: 'https://gw-data.example.com/ai_gw/v2',
+      adminEndpoint: 'https://gw-admin.example.com/ai_gw/admin/v2',
+      tokenEndpoint: 'https://gw-token.example.com',
+    });
+  });
+
+  it('falls back to mgmtTokenEndpoint when aiGwTokenEndpoint unset', () => {
+    const config = ConfigSchema.parse({
+      mgmtTokenEndpoint: 'https://mgmt-token.example.com',
+    });
+    expect(aiGatewayClientOptions(config).tokenEndpoint).toBe('https://mgmt-token.example.com');
+  });
+
+  it('prefers aiGwTokenEndpoint over mgmtTokenEndpoint', () => {
+    const config = ConfigSchema.parse({
+      mgmtTokenEndpoint: 'https://mgmt-token.example.com',
+      aiGwTokenEndpoint: 'https://gw-token.example.com',
+    });
+    expect(aiGatewayClientOptions(config).tokenEndpoint).toBe('https://gw-token.example.com');
   });
 });

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  checkAiGatewayApi,
   checkConfigFile,
   checkManagementAuth,
   checkManagementCredentials,
@@ -214,6 +215,41 @@ describe('doctor command', () => {
     });
   });
 
+  describe('checkAiGatewayApi', () => {
+    it('warns (skips) when management creds are missing', async () => {
+      const check = await checkAiGatewayApi(never, false, 50);
+      expect(check.status).toBe('warn');
+      expect(check.detail).toContain('skipped');
+    });
+
+    it('passes when the probe resolves with a workspace count', async () => {
+      const check = await checkAiGatewayApi(() => Promise.resolve(3), true, 50);
+      expect(check.status).toBe('pass');
+      expect(check.name).toBe('AI Gateway API');
+      expect(check.detail).toContain('3');
+    });
+
+    it('warns (not fails) on a 403 — permission boundary, endpoint reachable', async () => {
+      const err = Object.assign(new Error('Forbidden: errorCode AB03'), { statusCode: 403 });
+      const check = await checkAiGatewayApi(() => Promise.reject(err), true, 50);
+      expect(check.status).toBe('warn');
+      expect(check.detail).toContain('reachable');
+      expect(check.hint).toContain('workspace-scope');
+    });
+
+    it('still fails on non-403 HTTP errors', async () => {
+      const err = Object.assign(new Error('boom'), { statusCode: 500 });
+      const check = await checkAiGatewayApi(() => Promise.reject(err), true, 50);
+      expect(check.status).toBe('fail');
+    });
+
+    it('fails when the probe hangs past the timeout', async () => {
+      const check = await checkAiGatewayApi(never, true, 20);
+      expect(check.status).toBe('fail');
+      expect(check.detail).toContain('timed out');
+    });
+  });
+
   describe('runDoctor', () => {
     let tempDir: string;
 
@@ -225,7 +261,7 @@ describe('doctor command', () => {
       await rm(tempDir, { recursive: true, force: true });
     });
 
-    it('runs all six checks and never throws, even when probes reject', async () => {
+    it('runs all seven checks and never throws, even when probes reject', async () => {
       const checks = await runDoctor({
         nodeVersion: 'v22.0.0',
         configFilePath: join(tempDir, 'absent.json'),
@@ -238,10 +274,11 @@ describe('doctor command', () => {
           }),
         scannerProbe: () => Promise.reject(new TypeError('fetch failed')),
         mgmtProbe: () => Promise.reject(Object.assign(new Error('boom'), { status: 500 })),
+        aiGwProbe: () => Promise.reject(Object.assign(new Error('boom'), { status: 500 })),
         timeoutMs: 50,
       });
 
-      expect(checks).toHaveLength(6);
+      expect(checks).toHaveLength(7);
       expect(checks.map((c) => c.name)).toEqual([
         'Node.js version',
         'Config file',
@@ -249,6 +286,7 @@ describe('doctor command', () => {
         'Management credentials',
         'Scanner API',
         'Management OAuth',
+        'AI Gateway API',
       ]);
       for (const c of checks) {
         expect(['pass', 'warn', 'fail']).toContain(c.status);
@@ -263,12 +301,14 @@ describe('doctor command', () => {
         inspect: async () => inspected(),
         scannerProbe: never,
         mgmtProbe: never,
+        aiGwProbe: never,
         timeoutMs: 20,
       });
 
       const byName = Object.fromEntries(checks.map((c) => [c.name, c]));
       expect(byName['Scanner API'].status).toBe('warn');
       expect(byName['Management OAuth'].status).toBe('warn');
+      expect(byName['AI Gateway API'].status).toBe('warn');
       // creds checks themselves fail
       expect(byName['Scanner credentials'].status).toBe('fail');
       expect(byName['Management credentials'].status).toBe('fail');
@@ -289,6 +329,7 @@ describe('doctor command', () => {
           }),
         scannerProbe: () => Promise.resolve([]),
         mgmtProbe: () => Promise.resolve(2),
+        aiGwProbe: () => Promise.resolve(1),
         timeoutMs: 50,
       });
 
@@ -302,6 +343,7 @@ describe('doctor command', () => {
         inspect: async () => inspected(),
         scannerProbe: never,
         mgmtProbe: never,
+        aiGwProbe: never,
         timeoutMs: 20,
       });
 

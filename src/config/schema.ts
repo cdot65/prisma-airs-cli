@@ -26,6 +26,11 @@ export const ConfigSchema = z.object({
   modelSecMgmtEndpoint: z.string().optional(),
   modelSecTokenEndpoint: z.string().optional(),
 
+  // AI Gateway (endpoints only; creds shared with mgmt*)
+  aiGwDataEndpoint: z.string().optional(),
+  aiGwAdminEndpoint: z.string().optional(),
+  aiGwTokenEndpoint: z.string().optional(),
+
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),
 
