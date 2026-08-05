@@ -95,3 +95,93 @@ and prefer the list value.
 airs aigateway workspace get ws-main-a-349e0e
 airs aigateway workspace get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json
 ```
+
+### aigateway workspace create
+
+Create a workspace. **Admin plane** — needs a tenant-root admin role.
+
+```text
+airs aigateway workspace create --name <name> --scope-name <scope> [options]
+```
+
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--name <name>` | Yes | — | Display name |
+| `--scope-name <scope>` | Yes | — | SCM role scope granting data-plane access (e.g. `ws_production_bx7qw0`) |
+| `--description <text>` | No | — | Workspace description |
+| `--icon <icon>` | No | — | Workspace icon |
+| `--metadata <json>` | No | — | Sugar for `defaults.metadata` (flat string map) |
+| `--defaults <json>` | No | — | Workspace defaults object |
+| `--users <ids>` | No | — | Comma-separated user ids to seed the workspace with |
+| `--usage-limits <json>` | No | — | Usage-limit policies — a JSON **array** of policy objects |
+| `--rate-limits <json>` | No | — | Rate-limit policies — a JSON **array** of policy objects |
+| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+
+:::warning scope_name is not derived from name
+
+`--scope-name` is the SCM role scope that grants data-plane access. Create a
+workspace with a scope nobody holds and it simply will not appear in a
+data-plane `list` — the most common way a fresh workspace "goes missing". The
+CLI warns when the scope shares no token with the name.
+
+:::
+
+The create response omits `status`, `is_default`, `icon`, both limit fields,
+and the settings blocks — the CLI renders from a follow-up `get`, not from the
+write response.
+
+#### Examples
+
+```bash
+airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0
+airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0 \
+  --metadata '{"env":"production"}' \
+  --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'
+```
+
+### aigateway workspace update
+
+Partial update — send only what changes. **Admin plane.**
+
+```text
+airs aigateway workspace update <ref> [options]
+```
+
+Takes the same writable flags as `create` (minus `--scope-name`, plus no
+required flags); at least one must be given. The API acknowledges the write
+with an empty body, so the CLI re-reads the workspace and renders that.
+
+#### Examples
+
+```bash
+airs aigateway workspace update ws-produc-985697 --description 'Production workloads, us-east'
+airs aigateway workspace update ws-produc-985697 --rate-limits '[{"type":"requests","unit":"rpm","value":50}]'
+```
+
+### aigateway workspace delete
+
+Archive a workspace. **Admin plane.** Alias: `rm`.
+
+```text
+airs aigateway workspace delete <ref> [--force]
+```
+
+:::warning delete archives; it does not destroy
+
+There is **no hard delete** for workspaces. The row disappears from a default
+`list` but remains under `list --plane admin --status archived`. After the
+delete, `get` answers `404 AB08` for both the UUID and the slug on either plane
+— that is expected, not an error.
+
+:::
+
+Prompts for confirmation unless `--force`; non-TTY runs require `--force`.
+
+#### Examples
+
+```bash
+airs aigateway workspace delete ws-produc-985697
+airs aigateway workspace delete ws-produc-985697 --force
+```

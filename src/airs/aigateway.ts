@@ -1,10 +1,17 @@
-import { AIGatewayClient, type AIGatewayClientOptions } from '@cdot65/prisma-airs-sdk';
+import {
+  AIGatewayClient,
+  type AIGatewayClientOptions,
+  type GatewayWorkspaceCreateRequest,
+  type GatewayWorkspaceUpdateRequest,
+} from '@cdot65/prisma-airs-sdk';
 import type {
   AiGatewayService,
   AiGatewayWorkspace,
+  AiGatewayWorkspaceCreateRequest,
   AiGatewayWorkspaceDetail,
   AiGatewayWorkspaceGetOptions,
   AiGatewayWorkspaceListOptions,
+  AiGatewayWorkspaceUpdateRequest,
 } from './types.js';
 
 /**
@@ -105,5 +112,62 @@ export class SdkAiGatewayService implements AiGatewayService {
       unknown
     >;
     return normalizeWorkspaceDetail(raw);
+  }
+
+  async createWorkspace(
+    request: AiGatewayWorkspaceCreateRequest,
+  ): Promise<AiGatewayWorkspaceDetail> {
+    const body: GatewayWorkspaceCreateRequest = {
+      name: request.name,
+      scope_name: request.scopeName,
+    };
+    if (request.description !== undefined) body.description = request.description;
+    if (request.icon !== undefined) body.icon = request.icon;
+    if (request.defaults !== undefined) body.defaults = request.defaults;
+    if (request.users !== undefined) body.users = request.users;
+    if (request.usageLimits !== undefined) body.usage_limits = request.usageLimits;
+    if (request.rateLimits !== undefined) body.rate_limits = request.rateLimits;
+
+    const created = (await this.client.workspaces.create(body)) as Record<string, unknown>;
+    // create omits status, is_default, icon, both limit fields, and the
+    // settings blocks — re-read for the full record. Admin plane, because a
+    // fresh workspace's scope may not be granted to this service account yet.
+    return this.refetchAfterWrite(created.id as string, created);
+  }
+
+  async updateWorkspace(
+    workspaceRef: string,
+    request: AiGatewayWorkspaceUpdateRequest,
+  ): Promise<AiGatewayWorkspaceDetail> {
+    const body: GatewayWorkspaceUpdateRequest = {};
+    if (request.name !== undefined) body.name = request.name;
+    if (request.description !== undefined) body.description = request.description;
+    if (request.icon !== undefined) body.icon = request.icon;
+    if (request.defaults !== undefined) body.defaults = request.defaults;
+    if (request.usageLimits !== undefined) body.usage_limits = request.usageLimits;
+    if (request.rateLimits !== undefined) body.rate_limits = request.rateLimits;
+
+    await this.client.workspaces.update(workspaceRef, body);
+    // update returns a literal `{}` — the write lands; re-read to display anything.
+    return this.getWorkspace(workspaceRef, { plane: 'admin' });
+  }
+
+  async deleteWorkspace(workspaceRef: string): Promise<void> {
+    // Soft delete. Deliberately no verify-by-get: an archived workspace
+    // answers 404 AB08 on both planes even though list --status archived
+    // still shows it.
+    await this.client.workspaces.delete(workspaceRef);
+  }
+
+  /** Re-read after a write, falling back to the (partial) write response if the get fails. */
+  private async refetchAfterWrite(
+    workspaceRef: string,
+    writeResponse: Record<string, unknown>,
+  ): Promise<AiGatewayWorkspaceDetail> {
+    try {
+      return await this.getWorkspace(workspaceRef, { plane: 'admin' });
+    } catch {
+      return normalizeWorkspaceDetail(writeResponse);
+    }
   }
 }

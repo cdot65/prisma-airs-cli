@@ -1337,4 +1337,40 @@ export interface AiGatewayService {
     workspaceRef: string,
     opts?: AiGatewayWorkspaceGetOptions,
   ): Promise<AiGatewayWorkspaceDetail>;
+  /** Create a workspace (admin plane); renders from a follow-up get, not the write response. */
+  createWorkspace(request: AiGatewayWorkspaceCreateRequest): Promise<AiGatewayWorkspaceDetail>;
+  /** Partial update (admin plane); the API returns `{}`, so the result comes from a re-read. */
+  updateWorkspace(
+    workspaceRef: string,
+    request: AiGatewayWorkspaceUpdateRequest,
+  ): Promise<AiGatewayWorkspaceDetail>;
+  /** Soft delete — archives the workspace; there is no hard delete. */
+  deleteWorkspace(workspaceRef: string): Promise<void>;
+}
+
+/** Request to create an AI Gateway workspace. */
+export interface AiGatewayWorkspaceCreateRequest {
+  name: string;
+  /**
+   * SCM role scope granting data-plane access, e.g. `ws_production_bx7qw0`.
+   * Required and not derived from `name` — a workspace created with a scope
+   * nobody holds is invisible to data-plane lists.
+   */
+  scopeName: string;
+  description?: string;
+  icon?: string;
+  defaults?: Record<string, unknown>;
+  users?: string[];
+  usageLimits?: Array<Record<string, unknown>>;
+  rateLimits?: Array<Record<string, unknown>>;
+}
+
+/** Partial update for an AI Gateway workspace — send only what changes. */
+export interface AiGatewayWorkspaceUpdateRequest {
+  name?: string;
+  description?: string;
+  icon?: string;
+  defaults?: Record<string, unknown>;
+  usageLimits?: Array<Record<string, unknown>>;
+  rateLimits?: Array<Record<string, unknown>>;
 }
