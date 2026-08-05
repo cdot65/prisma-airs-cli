@@ -1022,3 +1022,145 @@ export function renderErrorLogs(
     console.log();
   }
 }
+
+/** Render an adapter list in the requested format. */
+export function renderAdapterList(
+  adapters: Array<{
+    uuid: string;
+    name: string;
+    status: string;
+    createdAt?: string;
+    updatedAt?: string;
+    targetCount?: number | null;
+  }>,
+  format: OutputFormat = 'pretty',
+  totalItems?: number,
+): void {
+  if (adapters.length === 0) {
+    ui.emptyList('adapters');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = adapters.map((a) => ({
+      uuid: a.uuid,
+      name: a.name,
+      status: a.status,
+      targets: a.targetCount ?? '',
+      updated: a.updatedAt ?? '',
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'uuid', label: 'UUID' },
+          { key: 'name', label: 'Name' },
+          { key: 'status', label: 'Status' },
+          { key: 'targets', label: 'Targets' },
+          { key: 'updated', label: 'Updated' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('Custom Target Adapters:');
+  for (const a of adapters) {
+    ui.dim(a.uuid);
+    const status = a.status === 'ACTIVE' ? chalk.green(a.status) : chalk.yellow(a.status);
+    const targets = a.targetCount != null ? `  targets: ${a.targetCount}` : '';
+    console.log(`    ${a.name}  ${status}${targets}`);
+    console.log();
+  }
+  if (totalItems !== undefined) ui.dim(`${totalItems} total`);
+}
+
+/**
+ * Render an adapter detail. Secret values arrive masked (`'**********'`) with
+ * `isRedacted: true` — render the flag, never pretend the mask is the value.
+ */
+export function renderAdapterDetail(
+  adapter: {
+    uuid: string;
+    name: string;
+    status: string;
+    scriptB64: string;
+    description?: string | null;
+    networkBrokerChannelUuid?: string | null;
+    variables: Array<{
+      key: string;
+      value?: string | null;
+      type: 'VAR' | 'SECRET';
+      isRedacted?: boolean;
+    }>;
+    targetCount?: number | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(adapter, null, 2) : yamlDump(adapter));
+    return;
+  }
+  ui.section('Adapter Detail:');
+  const pairs: Array<[string, unknown]> = [
+    ['UUID', adapter.uuid],
+    ['Name', adapter.name],
+    [
+      'Status',
+      adapter.status === 'ACTIVE' ? chalk.green(adapter.status) : chalk.yellow(adapter.status),
+    ],
+    ['Script', `${adapter.scriptB64.length} base64 chars`],
+  ];
+  if (adapter.description != null) pairs.push(['Description', adapter.description]);
+  if (adapter.networkBrokerChannelUuid != null)
+    pairs.push(['Broker Channel', adapter.networkBrokerChannelUuid]);
+  if (adapter.targetCount != null) pairs.push(['Targets', adapter.targetCount]);
+  if (adapter.createdAt != null) pairs.push(['Created', adapter.createdAt]);
+  if (adapter.updatedAt != null) pairs.push(['Updated', adapter.updatedAt]);
+  ui.keyValue(pairs);
+  if (adapter.variables.length > 0) {
+    ui.section('Variables:');
+    ui.keyValue(
+      adapter.variables.map((v) => [
+        `${v.key} (${v.type})`,
+        v.isRedacted ? chalk.dim('(redacted)') : (v.value ?? ''),
+      ]),
+    );
+  }
+  console.log();
+}
+
+/** Render a validation run outcome; on failure, stderr/traceback are the useful part. */
+export function renderAdapterValidation(
+  result: {
+    validated: boolean;
+    stdout?: string | null;
+    stderr?: string | null;
+    traceback?: string | null;
+  },
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(result, null, 2) : yamlDump(result));
+    return;
+  }
+  if (result.validated) {
+    ui.success('Adapter script validated');
+  } else {
+    ui.error('Adapter script validation FAILED');
+  }
+  if (result.stdout) {
+    ui.section('stdout:');
+    console.log(result.stdout);
+  }
+  if (result.stderr) {
+    ui.section('stderr:');
+    console.log(chalk.red(result.stderr));
+  }
+  if (result.traceback) {
+    ui.section('traceback:');
+    console.log(chalk.red(result.traceback));
+  }
+  console.log();
+}
