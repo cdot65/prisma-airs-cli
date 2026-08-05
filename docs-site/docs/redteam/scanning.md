@@ -95,6 +95,18 @@ airs redteam scan \
   --name "Full Static Scan"
 ```
 
+When `--categories` is omitted, the CLI fetches the current AIRS category catalog and
+selects every available subcategory except `MULTI_TURN`. It prints this notice before
+submitting the scan:
+
+```text
+No --categories given — defaulting to all 27 categories (MULTI_TURN excluded). Pass --categories to narrow the scan.
+```
+
+The number reflects the catalog returned by your tenant. Use `--quiet` to suppress the
+notice. To include `MULTI_TURN`, pass an explicit `--categories` payload and use a target
+that supports multi-turn testing.
+
 By default, Prisma AIRS CLI polls until the scan completes. Use `--no-wait` to submit and return immediately.
 
 ### Static Scan with Category Filter

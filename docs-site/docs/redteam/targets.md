@@ -27,7 +27,8 @@ Instead of writing a JSON config from scratch, scaffold one from a provider temp
 airs redteam targets init <provider>
 ```
 
-Available providers: `OPENAI`, `HUGGING_FACE`, `DATABRICKS`, `BEDROCK`, `REST`, `STREAMING`.
+Available providers: `OPENAI`, `HUGGING_FACE`, `DATABRICKS`, `BEDROCK`, `REST`, `STREAMING`,
+`WEBSOCKET`, and `CUSTOM_TARGET_ADAPTER`.
 
 This fetches the provider's template from AIRS and writes a ready-to-edit JSON file:
 
@@ -48,6 +49,16 @@ vim openai-target.json
 # Create the target (with connection validation)
 airs redteam targets create --config openai-target.json --validate
 ```
+
+The scaffold shape depends on the provider family:
+
+- `OPENAI`, `BEDROCK`, and `DATABRICKS` put the native provider template under
+  `connection_params.target_connection_config`.
+- `REST`, `HUGGING_FACE`, `STREAMING`, and `WEBSOCKET` use an HTTP-style
+  `connection_params` object with `api_endpoint`, request fields, and `response_key`.
+- `CUSTOM_TARGET_ADAPTER` creates an `AGENT` target that uses a `NETWORK_BROKER` endpoint,
+  with placeholders for `adapter_uuid` and `network_broker_channel_uuid` and an
+  `adapter_variable_overrides` array.
 
 :::tip
 The `init` command is the fastest way to get started — it gives you the correct JSON structure for your provider so you only need to fill in credentials.

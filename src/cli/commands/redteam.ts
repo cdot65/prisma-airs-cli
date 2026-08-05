@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import type { Command } from 'commander';
 import { SdkPromptSetService } from '../../airs/promptsets.js';
 import { SdkRedTeamService } from '../../airs/redteam.js';
+import type { RedTeamCategory } from '../../airs/types.js';
 import { resolveOutputDir } from '../../backup/io.js';
 import type { BackupFormat } from '../../backup/types.js';
 import { redTeamClientOptions } from '../../config/client-options.js';
@@ -70,6 +71,18 @@ async function createPromptSetService() {
   return new SdkPromptSetService(redTeamClientOptions(config));
 }
 
+/** Build the STATIC scan category payload from the available AIRS categories. */
+export function buildDefaultCategories(categories: RedTeamCategory[]): Record<string, string[]> {
+  return Object.fromEntries(
+    categories.map((category) => [
+      category.id,
+      category.subCategories
+        .map((subCategory) => subCategory.id)
+        .filter((id) => id !== 'MULTI_TURN'),
+    ]),
+  );
+}
+
 /** Parse `--goals` arg as inline JSON array (starts with `[`) or path to a JSON file. */
 export function parseAttackGoals(input: string): string[] {
   const trimmed = input.trim();
@@ -110,7 +123,16 @@ export const VALID_TARGET_PROVIDERS = [
   'BEDROCK',
   'REST',
   'STREAMING',
+  'WEBSOCKET',
+  'CUSTOM_TARGET_ADAPTER',
 ] as const;
+
+/**
+ * Providers whose connection goes through a REST HTTP endpoint.
+ * These use RestConnectionParamsBase (api_endpoint / response_key)
+ * rather than a native SDK provider config.
+ */
+const REST_PROVIDERS = new Set(['REST', 'STREAMING', 'WEBSOCKET', 'HUGGING_FACE']);
 
 /** Build a target config scaffold from a provider template. */
 export function buildTargetScaffold(
@@ -123,13 +145,66 @@ export function buildTargetScaffold(
       `Unknown provider "${provider}". Valid providers: ${VALID_TARGET_PROVIDERS.join(', ')}`,
     );
   }
+
+  // Custom target adapter — drives via an in-cluster Python sidecar.
+  if (key === 'CUSTOM_TARGET_ADAPTER') {
+    return {
+      name: '',
+      target_type: 'AGENT',
+      connection_type: 'CUSTOM_TARGET_ADAPTER',
+      api_endpoint_type: 'NETWORK_BROKER',
+      network_broker_channel_uuid: '<channel-uuid>',
+      adapter_uuid: '<adapter-uuid>',
+      // adapter_variable_overrides is an ARRAY of {key, value, type} objects.
+      adapter_variable_overrides: [],
+      target_background: { use_case: '' },
+      additional_context: {},
+    };
+  }
+
+  // REST-family providers: use RestConnectionParamsBase schema.
+  // The API expects api_endpoint / response_key, not the legacy url field
+  // that getTargetTemplates() returns.
+  if (REST_PROVIDERS.has(key)) {
+    const tpl = (templates[key] ?? {}) as Record<string, unknown>;
+    return {
+      name: '',
+      target_type: 'APPLICATION',
+      connection_type: 'CUSTOM',
+      api_endpoint_type: 'PUBLIC',
+      response_mode: key === 'STREAMING' ? 'STREAMING' : key === 'WEBSOCKET' ? 'WEBSOCKET' : 'REST',
+      auth_type: 'HEADERS',
+      auth_config: {
+        auth_header: { Authorization: 'Bearer <token>' },
+      },
+      connection_params: {
+        api_endpoint: (tpl.url as string | undefined) ?? '',
+        request_headers: { 'Content-Type': 'application/json' },
+        request_json: tpl.request_json ?? { messages: [{ role: 'user', content: '{INPUT}' }] },
+        response_json: tpl.response_json ?? { choices: [{ message: { content: '{RESPONSE}' } }] },
+        response_key: 'choices.0.message.content',
+      },
+      target_background: {},
+      additional_context: {},
+    };
+  }
+
+  // Native SDK providers (OPENAI, BEDROCK, DATABRICKS): use NativeConnectionParamsBase.
   return {
     name: '',
     target_type: 'APPLICATION',
-    connection_params: templates[key] ?? {},
+    connection_type: key,
+    api_endpoint_type: 'PUBLIC',
+    response_mode: 'REST',
+    auth_type: 'HEADERS',
+    auth_config: {
+      auth_header: { Authorization: 'Bearer <token>' },
+    },
+    connection_params: {
+      target_connection_config: templates[key] ?? {},
+    },
     target_background: {},
     additional_context: {},
-    target_metadata: {},
   };
 }
 
@@ -849,6 +924,18 @@ export function registerRedteamCommand(program: Command): void {
       try {
         renderRedteamHeader();
         const service = await createService();
+
+        if (opts.type === 'STATIC' && !categories) {
+          const defaultCategories = buildDefaultCategories(await service.getCategories());
+          const categoryCount = Object.values(defaultCategories).reduce(
+            (total, subCategories) => total + subCategories.length,
+            0,
+          );
+          categories = defaultCategories;
+          ui.status(
+            `No --categories given — defaulting to all ${categoryCount} categories (MULTI_TURN excluded). Pass --categories to narrow the scan.`,
+          );
+        }
 
         ui.status(`Creating ${opts.type} scan "${opts.name}"...`);
         const job = await service.createScan({

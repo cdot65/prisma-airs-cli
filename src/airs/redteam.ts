@@ -464,7 +464,12 @@ export class SdkRedTeamService implements RedTeamService {
     streamBreadth?: number;
   }): Promise<RedTeamJob> {
     let jobMetadata: Record<string, unknown> = {};
-    if (request.jobType === 'STATIC' && request.categories) {
+    if (request.jobType === 'STATIC') {
+      if (!request.categories) {
+        throw new Error(
+          'STATIC scans require categories. Pass categories explicitly or use the CLI default.',
+        );
+      }
       jobMetadata = { categories: request.categories };
     } else if (request.jobType === 'CUSTOM' && request.customPromptSets) {
       jobMetadata = {
