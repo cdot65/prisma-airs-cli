@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Summary
 
-Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, ML model supply chain security, and backup/restore of AIRS configuration to local files.
+Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, AI Gateway workspace management and cost telemetry, ML model supply chain security, and backup/restore of AIRS configuration to local files.
 
 ## Commands
 
@@ -101,7 +101,7 @@ src/
 │   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties, adapters CRUD+validate)
-│   │   ├── aigateway.ts   # AI Gateway operations (workspace list/get; two-plane routing, --all merge)
+│   │   ├── aigateway.ts   # AI Gateway workspace CRUD + cost telemetry (two-plane routing, --all merge)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Validated item-centric v2 bulk state; atomic 0600 checkpoints for safe resume
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
@@ -113,6 +113,7 @@ src/
 │       ├── common.ts      # renderError
 │       ├── eval.ts        # Eval metrics, FP/FN list rendering
 │       ├── redteam.ts     # Red team scan/target/prompt-set rendering
+│       ├── aigateway.ts   # AI Gateway workspace and cost telemetry rendering
 │       ├── runtime.ts     # Runtime scan + config management rendering
 │       ├── dlp.ts         # DLP filtering-profiles/patterns/profiles/dictionaries rendering
 │       └── modelsecurity.ts # Model security groups/rules/scans rendering
@@ -131,7 +132,7 @@ src/
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
-│   ├── aigateway.ts       # SdkAiGatewayService — AI Gateway workspace reads + 403 grant hints
+│   ├── aigateway.ts       # SdkAiGatewayService — workspace CRUD/cost telemetry + 403 grant hints
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ProfileTopic, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
 ├── backup/
@@ -260,6 +261,16 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime dlp dictionaries {list, create, get, replace, patch, delete}` — multipart upload, 200/204 fallback
   - `airs runtime dlp generate` — generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX; no auth (local only)
 
+### AI Gateway (`src/airs/aigateway.ts`)
+- `SdkAiGatewayService` wraps `AiGatewayClient` for workspace CRUD and cost telemetry, using the existing `PANW_MGMT_*` OAuth credentials plus optional `PANW_AI_GW_{DATA,ADMIN,TOKEN}_ENDPOINT` overrides.
+- Two authorization planes: data-plane reads return active workspaces in the caller's SCM role scope; admin-plane reads and all writes require the tenant-root AI Gateway admin grant. A 403 is decorated with the missing-grant hint.
+- CLI: `airs aigateway workspace {list,get,create,update,delete}` and `airs aigateway telemetry cost`.
+- `workspace list` defaults to scoped data-plane reads. `--plane admin --status active|archived` reads tenant-wide state; `--all` merges both admin lifecycle states and is mutually exclusive with `--plane`/`--status`.
+- `workspace create` requires independent `--name` and `--scope-name` values. The CLI warns when the scope looks unrelated because a scope nobody holds makes the workspace disappear from data-plane lists.
+- `workspace update` is a partial patch. `workspace delete` is a confirmation-gated soft delete (archive); archived rows remain listable through the admin plane and direct GET returns 404.
+- Workspace JSON flags: `--metadata` merges into `defaults.metadata`; `--defaults`, `--usage-limits`, and `--rate-limits` must be valid JSON; create-only `--users` is comma-separated.
+- Cost telemetry requires a workspace slug (UUID/display name inputs are resolved), defaults to seven days, and comes from AIRS in cents. Pretty output converts to dollars; structured output retains explicit `*Cents` fields.
+
 ### Red Team (`src/airs/redteam.ts`, `src/airs/promptsets.ts`)
 - `SdkRedTeamService` wraps `RedTeamClient` for scan CRUD, polling, reports, **target CRUD**
 - `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for prompt set CRUD, prompt CRUD, CSV upload, properties
@@ -270,7 +281,10 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `waitForCompletion()` polls with configurable interval, throws on FAILED
 - Target create/update accept `{ validate: true }` to validate connection before saving (SDK v0.6.0)
 - CLI top-level commands: `scan`, `status <jobId>`, `report <jobId>`, `list`, `abort <jobId>`, `categories`, `languages` (tenant languages; `--management` for mgmt plane)
-- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore,error-logs}`, `network-broker {channels {list,get,create,update}, stats}` (channels on distinct `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT`), `adapter {list,get,create,update,delete,validate}` (custom target adapters; update is read-modify-write, validate needs an ONLINE broker channel), `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
+- CLI subcommand groups: `targets {list,get,create,update,delete,probe,profile,update-profile,validate-auth,metadata,init,templates,backup,restore,error-logs}`, `network-broker {channels {list,get,create,update}, stats}` (channels on distinct `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT`), `adapter {list,get,create,update,delete,validate}`, `prompt-sets {list,get,create,update,archive,download,upload}`, `prompts {list,get,add,update,delete}`, `properties {list,create,values,add-value}`, `eula`, `instances`, `devices`, `registry-credentials`
+- Custom adapters accept script files (CLI base64-encodes) or `--script-b64`; variables are the complete array of `{key,value,type: VAR|SECRET}`. Secret masks render `(redacted)` and `value: null` preserves stored secrets during update.
+- Adapter update is read-modify-write over an upstream full-replacement PUT. Passing `--variables` replaces the complete key set; omitted keys are deleted.
+- `adapter validate` is non-persistent, requires an ONLINE network-broker channel and full variable array, can hydrate stored variables/secrets with `--adapter`, and exits 1 while rendering `stderr`/`traceback` on execution failure.
 
 ### DLP (`src/airs/dlp/`)
 - **Shape**: thin SDK wrappers; one class per resource (filtering-profiles, patterns, profiles, dictionaries); all instantiate via `getOrCreateManagementClient()` for shared OAuth token cache

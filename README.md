@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
 
-**Full operational coverage over Palo Alto Prisma AIRS AI security — guardrail refinement, runtime scanning, AI red teaming, and model security.**
+**Full operational coverage over Palo Alto Prisma AIRS AI security — guardrail refinement, runtime scanning, AI red teaming, AI Gateway, and model security.**
 
 > **[Read the full documentation](https://cdot65.github.io/prisma-airs-cli/)** — installation, configuration, architecture, CLI reference, and examples.
 
@@ -19,6 +19,7 @@
 - **Runtime Scanning** — scan prompts and responses against AIRS security profiles, single or bulk with CSV export
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
+- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/workspaces/)** — scoped/admin workspace management and workspace cost telemetry
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
 - **`airs doctor`** — one-command diagnostics for environment, credentials, and API connectivity
 - **`airs config`** — manage `~/.prisma-airs/config.json` from the CLI (`list`, `get`, `set`, `unset`, `path`)
@@ -55,6 +56,13 @@ airs runtime topics revert --profile my-profile --name "Explosives"
 airs redteam scan --target <uuid> --name "Full Scan" --type STATIC
 airs redteam report <job-id>
 
+# Red team custom target adapters
+airs redteam adapter list --output json
+
+# AI Gateway workspaces and cost telemetry
+airs aigateway workspace list --all --output json
+airs aigateway telemetry cost --workspace <workspace-slug> --days 30
+
 # Model security
 airs model-security scans create --config scan-config.json
 ```
@@ -69,6 +77,7 @@ The full guides, complete CLI reference, configuration, and architecture live on
 - **[Runtime Security](https://cdot65.github.io/prisma-airs-cli/runtime/overview/)** — scanning, profiles, topics, and DLP management
 - **[Guardrail Optimization](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/)** — the agent-driven `topics create/apply/eval/revert` loop
 - **[AI Red Teaming](https://cdot65.github.io/prisma-airs-cli/redteam/overview/)** — static, dynamic, and custom adversarial scans
+- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/workspaces/)** — workspace CRUD, two-plane authorization, and cost telemetry
 - **[Model Security](https://cdot65.github.io/prisma-airs-cli/model-security/overview/)** — ML model supply-chain scanning
 - **[CLI Reference](https://cdot65.github.io/prisma-airs-cli/cli/)** — every command, flag, and example
 
