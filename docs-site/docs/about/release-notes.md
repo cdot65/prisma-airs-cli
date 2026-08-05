@@ -1,5 +1,26 @@
 # Release Notes
 
+## v3.3.0 (2026-08-05)
+
+### New
+
+- **AI Gateway workspace management** — new `airs aigateway workspace` commands cover scoped and tenant-wide listing, detail reads, creation, partial updates, and confirmation-gated archival. Data-plane reads show active workspaces in the caller's SCM role scope; `--plane admin` and `--all` expose tenant-wide active/archived state when the caller has the tenant-root grant.
+- **AI Gateway cost telemetry** — `airs aigateway telemetry cost --workspace <slug> [--days 7]` reports total, average, and per-day spend. Pretty output converts AIRS cents to dollars; JSON/YAML keep explicit `*Cents` fields.
+- **Red Team custom target adapters** — `airs redteam adapter {list,get,create,update,delete,validate}` manages user-supplied scripts for network-broker targets. Updates preserve omitted variables and stored secrets, validation checks for an ONLINE broker channel, and failed scripts surface `stderr`/`traceback` with exit code 1.
+
+### Fixed
+
+- **Bare STATIC scans now select the full attack catalog** — omitting `--categories` defaults to every available subcategory except `MULTI_TURN`, prints a `--quiet`-aware notice, and avoids the AIRS API's blank 422 response. Library callers must still pass categories explicitly and receive a descriptive local error otherwise.
+- **Target scaffolds match current AIRS schemas** — native, REST-family, WebSocket, and custom target adapter templates now use their correct connection shapes, required top-level fields, and adapter variable array.
+
+### Documentation
+
+- Added complete Docusaurus CLI guides for AI Gateway workspaces, cost telemetry, and Red Team adapters; updated scan/target guides, `README.md`, `AGENTS.md`, and `CLAUDE.md` for the new command surfaces and platform rules.
+
+### Dependencies
+
+- Upgraded `@cdot65/prisma-airs-sdk` to `^0.17.0` for AI Gateway and Red Team adapter support.
+
 ## v3.2.0 (2026-07-17)
 
 ### New
