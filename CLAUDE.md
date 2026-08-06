@@ -25,6 +25,7 @@ pnpm test:e2e              # E2E tests (requires real creds, opt-in)
 # Docker (Dockerfile lives at docker/Dockerfile)
 pnpm run docker:build      # Build local image (-f docker/Dockerfile)
 pnpm run docker:run        # Run (mounts ~/.prisma-airs)
+pnpm run container:dev     # Apple-container alpine shell with repo mounted at /work (interactive)
 
 # Lint & Format (Biome config lives at config/biome.json)
 pnpm run lint              # Biome check  --config-path config
