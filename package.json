@@ -29,6 +29,7 @@
     "docker:build:arm64": "docker buildx build -f docker/Dockerfile --platform linux/arm64 --load -t prisma-airs-cli:local-arm64 .",
     "docker:run": "docker run --rm -v ~/.prisma-airs:/root/.prisma-airs prisma-airs-cli:local",
     "docker:push:arm64": "./docker/docker-push-arm64.sh",
+    "container:dev": "container run --rm -it -v \"$PWD\":/work -w /work node:20-alpine sh",
     "docs:api": "typedoc",
     "docs:install": "pnpm -C docs-site install",
     "docs:build": "pnpm docs:api && pnpm -C docs-site build",
