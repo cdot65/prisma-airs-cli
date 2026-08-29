@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { afterEach, describe, expect, it } from 'vitest';
-import { resolveOutput } from '../../../src/cli/renderer/common.js';
+import { formatOutput, resolveOutput } from '../../../src/cli/renderer/common.js';
 
 describe('resolveOutput', () => {
   const original = process.env.PANW_CLI_OUTPUT;
@@ -22,6 +22,14 @@ describe('resolveOutput', () => {
     await expect(resolveOutput(command, command.opts())).resolves.toBe('markdown');
   });
 
+  it('does not let a legacy command default mask the configured output', async () => {
+    process.env.PANW_CLI_OUTPUT = 'yaml';
+    const root = new Command().option('--output <format>');
+    const child = root.command('list').option('--output <format>', 'format', 'pretty');
+    await root.parseAsync(['node', 'test', 'list']);
+    await expect(resolveOutput(child, child.opts())).resolves.toBe('yaml');
+  });
+
   it('rejects invalid and restricted formats as usage errors', async () => {
     process.env.PANW_CLI_OUTPUT = 'xml';
     await expect(resolveOutput(new Command('list'), {})).rejects.toThrow('Invalid output format');
@@ -29,5 +37,12 @@ describe('resolveOutput', () => {
     await expect(
       resolveOutput(new Command('list'), {}, { allowed: ['pretty', 'json'] }),
     ).rejects.toThrow('not supported');
+  });
+});
+
+describe('empty structured output', () => {
+  it('emits a bare empty array for JSON and YAML', () => {
+    expect(formatOutput([], [], 'json')).toBe('[]');
+    expect(formatOutput([], [], 'yaml')).toBe('[]\n');
   });
 });

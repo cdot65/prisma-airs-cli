@@ -597,7 +597,8 @@ export function renderScanLogList(
   format: OutputFormat = 'pretty',
 ): void {
   if (results.length === 0) {
-    ui.emptyList('scan logs');
+    if (format === 'pretty') ui.emptyList('scan logs');
+    else console.log(formatOutput([], [], format));
     return;
   }
   if (format !== 'pretty') {

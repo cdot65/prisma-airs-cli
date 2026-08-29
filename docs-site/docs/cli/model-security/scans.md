@@ -24,7 +24,7 @@ airs model-security scans list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -63,7 +63,7 @@ airs model-security scans get [options] <uuid>
 
 #### Examples
 
-*Pretty output (default; no --output flag on this command). Re-run after scan completes to see final Outcome + rule counts.*
+*Pretty output (fallback `pretty`; no output override in this example). Re-run after scan completes to see final Outcome + rule counts.*
 
 ```bash
 airs model-security scans get 00000000-0000-0000-0000-000000000002

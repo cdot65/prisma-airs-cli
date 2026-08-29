@@ -120,13 +120,13 @@ export function registerAiGatewayCommand(program: Command): void {
 
   const workspace = aigateway.command('workspace').description('Manage AI Gateway workspaces');
 
-  workspace
+  const workspaceList = workspace
     .command('list')
     .description('List workspaces (default: active workspaces you are scoped to)')
     .option('--plane <plane>', 'Plane to read from: data (scoped) or admin (whole tenant)')
     .option('--status <status>', 'Filter by lifecycle state: active or archived')
     .option('--all', 'Merge active + archived admin-plane reads (whole tenant, both states)')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
       examples(
@@ -138,7 +138,7 @@ export function registerAiGatewayCommand(program: Command): void {
     )
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(workspaceList, opts);
         if (fmt === 'pretty') renderAiGatewayHeader();
         const plane = parsePlane(opts.plane);
         const status = parseStatus(opts.status);
@@ -162,11 +162,11 @@ export function registerAiGatewayCommand(program: Command): void {
       }
     });
 
-  workspace
+  const workspaceGet = workspace
     .command('get <ref>')
     .description('Get one workspace by UUID or slug (includes settings blocks)')
     .option('--plane <plane>', 'Plane to read from: data (scoped) or admin (whole tenant)')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
       examples(
@@ -176,7 +176,7 @@ export function registerAiGatewayCommand(program: Command): void {
     )
     .action(async (ref: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(workspaceGet, opts);
         if (fmt === 'pretty') renderAiGatewayHeader();
         const plane = parsePlane(opts.plane);
         const service = await createService();

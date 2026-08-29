@@ -49,7 +49,10 @@ export async function resolveOutput(
   resolution: ResolveOutputOptions = {},
 ): Promise<OutputFormat> {
   const localIsExplicit = command.getOptionValueSource?.('output') === 'cli';
-  const root = command.parent ? command.optsWithGlobals() : command.opts();
+  let rootCommand = command;
+  while (rootCommand.parent) rootCommand = rootCommand.parent;
+  const globalIsExplicit = rootCommand.getOptionValueSource?.('output') === 'cli';
+  const globalOutput = globalIsExplicit ? rootCommand.opts().output : undefined;
   let configured: string | undefined;
   try {
     configured = (await loadConfig()).defaultOutput;
@@ -57,7 +60,9 @@ export async function resolveOutput(
     if (process.env.PANW_CLI_OUTPUT !== undefined) configured = process.env.PANW_CLI_OUTPUT;
     else throw error;
   }
-  const candidate = String(localIsExplicit ? opts.output : (root.output ?? configured ?? 'pretty'));
+  const candidate = String(
+    localIsExplicit ? opts.output : (globalOutput ?? configured ?? 'pretty'),
+  );
   if (!OUTPUT_FORMATS.includes(candidate as OutputFormat))
     throw new CliUsageError(
       `Invalid output format '${candidate}'. Expected: ${OUTPUT_FORMATS.join(', ')}`,
@@ -95,7 +100,11 @@ export function formatOutput(
   columns: OutputColumn[],
   format: OutputFormat,
 ): string {
-  if (rows.length === 0) return format === 'json' ? '[]' : '';
+  if (rows.length === 0) {
+    if (format === 'json') return '[]';
+    if (format === 'yaml') return '[]\n';
+    return '';
+  }
   const projected = rows.map((row) => columns.map((column) => row[column.key]));
   switch (format) {
     case 'json':

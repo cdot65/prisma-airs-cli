@@ -20,7 +20,7 @@ airs redteam targets list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Return every target |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -59,7 +59,7 @@ airs redteam targets get [options] <uuid>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -755,7 +755,7 @@ airs redteam targets error-logs <targetId> [options]
 | `--limit <n>` | No | — | Max results |
 | `--offset <n>` | No | — | Starting offset |
 | `--search <text>` | No | — | Filter by search text |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

@@ -20,11 +20,11 @@ airs runtime customer-apps list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default). Use `customer-apps get <appName>` for the complete detail record.*
+*Pretty output (fallback `pretty`). Use `customer-apps get <appName>` for the complete detail record.*
 
 ```bash
 airs runtime customer-apps list --limit 2
@@ -168,11 +168,11 @@ airs runtime customer-apps consumption [options] [appName]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--time-interval <n>` | No | `30` | Window in days: 7, 30, or 60 |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default) — single app, default 30-day window. Only firing detectors are shown.*
+*Pretty output (fallback `pretty`) — single app, default 30-day window. Only firing detectors are shown.*
 
 ```bash
 airs runtime customer-apps consumption example-app

@@ -21,11 +21,11 @@ airs runtime dlp patterns list [options]
 | `--all` | No | — | Walk every API page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--sort <field,dir>` | No | — | Sort criteria (repeatable) |
-| `--output <fmt>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <fmt>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs runtime dlp patterns list --limit 2 --sort name,asc
@@ -156,7 +156,7 @@ airs runtime dlp patterns get [options] <id>
 
 #### Examples
 
-*Pretty output (default — predefined pattern)*
+*Pretty output (fallback `pretty` — predefined pattern)*
 
 ```bash
 airs runtime dlp patterns get 000000000000000000000001

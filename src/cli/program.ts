@@ -13,6 +13,28 @@ import { registerRuntimeCommand } from './commands/runtime.js';
 import { installDebugLogger } from './debug-logger.js';
 import { fail, resolveOutput, setQuiet, ui } from './renderer/index.js';
 
+const READ_COMMAND_NAMES = new Set([
+  'categories',
+  'consumption',
+  'evaluation',
+  'evaluations',
+  'files',
+  'get',
+  'languages',
+  'list',
+  'pypi-auth',
+  'query',
+  'registry-credentials',
+  'report',
+  'stats',
+  'status',
+  'values',
+  'version',
+  'versions',
+  'violation',
+  'violations',
+]);
+
 /** Give every `list` subcommand an `ls` alias and every `delete` an `rm` alias. */
 function applyListDeleteAliases(cmd: Command): void {
   for (const sub of cmd.commands) {
@@ -66,7 +88,7 @@ export function buildProgram(): Command {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
     if (
-      (actionCommand.name() === 'list' || actionCommand.name() === 'get') &&
+      READ_COMMAND_NAMES.has(actionCommand.name()) &&
       actionCommand.options.some((option) => option.long === '--output')
     ) {
       try {

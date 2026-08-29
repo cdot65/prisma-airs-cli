@@ -20,11 +20,11 @@ airs redteam properties list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Return every property name |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs redteam properties list
@@ -105,7 +105,7 @@ airs redteam properties values [options] <name>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

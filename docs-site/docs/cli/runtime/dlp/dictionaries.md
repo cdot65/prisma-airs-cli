@@ -23,11 +23,11 @@ airs runtime dlp dictionaries list [options]
 | `--sort <field,dir>` | No | — | (repeatable) |
 | `--keywords` | No | — | Include keyword list in response |
 | `--include-keywords` | No | — | Alias for --keywords |
-| `--output <fmt>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <fmt>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default — JSON envelope)*
+*Pretty output (fallback `pretty` — JSON envelope)*
 
 ```bash
 airs runtime dlp dictionaries list --limit 2 --sort name,asc
@@ -355,7 +355,7 @@ airs runtime dlp dictionaries get [options] <id>
 
 #### Examples
 
-*Pretty output (default — JSON object)*
+*Pretty output (fallback `pretty` — JSON object)*
 
 ```bash
 airs runtime dlp dictionaries get 000000000000000000000001

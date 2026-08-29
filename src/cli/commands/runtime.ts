@@ -40,7 +40,6 @@ import {
   emitDetail,
   emitList,
   fail,
-  type OutputFormat,
   renderApiKeyDetail,
   renderCustomerAppConsumption,
   renderCustomerAppDetail,
@@ -527,7 +526,7 @@ export function registerRuntimeCommand(program: Command): void {
       }
     });
 
-  customerApps
+  const customerAppsConsumption = customerApps
     .command('consumption')
     .argument(
       '[appName]',
@@ -537,10 +536,10 @@ export function registerRuntimeCommand(program: Command): void {
       'Show per-app token consumption + violation breakdown (SCM dashboard). Omit appName to scan all apps.',
     )
     .option('--time-interval <n>', 'Window in days: 7, 30, or 60', '30')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (appName: string | undefined, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(customerAppsConsumption, opts);
         const interval = Number.parseInt(opts.timeInterval, 10);
         if (interval !== 7 && interval !== 30 && interval !== 60) {
           usageError('--time-interval must be 7, 30, or 60 (the API rejects other values)');
@@ -590,14 +589,14 @@ export function registerRuntimeCommand(program: Command): void {
     .command('deployment-profiles')
     .description('List AIRS deployment profiles');
 
-  deploymentProfiles
+  const deploymentProfilesList = deploymentProfiles
     .command('list')
     .description('List deployment profiles')
     .option('--unactivated', 'Include unactivated profiles')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(deploymentProfilesList, opts);
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const profiles = await service.listDeploymentProfiles({
@@ -1092,12 +1091,12 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--filter <filter>', 'Filter: all, benign, threat', 'all')
     .option('--limit <n>', 'Max results per page (API page size)', '50')
     .option('--offset <n>', 'Starting offset — rounds down to a page boundary', '0')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty');
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml');
   registerPageAliases(scanLogsQuery, { sizeFlag: '--page-size', sizeKey: 'pageSize' });
   scanLogsQuery.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(scanLogsQuery, opts, { indexBase: 1 });
-      const fmt = opts.output as OutputFormat;
+      const fmt = await resolveOutput(scanLogsQuery, opts);
       if (fmt === 'pretty') renderRuntimeConfigHeader();
       const service = await createMgmtService();
       const result = await service.queryScanLogs({

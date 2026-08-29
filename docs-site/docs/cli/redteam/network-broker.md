@@ -28,7 +28,7 @@ airs redteam network-broker channels list [options]
 | `--status <status...>` | No | — | Filter by status (`ONLINE`, `OFFLINE`, `DRAFT`) |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -47,7 +47,7 @@ airs redteam network-broker channels get <channelId> [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### redteam network-broker channels create
 
@@ -92,4 +92,4 @@ airs redteam network-broker stats [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |

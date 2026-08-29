@@ -46,7 +46,7 @@ airs aigateway workspace list [options]
 | `--plane <plane>` | No | `data` | Plane to read from: `data` (scoped) or `admin` (whole tenant) |
 | `--status <status>` | No | `active` | Filter by lifecycle state: `active` or `archived` |
 | `--all` | No | — | Merge active + archived admin-plane reads (whole tenant, both states) |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 Without `--status`, archived workspaces are omitted entirely — there is no
 single call returning both states, so `--all` merges two admin-plane reads.
@@ -76,7 +76,7 @@ airs aigateway workspace get <ref> [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--plane <plane>` | No | `data` | Plane to read from: `data` (scoped) or `admin` (whole tenant) |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 A workspace outside your workspace scope answers `403 AB03` on the data plane
 (not 404) — re-read it with `--plane admin`. An **archived** workspace answers

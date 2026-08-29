@@ -136,13 +136,13 @@ airs runtime topics get [options] <nameOrId>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 | `--revision <n>` | No | latest | Select an exact revision |
 | `--all-versions` | No | — | Return every matching revision as a list |
 
 #### Examples
 
-*Pretty output (default) — accepts topic name or UUID*
+*Pretty output (fallback `pretty`) — accepts topic name or UUID*
 
 ```bash
 airs runtime topics get "Professional authority"
@@ -214,11 +214,11 @@ airs runtime topics list [options]
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--all-versions` | No | — | Include historical revisions instead of latest-only results |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs runtime topics list --limit 3

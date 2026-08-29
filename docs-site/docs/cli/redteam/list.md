@@ -23,7 +23,7 @@ airs redteam list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### Examples
 

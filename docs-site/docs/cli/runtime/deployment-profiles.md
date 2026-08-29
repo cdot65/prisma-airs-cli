@@ -17,11 +17,11 @@ airs runtime deployment-profiles list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--unactivated` | No | — | Include unactivated profiles |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs runtime deployment-profiles list

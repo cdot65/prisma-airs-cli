@@ -28,7 +28,7 @@ airs model-security models list [options]
 | `--offset <n>` | No | — | Starting offset |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -47,7 +47,7 @@ airs model-security models get <uuid> [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### model-security models versions
 
@@ -62,7 +62,7 @@ airs model-security models versions <modelUuid> [options]
 | `--sort-order <order>` | No | — | Sort order: `asc`, `desc` |
 | `--limit <n>` | No | — | Max results |
 | `--offset <n>` | No | — | Starting offset |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### model-security models version
 
@@ -74,7 +74,7 @@ airs model-security models version <uuid> [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### model-security models files
 
@@ -88,4 +88,4 @@ airs model-security models files <modelVersionUuid> [options]
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | — | Max results |
 | `--offset <n>` | No | — | Starting offset |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |

@@ -1,5 +1,15 @@
 # Release Notes
 
+## v4.0.1 (2026-08-29)
+
+### Fixed
+
+- Read commands with legacy Commander defaults now honor the documented output precedence instead
+  of allowing an internal `pretty` default to mask global, config-file, or environment selection.
+- Empty JSON and YAML lists consistently emit bare arrays (`[]`), including scan-log queries.
+- CLI reference tables now describe output as **Resolved** rather than claiming the unconditional
+  default is `pretty`, and captured pretty examples state the configuration assumption explicitly.
+
 ## v4.0.0 (2026-08-29)
 
 ### Changed (breaking)

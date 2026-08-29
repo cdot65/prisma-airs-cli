@@ -20,11 +20,11 @@ airs runtime api-keys list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default) — `last8` is the trailing 8 chars of the secret; full key is only echoed on create / regenerate*
+*Pretty output (fallback `pretty`) — `last8` is the trailing 8 chars of the secret; full key is only echoed on create / regenerate*
 
 ```bash
 airs runtime api-keys list --limit 2

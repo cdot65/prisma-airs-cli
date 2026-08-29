@@ -21,14 +21,14 @@ airs runtime scan-logs query [options]
 | `--filter <filter>` | No | `all` | Filter: all, benign, threat |
 | `--limit <n>` | No | `50` | Max results per page (API page size) |
 | `--offset <n>` | No | `0` | Starting offset — rounds down to a page boundary |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### Examples
 
 *Empty result for a 24-hour window. The upstream `/v1/mgmt/scanlogs` endpoint only accepts a fixed set of (interval, unit) pairs — `(1, hours)`, `(24, hours)`, `(7, days)`, `(30, days)`. Anything else returns API 400.*
 
 ```bash
-airs runtime scan-logs query --interval 24 --unit hours --limit 5
+airs runtime scan-logs query --interval 24 --unit hours --limit 5 --output pretty
 ```
 
 ```text
@@ -38,22 +38,22 @@ Security profile and topic management
 No scan logs found.
 ```
 
-*JSON output (the renderer short-circuits the empty case across all formats, so JSON returns the same status line, not `[]`)*
+*JSON output uses the list contract even when the result is empty.*
 
 ```bash
 airs runtime scan-logs query --interval 24 --unit hours --limit 5 --output json
 ```
 
-```text
-No scan logs found.
+```json
+[]
 ```
 
-*YAML output (same empty-state shape as JSON)*
+*YAML output uses the same bare-array shape.*
 
 ```bash
 airs runtime scan-logs query --interval 24 --unit hours --limit 5 --output yaml
 ```
 
-```text
-No scan logs found.
+```yaml
+[]
 ```

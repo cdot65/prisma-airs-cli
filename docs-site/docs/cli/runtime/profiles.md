@@ -21,11 +21,11 @@ airs runtime profiles list [options]
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--all-versions` | No | — | Include historical revisions instead of latest-only results |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs runtime profiles list --limit 2
@@ -106,11 +106,11 @@ airs runtime profiles get [options] <nameOrId>
 |------|:--------:|---------|-------------|
 | `--revision <n>` | No | latest | Select an exact revision |
 | `--all-versions` | No | — | Return every matching revision as a list |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs runtime profiles get docs-example-profile

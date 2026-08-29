@@ -22,7 +22,7 @@ airs model-security rules list [options]
 | `--offset <n>` | No | `0` | Starting offset |
 | `--all` | No | — | Walk every page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -67,11 +67,11 @@ airs model-security rules get [options] <uuid>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default; no --output flag on this command)*
+*Pretty output (fallback `pretty`; no output override in this example)*
 
 ```bash
 airs model-security rules get 550e8400-e29b-41d4-a716-44665544000b

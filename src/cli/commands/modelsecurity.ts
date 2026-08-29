@@ -29,6 +29,7 @@ import {
   renderRuleList,
   renderViolationDetail,
   renderViolationList,
+  resolveOutput,
   ui,
   usageError,
 } from '../renderer/index.js';
@@ -74,7 +75,7 @@ export function registerModelSecurityCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const groups = ms.command('groups').description('Manage security groups');
 
-  groups
+  const groupsList = groups
     .command('list')
     .description('List security groups')
     .option('--source-types <types>', 'Filter by source types (comma-separated)')
@@ -83,10 +84,10 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--sort-dir <dir>', 'Sort direction (asc, desc)')
     .option('--enabled-rules <uuids>', 'Filter by enabled rule UUIDs (comma-separated)')
     .option('--limit <n>', 'Max results', '20')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(groupsList, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const listOptions = {
@@ -111,13 +112,13 @@ export function registerModelSecurityCommand(program: Command): void {
       }
     });
 
-  groups
+  const groupsGet = groups
     .command('get <uuid>')
     .description('Get security group details')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (uuid: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(groupsGet, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const group = await service.getGroup(uuid);
@@ -446,16 +447,16 @@ export function registerModelSecurityCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const rules = ms.command('rules').description('Browse security rules');
 
-  rules
+  const rulesList = rules
     .command('list')
     .description('List available security rules')
     .option('--source-type <type>', 'Filter by source type')
     .option('--search <query>', 'Search by name or UUID')
     .option('--limit <n>', 'Max results', '20')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(rulesList, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const listOptions = {
@@ -493,7 +494,7 @@ export function registerModelSecurityCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const scans = ms.command('scans').description('Model security scan operations');
 
-  scans
+  const scansList = scans
     .command('list')
     .description('List model security scans')
     .option('--eval-outcome <outcome>', 'Filter by eval outcome')
@@ -501,7 +502,7 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--scan-origin <origin>', 'Filter by scan origin')
     .option('--search <query>', 'Search scans')
     .option('--limit <n>', 'Max results', '20')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
       examples(
@@ -512,7 +513,7 @@ export function registerModelSecurityCommand(program: Command): void {
     )
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(scansList, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const listOptions = {
@@ -652,7 +653,7 @@ export function registerModelSecurityCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const models = ms.command('models').description('Browse the scanned model catalog (read-only)');
 
-  models
+  const modelsList = models
     .command('list')
     .description('List models in the catalog')
     .option('--search <text>', 'Filter by search text')
@@ -661,11 +662,11 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--sort-order <order>', 'Sort order: asc, desc')
     .option('--limit <n>', 'Max results')
     .option('--offset <n>', 'Starting offset')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText('after', examples('airs model-security models list'))
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(modelsList, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const listOptions = {
@@ -685,13 +686,13 @@ export function registerModelSecurityCommand(program: Command): void {
       }
     });
 
-  models
+  const modelsGet = models
     .command('get <uuid>')
     .description('Get a model by UUID')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (uuid: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(modelsGet, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const model = await service.getModel(uuid);
@@ -701,16 +702,16 @@ export function registerModelSecurityCommand(program: Command): void {
       }
     });
 
-  models
+  const modelVersions = models
     .command('versions <modelUuid>')
     .description('List versions of a model')
     .option('--sort-order <order>', 'Sort order: asc, desc')
     .option('--limit <n>', 'Max results')
     .option('--offset <n>', 'Starting offset')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (modelUuid: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(modelVersions, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const result = await service.listModelVersions(modelUuid, {
@@ -724,13 +725,13 @@ export function registerModelSecurityCommand(program: Command): void {
       }
     });
 
-  models
+  const modelVersion = models
     .command('version <uuid>')
     .description('Get a model version by UUID')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (uuid: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(modelVersion, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const version = await service.getModelVersion(uuid);
@@ -740,15 +741,15 @@ export function registerModelSecurityCommand(program: Command): void {
       }
     });
 
-  models
+  const modelFiles = models
     .command('files <modelVersionUuid>')
     .description('List files in a model version')
     .option('--limit <n>', 'Max results')
     .option('--offset <n>', 'Starting offset')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (modelVersionUuid: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(modelFiles, opts);
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const result = await service.listModelVersionFiles(modelVersionUuid, {

@@ -21,11 +21,11 @@ airs runtime dlp profiles list [options]
 | `--all` | No | — | Walk every API page |
 | `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--sort <field,dir>` | No | — | Sort criteria (repeatable) |
-| `--output <fmt>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--output <fmt>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default)*
+*Pretty output (fallback `pretty`)*
 
 ```bash
 airs runtime dlp profiles list --limit 2 --sort id,asc
@@ -279,7 +279,7 @@ airs runtime dlp profiles get [options] <id>
 
 #### Examples
 
-*Pretty output (default — predefined profile)*
+*Pretty output (fallback `pretty` — predefined profile)*
 
 ```bash
 airs runtime dlp profiles get 00000001
