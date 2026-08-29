@@ -18,8 +18,10 @@ airs runtime dlp patterns list [options]
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | — | Max results per page (API page size) |
 | `--offset <n>` | No | — | Starting offset — rounds down to a page boundary |
+| `--all` | No | — | Walk every API page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--sort <field,dir>` | No | — | Sort criteria (repeatable) |
-| `--output <fmt>` | No | `pretty` | Output format |
+| `--output <fmt>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -47,32 +49,22 @@ airs runtime dlp patterns list --limit 2 --sort name,asc --output json
 ```
 
 ```text
-{
-  "items": [
-    {
-      "id": "000000000000000000000001",
-      "name": "API Credentials Client ID - Amazon Web Services AWS",
-      "type": "predefined",
-      "status": "disabled",
-      "technique": "regex",
-      "version": 1
-    },
-    {
-      "id": "000000000000000000000002",
-      "name": "API Credentials Client ID - Bitly",
-      "type": "predefined",
-      "status": "disabled",
-      "technique": "regex",
-      "version": 1
-    }
-  ],
-  "page": {
-    "number": 0,
-    "size": 2,
-    "total": 1126,
-    "returned": 2
+[
+  {
+    "id": "000000000000000000000001",
+    "name": "API Credentials Client ID - Amazon Web Services AWS",
+    "type": "predefined",
+    "status": "disabled",
+    "version": 1
+  },
+  {
+    "id": "000000000000000000000002",
+    "name": "API Credentials Client ID - Bitly",
+    "type": "predefined",
+    "status": "disabled",
+    "version": 1
   }
-}
+]
 ```
 
 *YAML output*
@@ -82,24 +74,16 @@ airs runtime dlp patterns list --limit 2 --sort name,asc --output yaml
 ```
 
 ```text
-items:
-  - id: 000000000000000000000001
-    name: API Credentials Client ID - Amazon Web Services AWS
-    type: predefined
-    status: disabled
-    technique: regex
-    version: 1
-  - id: 000000000000000000000002
-    name: API Credentials Client ID - Bitly
-    type: predefined
-    status: disabled
-    technique: regex
-    version: 1
-page:
-  number: 0
-  size: 2
-  total: 1126
-  returned: 2
+- id: 000000000000000000000001
+  name: API Credentials Client ID - Amazon Web Services AWS
+  type: predefined
+  status: disabled
+  version: 1
+- id: 000000000000000000000002
+  name: API Credentials Client ID - Bitly
+  type: predefined
+  status: disabled
+  version: 1
 ```
 
 ---

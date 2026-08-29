@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetUpdateRequest
 
-Defined in: [src/airs/types.ts:263](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L263)
+Defined in: src/airs/types.ts:263
 
 Request to update a red team target.
 
@@ -10,7 +10,7 @@ Request to update a red team target.
 
 > `optional` **additional\_context?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:268](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L268)
+Defined in: src/airs/types.ts:268
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:268](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **background?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:267](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L267)
+Defined in: src/airs/types.ts:267
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:267](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **connection\_params?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:266](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L266)
+Defined in: src/airs/types.ts:266
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:266](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **metadata?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:269](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L269)
+Defined in: src/airs/types.ts:269
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:269](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **name?**: `string`
 
-Defined in: [src/airs/types.ts:264](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L264)
+Defined in: src/airs/types.ts:264
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [src/airs/types.ts:264](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **target\_type?**: `string`
 
-Defined in: [src/airs/types.ts:265](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L265)
+Defined in: src/airs/types.ts:265

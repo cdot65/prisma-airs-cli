@@ -1,6 +1,6 @@
 # Interface: BackupResult
 
-Defined in: [src/backup/types.ts:16](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L16)
+Defined in: src/backup/types.ts:16
 
 Per-target result reported after a backup run.
 
@@ -10,7 +10,7 @@ Per-target result reported after a backup run.
 
 > `optional` **error?**: `string`
 
-Defined in: [src/backup/types.ts:20](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L20)
+Defined in: src/backup/types.ts:20
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/backup/types.ts:20](https://github.com/cdot65/prisma-airs-cli/b
 
 > **filename**: `string`
 
-Defined in: [src/backup/types.ts:18](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L18)
+Defined in: src/backup/types.ts:18
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/backup/types.ts:18](https://github.com/cdot65/prisma-airs-cli/b
 
 > **name**: `string`
 
-Defined in: [src/backup/types.ts:17](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L17)
+Defined in: src/backup/types.ts:17
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [src/backup/types.ts:17](https://github.com/cdot65/prisma-airs-cli/b
 
 > **status**: `"failed"` \| `"ok"`
 
-Defined in: [src/backup/types.ts:19](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L19)
+Defined in: src/backup/types.ts:19

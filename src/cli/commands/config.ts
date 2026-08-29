@@ -4,7 +4,7 @@ import type { Command } from 'commander';
 import { type ConfigEntry, inspectConfig, resolveConfigFilePath } from '../../config/loader.js';
 import { ConfigSchema } from '../../config/schema.js';
 import { examples } from '../examples.js';
-import { fail, formatOutput, ui, usageError } from '../renderer/index.js';
+import { fail, formatOutput, resolveOutput, ui, usageError } from '../renderer/index.js';
 
 export const CONFIG_KEYS: string[] = Object.keys(ConfigSchema.shape);
 
@@ -114,16 +114,6 @@ function assertKnownKey(key: string): void {
   }
 }
 
-const LIST_FORMATS = ['pretty', 'json', 'yaml'] as const;
-type ListFormat = (typeof LIST_FORMATS)[number];
-
-function parseListFormat(value: string): ListFormat {
-  if (!(LIST_FORMATS as readonly string[]).includes(value)) {
-    usageError(`Invalid --output '${value}'. Valid formats: ${LIST_FORMATS.join(', ')}`);
-  }
-  return value as ListFormat;
-}
-
 const COLUMNS = [
   { key: 'key', label: 'Key' },
   { key: 'value', label: 'Value' },
@@ -143,14 +133,14 @@ export function registerConfigCommand(program: Command): void {
       ),
     );
 
-  config
+  const configList = config
     .command('list')
     .description('Show effective configuration with per-key source (env/file/default)')
-    .option('--output <format>', 'Output format: pretty, json, or yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .option('--reveal', 'Show secret values in full')
     .action(async (opts) => {
       try {
-        const fmt = parseListFormat(opts.output);
+        const fmt = await resolveOutput(configList, opts);
         const filePath = resolveConfigFilePath();
         const rows = buildConfigRows(await inspectConfig(), Boolean(opts.reveal));
 
@@ -167,9 +157,10 @@ export function registerConfigCommand(program: Command): void {
       }
     });
 
-  config
+  const configGet = config
     .command('get <key>')
     .description('Print a single effective config value')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .option('--reveal', 'Show the real value of a secret key')
     .action(async (key: string, opts) => {
       try {
@@ -177,6 +168,12 @@ export function registerConfigCommand(program: Command): void {
         const inspected = await inspectConfig();
         const entry = inspected[key];
         const raw = entry.value == null ? '' : String(entry.value);
+        const fmt = await resolveOutput(configGet, opts);
+        const value = raw !== '' && isSecretKey(key) && !opts.reveal ? maskSecret(raw) : raw;
+        if (fmt !== 'pretty') {
+          console.log(formatOutput([{ key, value, source: entry.source }], COLUMNS, fmt));
+          return;
+        }
 
         if (raw !== '' && isSecretKey(key)) {
           if (opts.reveal) {

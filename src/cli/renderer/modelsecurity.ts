@@ -1,5 +1,4 @@
 import chalk from 'chalk';
-import { dump as yamlDump } from 'js-yaml';
 import type {
   ModelSecurityEvaluation,
   ModelSecurityFile,
@@ -11,8 +10,36 @@ import type {
   ModelSecurityScan,
   ModelSecurityViolation,
 } from '../../airs/types.js';
-import { formatOutput, type OutputFormat } from './common.js';
+import type { OutputFormat } from './common.js';
 import { ui } from './ui.js';
+import { emitDetail, emitList, type ResourceView } from './view.js';
+
+function resourceView<T>(
+  name: string,
+  columns: ResourceView<T>['columns'],
+  pretty: ResourceView<T>['pretty'],
+): ResourceView<T> {
+  return { name, columns, pretty };
+}
+
+function structuredList<T>(
+  name: string,
+  items: T[],
+  columns: ResourceView<T>['columns'],
+  format: OutputFormat,
+  pretty: () => void,
+): void {
+  emitList(resourceView(name, columns, { list: pretty, detail: () => undefined }), items, format);
+}
+
+function structuredDetail<T>(
+  name: string,
+  item: T,
+  format: OutputFormat,
+  pretty: () => void,
+): void {
+  emitDetail(resourceView(name, [], { list: () => undefined, detail: pretty }), item, format);
+}
 
 /** Render the model security banner. */
 export function renderModelSecurityHeader(): void {
@@ -44,29 +71,23 @@ export function renderGroupList(
   groups: ModelSecurityGroup[],
   format: OutputFormat = 'pretty',
 ): void {
-  if (groups.length === 0) {
-    ui.emptyList('security groups');
+  if (format !== 'pretty') {
+    structuredList(
+      'security groups',
+      groups,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'name', label: 'Name' },
+        { key: 'state', label: 'State' },
+        { key: 'sourceType', label: 'Source Type' },
+      ],
+      format,
+      () => undefined,
+    );
     return;
   }
-  if (format !== 'pretty') {
-    const rows = groups.map((g) => ({
-      id: g.uuid,
-      name: g.name,
-      state: g.state,
-      sourceType: g.sourceType,
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name' },
-          { key: 'state', label: 'State' },
-          { key: 'sourceType', label: 'Source Type' },
-        ],
-        format,
-      ),
-    );
+  if (groups.length === 0) {
+    ui.emptyList('security groups');
     return;
   }
   ui.section('Security Groups:');
@@ -83,12 +104,8 @@ export function renderGroupDetail(
   group: ModelSecurityGroup,
   format: OutputFormat = 'pretty',
 ): void {
-  if (format === 'json') {
-    console.log(JSON.stringify(group, null, 2));
-    return;
-  }
-  if (format === 'yaml') {
-    console.log(yamlDump(group));
+  if (format !== 'pretty') {
+    structuredDetail('security group', group, format, () => undefined);
     return;
   }
   ui.section('Security Group Detail:');
@@ -107,31 +124,28 @@ export function renderGroupDetail(
 
 /** Render security rule list. */
 export function renderRuleList(rules: ModelSecurityRule[], format: OutputFormat = 'pretty'): void {
-  if (rules.length === 0) {
-    ui.emptyList('security rules');
+  if (format !== 'pretty') {
+    structuredList(
+      'security rules',
+      rules,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'name', label: 'Name' },
+        { key: 'ruleType', label: 'Type' },
+        { key: 'defaultState', label: 'Default State' },
+        {
+          key: 'compatibleSources',
+          label: 'Sources',
+          get: (rule) => rule.compatibleSources.join(', '),
+        },
+      ],
+      format,
+      () => undefined,
+    );
     return;
   }
-  if (format !== 'pretty') {
-    const rows = rules.map((r) => ({
-      id: r.uuid,
-      name: r.name,
-      type: r.ruleType,
-      defaultState: r.defaultState,
-      sources: r.compatibleSources.join(', '),
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name' },
-          { key: 'type', label: 'Type' },
-          { key: 'defaultState', label: 'Default State' },
-          { key: 'sources', label: 'Sources' },
-        ],
-        format,
-      ),
-    );
+  if (rules.length === 0) {
+    ui.emptyList('security rules');
     return;
   }
   ui.section('Security Rules:');
@@ -147,7 +161,11 @@ export function renderRuleList(rules: ModelSecurityRule[], format: OutputFormat 
 }
 
 /** Render security rule detail. */
-export function renderRuleDetail(rule: ModelSecurityRule): void {
+export function renderRuleDetail(rule: ModelSecurityRule, format: OutputFormat = 'pretty'): void {
+  if (format !== 'pretty') {
+    structuredDetail('security rule', rule, format, () => undefined);
+    return;
+  }
   ui.section('Security Rule Detail:');
   ui.keyValue([
     ['UUID', rule.uuid],
@@ -182,7 +200,24 @@ export function renderRuleDetail(rule: ModelSecurityRule): void {
 }
 
 /** Render rule instance list. */
-export function renderRuleInstanceList(instances: ModelSecurityRuleInstance[]): void {
+export function renderRuleInstanceList(
+  instances: ModelSecurityRuleInstance[],
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    structuredList(
+      'rule instances',
+      instances,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'securityRuleUuid', label: 'Rule ID' },
+        { key: 'state', label: 'State' },
+      ],
+      format,
+      () => undefined,
+    );
+    return;
+  }
   if (instances.length === 0) {
     ui.emptyList('rule instances');
     return;
@@ -197,7 +232,14 @@ export function renderRuleInstanceList(instances: ModelSecurityRuleInstance[]): 
 }
 
 /** Render rule instance detail. */
-export function renderRuleInstanceDetail(instance: ModelSecurityRuleInstance): void {
+export function renderRuleInstanceDetail(
+  instance: ModelSecurityRuleInstance,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    structuredDetail('rule instance', instance, format, () => undefined);
+    return;
+  }
   ui.section('Rule Instance Detail:');
   const pairs: Array<[string, unknown]> = [
     ['UUID', instance.uuid],
@@ -232,35 +274,24 @@ export function renderMsScanList(
   scans: ModelSecurityScan[],
   format: OutputFormat = 'pretty',
 ): void {
-  if (scans.length === 0) {
-    ui.emptyList('scans');
+  if (format !== 'pretty') {
+    structuredList(
+      'scans',
+      scans,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'evalOutcome', label: 'Outcome' },
+        { key: 'scanOrigin', label: 'Origin' },
+        { key: 'modelUri', label: 'Model URI' },
+        { key: 'createdAt', label: 'Created' },
+      ],
+      format,
+      () => undefined,
+    );
     return;
   }
-  if (format !== 'pretty') {
-    const rows = scans.map((s) => ({
-      id: s.uuid,
-      outcome: s.evalOutcome,
-      origin: s.scanOrigin,
-      modelUri: s.modelUri ?? '',
-      createdAt: s.createdAt,
-      passed: s.evalSummary?.rulesPassed ?? '',
-      failed: s.evalSummary?.rulesFailed ?? '',
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'outcome', label: 'Outcome' },
-          { key: 'origin', label: 'Origin' },
-          { key: 'modelUri', label: 'Model URI' },
-          { key: 'passed', label: 'Passed' },
-          { key: 'failed', label: 'Failed' },
-          { key: 'createdAt', label: 'Created' },
-        ],
-        format,
-      ),
-    );
+  if (scans.length === 0) {
+    ui.emptyList('scans');
     return;
   }
   ui.section('Model Security Scans:');
@@ -281,7 +312,11 @@ export function renderMsScanList(
 }
 
 /** Render full scan detail. */
-export function renderMsScanDetail(scan: ModelSecurityScan): void {
+export function renderMsScanDetail(scan: ModelSecurityScan, format: OutputFormat = 'pretty'): void {
+  if (format !== 'pretty') {
+    structuredDetail('scan', scan, format, () => undefined);
+    return;
+  }
   ui.section('Scan Detail:');
   const pairs: Array<[string, unknown]> = [
     ['UUID', scan.uuid],
@@ -313,7 +348,25 @@ export function renderMsScanDetail(scan: ModelSecurityScan): void {
 // ---------------------------------------------------------------------------
 
 /** Render a list of evaluations. */
-export function renderEvaluationList(evaluations: ModelSecurityEvaluation[]): void {
+export function renderEvaluationList(
+  evaluations: ModelSecurityEvaluation[],
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    structuredList(
+      'evaluations',
+      evaluations,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'ruleName', label: 'Rule' },
+        { key: 'result', label: 'Result' },
+        { key: 'ruleInstanceState', label: 'State' },
+      ],
+      format,
+      () => undefined,
+    );
+    return;
+  }
   if (evaluations.length === 0) {
     ui.emptyList('evaluations');
     return;
@@ -329,7 +382,14 @@ export function renderEvaluationList(evaluations: ModelSecurityEvaluation[]): vo
 }
 
 /** Render a single evaluation detail. */
-export function renderEvaluationDetail(evaluation: ModelSecurityEvaluation): void {
+export function renderEvaluationDetail(
+  evaluation: ModelSecurityEvaluation,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    structuredDetail('evaluation', evaluation, format, () => undefined);
+    return;
+  }
   ui.section('Evaluation Detail:');
   ui.keyValue([
     ['UUID', evaluation.uuid],
@@ -348,7 +408,25 @@ export function renderEvaluationDetail(evaluation: ModelSecurityEvaluation): voi
 // ---------------------------------------------------------------------------
 
 /** Render a list of violations. */
-export function renderViolationList(violations: ModelSecurityViolation[]): void {
+export function renderViolationList(
+  violations: ModelSecurityViolation[],
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    structuredList(
+      'violations',
+      violations,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'ruleName', label: 'Rule' },
+        { key: 'file', label: 'File' },
+        { key: 'threat', label: 'Threat' },
+      ],
+      format,
+      () => undefined,
+    );
+    return;
+  }
   if (violations.length === 0) {
     ui.emptyList('violations');
     return;
@@ -364,7 +442,14 @@ export function renderViolationList(violations: ModelSecurityViolation[]): void 
 }
 
 /** Render a single violation detail. */
-export function renderViolationDetail(violation: ModelSecurityViolation): void {
+export function renderViolationDetail(
+  violation: ModelSecurityViolation,
+  format: OutputFormat = 'pretty',
+): void {
+  if (format !== 'pretty') {
+    structuredDetail('violation', violation, format, () => undefined);
+    return;
+  }
   ui.section('Violation Detail:');
   ui.keyValue([
     ['UUID', violation.uuid],
@@ -383,7 +468,22 @@ export function renderViolationDetail(violation: ModelSecurityViolation): void {
 // ---------------------------------------------------------------------------
 
 /** Render a list of scanned files. */
-export function renderFileList(files: ModelSecurityFile[]): void {
+export function renderFileList(files: ModelSecurityFile[], format: OutputFormat = 'pretty'): void {
+  if (format !== 'pretty') {
+    structuredList(
+      'files',
+      files,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'path', label: 'Path' },
+        { key: 'type', label: 'Type' },
+        { key: 'result', label: 'Result' },
+      ],
+      format,
+      () => undefined,
+    );
+    return;
+  }
   if (files.length === 0) {
     ui.emptyList('files');
     return;
@@ -437,31 +537,28 @@ export function renderModelList(
   models: ModelSecurityModel[],
   format: OutputFormat = 'pretty',
 ): void {
-  if (models.length === 0) {
-    ui.emptyList('models');
+  if (format !== 'pretty') {
+    structuredList(
+      'models',
+      models,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'name', label: 'Name' },
+        { key: 'latestVersionOutcome', label: 'Outcome' },
+        {
+          key: 'latestVersionFormats',
+          label: 'Formats',
+          get: (model) => (model.latestVersionFormats ?? []).join(', '),
+        },
+        { key: 'latestVersionScanTime', label: 'Last Scan' },
+      ],
+      format,
+      () => undefined,
+    );
     return;
   }
-  if (format !== 'pretty') {
-    const rows = models.map((m) => ({
-      id: m.uuid,
-      name: m.name,
-      outcome: m.latestVersionOutcome ?? '',
-      formats: (m.latestVersionFormats ?? []).join(', '),
-      scanned: m.latestVersionScanTime ?? '',
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name' },
-          { key: 'outcome', label: 'Outcome' },
-          { key: 'formats', label: 'Formats' },
-          { key: 'scanned', label: 'Last Scan' },
-        ],
-        format,
-      ),
-    );
+  if (models.length === 0) {
+    ui.emptyList('models');
     return;
   }
   ui.section('Models:');
@@ -485,7 +582,7 @@ export function renderModelDetail(
   format: OutputFormat = 'pretty',
 ): void {
   if (format !== 'pretty') {
-    console.log(format === 'json' ? JSON.stringify(model, null, 2) : yamlDump(model));
+    structuredDetail('model', model, format, () => undefined);
     return;
   }
   ui.section('Model Detail:');
@@ -517,31 +614,24 @@ export function renderModelVersionList(
   versions: ModelSecurityModelVersion[],
   format: OutputFormat = 'pretty',
 ): void {
-  if (versions.length === 0) {
-    ui.emptyList('versions');
+  if (format !== 'pretty') {
+    structuredList(
+      'versions',
+      versions,
+      [
+        { key: 'uuid', label: 'ID' },
+        { key: 'revision', label: 'Revision' },
+        { key: 'fileCount', label: 'Files' },
+        { key: 'lastEvalOutcome', label: 'Outcome' },
+        { key: 'latestScanTime', label: 'Last Scan' },
+      ],
+      format,
+      () => undefined,
+    );
     return;
   }
-  if (format !== 'pretty') {
-    const rows = versions.map((v) => ({
-      id: v.uuid,
-      revision: v.revision,
-      files: v.fileCount ?? '',
-      outcome: v.lastEvalOutcome ?? '',
-      scanned: v.latestScanTime ?? '',
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'revision', label: 'Revision' },
-          { key: 'files', label: 'Files' },
-          { key: 'outcome', label: 'Outcome' },
-          { key: 'scanned', label: 'Last Scan' },
-        ],
-        format,
-      ),
-    );
+  if (versions.length === 0) {
+    ui.emptyList('versions');
     return;
   }
   ui.section('Model Versions:');
@@ -562,7 +652,7 @@ export function renderModelVersionDetail(
   format: OutputFormat = 'pretty',
 ): void {
   if (format !== 'pretty') {
-    console.log(format === 'json' ? JSON.stringify(version, null, 2) : yamlDump(version));
+    structuredDetail('model version', version, format, () => undefined);
     return;
   }
   ui.section('Model Version Detail:');
@@ -599,31 +689,12 @@ export function renderModelFileList(
   files: ModelSecurityFile[],
   format: OutputFormat = 'pretty',
 ): void {
-  if (files.length === 0) {
-    ui.emptyList('files');
+  if (format !== 'pretty') {
+    renderFileList(files, format);
     return;
   }
-  if (format !== 'pretty') {
-    const rows = files.map((f) => ({
-      id: f.uuid,
-      path: f.path,
-      type: f.type,
-      formats: f.formats.join(', '),
-      result: f.result,
-    }));
-    console.log(
-      formatOutput(
-        rows,
-        [
-          { key: 'id', label: 'ID' },
-          { key: 'path', label: 'Path' },
-          { key: 'type', label: 'Type' },
-          { key: 'formats', label: 'Formats' },
-          { key: 'result', label: 'Result' },
-        ],
-        format,
-      ),
-    );
+  if (files.length === 0) {
+    ui.emptyList('files');
     return;
   }
   renderFileList(files);

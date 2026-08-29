@@ -17,7 +17,7 @@ airs runtime deployment-profiles list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--unactivated` | No | — | Include unactivated profiles |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### Examples
 

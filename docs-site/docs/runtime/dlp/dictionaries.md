@@ -27,22 +27,22 @@ airs runtime dlp dictionaries list --limit 50 --offset 0 --output json
 airs runtime dlp dictionaries list --keywords  # Include keyword array in output
 ```
 
-**Output (`--output json`)** — curated `{items, page}` projection. `status`, `keywords`, and `version` are omitted from JSON when undefined (typical for predefined entries):
+**Output (`--output json`)** — a bare array of complete camelCase records.
+Optional fields are omitted when the API does not return them:
 
 ```json
-{
-  "items": [
+[
     {
       "id": "6901...",
       "name": "Bank Names",
       "type": "predefined"
     }
-  ],
-  "page": { "number": 0, "size": 25, "total": 32, "returned": 1 }
-}
+]
 ```
 
-Custom entries with status/version populated include those fields. The `keywords` field shows the count (not the array) when the underlying entry has a populated keyword list. Use `get <id> --keywords` for the full keyword list and other nested fields (`description`, `category`, `region_name`, `is_case_sensitive`, `detection_technique`, `dictionary_metadata`, `tags`, `audit_metadata`).
+Custom entries with status/version populated include those fields. Pass
+`--keywords` when the full keyword list is needed. Use `get <id> --keywords`
+for nested fields such as `dictionaryMetadata`, `tags`, and `auditMetadata`.
 
 ## create
 

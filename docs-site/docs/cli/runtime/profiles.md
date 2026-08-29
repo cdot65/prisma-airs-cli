@@ -18,7 +18,10 @@ airs runtime profiles list [options]
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | `100` | Max results |
 | `--offset <n>` | No | `0` | Starting offset |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--all-versions` | No | — | Include historical revisions instead of latest-only results |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -52,36 +55,35 @@ airs runtime profiles list --limit 2 --output json
 ```text
 [
   {
-    "id": "00000000-0000-0000-0000-000000000001",
-    "name": "docs-example-profile",
-    "status": "active",
+    "profileId": "00000000-0000-0000-0000-000000000001",
+    "profileName": "docs-example-profile",
+    "active": true,
     "revision": 1
   },
   {
-    "id": "00000000-0000-0000-0000-000000000002",
-    "name": "example-other-profile",
-    "status": "active",
+    "profileId": "00000000-0000-0000-0000-000000000002",
+    "profileName": "example-other-profile",
+    "active": true,
     "revision": 6
   }
 ]
 ```
 
-*YAML output (multi-doc stream — one document per profile)*
+*YAML output (one sequence containing complete records)*
 
 ```bash
 airs runtime profiles list --limit 2 --output yaml
 ```
 
 ```text
-id: 00000000-0000-0000-0000-000000000001
-name: docs-example-profile
-status: active
-revision: 1
----
-id: 00000000-0000-0000-0000-000000000002
-name: example-other-profile
-status: active
-revision: 6
+- profileId: 00000000-0000-0000-0000-000000000001
+  profileName: docs-example-profile
+  active: true
+  revision: 1
+- profileId: 00000000-0000-0000-0000-000000000002
+  profileName: example-other-profile
+  active: true
+  revision: 6
 ```
 
 ---
@@ -102,7 +104,9 @@ airs runtime profiles get [options] <nameOrId>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+| `--revision <n>` | No | latest | Select an exact revision |
+| `--all-versions` | No | — | Return every matching revision as a list |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

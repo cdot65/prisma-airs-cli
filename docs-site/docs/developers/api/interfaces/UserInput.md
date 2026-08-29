@@ -1,6 +1,6 @@
 # Interface: UserInput
 
-Defined in: [src/core/types.ts:17](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L17)
+Defined in: src/core/types.ts:17
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [src/core/types.ts:17](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **accumulateTests?**: `boolean`
 
-Defined in: [src/core/types.ts:27](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L27)
+Defined in: src/core/types.ts:27
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [src/core/types.ts:27](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **createPromptSet?**: `boolean`
 
-Defined in: [src/core/types.ts:29](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L29)
+Defined in: src/core/types.ts:29
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/core/types.ts:29](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **intent**: `"allow"` \| `"block"`
 
-Defined in: [src/core/types.ts:19](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L19)
+Defined in: src/core/types.ts:19
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/core/types.ts:19](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **maxAccumulatedTests?**: `number`
 
-Defined in: [src/core/types.ts:28](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L28)
+Defined in: src/core/types.ts:28
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [src/core/types.ts:28](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **maxIterations?**: `number`
 
-Defined in: [src/core/types.ts:22](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L22)
+Defined in: src/core/types.ts:22
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [src/core/types.ts:22](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **maxRegressions?**: `number`
 
-Defined in: [src/core/types.ts:24](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L24)
+Defined in: src/core/types.ts:24
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: [src/core/types.ts:24](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **plateauBand?**: `number`
 
-Defined in: [src/core/types.ts:26](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L26)
+Defined in: src/core/types.ts:26
 
 ***
 
@@ -64,7 +64,7 @@ Defined in: [src/core/types.ts:26](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **plateauWindow?**: `number`
 
-Defined in: [src/core/types.ts:25](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L25)
+Defined in: src/core/types.ts:25
 
 ***
 
@@ -72,7 +72,7 @@ Defined in: [src/core/types.ts:25](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **profileName**: `string`
 
-Defined in: [src/core/types.ts:21](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L21)
+Defined in: src/core/types.ts:21
 
 ***
 
@@ -80,7 +80,7 @@ Defined in: [src/core/types.ts:21](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **promptSetName?**: `string`
 
-Defined in: [src/core/types.ts:30](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L30)
+Defined in: src/core/types.ts:30
 
 ***
 
@@ -88,7 +88,7 @@ Defined in: [src/core/types.ts:30](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **scanRate?**: `number`
 
-Defined in: [src/core/types.ts:32](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L32)
+Defined in: src/core/types.ts:32
 
 Max AIRS scan API calls per second. Undefined = unlimited.
 
@@ -98,7 +98,7 @@ Max AIRS scan API calls per second. Undefined = unlimited.
 
 > `optional` **seedExamples?**: `string`[]
 
-Defined in: [src/core/types.ts:20](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L20)
+Defined in: src/core/types.ts:20
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: [src/core/types.ts:20](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **targetCoverage?**: `number`
 
-Defined in: [src/core/types.ts:23](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L23)
+Defined in: src/core/types.ts:23
 
 ***
 
@@ -114,4 +114,4 @@ Defined in: [src/core/types.ts:23](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **topicDescription**: `string`
 
-Defined in: [src/core/types.ts:18](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L18)
+Defined in: src/core/types.ts:18

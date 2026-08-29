@@ -22,7 +22,8 @@ For settings you use across every run, create `~/.prisma-airs/config.json`:
 
 ```json title="~/.prisma-airs/config.json"
 {
-  "scanConcurrency": 5
+  "scanConcurrency": 5,
+  "defaultOutput": "json"
 }
 ```
 
@@ -33,12 +34,15 @@ The `airs config` command group manages `~/.prisma-airs/config.json` without han
 ```bash
 airs config list                     # Effective config: every key, value, and source (env/file/default)
 airs config get scanConcurrency      # Print a single effective value
+airs config get defaultOutput --output yaml
 airs config set scanConcurrency 3    # Validate via schema and write to the config file
 airs config unset scanConcurrency    # Remove the key from the file (defaults take over)
 airs config path                     # Print the config file path (pipe-friendly)
 ```
 
-- **`list`** shows the full effective configuration with a `Source` column so you can see where each value comes from in the cascade. Supports `--output pretty|json|yaml`.
+- **`list` and `get`** show effective values and their source. Both support
+  `--output pretty|table|markdown|csv|json|yaml`; structured `get` output is a
+  `{key, value, source}` record.
 - **`set`** validates the resulting config through the schema before writing — invalid values (for example `scanConcurrency` above 20) are rejected with exit code 2 and nothing is written. Unknown keys already present in the file are preserved.
 - **`unset`** removes a key from the file; if the key is not set, the command is a no-op.
 - **`path`** prints only the resolved config file path, which honors the `PRISMA_AIRS_CONFIG_PATH` environment variable override.
@@ -62,6 +66,7 @@ These settings control how Prisma AIRS CLI interacts with AIRS.
 |---------|-----------|---------|-------------|
 | `SCAN_CONCURRENCY` | `scanConcurrency` | `5` | Parallel scan requests per batch (1--20) |
 | `DATA_DIR` | `dataDir` | `~/.prisma-airs/runs` | Data directory |
+| `PANW_CLI_OUTPUT` | `defaultOutput` | `pretty` | Default read format: `pretty`, `table`, `markdown`, `csv`, `json`, or `yaml` |
 
 :::tip[Concurrency vs. rate limits]
 Keep `scanConcurrency` at 5 or lower to avoid AIRS rate limiting. Increase only if your tenant has elevated quotas.

@@ -296,7 +296,10 @@ Target Detail:
 The reconstructed `curl` template proves the server stored the request shape correctly and masked your bearer token. You can copy that command, swap `{INPUT}` for a real prompt, and verify the endpoint by hand.
 
 :::warning[Gotcha: nested objects render as `[object Object]` and there is no `--output json`]
-`targets get` flattens nested objects (`request_headers`, `request_json`, `response_json`) to the literal string `[object Object]` in pretty mode, and the command does **not** accept `--output json|yaml` — only pretty. To inspect the nested fields, re-run with `airs --debug` and read the raw API response from `~/.prisma-airs/debug-api-*.jsonl`.
+`targets get` preserves nested connection fields. Use `--output json` or
+`--output yaml` for the complete normalized object, or a tabular format for a
+two-column Key/Value view. `airs --debug` remains useful for inspecting the
+secret-redacted wire response in `~/.prisma-airs/debug-api-*.jsonl`.
 :::
 
 ---

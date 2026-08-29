@@ -33,6 +33,7 @@ export const ConfigSchema = z.object({
 
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),
+  defaultOutput: z.enum(['pretty', 'table', 'markdown', 'csv', 'json', 'yaml']).optional(),
 
   // Persistence
   dataDir: z.string().default('~/.prisma-airs/runs'),

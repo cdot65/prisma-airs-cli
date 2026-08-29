@@ -1,6 +1,6 @@
 # Interface: TestResult
 
-Defined in: [src/core/types.ts:57](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L57)
+Defined in: src/core/types.ts:57
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [src/core/types.ts:57](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **actualTriggered**: `boolean`
 
-Defined in: [src/core/types.ts:59](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L59)
+Defined in: src/core/types.ts:59
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [src/core/types.ts:59](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **correct**: `boolean`
 
-Defined in: [src/core/types.ts:63](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L63)
+Defined in: src/core/types.ts:63
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/core/types.ts:63](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **reportId**: `string`
 
-Defined in: [src/core/types.ts:62](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L62)
+Defined in: src/core/types.ts:62
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/core/types.ts:62](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **scanAction**: `"allow"` \| `"block"`
 
-Defined in: [src/core/types.ts:60](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L60)
+Defined in: src/core/types.ts:60
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [src/core/types.ts:60](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **scanId**: `string`
 
-Defined in: [src/core/types.ts:61](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L61)
+Defined in: src/core/types.ts:61
 
 ***
 
@@ -48,4 +48,4 @@ Defined in: [src/core/types.ts:61](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **testCase**: [`TestCase`](TestCase.md)
 
-Defined in: [src/core/types.ts:58](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L58)
+Defined in: src/core/types.ts:58

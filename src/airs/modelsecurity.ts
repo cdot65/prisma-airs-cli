@@ -229,6 +229,21 @@ export class SdkModelSecurityService implements ModelSecurityService {
     };
   }
 
+  async listAllGroups(
+    opts: ModelSecurityGroupListOptions & { max?: number } = {},
+  ): Promise<ModelSecurityGroup[]> {
+    const rows = await this.client.securityGroups.listAll({
+      source_types: opts.sourceTypes,
+      search_query: opts.searchQuery,
+      sort_field: opts.sortField,
+      sort_dir: opts.sortDir,
+      enabled_rules: opts.enabledRules,
+      limit: opts.limit,
+      max: opts.max,
+    });
+    return rows.map((row) => normalizeGroup(row as unknown as Record<string, unknown>));
+  }
+
   async getGroup(uuid: string): Promise<ModelSecurityGroup> {
     const response = await this.client.securityGroups.get(uuid);
     return normalizeGroup(response as unknown as Record<string, unknown>);
@@ -355,6 +370,18 @@ export class SdkModelSecurityService implements ModelSecurityService {
     };
   }
 
+  async listAllRules(
+    opts: ModelSecurityRuleListOptions & { max?: number } = {},
+  ): Promise<ModelSecurityRule[]> {
+    const rows = await this.client.securityRules.listAll({
+      source_type: opts.sourceType,
+      search_query: opts.searchQuery,
+      limit: opts.limit,
+      max: opts.max,
+    });
+    return rows.map((row) => normalizeRule(row as unknown as Record<string, unknown>));
+  }
+
   async getRule(uuid: string): Promise<ModelSecurityRule> {
     const response = await this.client.securityRules.get(uuid);
     return normalizeRule(response as unknown as Record<string, unknown>);
@@ -389,6 +416,19 @@ export class SdkModelSecurityService implements ModelSecurityService {
       totalItems: raw.pagination.total_items ?? 0,
       scans: raw.scans.map(normalizeScan),
     };
+  }
+
+  async listAllScans(
+    opts: ModelSecurityScanListOptions & { max?: number } = {},
+  ): Promise<ModelSecurityScan[]> {
+    const rows = await this.client.scans.listAll({
+      eval_outcomes: opts.evalOutcome === undefined ? undefined : [opts.evalOutcome],
+      source_types: opts.sourceType === undefined ? undefined : [opts.sourceType],
+      search_query: opts.search,
+      limit: opts.limit,
+      max: opts.max,
+    });
+    return rows.map((row) => normalizeScan(row as unknown as Record<string, unknown>));
   }
 
   async getScan(uuid: string): Promise<ModelSecurityScan> {
@@ -546,6 +586,20 @@ export class SdkModelSecurityService implements ModelSecurityService {
       totalItems: raw.pagination.total_items ?? 0,
       models: raw.models.map(normalizeModel),
     };
+  }
+
+  async listAllModels(
+    opts: ModelSecurityModelListOptions & { max?: number } = {},
+  ): Promise<ModelSecurityModel[]> {
+    const rows = await this.client.models.listAllModels({
+      search: opts.search,
+      search_query: opts.searchQuery,
+      sort_field: opts.sortField,
+      sort_order: opts.sortOrder,
+      limit: opts.limit,
+      max: opts.max,
+    });
+    return rows.map((row) => normalizeModel(row as unknown as Record<string, unknown>));
   }
 
   async getModel(uuid: string): Promise<ModelSecurityModel> {

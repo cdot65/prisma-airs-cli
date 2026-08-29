@@ -13,6 +13,13 @@ describe('ConfigSchema', () => {
     expect(config.scanConcurrency).toBe(10);
   });
 
+  it('accepts every output format and rejects unknown formats', () => {
+    for (const defaultOutput of ['pretty', 'table', 'markdown', 'csv', 'json', 'yaml']) {
+      expect(ConfigSchema.parse({ defaultOutput }).defaultOutput).toBe(defaultOutput);
+    }
+    expect(() => ConfigSchema.parse({ defaultOutput: 'xml' })).toThrow();
+  });
+
   it('rejects scanConcurrency below 1', () => {
     expect(() => ConfigSchema.parse({ scanConcurrency: 0 })).toThrow();
   });

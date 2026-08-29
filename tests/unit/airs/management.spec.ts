@@ -29,8 +29,10 @@ const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockList = vi.fn();
+const mockListAll = vi.fn();
 const mockForceDelete = vi.fn();
 const mockProfileList = vi.fn();
+const mockProfileListAll = vi.fn();
 const mockProfileGet = vi.fn();
 const mockProfileGetByName = vi.fn();
 const mockProfileUpdate = vi.fn();
@@ -38,10 +40,12 @@ const mockProfileCreate = vi.fn();
 const mockProfileDelete = vi.fn();
 const mockProfileForceDelete = vi.fn();
 const mockApiKeysList = vi.fn();
+const mockApiKeysListAll = vi.fn();
 const mockApiKeysCreate = vi.fn();
 const mockApiKeysRegenerate = vi.fn();
 const mockApiKeysDelete = vi.fn();
 const mockCustomerAppsList = vi.fn();
+const mockCustomerAppsListAll = vi.fn();
 const mockCustomerAppsGet = vi.fn();
 const mockCustomerAppsUpdate = vi.fn();
 const mockCustomerAppsDelete = vi.fn();
@@ -58,10 +62,12 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
       update: mockUpdate,
       delete: mockDelete,
       list: mockList,
+      listAll: mockListAll,
       forceDelete: mockForceDelete,
     },
     profiles: {
       list: mockProfileList,
+      listAll: mockProfileListAll,
       get: mockProfileGet,
       getByName: mockProfileGetByName,
       update: mockProfileUpdate,
@@ -71,12 +77,14 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
     },
     apiKeys: {
       list: mockApiKeysList,
+      listAll: mockApiKeysListAll,
       create: mockApiKeysCreate,
       regenerate: mockApiKeysRegenerate,
       delete: mockApiKeysDelete,
     },
     customerApps: {
       list: mockCustomerAppsList,
+      listAll: mockCustomerAppsListAll,
       get: mockCustomerAppsGet,
       update: mockCustomerAppsUpdate,
       delete: mockCustomerAppsDelete,
@@ -108,6 +116,8 @@ describe('SdkManagementService', () => {
     // Default topics list for revision lookup in assignTopicsToProfile.
     // Tests that need specific revisions can override this mock.
     mockList.mockResolvedValue({ custom_topics: [] });
+    mockListAll.mockImplementation(async () => (await mockList()).custom_topics ?? []);
+    mockProfileListAll.mockImplementation(async () => (await mockProfileList()).ai_profiles ?? []);
   });
 
   describe('createTopic', () => {
@@ -191,6 +201,12 @@ describe('SdkManagementService', () => {
   });
 
   describe('listTopics', () => {
+    it('requests SDK latest-only grouping with pagination', async () => {
+      mockList.mockResolvedValue({ custom_topics: [{ topic_name: 'latest', revision: 2 }] });
+      await expect(service.listLatestTopics({ offset: 4, limit: 2 })).resolves.toHaveLength(1);
+      expect(mockList).toHaveBeenCalledWith({ latestOnly: true, offset: 4, limit: 2 });
+    });
+
     it('lists topics and unwraps custom_topics array', async () => {
       mockList.mockResolvedValue({
         custom_topics: [
@@ -237,6 +253,17 @@ describe('SdkManagementService', () => {
   });
 
   describe('getTopicByName', () => {
+    it('returns the highest revision when a name has multiple versions', async () => {
+      mockList.mockResolvedValue({
+        custom_topics: [
+          { topic_id: 'old', topic_name: 'Versioned', revision: 1 },
+          { topic_id: 'new', topic_name: 'Versioned', revision: 3 },
+          { topic_id: 'middle', topic_name: 'Versioned', revision: 2 },
+        ],
+      });
+      await expect(service.getTopicByName('Versioned')).resolves.toMatchObject({ topic_id: 'new' });
+    });
+
     it('returns matching topic by name', async () => {
       mockList.mockResolvedValue({
         custom_topics: [
@@ -847,6 +874,16 @@ describe('SdkManagementService', () => {
   });
 
   describe('listProfiles', () => {
+    it('walks all profile pages through the SDK and normalizes records', async () => {
+      mockProfileListAll.mockResolvedValue([
+        { profile_id: 'all-1', profile_name: 'All', revision: 2, active: true },
+      ]);
+      await expect(service.listAllProfiles({ latest: true, max: 500 })).resolves.toEqual([
+        expect.objectContaining({ profileId: 'all-1', profileName: 'All' }),
+      ]);
+      expect(mockProfileListAll).toHaveBeenCalledWith({ latest: true, max: 500 });
+    });
+
     it('lists profiles and returns normalized results', async () => {
       mockProfileList.mockResolvedValue({
         ai_profiles: [
@@ -1330,6 +1367,26 @@ describe('SdkManagementService', () => {
   });
 
   describe('listConsumptionApps', () => {
+    it('walks every dashboard page before normalizing buckets', async () => {
+      mockDashboardApplicationsOverview
+        .mockResolvedValueOnce({
+          items: [
+            { id: 'one', name: 'One' },
+            { id: 'two', name: 'Two' },
+          ],
+          pagination: { total_items: 3 },
+        })
+        .mockResolvedValueOnce({
+          items: [{ id: 'three', name: 'Three' }],
+          pagination: { total_items: 3 },
+        });
+      await expect(service.listConsumptionApps({ limit: 2 })).resolves.toHaveLength(3);
+      expect(mockDashboardApplicationsOverview).toHaveBeenNthCalledWith(2, {
+        limit: 2,
+        offset: 2,
+      });
+    });
+
     it('enumerates dashboard buckets and normalizes shape', async () => {
       mockDashboardApplicationsOverview.mockResolvedValue({
         items: [

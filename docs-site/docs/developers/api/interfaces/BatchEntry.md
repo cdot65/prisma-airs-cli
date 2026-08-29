@@ -1,6 +1,6 @@
 # Interface: BatchEntry
 
-Defined in: [src/airs/types.ts:67](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L67)
+Defined in: src/airs/types.ts:67
 
 Correlation data for one prompt accepted in an async AIRS submission.
 
@@ -14,7 +14,7 @@ Correlation data for one prompt accepted in an async AIRS submission.
 
 > **index**: `number`
 
-Defined in: [src/airs/types.ts:62](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L62)
+Defined in: src/airs/types.ts:62
 
 #### Inherited from
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:62](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **prompt**: `string`
 
-Defined in: [src/airs/types.ts:63](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L63)
+Defined in: src/airs/types.ts:63
 
 #### Inherited from
 
@@ -38,7 +38,7 @@ Defined in: [src/airs/types.ts:63](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **reqId**: `number`
 
-Defined in: [src/airs/types.ts:69](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L69)
+Defined in: src/airs/types.ts:69
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [src/airs/types.ts:69](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **scanId**: `string`
 
-Defined in: [src/airs/types.ts:68](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L68)
+Defined in: src/airs/types.ts:68

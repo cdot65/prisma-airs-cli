@@ -1,6 +1,6 @@
 # Class: SdkRuntimeService
 
-Defined in: [src/airs/runtime.ts:203](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L203)
+Defined in: src/airs/runtime.ts:203
 
 Runtime scanning contract with item-correlated, resumable bulk operations.
 
@@ -14,7 +14,7 @@ Runtime scanning contract with item-correlated, resumable bulk operations.
 
 > **new SdkRuntimeService**(`opts`): `SdkRuntimeService`
 
-Defined in: [src/airs/runtime.ts:206](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L206)
+Defined in: src/airs/runtime.ts:206
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [src/airs/runtime.ts:206](https://github.com/cdot65/prisma-airs-cli/
 
 > **pollBatch**(`batch`, `intervalMs?`, `retryOpts?`): `Promise`\<[`BulkScanResult`](../interfaces/BulkScanResult.md)[]\>
 
-Defined in: [src/airs/runtime.ts:291](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L291)
+Defined in: src/airs/runtime.ts:291
 
 Poll one async submission and return one result per prompt, ordered by input index.
 
@@ -64,7 +64,7 @@ Poll one async submission and return one result per prompt, ordered by input ind
 
 > **pollResults**(`scanIds`, `intervalMs?`, `retryOpts?`): `Promise`\<[`RuntimeScanResult`](../interfaces/RuntimeScanResult.md)[]\>
 
-Defined in: [src/airs/runtime.ts:500](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L500)
+Defined in: src/airs/runtime.ts:500
 
 Compatibility poller for callers that retained only batch scan IDs.
 Nested detection data is preserved, but prompt text and per-request fan-out
@@ -102,7 +102,7 @@ Use pollBatch to preserve `(scan_id, req_id)` correlation and prompt text.
 
 > **scanPrompt**(`profileName`, `prompt`, `response?`): `Promise`\<[`RuntimeScanResult`](../interfaces/RuntimeScanResult.md)\>
 
-Defined in: [src/airs/runtime.ts:211](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L211)
+Defined in: src/airs/runtime.ts:211
 
 Scan a single prompt (and optional response) synchronously.
 
@@ -134,7 +134,7 @@ Scan a single prompt (and optional response) synchronously.
 
 > **submitBatch**(`profileName`, `prompts`, `sessionId?`, `retryOpts?`): `Promise`\<[`SubmittedBatch`](../interfaces/SubmittedBatch.md)\>
 
-Defined in: [src/airs/runtime.ts:229](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L229)
+Defined in: src/airs/runtime.ts:229
 
 Submit one SDK-sized group of indexed prompts for async scanning.
 
@@ -170,7 +170,7 @@ Submit one SDK-sized group of indexed prompts for async scanning.
 
 > **submitBulkScan**(`profileName`, `prompts`, `sessionId?`): `Promise`\<`string`[]\>
 
-Defined in: [src/airs/runtime.ts:469](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L469)
+Defined in: src/airs/runtime.ts:469
 
 #### Parameters
 
@@ -204,7 +204,7 @@ Use submitBatch to preserve per-prompt request correlation.
 
 > `static` **formatResultsCsv**(`results`): `string`
 
-Defined in: [src/airs/runtime.ts:597](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/runtime.ts#L597)
+Defined in: src/airs/runtime.ts:597
 
 #### Parameters
 

@@ -1,6 +1,6 @@
 # Interface: TestCase
 
-Defined in: [src/core/types.ts:38](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L38)
+Defined in: src/core/types.ts:38
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [src/core/types.ts:38](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **category**: `string`
 
-Defined in: [src/core/types.ts:41](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L41)
+Defined in: src/core/types.ts:41
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [src/core/types.ts:41](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **expectedTriggered**: `boolean`
 
-Defined in: [src/core/types.ts:40](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L40)
+Defined in: src/core/types.ts:40
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/core/types.ts:40](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **prompt**: `string`
 
-Defined in: [src/core/types.ts:39](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L39)
+Defined in: src/core/types.ts:39
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/core/types.ts:39](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **source?**: `"generated"` \| `"carried-fp"` \| `"carried-fn"` \| `"regression"`
 
-Defined in: [src/core/types.ts:43](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L43)
+Defined in: src/core/types.ts:43
 
 How this test entered the suite. Default: 'generated'.
 
@@ -42,6 +42,6 @@ How this test entered the suite. Default: 'generated'.
 
 > `optional` **targetTopic?**: `string`
 
-Defined in: [src/core/types.ts:45](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L45)
+Defined in: src/core/types.ts:45
 
 Which topic this test targets (used by audit).

@@ -78,5 +78,5 @@ Polling honors `Retry-After` for rate limits and stops after 120 consecutive pol
 The state file contains original prompt text. The CLI creates the default state directory with mode `0700` and state files with mode `0600`; preserve those protections when copying the file.
 :::
 
-Requires `@cdot65/prisma-airs-sdk` 0.13.2 or later. A per-state lock prevents overlapping resume
+CLI v4 uses `@cdot65/prisma-airs-sdk` 0.18.0 or later. A per-state lock prevents overlapping resume
 processes from submitting the same pending prompt.

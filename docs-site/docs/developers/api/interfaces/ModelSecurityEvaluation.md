@@ -1,6 +1,6 @@
 # Interface: ModelSecurityEvaluation
 
-Defined in: [src/airs/types.ts:846](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L846)
+Defined in: src/airs/types.ts:858
 
 Normalized rule evaluation from a scan.
 
@@ -10,7 +10,7 @@ Normalized rule evaluation from a scan.
 
 > **result**: `string`
 
-Defined in: [src/airs/types.ts:848](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L848)
+Defined in: src/airs/types.ts:860
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:848](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **ruleDescription**: `string`
 
-Defined in: [src/airs/types.ts:852](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L852)
+Defined in: src/airs/types.ts:864
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:852](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **ruleInstanceState**: `string`
 
-Defined in: [src/airs/types.ts:853](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L853)
+Defined in: src/airs/types.ts:865
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:853](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **ruleInstanceUuid**: `string`
 
-Defined in: [src/airs/types.ts:850](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L850)
+Defined in: src/airs/types.ts:862
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:850](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **ruleName**: `string`
 
-Defined in: [src/airs/types.ts:851](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L851)
+Defined in: src/airs/types.ts:863
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:851](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:847](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L847)
+Defined in: src/airs/types.ts:859
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: [src/airs/types.ts:847](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **violationCount**: `number`
 
-Defined in: [src/airs/types.ts:849](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L849)
+Defined in: src/airs/types.ts:861

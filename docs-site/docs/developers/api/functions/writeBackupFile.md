@@ -2,7 +2,7 @@
 
 > **writeBackupFile**\<`T`\>(`dir`, `filename`, `envelope`, `format`): `void`
 
-Defined in: [src/backup/io.ts:27](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/io.ts#L27)
+Defined in: src/backup/io.ts:27
 
 Serialize envelope and write to `dir/filename.{json|yaml}`. Creates dir if needed.
 

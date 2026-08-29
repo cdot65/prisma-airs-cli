@@ -709,7 +709,7 @@ File-only operations; no destructive change to AIRS state. Always safe.
 
 ```bash
 # Backup all targets to local files
-airs redteam targets backup --output-dir ./airs-backup --output yaml
+airs redteam targets backup --output-dir ./airs-backup --file-format yaml
 
 # Backup a single target
 airs redteam targets backup --output-dir ./airs-backup --name "<targetName>"

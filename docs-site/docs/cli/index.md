@@ -8,11 +8,16 @@ slug: /cli/
 
 Auto-generated from the `airs` command tree. Every command below lists its synopsis, options, and at least one input/output example.
 
+All help screens sort commands and options alphabetically. Read commands share
+the six-format and pagination contract described in
+[Exit Codes & Output Streams](../getting-started/exit-codes-and-output.md).
+
 - [`airs aigateway telemetry`](aigateway/telemetry.md)
 - [`airs aigateway workspace`](aigateway/workspaces.md)
 - [`airs model-security groups`](model-security/groups.md)
 - [`airs model-security install`](model-security/install.md)
 - [`airs model-security labels`](model-security/labels.md)
+- [`airs model-security models`](model-security/models.md)
 - [`airs model-security pypi-auth`](model-security/pypi-auth.md)
 - [`airs model-security rule-instances`](model-security/rule-instances.md)
 - [`airs model-security rules`](model-security/rules.md)
@@ -23,7 +28,9 @@ Auto-generated from the `airs` command tree. Every command below lists its synop
 - [`airs redteam devices`](redteam/devices.md)
 - [`airs redteam eula`](redteam/eula.md)
 - [`airs redteam instances`](redteam/instances.md)
+- [`airs redteam languages`](redteam/languages.md)
 - [`airs redteam list`](redteam/list.md)
+- [`airs redteam network-broker`](redteam/network-broker.md)
 - [`airs redteam prompt-sets`](redteam/prompt-sets.md)
 - [`airs redteam prompts`](redteam/prompts.md)
 - [`airs redteam properties`](redteam/properties.md)
@@ -46,3 +53,9 @@ Auto-generated from the `airs` command tree. Every command below lists its synop
 - [`airs runtime scan`](runtime/scan.md)
 - [`airs runtime scan-logs`](runtime/scan-logs.md)
 - [`airs runtime topics`](runtime/topics.md)
+
+Utility commands are documented in the guides:
+
+- [`airs config`](../getting-started/configuration.md)
+- [`airs doctor`](../getting-started/quick-start.md#verifying-your-setup)
+- [`airs completion`](../getting-started/quick-start.md#shell-completion)

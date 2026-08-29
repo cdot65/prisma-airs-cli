@@ -1,6 +1,6 @@
 # Interface: RedTeamAttack
 
-Defined in: [src/airs/types.ts:382](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L382)
+Defined in: src/airs/types.ts:382
 
 Normalized attack list item (static/dynamic scans).
 
@@ -10,7 +10,7 @@ Normalized attack list item (static/dynamic scans).
 
 > `optional` **category?**: `string`
 
-Defined in: [src/airs/types.ts:386](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L386)
+Defined in: src/airs/types.ts:386
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:386](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **id**: `string`
 
-Defined in: [src/airs/types.ts:383](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L383)
+Defined in: src/airs/types.ts:383
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:383](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:384](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L384)
+Defined in: src/airs/types.ts:384
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:384](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **severity?**: `string`
 
-Defined in: [src/airs/types.ts:385](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L385)
+Defined in: src/airs/types.ts:385
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:385](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **subCategory?**: `string`
 
-Defined in: [src/airs/types.ts:387](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L387)
+Defined in: src/airs/types.ts:387
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:387](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **subCategoryDisplayName?**: `string`
 
-Defined in: [src/airs/types.ts:388](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L388)
+Defined in: src/airs/types.ts:388
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: [src/airs/types.ts:388](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **successful**: `boolean`
 
-Defined in: [src/airs/types.ts:389](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L389)
+Defined in: src/airs/types.ts:389

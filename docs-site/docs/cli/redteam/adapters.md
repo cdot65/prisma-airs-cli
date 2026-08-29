@@ -11,11 +11,15 @@ credentials are shared with the other Red Team commands (`PANW_MGMT_*`).
 ### redteam adapter list
 
 ```text
-airs redteam adapter list [--limit <n>] [--offset <n>] [--search <text>] [--output <format>]
+airs redteam adapter list [--limit <n>] [--offset <n>] [--all] [--max <n>] [--search <text>] [--output <format>]
 ```
 
 List rows carry no script, description, or variables — use `get` for the full
 record.
+
+`--all` walks every SDK page and is capped at 10,000 records by default;
+change the cap with `--max`, or use `--max 0` for no cap. Read output supports
+`pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`.
 
 #### Examples
 
@@ -27,7 +31,7 @@ airs redteam adapter list --search keycloak --output json
 ### redteam adapter get
 
 ```text
-airs redteam adapter get <uuid> [--output pretty|json|yaml]
+airs redteam adapter get <uuid> [--output pretty|table|markdown|csv|json|yaml]
 ```
 
 #### Examples

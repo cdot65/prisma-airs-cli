@@ -7,3 +7,4 @@ export * from './modelsecurity.js';
 export * from './redteam.js';
 export * from './runtime.js';
 export * from './ui.js';
+export * from './view.js';

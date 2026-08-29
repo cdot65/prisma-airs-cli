@@ -53,7 +53,15 @@ export class SdkManagementService implements ManagementService {
   }
 
   async listTopics(): Promise<SdkCustomTopic[]> {
-    const response = await this.client.topics.list();
+    return this.client.topics.listAll();
+  }
+
+  async listLatestTopics(opts?: PaginationOptions): Promise<SdkCustomTopic[]> {
+    const response = await this.client.topics.list({
+      latestOnly: true,
+      limit: opts?.limit,
+      offset: opts?.offset,
+    });
     return response.custom_topics;
   }
 
@@ -66,9 +74,9 @@ export class SdkManagementService implements ManagementService {
 
   async getTopicByName(topicName: string): Promise<SdkCustomTopic> {
     const topics = await this.listTopics();
-    const topic = topics.find((t) => t.topic_name === topicName);
-    if (!topic) throw new Error(`Topic "${topicName}" not found`);
-    return topic;
+    const matches = topics.filter((topic) => topic.topic_name === topicName);
+    if (matches.length === 0) throw new Error(`Topic "${topicName}" not found`);
+    return matches.reduce((latest, topic) => (topic.revision > latest.revision ? topic : latest));
   }
 
   /**
@@ -99,7 +107,7 @@ export class SdkManagementService implements ManagementService {
     guardrailAction?: 'allow' | 'block',
   ): Promise<void> {
     // Find profile by name
-    const { ai_profiles } = await this.client.profiles.list();
+    const ai_profiles = await this.client.profiles.listAll();
     const profile = ai_profiles.find((p) => p.profile_name === profileName);
     if (!profile?.profile_id) {
       throw new Error(`Profile "${profileName}" not found`);
@@ -174,7 +182,7 @@ export class SdkManagementService implements ManagementService {
   }
 
   async getProfileTopics(profileName: string): Promise<ProfileTopic[]> {
-    const { ai_profiles } = await this.client.profiles.list();
+    const ai_profiles = await this.client.profiles.listAll();
     const profile = ai_profiles.find((p) => p.profile_name === profileName);
     if (!profile?.profile_id) {
       throw new Error(`Profile "${profileName}" not found`);
@@ -265,6 +273,15 @@ export class SdkManagementService implements ManagementService {
     };
   }
 
+  async listAllProfiles(
+    opts?: Omit<PaginationOptions, 'offset'> & { max?: number },
+  ): Promise<SecurityProfileInfo[]> {
+    const profiles = await this.client.profiles.listAll(opts);
+    return profiles.map((profile) =>
+      this.normalizeProfile(profile as unknown as Record<string, unknown>),
+    );
+  }
+
   async createProfile(request: CreateSecurityProfileRequest): Promise<SecurityProfileInfo> {
     const response = await this.client.profiles.create(request);
     return this.normalizeProfile(response as unknown as Record<string, unknown>);
@@ -313,6 +330,12 @@ export class SdkManagementService implements ManagementService {
     };
   }
 
+  async listAllApiKeys(opts?: { limit?: number; max?: number }): Promise<ApiKeyInfo[]> {
+    return (await this.client.apiKeys.listAll(opts)).map((key) =>
+      this.normalizeApiKey(key as unknown as Record<string, unknown>),
+    );
+  }
+
   async createApiKey(request: Record<string, unknown>): Promise<ApiKeyInfo> {
     const response = await this.client.apiKeys.create(request as never);
     return this.normalizeApiKey(response as unknown as Record<string, unknown>);
@@ -351,6 +374,12 @@ export class SdkManagementService implements ManagementService {
     };
   }
 
+  async listAllCustomerApps(opts?: { limit?: number; max?: number }): Promise<CustomerAppInfo[]> {
+    return (await this.client.customerApps.listAll(opts)).map((app) =>
+      this.normalizeCustomerApp(app as unknown as Record<string, unknown>),
+    );
+  }
+
   async getCustomerApp(appName: string): Promise<CustomerAppInfo> {
     const response = await this.client.customerApps.get(appName);
     return this.normalizeCustomerApp(response as unknown as Record<string, unknown>);
@@ -377,11 +406,20 @@ export class SdkManagementService implements ManagementService {
     // returns registered customer-apps (one per customer_appId), but the dashboard tracks
     // one bucket per distinct scan-payload metadata.app_name. Using applicationsOverview
     // surfaces every bucket - which is what the SCM UI's AI Applications view shows.
-    const response = await this.client.dashboard.applicationsOverview({
-      limit: opts?.limit ?? 100,
-      offset: opts?.offset ?? 0,
-    });
-    return (response.items ?? [])
+    const limit = opts?.limit ?? 100;
+    let offset = opts?.offset ?? 0;
+    const items: NonNullable<
+      Awaited<ReturnType<typeof this.client.dashboard.applicationsOverview>>['items']
+    > = [];
+    for (;;) {
+      const response = await this.client.dashboard.applicationsOverview({ limit, offset });
+      const page = response.items ?? [];
+      items.push(...page);
+      const total = response.pagination?.total_items;
+      offset += page.length;
+      if (page.length === 0 || page.length < limit || (total != null && offset >= total)) break;
+    }
+    return items
       .filter(
         (item): item is typeof item & { id: string; name: string } =>
           typeof item.id === 'string' && typeof item.name === 'string',

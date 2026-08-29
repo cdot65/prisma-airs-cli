@@ -16,7 +16,11 @@ airs redteam properties list [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--limit <n>` | No | — | Maximum records in a client-side slice |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Return every property name |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -101,7 +105,7 @@ airs redteam properties values [options] <name>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

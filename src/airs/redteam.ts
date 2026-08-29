@@ -377,31 +377,14 @@ export class SdkRedTeamService implements RedTeamService {
   }
 
   async listTargets(): Promise<RedTeamTarget[]> {
-    const all: RedTeamTarget[] = [];
-    let skip = 0;
-    const limit = 100;
-    for (;;) {
-      const response = this.client.targets.list({ skip, limit }) as Promise<
-        Record<string, unknown>
-      >;
-      const body = await response;
-      const data = body.data as Record<string, unknown>[];
-      for (const t of data) {
-        all.push({
-          uuid: t.uuid as string,
-          name: t.name as string,
-          status: t.status as string,
-          targetType: t.target_type as string | undefined,
-          active: t.active as boolean,
-        });
-      }
-      const pagination = body.pagination as { total?: number } | undefined;
-      if (!pagination || all.length >= (pagination.total ?? data.length) || data.length < limit) {
-        break;
-      }
-      skip += limit;
-    }
-    return all;
+    const targets = await this.client.targets.listAll({ limit: 100 });
+    return targets.map((target) => ({
+      uuid: target.uuid,
+      name: target.name,
+      status: String(target.status ?? ''),
+      targetType: target.target_type == null ? undefined : String(target.target_type),
+      active: target.active,
+    }));
   }
 
   async getTarget(uuid: string): Promise<RedTeamTargetDetail> {
@@ -502,17 +485,36 @@ export class SdkRedTeamService implements RedTeamService {
     jobType?: string;
     targetId?: string;
     limit?: number;
+    offset?: number;
   }): Promise<RedTeamJob[]> {
     const sdkOpts: Record<string, unknown> = {};
     if (opts?.status) sdkOpts.status = opts.status;
     if (opts?.jobType) sdkOpts.job_type = opts.jobType;
     if (opts?.targetId) sdkOpts.target_id = opts.targetId;
     if (opts?.limit) sdkOpts.limit = opts.limit;
+    if (opts?.offset !== undefined) sdkOpts.skip = opts.offset;
 
     const response = await this.client.scans.list(sdkOpts);
     return ((response as Record<string, unknown>).data as Record<string, unknown>[]).map(
       normalizeJob,
     );
+  }
+
+  async listAllScans(opts?: {
+    status?: string;
+    jobType?: string;
+    targetId?: string;
+    limit?: number;
+    max?: number;
+  }): Promise<RedTeamJob[]> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts?.status) sdkOpts.status = opts.status;
+    if (opts?.jobType) sdkOpts.job_type = opts.jobType;
+    if (opts?.targetId) sdkOpts.target_id = opts.targetId;
+    if (opts?.limit) sdkOpts.limit = opts.limit;
+    if (opts?.max !== undefined) sdkOpts.max = opts.max;
+    const rows = await this.client.scans.listAll(sdkOpts);
+    return rows.map((row) => normalizeJob(row as unknown as Record<string, unknown>));
   }
 
   async abortScan(jobId: string): Promise<void> {
@@ -681,6 +683,24 @@ export class SdkRedTeamService implements RedTeamService {
     };
   }
 
+  async listAllChannels(
+    opts: RedTeamChannelListOptions & { max?: number } = {},
+  ): Promise<RedTeamChannel[]> {
+    const limit = opts.limit ?? 100;
+    const cap = opts.max === 0 ? Number.POSITIVE_INFINITY : (opts.max ?? 10_000);
+    const rows: RedTeamChannel[] = [];
+    for (let offset = 0; rows.length < cap; offset += limit) {
+      const page = await this.listChannels({ ...opts, limit, offset });
+      rows.push(...page.channels.slice(0, cap - rows.length));
+      if (
+        page.channels.length < limit ||
+        rows.length >= (page.totalItems ?? Number.POSITIVE_INFINITY)
+      )
+        break;
+    }
+    return rows;
+  }
+
   async getChannel(channelId: string): Promise<RedTeamChannel> {
     const raw = (await this.client.networkBroker.getChannel(channelId)) as Record<string, unknown>;
     return normalizeChannel(raw);
@@ -774,6 +794,17 @@ export class SdkRedTeamService implements RedTeamService {
       adapters: ((raw.data ?? []) as Array<Record<string, unknown>>).map(normalizeAdapterListItem),
       totalItems: pagination?.total_items as number | undefined,
     };
+  }
+
+  async listAllAdapters(
+    opts: RedTeamAdapterListOptions & { max?: number } = {},
+  ): Promise<RedTeamAdapterListItem[]> {
+    const sdkOpts: Record<string, unknown> = {};
+    if (opts.limit != null) sdkOpts.limit = opts.limit;
+    if (opts.search) sdkOpts.search = opts.search;
+    if (opts.max !== undefined) sdkOpts.max = opts.max;
+    const rows = await this.client.adapters.listAll(sdkOpts);
+    return rows.map((row) => normalizeAdapterListItem(row as unknown as Record<string, unknown>));
   }
 
   async getAdapter(uuid: string): Promise<RedTeamAdapterDetail> {

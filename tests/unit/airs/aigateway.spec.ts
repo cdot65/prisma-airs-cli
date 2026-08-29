@@ -390,11 +390,13 @@ describe('getTelemetryCost', () => {
       workspaceSlug: 'ws-main-a-349e0e',
       days: 7,
       totalCents: 123556.78,
+      totalUsd: 1235.5678,
       avgCents: 61778.39,
+      avgUsd: 617.7839,
       quotaExceeded: false,
       records: [
-        { date: '2026-07-30', costCents: 123456.78 },
-        { date: '2026-07-31', costCents: 100 },
+        { date: '2026-07-30', costCents: 123456.78, costUsd: 1234.5678 },
+        { date: '2026-07-31', costCents: 100, costUsd: 1 },
       ],
     });
   });

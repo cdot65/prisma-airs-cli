@@ -16,7 +16,11 @@ airs redteam prompt-sets list [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--limit <n>` | No | — | Maximum records in a single client-side slice |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Return every prompt set |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -55,7 +59,7 @@ airs redteam prompt-sets get [options] <uuid>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

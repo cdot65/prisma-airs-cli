@@ -2,6 +2,11 @@ import chalk from 'chalk';
 import { dump as yamlDump } from 'js-yaml';
 import { formatOutput, type OutputFormat } from './common.js';
 import { ui } from './ui.js';
+import {
+  emitDetail as emitViewDetail,
+  emitList as emitViewList,
+  type ResourceView,
+} from './view.js';
 
 // biome-ignore lint/suspicious/noExplicitAny: renderer accepts arbitrary SDK payloads
 type Any = any;
@@ -50,6 +55,23 @@ function pageMeta(page: Any, returned: number): Record<string, unknown> {
   };
 }
 
+function camelKey(key: string): string {
+  return key.replace(/[_-]([a-z0-9])/g, (_, char: string) => char.toUpperCase());
+}
+
+function camelize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(camelize);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, child]) => [
+        camelKey(key),
+        camelize(child),
+      ]),
+    );
+  }
+  return value;
+}
+
 function emitList(
   page: Any,
   fmt: OutputFormat,
@@ -59,72 +81,56 @@ function emitList(
   prettyLine: (item: Any) => string,
 ): void {
   const content: Any[] = Array.isArray(page?.content) ? page.content : [];
-  const rows = content.map(toRow);
-
-  if (fmt === 'json' || fmt === 'yaml') {
-    emitStructured({ items: rows, page: pageMeta(page, content.length) }, fmt);
-    return;
-  }
-  if (content.length === 0) {
-    ui.emptyList(header.toLowerCase());
-    return;
-  }
-  if (fmt === 'pretty') {
-    ui.section(`${header}:`);
-    for (const item of content) console.log(prettyLine(item));
-    const meta = pageMeta(page, content.length);
-    console.log();
-    ui.dim(
-      `page=${meta.number} size=${meta.size} returned=${meta.returned} total=${meta.total ?? '?'}`,
-    );
-    console.log();
-    return;
-  }
-  console.log(formatOutput(rows, columns, fmt));
-}
-
-function fieldsToObject(
-  fields: { label: string; value: string | number | undefined }[],
-): Record<string, unknown> {
-  const obj: Record<string, unknown> = {};
-  for (const f of fields) {
-    if (f.value === undefined || f.value === null || f.value === '') continue;
-    obj[toKey(f.label)] = f.value;
-  }
-  return obj;
-}
-
-export function toKey(label: string): string {
-  return label
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+  const meta = pageMeta(page, content.length);
+  const view: ResourceView<Any> = {
+    name: header.toLowerCase(),
+    columns: columns.map((column) => ({
+      ...column,
+      get: (item) => toRow(item)[column.key],
+    })),
+    structured: (item) => camelize(item) as Record<string, unknown>,
+    pretty: {
+      list(items) {
+        ui.section(`${header}:`);
+        for (const item of items) console.log(prettyLine(item));
+        console.log();
+      },
+      detail() {},
+    },
+  };
+  const total = typeof meta.total === 'number' ? meta.total : undefined;
+  const number = Number(meta.number ?? 0);
+  const size = Number(meta.size ?? content.length);
+  const next = total !== undefined && (number + 1) * size < total ? (number + 1) * size : undefined;
+  emitViewList(view, content, fmt, { page: { returned: content.length, total, next } });
 }
 
 function emitDetail(
-  _item: Any,
+  item: Any,
   fmt: OutputFormat,
   fields: { label: string; value: string | number | undefined }[],
   title: string,
 ): void {
-  if (fmt === 'json' || fmt === 'yaml') {
-    emitStructured(fieldsToObject(fields), fmt);
-    return;
-  }
-  if (fmt === 'pretty') {
-    ui.section(`${title}:`);
-    const pairs: Array<[string, unknown]> = [];
-    for (const f of fields) {
-      if (f.value === undefined || f.value === null || f.value === '') continue;
-      pairs.push([f.label, f.value]);
-    }
-    ui.keyValue(pairs);
-    console.log();
-    return;
-  }
-  const rows = [Object.fromEntries(fields.map((f) => [f.label, f.value ?? '']))];
-  const columns = fields.map((f) => ({ key: f.label, label: f.label }));
-  console.log(formatOutput(rows, columns, fmt));
+  const view: ResourceView<Any> = {
+    name: title.toLowerCase(),
+    columns: [],
+    structured: (value) => camelize(value) as Record<string, unknown>,
+    pretty: {
+      list() {},
+      detail() {
+        ui.section(`${title}:`);
+        ui.keyValue(
+          fields
+            .filter(
+              (field) => field.value !== undefined && field.value !== null && field.value !== '',
+            )
+            .map((field) => [field.label, field.value]),
+        );
+        console.log();
+      },
+    },
+  };
+  emitViewDetail(view, item, fmt);
 }
 
 function ackObject(verb: string, item: Any): Record<string, unknown> {

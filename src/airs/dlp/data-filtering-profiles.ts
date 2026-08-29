@@ -19,6 +19,12 @@ export class SdkDataFilteringProfilesService implements DataFilteringProfilesSer
     return this.client.list(params);
   }
 
+  async listAll(
+    params?: DataFilteringProfileListParams & { max?: number },
+  ): Promise<DataFilteringProfileResponse[]> {
+    return this.client.listAll(params);
+  }
+
   async get(id: string): Promise<DataFilteringProfileResponse> {
     return this.client.get(id);
   }

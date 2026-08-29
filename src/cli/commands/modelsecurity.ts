@@ -89,7 +89,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
-        const result = await service.listGroups({
+        const listOptions = {
           sourceTypes: opts.sourceTypes
             ? (opts.sourceTypes as string).split(',').map((s: string) => s.trim())
             : undefined,
@@ -100,8 +100,12 @@ export function registerModelSecurityCommand(program: Command): void {
             ? (opts.enabledRules as string).split(',').map((s: string) => s.trim())
             : undefined,
           limit: Number.parseInt(opts.limit, 10),
-        });
-        renderGroupList(result.groups, fmt);
+          skip: Number(opts.offset ?? 0),
+        };
+        const rows = opts.all
+          ? await service.listAllGroups({ ...listOptions, max: Number(opts.max) })
+          : (await service.listGroups(listOptions)).groups;
+        renderGroupList(rows, fmt);
       } catch (err) {
         fail(err);
       }
@@ -388,14 +392,15 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--limit <n>', 'Max results', '20')
     .action(async (groupUuid: string, opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const result = await service.listRuleInstances(groupUuid, {
           securityRuleUuid: opts.securityRuleUuid,
           state: opts.state,
           limit: Number.parseInt(opts.limit, 10),
         });
-        renderRuleInstanceList(result.ruleInstances);
+        renderRuleInstanceList(result.ruleInstances, fmt);
       } catch (err) {
         fail(err);
       }
@@ -404,12 +409,13 @@ export function registerModelSecurityCommand(program: Command): void {
   ruleInstances
     .command('get <groupUuid> <instanceUuid>')
     .description('Get rule instance details')
-    .action(async (groupUuid: string, instanceUuid: string) => {
+    .action(async (groupUuid: string, instanceUuid: string, opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const instance = await service.getRuleInstance(groupUuid, instanceUuid);
-        renderRuleInstanceDetail(instance);
+        renderRuleInstanceDetail(instance, fmt);
       } catch (err) {
         fail(err);
       }
@@ -452,12 +458,16 @@ export function registerModelSecurityCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
-        const result = await service.listRules({
+        const listOptions = {
           sourceType: opts.sourceType,
           searchQuery: opts.search,
           limit: Number.parseInt(opts.limit, 10),
-        });
-        renderRuleList(result.rules, fmt);
+          skip: Number(opts.offset ?? 0),
+        };
+        const rows = opts.all
+          ? await service.listAllRules({ ...listOptions, max: Number(opts.max) })
+          : (await service.listRules(listOptions)).rules;
+        renderRuleList(rows, fmt);
       } catch (err) {
         fail(err);
       }
@@ -466,12 +476,13 @@ export function registerModelSecurityCommand(program: Command): void {
   rules
     .command('get <uuid>')
     .description('Get security rule details')
-    .action(async (uuid: string) => {
+    .action(async (uuid: string, opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const rule = await service.getRule(uuid);
-        renderRuleDetail(rule);
+        renderRuleDetail(rule, fmt);
       } catch (err) {
         fail(err);
       }
@@ -504,14 +515,18 @@ export function registerModelSecurityCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
-        const result = await service.listScans({
+        const listOptions = {
           evalOutcome: opts.evalOutcome,
           sourceType: opts.sourceType,
           scanOrigin: opts.scanOrigin,
           search: opts.search,
           limit: Number.parseInt(opts.limit, 10),
-        });
-        renderMsScanList(result.scans, fmt);
+          skip: Number(opts.offset ?? 0),
+        };
+        const rows = opts.all
+          ? await service.listAllScans({ ...listOptions, max: Number(opts.max) })
+          : (await service.listScans(listOptions)).scans;
+        renderMsScanList(rows, fmt);
       } catch (err) {
         fail(err);
       }
@@ -520,12 +535,13 @@ export function registerModelSecurityCommand(program: Command): void {
   scans
     .command('get <uuid>')
     .description('Get scan details')
-    .action(async (uuid: string) => {
+    .action(async (uuid: string, opts) => {
       try {
-        renderModelSecurityHeader();
+        const fmt = opts.output as OutputFormat;
+        if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
         const scan = await service.getScan(uuid);
-        renderMsScanDetail(scan);
+        renderMsScanDetail(scan, fmt);
       } catch (err) {
         fail(err);
       }
@@ -652,15 +668,18 @@ export function registerModelSecurityCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderModelSecurityHeader();
         const service = await createService();
-        const result = await service.listModels({
+        const listOptions = {
           search: opts.search,
           searchQuery: opts.searchQuery,
           sortField: opts.sortField,
           sortOrder: opts.sortOrder,
           limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
           skip: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
-        });
-        renderModelList(result.models, fmt);
+        };
+        const rows = opts.all
+          ? await service.listAllModels({ ...listOptions, max: Number(opts.max) })
+          : (await service.listModels(listOptions)).models;
+        renderModelList(rows, fmt);
       } catch (err) {
         fail(err);
       }

@@ -17,11 +17,14 @@ airs runtime customer-apps list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | `100` | Max results |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default) — only `name` is rendered; richer detail requires `customer-apps get` (currently blocked, see cdot65/prisma-airs-cli#115)*
+*Pretty output (default). Use `customer-apps get <appName>` for the complete detail record.*
 
 ```bash
 airs runtime customer-apps list --limit 2
@@ -59,20 +62,19 @@ airs runtime customer-apps list --limit 2 --output json
 ]
 ```
 
-*YAML output (multi-doc stream — one document per app)*
+*YAML output (one sequence containing complete records)*
 
 ```bash
 airs runtime customer-apps list --limit 2 --output yaml
 ```
 
 ```text
-id:
-name: example-app
-description:
----
-id:
-name: example-other-app
-description:
+- id:
+  name: example-app
+  description:
+- id:
+  name: example-other-app
+  description:
 ```
 
 ---
@@ -166,7 +168,7 @@ airs runtime customer-apps consumption [options] [appName]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--time-interval <n>` | No | `30` | Window in days: 7, 30, or 60 |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -262,7 +264,7 @@ airs runtime customer-apps consumption example-app --output json
 ]
 ```
 
-*YAML output — multi-doc stream, one document per detector per app.*
+*YAML output — one sequence containing detector records.*
 
 ```bash
 airs runtime customer-apps consumption example-app --output yaml

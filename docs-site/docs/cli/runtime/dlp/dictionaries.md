@@ -18,10 +18,12 @@ airs runtime dlp dictionaries list [options]
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | — | Max results per page (API page size) |
 | `--offset <n>` | No | — | Starting offset — rounds down to a page boundary |
+| `--all` | No | — | Walk every API page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--sort <field,dir>` | No | — | (repeatable) |
 | `--keywords` | No | — | Include keyword list in response |
 | `--include-keywords` | No | — | Alias for --keywords |
-| `--output <fmt>` | No | `pretty` | Output format |
+| `--output <fmt>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

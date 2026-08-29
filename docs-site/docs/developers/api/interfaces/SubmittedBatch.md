@@ -1,6 +1,6 @@
 # Interface: SubmittedBatch
 
-Defined in: [src/airs/types.ts:73](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L73)
+Defined in: src/airs/types.ts:73
 
 Receipt for exactly one SDK async submission (at most twenty prompts).
 
@@ -10,7 +10,7 @@ Receipt for exactly one SDK async submission (at most twenty prompts).
 
 > **entries**: [`BatchEntry`](BatchEntry.md)[]
 
-Defined in: [src/airs/types.ts:76](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L76)
+Defined in: src/airs/types.ts:76
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:76](https://github.com/cdot65/prisma-airs-cli/blo
 
 > `optional` **reportId?**: `string`
 
-Defined in: [src/airs/types.ts:75](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L75)
+Defined in: src/airs/types.ts:75
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: [src/airs/types.ts:75](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **scanId**: `string`
 
-Defined in: [src/airs/types.ts:74](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L74)
+Defined in: src/airs/types.ts:74

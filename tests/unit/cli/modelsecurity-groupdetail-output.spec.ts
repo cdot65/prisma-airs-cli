@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: test payloads use arbitrary SDK shapes
 import { describe, expect, it, vi } from 'vitest';
-import { renderGroupDetail } from '../../../src/cli/renderer/modelsecurity.js';
+import { renderGroupDetail, renderGroupList } from '../../../src/cli/renderer/modelsecurity.js';
 
 const group: any = {
   uuid: '00000000-0000-0000-0000-000000000001',
@@ -40,5 +40,31 @@ describe('renderGroupDetail --output (#238)', () => {
     spy.mockRestore();
     expect(out).toContain('Security Group Detail');
     expect(out).toContain('demo-group');
+  });
+});
+
+describe('renderGroupList unified structured output', () => {
+  it('keeps the complete normalized records in JSON', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    renderGroupList([group], 'json');
+    const parsed = JSON.parse(String(spy.mock.calls[0]?.[0]));
+    spy.mockRestore();
+    expect(parsed).toEqual([group]);
+  });
+
+  it('emits an empty JSON array instead of human empty-state text', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    renderGroupList([], 'json');
+    expect(spy).toHaveBeenCalledWith('[]');
+    spy.mockRestore();
+  });
+
+  it('projects stable columns for markdown', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    renderGroupList([group], 'markdown');
+    const output = String(spy.mock.calls[0]?.[0]);
+    spy.mockRestore();
+    expect(output).toContain('| ID | Name | State | Source Type |');
+    expect(output).toContain(group.uuid);
   });
 });

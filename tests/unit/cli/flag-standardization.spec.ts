@@ -42,7 +42,11 @@ describe('flag standardization — structural: canonical flag + hidden alias reg
     { path: ['runtime', 'topics', 'apply'], canonical: ['--output'], aliases: ['--format'] },
     { path: ['runtime', 'topics', 'eval'], canonical: ['--output'], aliases: ['--format'] },
     { path: ['runtime', 'topics', 'revert'], canonical: ['--output'], aliases: ['--format'] },
-    { path: ['redteam', 'targets', 'backup'], canonical: ['--output'], aliases: ['--format'] },
+    {
+      path: ['redteam', 'targets', 'backup'],
+      canonical: ['--file-format'],
+      aliases: ['--output', '--format'],
+    },
     // --output file-path overload → --output-file
     {
       path: ['runtime', 'bulk-scan'],
@@ -129,6 +133,41 @@ describe('flag standardization — structural: canonical flag + hidden alias reg
   });
 });
 
+describe('read-command contract', () => {
+  function walk(
+    command: Command,
+    path: string[] = [],
+  ): Array<{ command: Command; path: string[] }> {
+    return command.commands.flatMap((child) => {
+      const childPath = [...path, child.name()];
+      return [{ command: child, path: childPath }, ...walk(child, childPath)];
+    });
+  }
+
+  it('every get/list command accepts --output', () => {
+    const missing = walk(buildProgram())
+      .filter(({ command }) => command.name() === 'get' || command.name() === 'list')
+      .filter(({ command }) => !flagsOf(command).includes('--output'))
+      .map(({ path }) => path.join(' '));
+    expect(missing).toEqual([]);
+  });
+
+  it('paginated list commands register --limit, --offset, and --all as one contract', () => {
+    const partial = walk(buildProgram())
+      .filter(({ command }) => command.name() === 'list')
+      .filter(({ command }) => {
+        const flags = flagsOf(command);
+        if (!flags.includes('--limit') && !flags.includes('--offset')) return false;
+        const count = ['--limit', '--offset', '--all'].filter((flag) =>
+          flags.includes(flag),
+        ).length;
+        return count !== 0 && count !== 3;
+      })
+      .map(({ path }) => path.join(' '));
+    expect(partial).toEqual([]);
+  });
+});
+
 describe('flag standardization — behavioral: old flag maps to canonical key and warns', () => {
   it('runtime topics create --format json → opts.output === "json", warns on stderr', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -164,12 +203,12 @@ describe('flag standardization — behavioral: old flag maps to canonical key an
     expect(errSpy).toHaveBeenCalled();
   });
 
-  it('redteam targets backup --format yaml maps to output, warns', () => {
+  it('redteam targets backup --format yaml maps to fileFormat, warns', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const cmd = find(buildProgram(), 'redteam', 'targets', 'backup');
     cmd.parseOptions(['--format', 'yaml']);
     const opts = resolveDeprecatedAliases(cmd, cmd.opts());
-    expect(opts.output).toBe('yaml');
+    expect(opts.fileFormat).toBe('yaml');
     expect(errSpy).toHaveBeenCalled();
   });
 

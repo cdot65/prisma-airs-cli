@@ -20,6 +20,10 @@ export class SdkDataProfilesService implements DataProfilesService {
     return this.client.list(params);
   }
 
+  async listAll(params?: DataProfileListParams & { max?: number }): Promise<DataProfileResponse[]> {
+    return this.client.listAll(params);
+  }
+
   async create(body: AdvancedDataProfileRequest): Promise<DataProfileResponse> {
     return this.client.create(body);
   }

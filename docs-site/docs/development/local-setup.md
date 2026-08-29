@@ -41,7 +41,7 @@ To make the `airs` binary available globally from your source checkout:
 ```bash
 pnpm run build
 pnpm link --global
-airs --version   # 1.0.6
+airs --version   # 4.0.0
 ```
 
 After making code changes, re-run `pnpm run build` for the linked `airs` command to reflect them. `pnpm run dev` doesn't require a build step.
@@ -51,6 +51,13 @@ After making code changes, re-run `pnpm run build` for the linked `airs` command
 | Command | What it does |
 |---------|-------------|
 | `pnpm run dev` | Run CLI via tsx — no build needed (e.g. `pnpm run dev runtime scan ...`) |
+| `pnpm local:setup` | Install dependencies and build the local package |
+| `pnpm local:smoke` | Build, print the compiled version, and render compiled help |
+| `pnpm local:dev:help` | Render help directly from TypeScript source |
+| `pnpm local:dev:profiles` | List profiles as JSON using the source entry point |
+| `pnpm local:dev:topics` | Traverse topics and render YAML using the source entry point |
+| `pnpm local:dev:doctor` | Run doctor with Markdown output using the source entry point |
+| `pnpm local:link` / `pnpm local:unlink` | Build and globally link, or remove the global package |
 | `pnpm run build` | Compile TypeScript to `dist/` |
 | `pnpm test` | Run all tests |
 | `pnpm run test:watch` | Watch mode |
@@ -73,6 +80,12 @@ Runtime data lives under `~/.prisma-airs/`:
 
 :::info[Config priority]
 CLI flags > environment variables > config file > Zod schema defaults
+:::
+
+:::note[pnpm 10 argument forwarding]
+Invoke arbitrary development commands without a standalone separator:
+`pnpm dev --help` and `pnpm dev runtime profiles list --output json`. A
+standalone `--` is forwarded literally to Commander by pnpm 10.
 :::
 
 ## Verify Setup

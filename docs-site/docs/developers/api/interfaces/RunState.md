@@ -1,6 +1,6 @@
 # Interface: RunState
 
-Defined in: [src/core/types.ts:104](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L104)
+Defined in: src/core/types.ts:104
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [src/core/types.ts:104](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **bestCoverage**: `number`
 
-Defined in: [src/core/types.ts:112](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L112)
+Defined in: src/core/types.ts:112
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [src/core/types.ts:112](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **bestIteration**: `number`
 
-Defined in: [src/core/types.ts:111](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L111)
+Defined in: src/core/types.ts:111
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/core/types.ts:111](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **companionTopic?**: [`CustomTopic`](CustomTopic.md)
 
-Defined in: [src/core/types.ts:117](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L117)
+Defined in: src/core/types.ts:117
 
 Companion allow topic created for block-intent two-phase generation.
 
@@ -34,7 +34,7 @@ Companion allow topic created for block-intent two-phase generation.
 
 > **consecutiveRegressions**: `number`
 
-Defined in: [src/core/types.ts:113](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L113)
+Defined in: src/core/types.ts:113
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/core/types.ts:113](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **createdAt**: `string`
 
-Defined in: [src/core/types.ts:106](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L106)
+Defined in: src/core/types.ts:106
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [src/core/types.ts:106](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **currentIteration**: `number`
 
-Defined in: [src/core/types.ts:110](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L110)
+Defined in: src/core/types.ts:110
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [src/core/types.ts:110](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **hasRevertedToBest**: `boolean`
 
-Defined in: [src/core/types.ts:114](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L114)
+Defined in: src/core/types.ts:114
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/core/types.ts:114](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **hasTriedSimplification**: `boolean`
 
-Defined in: [src/core/types.ts:115](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L115)
+Defined in: src/core/types.ts:115
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [src/core/types.ts:115](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **id**: `string`
 
-Defined in: [src/core/types.ts:105](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L105)
+Defined in: src/core/types.ts:105
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: [src/core/types.ts:105](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **iterations**: [`IterationResult`](IterationResult.md)[]
 
-Defined in: [src/core/types.ts:109](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L109)
+Defined in: src/core/types.ts:109
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: [src/core/types.ts:109](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **status**: `"failed"` \| `"completed"` \| `"running"` \| `"paused"`
 
-Defined in: [src/core/types.ts:118](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L118)
+Defined in: src/core/types.ts:118
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: [src/core/types.ts:118](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **updatedAt**: `string`
 
-Defined in: [src/core/types.ts:107](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L107)
+Defined in: src/core/types.ts:107
 
 ***
 
@@ -106,4 +106,4 @@ Defined in: [src/core/types.ts:107](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **userInput**: [`UserInput`](UserInput.md)
 
-Defined in: [src/core/types.ts:108](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L108)
+Defined in: src/core/types.ts:108

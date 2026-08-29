@@ -638,6 +638,14 @@ export interface RedTeamService {
     jobType?: string;
     targetId?: string;
     limit?: number;
+    offset?: number;
+  }): Promise<RedTeamJob[]>;
+  listAllScans(opts?: {
+    status?: string;
+    jobType?: string;
+    targetId?: string;
+    limit?: number;
+    max?: number;
   }): Promise<RedTeamJob[]>;
 
   /** Abort a running scan. */
@@ -675,6 +683,7 @@ export interface RedTeamService {
   listChannels(
     opts?: RedTeamChannelListOptions,
   ): Promise<{ channels: RedTeamChannel[]; totalItems?: number }>;
+  listAllChannels(opts?: RedTeamChannelListOptions & { max?: number }): Promise<RedTeamChannel[]>;
   /** Get a network broker channel by ID. */
   getChannel(channelId: string): Promise<RedTeamChannel>;
   /** Create a network broker channel. */
@@ -696,6 +705,9 @@ export interface RedTeamService {
   listAdapters(
     opts?: RedTeamAdapterListOptions,
   ): Promise<{ adapters: RedTeamAdapterListItem[]; totalItems?: number }>;
+  listAllAdapters(
+    opts?: RedTeamAdapterListOptions & { max?: number },
+  ): Promise<RedTeamAdapterListItem[]>;
   getAdapter(uuid: string): Promise<RedTeamAdapterDetail>;
   createAdapter(
     request: RedTeamAdapterCreateRequest,
@@ -966,6 +978,9 @@ export interface ModelSecurityService {
   listGroups(
     opts?: ModelSecurityGroupListOptions,
   ): Promise<{ totalItems: number; groups: ModelSecurityGroup[] }>;
+  listAllGroups(
+    opts?: ModelSecurityGroupListOptions & { max?: number },
+  ): Promise<ModelSecurityGroup[]>;
   getGroup(uuid: string): Promise<ModelSecurityGroup>;
   createGroup(request: ModelSecurityGroupCreateRequest): Promise<ModelSecurityGroup>;
   updateGroup(uuid: string, request: ModelSecurityGroupUpdateRequest): Promise<ModelSecurityGroup>;
@@ -985,12 +1000,18 @@ export interface ModelSecurityService {
   listRules(
     opts?: ModelSecurityRuleListOptions,
   ): Promise<{ totalItems: number; rules: ModelSecurityRule[] }>;
+  listAllRules(
+    opts?: ModelSecurityRuleListOptions & { max?: number },
+  ): Promise<ModelSecurityRule[]>;
   getRule(uuid: string): Promise<ModelSecurityRule>;
 
   createScan(request: Record<string, unknown>): Promise<ModelSecurityScan>;
   listScans(
     opts?: ModelSecurityScanListOptions,
   ): Promise<{ totalItems: number; scans: ModelSecurityScan[] }>;
+  listAllScans(
+    opts?: ModelSecurityScanListOptions & { max?: number },
+  ): Promise<ModelSecurityScan[]>;
   getScan(uuid: string): Promise<ModelSecurityScan>;
 
   getEvaluations(
@@ -1027,6 +1048,9 @@ export interface ModelSecurityService {
   listModels(
     opts?: ModelSecurityModelListOptions,
   ): Promise<{ totalItems: number; models: ModelSecurityModel[] }>;
+  listAllModels(
+    opts?: ModelSecurityModelListOptions & { max?: number },
+  ): Promise<ModelSecurityModel[]>;
   getModel(uuid: string): Promise<ModelSecurityModel>;
   listModelVersions(
     modelUuid: string,
@@ -1070,6 +1094,7 @@ export interface DeleteResponse {
 export interface PaginationOptions {
   offset?: number;
   limit?: number;
+  latest?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -1221,6 +1246,8 @@ export interface ManagementService {
   forceDeleteTopic(topicId: string, updatedBy?: string): Promise<DeleteResponse>;
   /** List all custom topics. */
   listTopics(): Promise<SdkCustomTopic[]>;
+  /** List latest topic revisions with client-side grouping in the SDK. */
+  listLatestTopics(opts?: PaginationOptions): Promise<SdkCustomTopic[]>;
   /** Get a single custom topic by ID. */
   getTopic(topicId: string): Promise<SdkCustomTopic>;
   /** Get a single custom topic by name. */
@@ -1247,6 +1274,10 @@ export interface ManagementService {
   getProfileByName(profileName: string): Promise<SecurityProfileInfo>;
   /** List security profiles. */
   listProfiles(opts?: PaginationOptions): Promise<SecurityProfileListResult>;
+  /** Walk all security-profile pages. */
+  listAllProfiles(
+    opts?: Omit<PaginationOptions, 'offset'> & { max?: number },
+  ): Promise<SecurityProfileInfo[]>;
   /** Create a security profile. */
   createProfile(request: CreateSecurityProfileRequest): Promise<SecurityProfileInfo>;
   /** Update a security profile. */
@@ -1261,12 +1292,14 @@ export interface ManagementService {
 
   // API keys
   listApiKeys(opts?: PaginationOptions): Promise<ApiKeyListResult>;
+  listAllApiKeys(opts?: { limit?: number; max?: number }): Promise<ApiKeyInfo[]>;
   createApiKey(request: Record<string, unknown>): Promise<ApiKeyInfo>;
   regenerateApiKey(apiKeyId: string, request: Record<string, unknown>): Promise<ApiKeyInfo>;
   deleteApiKey(apiKeyName: string, updatedBy: string): Promise<DeleteResponse>;
 
   // Customer apps
   listCustomerApps(opts?: PaginationOptions): Promise<CustomerAppListResult>;
+  listAllCustomerApps(opts?: { limit?: number; max?: number }): Promise<CustomerAppInfo[]>;
   getCustomerApp(appName: string): Promise<CustomerAppInfo>;
   updateCustomerApp(appId: string, request: Record<string, unknown>): Promise<CustomerAppInfo>;
   deleteCustomerApp(appName: string, updatedBy: string): Promise<CustomerAppInfo>;
@@ -1409,9 +1442,11 @@ export interface AiGatewayCostReport {
   workspaceSlug: string;
   days: number;
   totalCents: number;
+  totalUsd: number;
   avgCents: number;
+  avgUsd: number;
   quotaExceeded: boolean;
-  records: Array<{ date: string; costCents: number }>;
+  records: Array<{ date: string; costCents: number; costUsd: number }>;
 }
 
 // ---------------------------------------------------------------------------

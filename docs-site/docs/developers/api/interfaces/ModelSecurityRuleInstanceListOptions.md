@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleInstanceListOptions
 
-Defined in: [src/airs/types.ts:804](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L804)
+Defined in: src/airs/types.ts:816
 
 Filter options for listing rule instances.
 
@@ -10,7 +10,7 @@ Filter options for listing rule instances.
 
 > `optional` **limit?**: `number`
 
-Defined in: [src/airs/types.ts:808](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L808)
+Defined in: src/airs/types.ts:820
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:808](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **securityRuleUuid?**: `string`
 
-Defined in: [src/airs/types.ts:805](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L805)
+Defined in: src/airs/types.ts:817
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:805](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **skip?**: `number`
 
-Defined in: [src/airs/types.ts:807](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L807)
+Defined in: src/airs/types.ts:819
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: [src/airs/types.ts:807](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **state?**: `string`
 
-Defined in: [src/airs/types.ts:806](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L806)
+Defined in: src/airs/types.ts:818

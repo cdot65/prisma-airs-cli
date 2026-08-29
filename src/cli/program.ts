@@ -11,7 +11,7 @@ import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
 import { installDebugLogger } from './debug-logger.js';
-import { setQuiet, ui } from './renderer/index.js';
+import { fail, resolveOutput, setQuiet, ui } from './renderer/index.js';
 
 /** Give every `list` subcommand an `ls` alias and every `delete` an `rm` alias. */
 function applyListDeleteAliases(cmd: Command): void {
@@ -20,6 +20,31 @@ function applyListDeleteAliases(cmd: Command): void {
     if (sub.name() === 'delete' && !sub.aliases().includes('rm')) sub.alias('rm');
     applyListDeleteAliases(sub);
   }
+}
+
+/** Fill the uniform read-command flag surface after command groups register themselves. */
+function applyReadContractFlags(cmd: Command): void {
+  for (const sub of cmd.commands) {
+    const flags = () => sub.options.map((option) => option.long);
+    if ((sub.name() === 'list' || sub.name() === 'get') && !flags().includes('--output')) {
+      sub.option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml');
+    }
+    if (sub.name() === 'list' && (flags().includes('--limit') || flags().includes('--offset'))) {
+      if (!flags().includes('--limit')) sub.option('--limit <n>', 'Items per page', Number, 50);
+      if (!flags().includes('--offset')) sub.option('--offset <n>', 'Item offset', Number, 0);
+      if (!flags().includes('--all')) sub.option('--all', 'Walk all pages');
+      if (!flags().includes('--max')) {
+        sub.option('--max <n>', 'Maximum items with --all; 0 removes the cap', Number, 10_000);
+      }
+    }
+    applyReadContractFlags(sub);
+  }
+}
+
+/** Keep every help surface deterministic and easy to scan. */
+function applySortedHelp(cmd: Command): void {
+  cmd.configureHelp({ sortOptions: true, sortSubcommands: true });
+  for (const sub of cmd.commands) applySortedHelp(sub);
 }
 
 export function buildProgram(): Command {
@@ -34,11 +59,23 @@ export function buildProgram(): Command {
     )
     .version(pkg.version)
     .option('--debug', 'Log all AIRS/SCM API requests and responses to a JSONL file')
+    .option('--output <format>', 'Default output format for read commands')
     .option('--quiet', 'Suppress status and decorative output (data and errors still print)');
 
-  program.hook('preAction', (_thisCommand, actionCommand) => {
+  program.hook('preAction', async (_thisCommand, actionCommand) => {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
+    if (
+      (actionCommand.name() === 'list' || actionCommand.name() === 'get') &&
+      actionCommand.options.some((option) => option.long === '--output')
+    ) {
+      try {
+        const format = await resolveOutput(actionCommand, actionCommand.opts());
+        actionCommand.setOptionValueWithSource('output', format, 'implied');
+      } catch (error) {
+        fail(error);
+      }
+    }
     if (root.debug) {
       const logPath = join(homedir(), '.prisma-airs', `debug-api-${Date.now()}.jsonl`);
       installDebugLogger(logPath);
@@ -55,6 +92,8 @@ export function buildProgram(): Command {
   registerCompletionCommand(program);
 
   applyListDeleteAliases(program);
+  applyReadContractFlags(program);
+  applySortedHelp(program);
 
   return program;
 }

@@ -12,6 +12,7 @@ import {
   renderCostReport,
   renderWorkspaceDetail,
   renderWorkspaceList,
+  resolveOutput,
   ui,
   usageError,
 } from '../renderer/index.js';
@@ -299,14 +300,14 @@ export function registerAiGatewayCommand(program: Command): void {
     .command('telemetry')
     .description('AI Gateway runtime telemetry (data plane)');
 
-  telemetry
+  const cost = telemetry
     .command('cost')
     .description(
       'Total and per-day spend for a workspace (API reports cents; pretty output shows dollars)',
     )
     .requiredOption('--workspace <slug>', 'Workspace slug (not UUID), e.g. ws-main-a-349e0e')
     .option('--days <n>', 'Rolling window in days, counted back from now', '7')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
       examples(
@@ -316,7 +317,7 @@ export function registerAiGatewayCommand(program: Command): void {
     )
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(cost, opts);
         if (fmt === 'pretty') renderAiGatewayHeader();
         const days = Number.parseInt(opts.days, 10);
         if (!Number.isFinite(days) || days <= 0) {

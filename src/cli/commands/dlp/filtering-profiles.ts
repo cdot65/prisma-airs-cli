@@ -1,7 +1,13 @@
 import type { Command } from 'commander';
 import { SdkDataFilteringProfilesService } from '../../../airs/dlp/data-filtering-profiles.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import { dlpFilteringProfiles, fail, type OutputFormat, usageError } from '../../renderer/index.js';
+import {
+  dlpFilteringProfiles,
+  fail,
+  type OutputFormat,
+  resolveOutput,
+  usageError,
+} from '../../renderer/index.js';
 import { buildFilteringProfileBody, repeatable } from './build-body.js';
 import { parseBody } from './patch.js';
 
@@ -12,7 +18,7 @@ function listFlags<T extends Command>(cmd: T): T {
       Number.parseInt(v, 10),
     )
     .option('--sort <field,dir>', 'Sort criteria (repeatable)', repeatable)
-    .option('--output <fmt>', 'Output format', 'pretty');
+    .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml');
   registerPageAliases(cmd, { sizeFlag: '--size', sizeKey: 'size' });
   return cmd;
 }
@@ -39,21 +45,26 @@ export function register(dlp: Command): void {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataFilteringProfilesService();
-      const r = await svc.list({ page, size, sort: opts.sort });
-      dlpFilteringProfiles.renderList(r, opts.output as OutputFormat);
+      const all = opts.all
+        ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
+        : undefined;
+      const r = all
+        ? { content: all, totalElements: all.length }
+        : await svc.list({ page, size, sort: opts.sort });
+      dlpFilteringProfiles.renderList(r, await resolveOutput(listCmd, opts));
     } catch (err) {
       fail(err);
     }
   });
 
-  group
+  const getCmd = group
     .command('get <id>')
     .description('Get a filtering profile by id')
-    .option('--output <fmt>', 'Output format', 'pretty')
+    .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (id, opts) => {
       try {
         const svc = new SdkDataFilteringProfilesService();
-        dlpFilteringProfiles.renderGet(await svc.get(id), opts.output as OutputFormat);
+        dlpFilteringProfiles.renderGet(await svc.get(id), await resolveOutput(getCmd, opts));
       } catch (err) {
         fail(err);
       }

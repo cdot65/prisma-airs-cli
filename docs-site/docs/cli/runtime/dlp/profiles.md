@@ -18,12 +18,14 @@ airs runtime dlp profiles list [options]
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | — | Max results per page (API page size) |
 | `--offset <n>` | No | — | Starting offset — rounds down to a page boundary |
+| `--all` | No | — | Walk every API page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
 | `--sort <field,dir>` | No | — | Sort criteria (repeatable) |
-| `--output <fmt>` | No | `pretty` | Output format |
+| `--output <fmt>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
-*Pretty output (default — DLP profiles list has no custom renderer, so pretty == JSON)*
+*Pretty output (default)*
 
 ```bash
 airs runtime dlp profiles list --limit 2 --sort id,asc

@@ -1,6 +1,6 @@
 # Interface: CategoryBreakdown
 
-Defined in: [src/core/types.ts:49](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L49)
+Defined in: src/core/types.ts:49
 
 Per-category error breakdown from a previous iteration's results.
 
@@ -10,7 +10,7 @@ Per-category error breakdown from a previous iteration's results.
 
 > **category**: `string`
 
-Defined in: [src/core/types.ts:50](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L50)
+Defined in: src/core/types.ts:50
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/core/types.ts:50](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **errorRate**: `number`
 
-Defined in: [src/core/types.ts:54](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L54)
+Defined in: src/core/types.ts:54
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/core/types.ts:54](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **fn**: `number`
 
-Defined in: [src/core/types.ts:53](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L53)
+Defined in: src/core/types.ts:53
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/core/types.ts:53](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **fp**: `number`
 
-Defined in: [src/core/types.ts:52](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L52)
+Defined in: src/core/types.ts:52
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [src/core/types.ts:52](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **total**: `number`
 
-Defined in: [src/core/types.ts:51](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L51)
+Defined in: src/core/types.ts:51

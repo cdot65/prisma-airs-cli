@@ -1,6 +1,6 @@
 # Interface: BackupEnvelope\<T\>
 
-Defined in: [src/backup/types.ts:8](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L8)
+Defined in: src/backup/types.ts:8
 
 Envelope wrapping any backed-up resource.
 
@@ -16,7 +16,7 @@ Envelope wrapping any backed-up resource.
 
 > **data**: `T`
 
-Defined in: [src/backup/types.ts:12](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L12)
+Defined in: src/backup/types.ts:12
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/backup/types.ts:12](https://github.com/cdot65/prisma-airs-cli/b
 
 > **exportedAt**: `string`
 
-Defined in: [src/backup/types.ts:11](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L11)
+Defined in: src/backup/types.ts:11
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/backup/types.ts:11](https://github.com/cdot65/prisma-airs-cli/b
 
 > **resourceType**: `"redteam-target"`
 
-Defined in: [src/backup/types.ts:10](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L10)
+Defined in: src/backup/types.ts:10
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: [src/backup/types.ts:10](https://github.com/cdot65/prisma-airs-cli/b
 
 > **version**: `string`
 
-Defined in: [src/backup/types.ts:9](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L9)
+Defined in: src/backup/types.ts:9

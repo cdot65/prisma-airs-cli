@@ -1,7 +1,7 @@
 {
   "name": "@cdot65/prisma-airs-cli",
   "packageManager": "pnpm@10.6.5",
-  "version": "3.3.0",
+  "version": "4.0.0",
   "description": "CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits",
   "type": "module",
   "main": "dist/index.js",
@@ -34,7 +34,18 @@
     "docs:install": "pnpm -C docs-site install",
     "docs:build": "pnpm docs:api && pnpm -C docs-site build",
     "docs:serve": "pnpm docs:api && pnpm -C docs-site start",
-    "build:tsc": "tsc"
+    "build:tsc": "tsc",
+    "local:setup": "pnpm install && pnpm run build",
+    "local:built:version": "node dist/cli/index.js --version",
+    "local:built:help": "node dist/cli/index.js --help",
+    "local:smoke": "pnpm run build && pnpm local:built:version && pnpm local:built:help",
+    "local:dev:help": "tsx src/cli/index.ts --help",
+    "local:dev:profiles": "tsx src/cli/index.ts runtime profiles list --output json",
+    "local:dev:topics": "tsx src/cli/index.ts runtime topics list --all --output yaml",
+    "local:dev:doctor": "tsx src/cli/index.ts doctor --output markdown",
+    "local:link": "pnpm run build && pnpm link --global",
+    "local:link:check": "airs --version",
+    "local:unlink": "pnpm uninstall --global @cdot65/prisma-airs-cli"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -45,7 +56,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@cdot65/prisma-airs-sdk": "^0.17.0",
+    "@cdot65/prisma-airs-sdk": "^0.18.0",
     "@inquirer/prompts": "^8.3.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",

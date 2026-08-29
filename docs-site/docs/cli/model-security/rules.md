@@ -19,7 +19,10 @@ airs model-security rules list [options]
 | `--source-type <type>` | No | — | Filter by source type |
 | `--search <query>` | No | — | Search by name or UUID |
 | `--limit <n>` | No | `20` | Max results |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -59,6 +62,12 @@ airs model-security rules get [options] <uuid>
 #### Arguments
 
 - `uuid` (required) —
+
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

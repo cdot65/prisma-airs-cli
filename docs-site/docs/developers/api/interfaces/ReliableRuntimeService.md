@@ -1,6 +1,6 @@
 # Interface: ReliableRuntimeService
 
-Defined in: [src/airs/types.ts:97](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L97)
+Defined in: src/airs/types.ts:97
 
 Runtime scanning contract with item-correlated, resumable bulk operations.
 
@@ -14,7 +14,7 @@ Runtime scanning contract with item-correlated, resumable bulk operations.
 
 > **pollBatch**(`batch`, `intervalMs?`, `retryOpts?`): `Promise`\<[`BulkScanResult`](BulkScanResult.md)[]\>
 
-Defined in: [src/airs/types.ts:112](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L112)
+Defined in: src/airs/types.ts:112
 
 Poll one async submission and return one result per prompt, ordered by input index.
 
@@ -60,7 +60,7 @@ Poll one async submission and return one result per prompt, ordered by input ind
 
 > **pollResults**(`scanIds`, `intervalMs?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)[]\>
 
-Defined in: [src/airs/types.ts:93](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L93)
+Defined in: src/airs/types.ts:93
 
 #### Parameters
 
@@ -90,7 +90,7 @@ Use ReliableRuntimeService.pollBatch to preserve per-prompt correlation.
 
 > **scanPrompt**(`profileName`, `prompt`, `response?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)\>
 
-Defined in: [src/airs/types.ts:89](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L89)
+Defined in: src/airs/types.ts:89
 
 Scan a single prompt (and optional response) synchronously.
 
@@ -122,7 +122,7 @@ Scan a single prompt (and optional response) synchronously.
 
 > **submitBatch**(`profileName`, `prompts`, `sessionId?`, `retryOpts?`): `Promise`\<[`SubmittedBatch`](SubmittedBatch.md)\>
 
-Defined in: [src/airs/types.ts:99](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L99)
+Defined in: src/airs/types.ts:99
 
 Submit one SDK-sized group of indexed prompts for async scanning.
 
@@ -172,7 +172,7 @@ Submit one SDK-sized group of indexed prompts for async scanning.
 
 > **submitBulkScan**(`profileName`, `prompts`, `sessionId?`): `Promise`\<`string`[]\>
 
-Defined in: [src/airs/types.ts:91](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L91)
+Defined in: src/airs/types.ts:91
 
 #### Parameters
 

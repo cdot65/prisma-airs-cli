@@ -3,6 +3,7 @@ import { dump as yamlDump } from 'js-yaml';
 import type { AiGatewayWorkspace, AiGatewayWorkspaceDetail } from '../../airs/types.js';
 import { formatOutput, type OutputFormat } from './common.js';
 import { ui } from './ui.js';
+import { emitDetail } from './view.js';
 
 /** Standard header for aigateway commands. */
 export function renderAiGatewayHeader(): void {
@@ -126,14 +127,24 @@ export function renderCostReport(
     workspaceSlug: string;
     days: number;
     totalCents: number;
+    totalUsd: number;
     avgCents: number;
+    avgUsd: number;
     quotaExceeded: boolean;
-    records: Array<{ date: string; costCents: number }>;
+    records: Array<{ date: string; costCents: number; costUsd: number }>;
   },
   format: OutputFormat = 'pretty',
 ): void {
   if (format !== 'pretty') {
-    console.log(format === 'json' ? JSON.stringify(report, null, 2) : yamlDump(report));
+    emitDetail(
+      {
+        name: 'cost report',
+        columns: [],
+        pretty: { list() {}, detail() {} },
+      },
+      report,
+      format,
+    );
     return;
   }
   const dollars = (cents: number): string => `$${(cents / 100).toFixed(2)}`;

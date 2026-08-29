@@ -1,6 +1,6 @@
 # Interface: EfficacyMetrics
 
-Defined in: [src/core/types.ts:69](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L69)
+Defined in: src/core/types.ts:69
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [src/core/types.ts:69](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **accuracy**: `number`
 
-Defined in: [src/core/types.ts:76](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L76)
+Defined in: src/core/types.ts:76
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [src/core/types.ts:76](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **coverage**: `number`
 
-Defined in: [src/core/types.ts:77](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L77)
+Defined in: src/core/types.ts:77
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/core/types.ts:77](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **f1Score**: `number`
 
-Defined in: [src/core/types.ts:78](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L78)
+Defined in: src/core/types.ts:78
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/core/types.ts:78](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **falseNegatives**: `number`
 
-Defined in: [src/core/types.ts:73](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L73)
+Defined in: src/core/types.ts:73
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [src/core/types.ts:73](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **falsePositives**: `number`
 
-Defined in: [src/core/types.ts:72](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L72)
+Defined in: src/core/types.ts:72
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [src/core/types.ts:72](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **regressionCount**: `number`
 
-Defined in: [src/core/types.ts:80](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L80)
+Defined in: src/core/types.ts:80
 
 Count of regression-tier tests that failed (previously correct, now wrong).
 
@@ -58,7 +58,7 @@ Count of regression-tier tests that failed (previously correct, now wrong).
 
 > **trueNegativeRate**: `number`
 
-Defined in: [src/core/types.ts:75](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L75)
+Defined in: src/core/types.ts:75
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/core/types.ts:75](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **trueNegatives**: `number`
 
-Defined in: [src/core/types.ts:71](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L71)
+Defined in: src/core/types.ts:71
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [src/core/types.ts:71](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **truePositiveRate**: `number`
 
-Defined in: [src/core/types.ts:74](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L74)
+Defined in: src/core/types.ts:74
 
 ***
 
@@ -82,4 +82,4 @@ Defined in: [src/core/types.ts:74](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **truePositives**: `number`
 
-Defined in: [src/core/types.ts:70](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L70)
+Defined in: src/core/types.ts:70

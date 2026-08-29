@@ -20,6 +20,10 @@ export class SdkDataPatternsService implements DataPatternsService {
     return this.client.list(params);
   }
 
+  async listAll(params?: DataPatternListParams & { max?: number }): Promise<DataPatternResponse[]> {
+    return this.client.listAll(params);
+  }
+
   async create(body: DataPatternRequest): Promise<DataPatternResponse> {
     return this.client.create(body);
   }

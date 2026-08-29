@@ -1,6 +1,6 @@
 # Interface: RedTeamTarget
 
-Defined in: [src/airs/types.ts:211](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L211)
+Defined in: src/airs/types.ts:211
 
 Normalized red team target info.
 
@@ -14,7 +14,7 @@ Normalized red team target info.
 
 > **active**: `boolean`
 
-Defined in: [src/airs/types.ts:216](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L216)
+Defined in: src/airs/types.ts:216
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [src/airs/types.ts:216](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:213](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L213)
+Defined in: src/airs/types.ts:213
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [src/airs/types.ts:213](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **status**: `string`
 
-Defined in: [src/airs/types.ts:214](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L214)
+Defined in: src/airs/types.ts:214
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [src/airs/types.ts:214](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **targetType?**: `string`
 
-Defined in: [src/airs/types.ts:215](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L215)
+Defined in: src/airs/types.ts:215
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [src/airs/types.ts:215](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:212](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L212)
+Defined in: src/airs/types.ts:212

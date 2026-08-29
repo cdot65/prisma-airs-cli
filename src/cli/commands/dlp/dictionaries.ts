@@ -4,7 +4,13 @@ import type { Command } from 'commander';
 import { SdkDictionariesService } from '../../../airs/dlp/dictionaries.js';
 import type { DictionaryRequest } from '../../../airs/dlp/types.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import { dlpDictionaries, fail, type OutputFormat, usageError } from '../../renderer/index.js';
+import {
+  dlpDictionaries,
+  fail,
+  type OutputFormat,
+  resolveOutput,
+  usageError,
+} from '../../renderer/index.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
 // biome-ignore lint/suspicious/noExplicitAny: opts object from commander
@@ -38,20 +44,22 @@ export function register(dlp: Command): void {
     .option('--sort <field,dir>', '(repeatable)', (v, p: string[] = []) => [...p, v])
     .option('--keywords', 'Include keyword list in response')
     .option('--include-keywords', 'Alias for --keywords')
-    .option('--output <fmt>', 'Output format', 'pretty');
+    .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml');
   registerPageAliases(listCmd, { sizeFlag: '--size', sizeKey: 'size' });
   listCmd.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const includeKeywords = opts.keywords || opts.includeKeywords;
+      const svc = new SdkDictionariesService();
+      const params = {
+        size,
+        sort: opts.sort,
+        keywords: includeKeywords ? true : undefined,
+      };
+      const all = opts.all ? await svc.listAll({ ...params, max: Number(opts.max) }) : undefined;
       dlpDictionaries.renderList(
-        await new SdkDictionariesService().list({
-          page,
-          size,
-          sort: opts.sort,
-          keywords: includeKeywords ? true : undefined,
-        }),
-        opts.output as OutputFormat,
+        all ? { content: all, totalElements: all.length } : await svc.list({ ...params, page }),
+        await resolveOutput(listCmd, opts),
       );
     } catch (err) {
       fail(err);
@@ -86,17 +94,17 @@ export function register(dlp: Command): void {
       }
     });
 
-  group
+  const getCmd = group
     .command('get <id>')
     .option('--keywords', '')
     .option('--include-keywords', 'Alias for --keywords')
-    .option('--output <fmt>', 'Output format', 'pretty')
+    .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (id, opts) => {
       try {
         const includeKeywords = opts.keywords || opts.includeKeywords;
         dlpDictionaries.renderGet(
           await new SdkDictionariesService().get(id, { includeKeywords }),
-          opts.output as OutputFormat,
+          await resolveOutput(getCmd, opts),
         );
       } catch (err) {
         fail(err);

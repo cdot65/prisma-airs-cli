@@ -1,6 +1,6 @@
 # Interface: RedTeamStaticReport
 
-Defined in: [src/airs/types.ts:333](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L333)
+Defined in: src/airs/types.ts:333
 
 Normalized static report summary.
 
@@ -10,7 +10,7 @@ Normalized static report summary.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:335](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L335)
+Defined in: src/airs/types.ts:335
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:335](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **categories**: `object`[]
 
-Defined in: [src/airs/types.ts:342](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L342)
+Defined in: src/airs/types.ts:342
 
 #### asr
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:342](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **reportSummary?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:341](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L341)
+Defined in: src/airs/types.ts:341
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [src/airs/types.ts:341](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:334](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L334)
+Defined in: src/airs/types.ts:334
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/airs/types.ts:334](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **severityBreakdown**: `object`[]
 
-Defined in: [src/airs/types.ts:336](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L336)
+Defined in: src/airs/types.ts:336
 
 #### failed
 

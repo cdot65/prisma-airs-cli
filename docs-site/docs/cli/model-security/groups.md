@@ -22,7 +22,10 @@ airs model-security groups list [options]
 | `--sort-dir <dir>` | No | — | Sort direction (asc, desc) |
 | `--enabled-rules <uuids>` | No | — | Filter by enabled rule UUIDs (comma-separated) |
 | `--limit <n>` | No | `20` | Max results |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -65,7 +68,7 @@ airs model-security groups get [options] <uuid>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

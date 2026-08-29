@@ -1,12 +1,12 @@
 # Class: AirsScanService
 
-Defined in: [src/airs/scanner.ts:7](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/scanner.ts#L7)
+Defined in: src/airs/scanner.ts:7
 
 Scans prompts against AIRS security profiles via the Prisma AIRS SDK.
 
 ## Implements
 
-- `ScanService`
+- [`ScanService`](../interfaces/ScanService.md)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Scans prompts against AIRS security profiles via the Prisma AIRS SDK.
 
 > **new AirsScanService**(`opts`): `AirsScanService`
 
-Defined in: [src/airs/scanner.ts:10](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/scanner.ts#L10)
+Defined in: src/airs/scanner.ts:10
 
 #### Parameters
 
@@ -30,9 +30,9 @@ Defined in: [src/airs/scanner.ts:10](https://github.com/cdot65/prisma-airs-cli/b
 
 ### scan()
 
-> **scan**(`profileName`, `prompt`, `sessionId?`): `Promise`\<`ScanResult`\>
+> **scan**(`profileName`, `prompt`, `sessionId?`): `Promise`\<[`ScanResult`](../interfaces/ScanResult.md)\>
 
-Defined in: [src/airs/scanner.ts:16](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/scanner.ts#L16)
+Defined in: src/airs/scanner.ts:16
 
 Scan a single prompt synchronously and return the normalized result.
 
@@ -52,19 +52,19 @@ Scan a single prompt synchronously and return the normalized result.
 
 #### Returns
 
-`Promise`\<`ScanResult`\>
+`Promise`\<[`ScanResult`](../interfaces/ScanResult.md)\>
 
 #### Implementation of
 
-`ScanService.scan`
+[`ScanService`](../interfaces/ScanService.md).[`scan`](../interfaces/ScanService.md#scan)
 
 ***
 
 ### scanBatch()
 
-> **scanBatch**(`profileName`, `prompts`, `concurrency?`, `sessionId?`): `Promise`\<`ScanResult`[]\>
+> **scanBatch**(`profileName`, `prompts`, `concurrency?`, `sessionId?`): `Promise`\<[`ScanResult`](../interfaces/ScanResult.md)[]\>
 
-Defined in: [src/airs/scanner.ts:40](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/scanner.ts#L40)
+Defined in: src/airs/scanner.ts:40
 
 Scan multiple prompts concurrently (default 5) and return results in order.
 
@@ -88,8 +88,8 @@ Scan multiple prompts concurrently (default 5) and return results in order.
 
 #### Returns
 
-`Promise`\<`ScanResult`[]\>
+`Promise`\<[`ScanResult`](../interfaces/ScanResult.md)[]\>
 
 #### Implementation of
 
-`ScanService.scanBatch`
+[`ScanService`](../interfaces/ScanService.md).[`scanBatch`](../interfaces/ScanService.md#scanbatch)

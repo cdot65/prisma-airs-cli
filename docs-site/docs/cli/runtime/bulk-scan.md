@@ -133,7 +133,7 @@ airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
 
 State files include the original prompt text. The default state directory is created with mode `0700` and each state file with mode `0600`; treat them as sensitive. Exact-once submission cannot be guaranteed after an ambiguous acceptance, so resume recovers known accepted work and reports the ambiguous item for manual review instead of risking a duplicate POST.
 
-Requires `@cdot65/prisma-airs-sdk` 0.13.2 or later.
+CLI v4 uses `@cdot65/prisma-airs-sdk` 0.18.0 or later.
 
 The command holds a per-state job lock for its lifetime. A concurrent bulk/resume invocation for
 the same job exits without submitting; a lock whose local owner process has died is recovered.

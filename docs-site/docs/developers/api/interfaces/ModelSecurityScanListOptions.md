@@ -1,6 +1,6 @@
 # Interface: ModelSecurityScanListOptions
 
-Defined in: [src/airs/types.ts:836](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L836)
+Defined in: src/airs/types.ts:848
 
 Filter options for listing scans.
 
@@ -10,7 +10,7 @@ Filter options for listing scans.
 
 > `optional` **evalOutcome?**: `string`
 
-Defined in: [src/airs/types.ts:837](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L837)
+Defined in: src/airs/types.ts:849
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:837](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **limit?**: `number`
 
-Defined in: [src/airs/types.ts:842](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L842)
+Defined in: src/airs/types.ts:854
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:842](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **scanOrigin?**: `string`
 
-Defined in: [src/airs/types.ts:839](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L839)
+Defined in: src/airs/types.ts:851
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:839](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **search?**: `string`
 
-Defined in: [src/airs/types.ts:840](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L840)
+Defined in: src/airs/types.ts:852
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:840](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **skip?**: `number`
 
-Defined in: [src/airs/types.ts:841](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L841)
+Defined in: src/airs/types.ts:853
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [src/airs/types.ts:841](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **sourceType?**: `string`
 
-Defined in: [src/airs/types.ts:838](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L838)
+Defined in: src/airs/types.ts:850

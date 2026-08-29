@@ -136,7 +136,9 @@ airs runtime topics get [options] <nameOrId>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
+| `--revision <n>` | No | latest | Select an exact revision |
+| `--all-versions` | No | — | Return every matching revision as a list |
 
 #### Examples
 
@@ -168,14 +170,14 @@ airs runtime topics get "Professional authority" --output json
 
 ```text
 {
-  "topic_id": "00000000-0000-0000-0000-000000000001",
-  "topic_name": "Professional authority",
+  "topicId": "00000000-0000-0000-0000-000000000001",
+  "topicName": "Professional authority",
   "revision": 1,
   "description": "Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals.",
   "examples": [],
-  "last_modified_ts": "2026-05-21T21:23:53Z",
-  "csp_id": "<csp-id>",
-  "tsg_id": "<tenant-id>"
+  "lastModifiedTs": "2026-05-21T21:23:53Z",
+  "cspId": "<csp-id>",
+  "tsgId": "<tenant-id>"
 }
 ```
 
@@ -186,11 +188,11 @@ airs runtime topics get "Professional authority" --output yaml
 ```
 
 ```text
-topic_id: 00000000-0000-0000-0000-000000000001
-topic_name: Professional authority
+topicId: 00000000-0000-0000-0000-000000000001
+topicName: Professional authority
 revision: 1
 description: Prompts where the user asks the AI to adopt the persona of a licensed expert (e.g., doctor, engineer). Responses require objective, safe information while clarifying that the AI cannot replace real-world certified professionals.
-last_modified_ts: 2026-05-21T21:23:53Z
+lastModifiedTs: 2026-05-21T21:23:53Z
 ```
 
 ---
@@ -209,7 +211,10 @@ airs runtime topics list [options]
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | `100` | Max results |
 | `--offset <n>` | No | `0` | Starting offset |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--all-versions` | No | — | Include historical revisions instead of latest-only results |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

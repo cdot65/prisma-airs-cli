@@ -29,27 +29,36 @@ import {
 import { confirmOrAbort } from '../confirm.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { examples } from '../examples.js';
-import { registerPageAliases, resolvePageParams } from '../pagination.js';
+import {
+  registerListFlags,
+  registerPageAliases,
+  resolveListParams,
+  resolvePageParams,
+} from '../pagination.js';
 import { parseInputFile } from '../parse-input.js';
 import {
+  emitDetail,
+  emitList,
   fail,
-  OUTPUT_FORMATS,
   type OutputFormat,
   renderApiKeyDetail,
-  renderApiKeyList,
   renderCustomerAppConsumption,
   renderCustomerAppDetail,
-  renderCustomerAppList,
   renderDeploymentProfileList,
   renderProfileDetail,
-  renderProfileList,
   renderRuntimeConfigHeader,
   renderScanLogList,
   renderTopicDetail,
-  renderTopicList,
+  resolveOutput,
   ui,
   usageError,
 } from '../renderer/index.js';
+import {
+  apiKeysView,
+  customerAppsView,
+  profilesView,
+  topicsView,
+} from '../renderer/views/runtime.js';
 import { registerDlpCommands } from './dlp/index.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
 import { registerApplyCommand } from './topics-apply.js';
@@ -186,20 +195,29 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const apiKeys = runtime.command('api-keys').description('Manage AIRS API keys');
 
-  apiKeys
-    .command('list')
+  const apiKeysList = registerListFlags(apiKeys.command('list'), { dialect: 'offset' })
     .description('List API keys')
-    .option('--limit <n>', 'Max results', '100')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(apiKeysList, opts);
+        const page = resolveListParams(apiKeysList, opts, { dialect: 'offset' });
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
+        if (page.all) {
+          const items = await service.listAllApiKeys({ limit: page.limit, max: page.max });
+          emitList(apiKeysView, items, fmt, {
+            page: { returned: items.length, total: items.length, all: true },
+          });
+          return;
+        }
         const result = await service.listApiKeys({
-          limit: Number.parseInt(opts.limit, 10),
+          limit: page.limit,
+          offset: page.offset,
         });
-        renderApiKeyList(result.apiKeys, fmt);
+        emitList(apiKeysView, result.apiKeys, fmt, {
+          page: { returned: result.apiKeys.length, next: result.nextOffset },
+        });
       } catch (err) {
         fail(err);
       }
@@ -433,34 +451,45 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const customerApps = runtime.command('customer-apps').description('Manage AIRS customer apps');
 
-  customerApps
-    .command('list')
+  const customerAppsList = registerListFlags(customerApps.command('list'), { dialect: 'offset' })
     .description('List customer apps')
-    .option('--limit <n>', 'Max results', '100')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(customerAppsList, opts);
+        const page = resolveListParams(customerAppsList, opts, { dialect: 'offset' });
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
+        if (page.all) {
+          const items = await service.listAllCustomerApps({ limit: page.limit, max: page.max });
+          emitList(customerAppsView, items, fmt, {
+            page: { returned: items.length, total: items.length, all: true },
+          });
+          return;
+        }
         const result = await service.listCustomerApps({
-          limit: Number.parseInt(opts.limit, 10),
+          limit: page.limit,
+          offset: page.offset,
         });
-        renderCustomerAppList(result.apps, fmt);
+        emitList(customerAppsView, result.apps, fmt, {
+          page: { returned: result.apps.length, next: result.nextOffset },
+        });
       } catch (err) {
         fail(err);
       }
     });
 
-  customerApps
+  const customerAppsGet = customerApps
     .command('get <appName>')
     .description('Get customer app details')
-    .action(async (appName: string) => {
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
+    .action(async (appName: string, opts) => {
       try {
-        renderRuntimeConfigHeader();
+        const fmt = await resolveOutput(customerAppsGet, opts);
+        if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const app = await service.getCustomerApp(appName);
-        renderCustomerAppDetail(app);
+        emitDetail(customerAppsView, app, fmt);
       } catch (err) {
         fail(err);
       }
@@ -585,12 +614,10 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   const profiles = runtime.command('profiles').description('Manage AIRS security profiles');
 
-  profiles
-    .command('list')
+  const profilesList = registerListFlags(profiles.command('list'), { dialect: 'offset' })
     .description('List security profiles')
-    .option('--limit <n>', 'Max results', '100')
-    .option('--offset <n>', 'Starting offset', '0')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--all-versions', 'Include every profile revision')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
       examples(
@@ -601,56 +628,67 @@ export function registerRuntimeCommand(program: Command): void {
     )
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
-        if (!OUTPUT_FORMATS.includes(fmt)) {
-          usageError(`Invalid output format "${fmt}". Valid: ${OUTPUT_FORMATS.join(', ')}`);
-        }
+        const fmt = await resolveOutput(profilesList, opts);
+        const page = resolveListParams(profilesList, opts, { dialect: 'offset' });
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
-        const result = await service.listProfiles({
-          limit: Number.parseInt(opts.limit, 10),
-          offset: Number.parseInt(opts.offset, 10),
-        });
-        renderProfileList(result.profiles, fmt);
-        if (fmt === 'pretty' && result.nextOffset != null) {
-          ui.dim(`Next offset: ${result.nextOffset}`);
+        if (page.all) {
+          const items = await service.listAllProfiles({
+            limit: page.limit,
+            latest: !opts.allVersions,
+            max: page.max,
+          });
+          emitList(profilesView, items, fmt, {
+            page: { returned: items.length, total: items.length, all: true },
+          });
+          return;
         }
+        const result = await service.listProfiles({
+          limit: page.limit,
+          offset: page.offset,
+          latest: !opts.allVersions,
+        });
+        emitList(profilesView, result.profiles, fmt, {
+          page: {
+            returned: result.profiles.length,
+            next: result.nextOffset,
+          },
+        });
       } catch (err) {
         fail(err);
       }
     });
 
-  profiles
+  const profilesGet = profiles
     .command('get <nameOrId>')
     .description('Get a security profile by name or UUID')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--revision <n>', 'Select an exact revision', Number)
+    .option('--all-versions', 'Return every matching revision')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (nameOrId: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
-        if (fmt !== 'pretty' && fmt !== 'json' && fmt !== 'yaml') {
-          usageError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
-        }
+        const fmt = await resolveOutput(profilesGet, opts);
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           nameOrId,
         );
-        const profile = isUuid
-          ? await service.getProfile(nameOrId)
-          : await service.getProfileByName(nameOrId);
-        if (fmt === 'json') {
-          console.log(JSON.stringify(profile, null, 2));
-        } else if (fmt === 'yaml') {
-          const lines = [`profileId: ${profile.profileId}`, `profileName: ${profile.profileName}`];
-          if (profile.revision != null) lines.push(`revision: ${profile.revision}`);
-          if (profile.active != null) lines.push(`active: ${profile.active}`);
-          if (profile.createdBy) lines.push(`createdBy: ${profile.createdBy}`);
-          if (profile.updatedBy) lines.push(`updatedBy: ${profile.updatedBy}`);
-          if (profile.lastModifiedTs) lines.push(`lastModifiedTs: ${profile.lastModifiedTs}`);
-          if (profile.policy) lines.push(`policy: ${JSON.stringify(profile.policy, null, 2)}`);
-          console.log(lines.join('\n'));
+        if (opts.revision !== undefined || opts.allVersions) {
+          const profiles = (await service.listAllProfiles({ latest: false })).filter((profile) =>
+            isUuid ? profile.profileId === nameOrId : profile.profileName === nameOrId,
+          );
+          const selected =
+            opts.revision === undefined
+              ? profiles
+              : profiles.filter((profile) => profile.revision === opts.revision);
+          if (selected.length === 0) throw new Error(`Profile ${nameOrId} not found`);
+          if (opts.allVersions) emitList(profilesView, selected, fmt);
+          else emitDetail(profilesView, selected[0], fmt);
         } else {
-          renderProfileDetail(profile);
+          const profile = isUuid
+            ? await service.getProfile(nameOrId)
+            : await service.getProfileByName(nameOrId);
+          emitDetail(profilesView, profile, fmt);
         }
       } catch (err) {
         fail(err);
@@ -1112,66 +1150,75 @@ export function registerRuntimeCommand(program: Command): void {
 
   registerEvalCommand(topics);
 
-  topics
+  const topicsGet = topics
     .command('get <nameOrId>')
     .description('Get a custom topic by name or UUID')
-    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .option('--revision <n>', 'Select an exact revision', Number)
+    .option('--all-versions', 'Return every matching revision')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (nameOrId: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
-        if (fmt !== 'pretty' && fmt !== 'json' && fmt !== 'yaml') {
-          usageError(`Invalid output format "${fmt}". Valid: pretty, json, yaml`);
-        }
+        const fmt = await resolveOutput(topicsGet, opts);
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           nameOrId,
         );
-        const topic = isUuid
-          ? await service.getTopic(nameOrId)
-          : await service.getTopicByName(nameOrId);
-        if (fmt === 'json') {
-          console.log(JSON.stringify(topic, null, 2));
-        } else if (fmt === 'yaml') {
-          const lines = [`topic_id: ${topic.topic_id}`, `topic_name: ${topic.topic_name}`];
-          if (topic.revision != null) lines.push(`revision: ${topic.revision}`);
-          if (topic.description) lines.push(`description: ${topic.description}`);
-          if (topic.examples?.length) {
-            lines.push('examples:');
-            for (const ex of topic.examples) lines.push(`  - ${ex}`);
-          }
-          if (topic.created_by) lines.push(`created_by: ${topic.created_by}`);
-          if (topic.updated_by) lines.push(`updated_by: ${topic.updated_by}`);
-          if (topic.last_modified_ts) lines.push(`last_modified_ts: ${topic.last_modified_ts}`);
-          console.log(lines.join('\n'));
+        if (opts.revision !== undefined || opts.allVersions) {
+          const topics = (await service.listTopics()).filter((topic) =>
+            isUuid ? topic.topic_id === nameOrId : topic.topic_name === nameOrId,
+          );
+          const selected =
+            opts.revision === undefined
+              ? topics
+              : topics.filter((topic) => topic.revision === opts.revision);
+          if (selected.length === 0) throw new Error(`Topic ${nameOrId} not found`);
+          if (opts.allVersions) emitList(topicsView, selected, fmt);
+          else emitDetail(topicsView, selected[0], fmt);
         } else {
-          renderTopicDetail(topic);
+          const topic = isUuid
+            ? await service.getTopic(nameOrId)
+            : await service.getTopicByName(nameOrId);
+          emitDetail(topicsView, topic, fmt);
         }
       } catch (err) {
         fail(err);
       }
     });
 
-  topics
-    .command('list')
+  const topicsList = registerListFlags(topics.command('list'), { dialect: 'offset' })
     .description('List custom topics')
-    .option('--limit <n>', 'Max results', '100')
-    .option('--offset <n>', 'Starting offset', '0')
-    .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
+    .option('--all-versions', 'Include every topic revision')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(topicsList, opts);
+        const params = resolveListParams(topicsList, opts, { dialect: 'offset' });
         if (fmt === 'pretty') renderRuntimeConfigHeader();
         const service = await createMgmtService();
-        const allTopics = await service.listTopics();
-        // Client-side pagination since SDK returns all
-        const offset = Number.parseInt(opts.offset, 10);
-        const limit = Number.parseInt(opts.limit, 10);
-        const page = allTopics.slice(offset, offset + limit);
-        renderTopicList(page, fmt);
-        if (fmt === 'pretty' && offset + limit < allTopics.length) {
-          ui.dim(`Showing ${page.length} of ${allTopics.length} topics`);
-        }
+        const allTopics = opts.allVersions
+          ? await service.listTopics()
+          : await service.listLatestTopics(
+              params.all
+                ? { offset: 0, limit: params.max === 0 ? 10_000 : params.max }
+                : { offset: params.offset, limit: params.limit },
+            );
+        const page =
+          opts.allVersions && !params.all
+            ? allTopics.slice(params.offset, params.offset + params.limit)
+            : allTopics;
+        emitList(topicsView, page, fmt, {
+          page: params.all
+            ? { returned: page.length, total: page.length, all: true }
+            : {
+                returned: page.length,
+                total: opts.allVersions ? allTopics.length : undefined,
+                next:
+                  opts.allVersions && params.offset + params.limit < allTopics.length
+                    ? params.offset + params.limit
+                    : undefined,
+              },
+        });
       } catch (err) {
         fail(err);
       }

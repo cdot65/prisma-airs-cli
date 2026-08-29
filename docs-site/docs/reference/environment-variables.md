@@ -66,6 +66,7 @@ Model Security commands also reuse the `PANW_MGMT_*` credentials. All endpoint o
 | Variable | Default | Range | What it controls |
 |----------|---------|-------|-----------------|
 | `SCAN_CONCURRENCY` | `5` | 1--20 | Parallel scan requests per batch |
+| `PANW_CLI_OUTPUT` | `pretty` | six formats | Default read output format |
 
 :::warning
 `SCAN_CONCURRENCY` above 5 may trigger AIRS rate limits. Increase cautiously.
@@ -78,6 +79,19 @@ Model Security commands also reuse the `PANW_MGMT_*` credentials. All endpoint o
 | Variable | Default | What it does |
 |----------|---------|-------------|
 | `DATA_DIR` | `~/.prisma-airs/runs` | Data directory |
+| `PRISMA_AIRS_CONFIG_PATH` | `~/.prisma-airs/config.json` | Override config file location |
+
+---
+
+## AI Gateway API
+
+| Variable | Required | What it does |
+|----------|:--------:|-------------|
+| `PANW_AI_GW_DATA_ENDPOINT` | -- | AI Gateway scoped data-plane endpoint |
+| `PANW_AI_GW_ADMIN_ENDPOINT` | -- | AI Gateway tenant-wide admin endpoint |
+| `PANW_AI_GW_TOKEN_ENDPOINT` | -- | AI Gateway OAuth endpoint |
+
+AI Gateway reuses the shared `PANW_MGMT_*` credentials.
 
 :::tip
 The `~` prefix is expanded to `$HOME` automatically.

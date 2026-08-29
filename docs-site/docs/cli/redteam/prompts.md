@@ -21,6 +21,10 @@ airs redteam prompts list [options] <setUuid>
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | `50` | Max results |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -62,6 +66,12 @@ airs redteam prompts get [options] <setUuid> <promptUuid>
 
 - `setUuid` (required) —
 - `promptUuid` (required) —
+
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

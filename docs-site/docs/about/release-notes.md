@@ -1,5 +1,24 @@
 # Release Notes
 
+## v4.0.0 (2026-08-29)
+
+### Changed (breaking)
+
+- **One read-output contract everywhere.** Read commands accept `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`. JSON/YAML list output is always a bare array of complete normalized records; table/Markdown/CSV use a stable projection. Detail commands emit a complete object in JSON/YAML and a two-column Key/Value view in tabular formats. Status and paging hints go to stderr, leaving stdout pipe-safe.
+- **Output selection has one precedence order:** command `--output`, global `--output`, `defaultOutput` in config (or `PANW_CLI_OUTPUT`), then `pretty`.
+- **Pagination is uniform.** Paginated lists expose `--limit`, `--offset`, and `--all`; `--all` walks the underlying API pages and is capped at 10,000 records unless `--max` changes the cap (`--max 0` removes it). Profiles and topics return only their latest revision by default; use `--all-versions` or `--revision` when historical data is required.
+- **Backup serialization uses `--file-format json|yaml`.** The old `--output` and `--format` spellings remain hidden deprecated aliases for this release.
+
+### New
+
+- Markdown output for read commands, RFC 4180-safe CSV quoting, and camelCase normalized DLP JSON/YAML records.
+- AI Gateway cost telemetry retains explicit cent values and adds `totalUsd`, `avgUsd`, and per-record `costUsd` values.
+- `airs config get|list` and `airs doctor` participate in the same structured output system.
+
+### Dependencies
+
+- Upgraded `@cdot65/prisma-airs-sdk` to `^0.18.0`, which owns cross-page traversal, maximum-result enforcement, repeated-cursor protection, and latest-revision selection.
+
 ## v3.3.0 (2026-08-05)
 
 ### New

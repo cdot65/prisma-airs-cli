@@ -26,11 +26,11 @@ airs runtime dlp patterns list
 airs runtime dlp patterns list --limit 50 --offset 0 --sort name,asc --output json
 ```
 
-**Output (`--output json`)** — curated `{items, page}` projection (not the raw SDK envelope):
+**Output (`--output json`)** — a bare array of complete camelCase records (not
+the raw SDK page envelope):
 
 ```json
-{
-  "items": [
+[
     {
       "id": "6990...",
       "name": "IPv4",
@@ -47,15 +47,15 @@ airs runtime dlp patterns list --limit 50 --offset 0 --sort name,asc --output js
       "technique": "regex",
       "version": 1
     }
-  ],
-  "page": { "number": 0, "size": 25, "total": 1123, "returned": 2 }
-}
+]
 ```
 
-`pretty` and `table` formats render columns ID, Name, Type, Status, Technique, Version. Use `get <id>` for full nested fields (`detection_config`, `matching_rules`, `tags`, `audit_metadata`).
+`pretty`, `table`, `markdown`, and `csv` render stable projections. Use
+`get <id>` for complete nested fields (`detectionConfig`, `matchingRules`,
+`tags`, and `auditMetadata`).
 
 :::note[Nullable fields]
-Underlying API responses include `null` values on `matching_rules` nested fields — `delimiter`, `proximity_keywords`, `regexes`, `metadata_criteria` are each independently nullable depending on the detection technique. CLI requires `@cdot65/prisma-airs-sdk@^0.9.2` or newer to parse this surface; older SDK pins fail Zod validation.
+Underlying API responses include `null` values on `matching_rules` nested fields — `delimiter`, `proximity_keywords`, `regexes`, `metadata_criteria` are each independently nullable depending on the detection technique. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0` to parse this surface.
 :::
 
 ## create
@@ -120,7 +120,7 @@ Body shape matches the API request — `{ name, type, detection_config, matching
 
 ## get
 
-Retrieve a single pattern by ID. Requires `@cdot65/prisma-airs-sdk@^0.10.0` or newer (earlier versions hit a 400 against the upstream).
+Retrieve a single pattern by ID. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0`.
 
 ```bash
 airs runtime dlp patterns get 6a06d3cf7e175b786523b8e5

@@ -12,7 +12,7 @@ import {
   resolveConfigFilePath,
 } from '../../config/loader.js';
 import { examples } from '../examples.js';
-import { type BulletKind, ui, usageError } from '../renderer/index.js';
+import { type BulletKind, formatOutput, resolveOutput, ui } from '../renderer/index.js';
 
 export type DoctorStatus = 'pass' | 'warn' | 'fail';
 
@@ -443,26 +443,6 @@ const STATUS_KIND: Record<DoctorStatus, BulletKind> = {
   fail: 'error',
 };
 
-const DOCTOR_FORMATS = ['pretty', 'json', 'yaml'] as const;
-type DoctorFormat = (typeof DOCTOR_FORMATS)[number];
-
-function parseDoctorFormat(value: string): DoctorFormat {
-  if (!(DOCTOR_FORMATS as readonly string[]).includes(value)) {
-    usageError(`Invalid --output '${value}'. Valid formats: ${DOCTOR_FORMATS.join(', ')}`);
-  }
-  return value as DoctorFormat;
-}
-
-function toYaml(checks: DoctorCheck[]): string {
-  return checks
-    .map((c) => {
-      const lines = [`name: ${c.name}`, `status: ${c.status}`, `detail: ${c.detail}`];
-      if (c.hint) lines.push(`hint: ${c.hint}`);
-      return lines.join('\n');
-    })
-    .join('\n---\n');
-}
-
 function renderPretty(checks: DoctorCheck[]): void {
   ui.header('Doctor', 'Prisma AIRS CLI preflight checks');
   for (const check of checks) {
@@ -483,24 +463,33 @@ function renderPretty(checks: DoctorCheck[]): void {
 }
 
 export function registerDoctorCommand(program: Command): void {
-  program
+  const doctor = program
     .command('doctor')
     .description('Check credentials, config, and API connectivity (preflight)')
-    .option('--output <format>', 'Output format: pretty, json, or yaml', 'pretty')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
       examples('airs doctor', `airs doctor --output json | jq '.[] | select(.status != "pass")'`),
     )
     .action(async (opts) => {
-      const fmt = parseDoctorFormat(opts.output);
+      const fmt = await resolveOutput(doctor, opts);
       const checks = await runDoctor();
 
-      if (fmt === 'json') {
-        console.log(JSON.stringify(checks, null, 2));
-      } else if (fmt === 'yaml') {
-        console.log(toYaml(checks));
-      } else {
+      if (fmt === 'pretty') {
         renderPretty(checks);
+      } else {
+        console.log(
+          formatOutput(
+            checks.map((check) => ({ ...check })),
+            [
+              { key: 'name', label: 'Name' },
+              { key: 'status', label: 'Status' },
+              { key: 'detail', label: 'Detail' },
+              { key: 'hint', label: 'Hint' },
+            ],
+            fmt,
+          ),
+        );
       }
 
       // process.exit (not exitCode) — a timed-out probe may hold a pending

@@ -56,13 +56,13 @@ airs redteam targets backup --name "truffles - dev - langgraph agent"
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--output-dir <path>` | `./airs-backup/targets/` | Directory to write backup files |
-| `--output <format>` | `json` | Output format: `json` or `yaml` |
+| `--file-format <format>` | `json` | Backup file format: `json` or `yaml` (`--output` and `--format` are deprecated aliases) |
 | `--name <targetName>` | _(all targets)_ | Backup a single target by name |
 
 ### YAML Format
 
 ```bash
-airs redteam targets backup --output yaml --output-dir ./my-backups
+airs redteam targets backup --file-format yaml --output-dir ./my-backups
 ```
 
 ---
@@ -192,7 +192,7 @@ PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./airs-backup
 Store target configurations in git for audit trails:
 
 ```bash
-airs redteam targets backup --output-dir ./infra/airs-targets/ --output yaml
+airs redteam targets backup --output-dir ./infra/airs-targets/ --file-format yaml
 git add infra/airs-targets/
 git commit -m "snapshot: AIRS red team targets"
 ```

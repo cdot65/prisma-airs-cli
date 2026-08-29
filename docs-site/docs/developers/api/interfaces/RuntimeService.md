@@ -1,6 +1,6 @@
 # Interface: RuntimeService
 
-Defined in: [src/airs/types.ts:87](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L87)
+Defined in: src/airs/types.ts:87
 
 Backwards-compatible contract for the original runtime scanning operations.
 
@@ -14,7 +14,7 @@ Backwards-compatible contract for the original runtime scanning operations.
 
 > **pollResults**(`scanIds`, `intervalMs?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)[]\>
 
-Defined in: [src/airs/types.ts:93](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L93)
+Defined in: src/airs/types.ts:93
 
 #### Parameters
 
@@ -40,7 +40,7 @@ Use ReliableRuntimeService.pollBatch to preserve per-prompt correlation.
 
 > **scanPrompt**(`profileName`, `prompt`, `response?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)\>
 
-Defined in: [src/airs/types.ts:89](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L89)
+Defined in: src/airs/types.ts:89
 
 Scan a single prompt (and optional response) synchronously.
 
@@ -68,7 +68,7 @@ Scan a single prompt (and optional response) synchronously.
 
 > **submitBulkScan**(`profileName`, `prompts`, `sessionId?`): `Promise`\<`string`[]\>
 
-Defined in: [src/airs/types.ts:91](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L91)
+Defined in: src/airs/types.ts:91
 
 #### Parameters
 

@@ -17,7 +17,10 @@ airs runtime api-keys list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--limit <n>` | No | `100` | Max results |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -65,24 +68,23 @@ airs runtime api-keys list --limit 2 --output json
 ]
 ```
 
-*YAML output (multi-doc stream — one document per key)*
+*YAML output (one sequence containing complete records)*
 
 ```bash
 airs runtime api-keys list --limit 2 --output yaml
 ```
 
 ```text
-id: 00000000-0000-0000-0000-000000000001
-name: docs-example-key
-last8: ABCD1234
-createdAt:
-expiresAt:
----
-id: 00000000-0000-0000-0000-000000000002
-name: docs-other-example-key
-last8: EFGH5678
-createdAt:
-expiresAt:
+- id: 00000000-0000-0000-0000-000000000001
+  name: docs-example-key
+  last8: ABCD1234
+  createdAt:
+  expiresAt:
+- id: 00000000-0000-0000-0000-000000000002
+  name: docs-other-example-key
+  last8: EFGH5678
+  createdAt:
+  expiresAt:
 ```
 
 ---

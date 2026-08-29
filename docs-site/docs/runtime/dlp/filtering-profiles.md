@@ -24,28 +24,26 @@ airs runtime dlp filtering-profiles list --limit 20 --offset 0
 airs runtime dlp filtering-profiles list --sort name,asc --output json
 ```
 
-**Output (`--output json`)** — curated `{items, page}` projection:
+**Output (`--output json`)** — a bare array of complete camelCase records:
 
 ```json
-{
-  "items": [
+[
     {
       "id": "6a10...",
       "name": "asdfafdsadsa",
       "type": "custom",
       "direction": "c2s",
-      "severity": "low",
+      "logSeverity": "low",
       "version": 1
     }
-  ],
-  "page": { "number": 0, "size": 25, "total": 29, "returned": 1 }
-}
+]
 ```
 
-Use `get <id>` for the full nested fields (`file_type`, `criteria_details`, `exception_rules`, `exclusions`, `rule1`, `rule2`, `audit_metadata`).
+Use `get <id>` for complete nested fields (`fileType`, `criteriaDetails`,
+`exceptionRules`, `exclusions`, `rule1`, `rule2`, and `auditMetadata`).
 
 :::note[Nullable fields]
-Underlying API responses return `null` for several fields on real tenants — including `description`, `rule2`, `audit_metadata.created_by`, and `is_end_user_coaching_enabled`. CLI requires `@cdot65/prisma-airs-sdk@^0.9.2` or newer.
+Underlying API responses return `null` for several fields on real tenants — including `description`, `rule2`, `audit_metadata.created_by`, and `is_end_user_coaching_enabled`. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0` for these nullable shapes.
 :::
 
 ## get

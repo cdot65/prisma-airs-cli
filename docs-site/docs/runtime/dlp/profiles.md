@@ -26,28 +26,27 @@ airs runtime dlp profiles list
 airs runtime dlp profiles list --limit 50 --offset 0 --sort name,asc --output json
 ```
 
-**Output (`--output json`)** — curated `{items, page}` projection:
+**Output (`--output json`)** — a bare array of complete camelCase records:
 
 ```json
-{
-  "items": [
+[
     {
       "id": "1234567890",
       "name": "EU-Regulated (umbrella)",
       "type": "custom",
-      "profile_type": "advanced",
+      "profileType": "advanced",
       "status": "active",
       "version": 1
     }
-  ],
-  "page": { "number": 0, "size": 25, "total": 30, "returned": 1 }
-}
+]
 ```
 
-Use `get <id>` for nested fields (`detection_rules` with `expression_tree` or `multi_profile`, `audit_metadata`, server-rendered `advance_data_patterns_rule_request`).
+Use `get <id>` for nested fields (`detectionRules` with `expressionTree` or
+`multiProfile`, `auditMetadata`, and server-rendered
+`advanceDataPatternsRuleRequest`).
 
 :::note[Nullable fields]
-Underlying API `expression_tree` responses are recursive — many nodes carry `null` for `operator_type`, `rule_item`, or `sub_expressions`. CLI requires `@cdot65/prisma-airs-sdk@^0.9.2` or newer to parse them.
+Underlying API `expression_tree` responses are recursive — many nodes carry `null` for `operator_type`, `rule_item`, or `sub_expressions`. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0` to parse them.
 :::
 
 ## create
@@ -141,7 +140,7 @@ Multi-profile compositions auto-promote `profile_type` to `advanced`.
 
 ## get
 
-Retrieve a single profile by ID. Requires `@cdot65/prisma-airs-sdk@^0.10.0` or newer (earlier versions hit a 400 against the upstream).
+Retrieve a single profile by ID. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0`.
 
 ```bash
 airs runtime dlp profiles get 11995028

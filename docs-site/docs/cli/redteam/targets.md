@@ -16,7 +16,11 @@ airs redteam targets list [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--limit <n>` | No | — | Maximum records in a single client-side slice |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Return every target |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -55,7 +59,7 @@ airs redteam targets get [options] <uuid>
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--output <format>` | No | `pretty` | Output format: pretty, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -665,7 +669,7 @@ airs redteam targets backup [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--output-dir <path>` | No | — | Output directory |
-| `--output <format>` | No | `json` | Output format: json or yaml |
+| `--file-format <format>` | No | `json` | Backup file format: json or yaml (`--output` and `--format` are deprecated aliases) |
 | `--name <targetName>` | No | — | Backup a single target by name |
 
 #### Examples
@@ -688,7 +692,7 @@ Backed up 1 target(s) to ./backups:
 *Back up all targets in YAML format*
 
 ```bash
-airs redteam targets backup --output-dir ./backups --output yaml
+airs redteam targets backup --output-dir ./backups --file-format yaml
 ```
 
 ---
@@ -751,7 +755,7 @@ airs redteam targets error-logs <targetId> [options]
 | `--limit <n>` | No | — | Max results |
 | `--offset <n>` | No | — | Starting offset |
 | `--search <text>` | No | — | Filter by search text |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

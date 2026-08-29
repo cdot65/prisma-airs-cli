@@ -1,6 +1,6 @@
 # Interface: RestoreResult
 
-Defined in: [src/backup/types.ts:24](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L24)
+Defined in: src/backup/types.ts:24
 
 Per-target result reported after a restore run.
 
@@ -10,7 +10,7 @@ Per-target result reported after a restore run.
 
 > **action**: `"failed"` \| `"created"` \| `"updated"` \| `"skipped"`
 
-Defined in: [src/backup/types.ts:26](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L26)
+Defined in: src/backup/types.ts:26
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/backup/types.ts:26](https://github.com/cdot65/prisma-airs-cli/b
 
 > `optional` **error?**: `string`
 
-Defined in: [src/backup/types.ts:27](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L27)
+Defined in: src/backup/types.ts:27
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: [src/backup/types.ts:27](https://github.com/cdot65/prisma-airs-cli/b
 
 > **name**: `string`
 
-Defined in: [src/backup/types.ts:25](https://github.com/cdot65/prisma-airs-cli/blob/main/src/backup/types.ts#L25)
+Defined in: src/backup/types.ts:25

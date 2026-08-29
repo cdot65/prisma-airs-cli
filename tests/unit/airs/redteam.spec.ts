@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { interpolateReportSummary, SdkRedTeamService } from '../../../src/airs/redteam.js';
 
 const mockTargetsList = vi.fn();
+const mockTargetsListAll = vi.fn();
 const mockTargetsGet = vi.fn();
 const mockTargetsCreate = vi.fn();
 const mockTargetsUpdate = vi.fn();
@@ -46,6 +47,7 @@ function makeMockClient() {
   return {
     targets: {
       list: mockTargetsList,
+      listAll: mockTargetsListAll,
       get: mockTargetsGet,
       create: mockTargetsCreate,
       update: mockTargetsUpdate,
@@ -110,6 +112,7 @@ describe('SdkRedTeamService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTargetsListAll.mockImplementation(async () => (await mockTargetsList()).data ?? []);
     service = new SdkRedTeamService({
       clientId: 'test-id',
       clientSecret: 'test-secret',

@@ -5,35 +5,10 @@ import {
   dlpFilteringProfiles,
   dlpPatterns,
   dlpProfiles,
-  toKey,
 } from '../../../src/cli/renderer/dlp.js';
 
-describe('toKey (snake_case label transformer)', () => {
-  it('multi-word labels become snake_case', () => {
-    expect(toKey('Data Profile')).toBe('data_profile');
-    expect(toKey('Scan Type')).toBe('scan_type');
-    expect(toKey('File Based')).toBe('file_based');
-    expect(toKey('File Types')).toBe('file_types');
-    expect(toKey('Profile Type')).toBe('profile_type');
-  });
-
-  it('hyphens become underscores', () => {
-    expect(toKey('Non-File Based')).toBe('non_file_based');
-  });
-
-  it('single-word labels lowercased unchanged', () => {
-    expect(toKey('ID')).toBe('id');
-    expect(toKey('Name')).toBe('name');
-    expect(toKey('Version')).toBe('version');
-  });
-
-  it('empty string returns empty', () => {
-    expect(toKey('')).toBe('');
-  });
-});
-
-describe('dlp renderGet json keys are snake_case (regression #105)', () => {
-  it('filtering-profiles get json uses snake_case keys, not mangled camelCase', () => {
+describe('dlp renderGet uses full camelCase API records', () => {
+  it('filtering-profiles get json preserves fields and normalizes casing', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     dlpFilteringProfiles.renderGet(
       {
@@ -52,35 +27,30 @@ describe('dlp renderGet json keys are snake_case (regression #105)', () => {
       'json',
     );
     const out = String(spy.mock.calls[0]?.[0]);
-    expect(out).toContain('"data_profile"');
-    expect(out).toContain('"scan_type"');
-    expect(out).toContain('"file_based"');
-    expect(out).toContain('"non_file_based"');
-    expect(out).toContain('"file_types"');
-    expect(out).not.toContain('datarofile');
-    expect(out).not.toContain('scanype');
-    expect(out).not.toContain('fileased');
-    expect(out).not.toContain('nonileased');
-    expect(out).not.toContain('fileypes');
+    expect(out).toContain('"dataProfileId"');
+    expect(out).toContain('"scanType"');
+    expect(out).toContain('"fileBased"');
+    expect(out).toContain('"nonFileBased"');
+    expect(out).toContain('"fileType"');
     spy.mockRestore();
   });
 
-  it('profiles get json uses profile_type, not profileype', () => {
+  it('profiles get json uses profileType', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     dlpProfiles.renderGet(
       { id: 'dp', name: 'n', type: 'advanced', profile_type: 'predefined', version: 2 } as any,
       'json',
     );
     const out = String(spy.mock.calls[0]?.[0]);
-    expect(out).toContain('"profile_type"');
-    expect(out).not.toContain('profileype');
+    expect(out).toContain('"profileType"');
     spy.mockRestore();
   });
 });
 
 describe('dlpFilteringProfiles renderer', () => {
-  it('renderList json emits curated items + page meta (not raw SDK envelope)', () => {
+  it('renderList json emits a bare array of full normalized records', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
     dlpFilteringProfiles.renderList(
       {
         content: [{ id: 'a', name: 'p', type: 'custom', is_parent_managed: false }],
@@ -90,14 +60,15 @@ describe('dlpFilteringProfiles renderer', () => {
       'json',
     );
     const out = String(spy.mock.calls[0]?.[0]);
-    expect(out).toContain('"items"');
-    expect(out).toContain('"page"');
-    expect(out).toContain('"total": 1');
-    expect(out).not.toContain('is_parent_managed');
+    expect(JSON.parse(out)).toEqual([
+      { id: 'a', name: 'p', type: 'custom', isParentManaged: false },
+    ]);
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('Showing 1 of 1'));
+    err.mockRestore();
     spy.mockRestore();
   });
 
-  it('renderGet json emits curated fields only', () => {
+  it('renderGet json emits the full normalized record', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     dlpFilteringProfiles.renderGet(
       { id: 'a', name: 'p', type: 'custom', tenant_id: 'X', is_parent_managed: false } as any,
@@ -106,8 +77,8 @@ describe('dlpFilteringProfiles renderer', () => {
     const out = String(spy.mock.calls[0]?.[0]);
     expect(out).toContain('"id": "a"');
     expect(out).toContain('"name": "p"');
-    expect(out).not.toContain('tenant_id');
-    expect(out).not.toContain('is_parent_managed');
+    expect(out).toContain('"tenantId": "X"');
+    expect(out).toContain('"isParentManaged": false');
     spy.mockRestore();
   });
 
@@ -156,8 +127,9 @@ describe('dlpPatterns renderer', () => {
 });
 
 describe('dlpProfiles renderer', () => {
-  it('renderList json emits curated items + page', () => {
+  it('renderList json emits full normalized records without an envelope', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
     dlpProfiles.renderList(
       {
         content: [{ id: 'dp', name: 'n', tenant_id: 'X' }],
@@ -168,8 +140,9 @@ describe('dlpProfiles renderer', () => {
     );
     const out = String(spy.mock.calls[0]?.[0]);
     expect(out).toContain('"id": "dp"');
-    expect(out).toContain('"total": 1');
-    expect(out).not.toContain('tenant_id');
+    expect(JSON.parse(out)).toEqual([{ id: 'dp', name: 'n', tenantId: 'X' }]);
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('Showing 1 of 1'));
+    err.mockRestore();
     spy.mockRestore();
   });
 });

@@ -1,6 +1,6 @@
 # Interface: IndexedPrompt
 
-Defined in: [src/airs/types.ts:61](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L61)
+Defined in: src/airs/types.ts:61
 
 A prompt paired with its stable position and AIRS request ID.
 
@@ -14,7 +14,7 @@ A prompt paired with its stable position and AIRS request ID.
 
 > **index**: `number`
 
-Defined in: [src/airs/types.ts:62](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L62)
+Defined in: src/airs/types.ts:62
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [src/airs/types.ts:62](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **prompt**: `string`
 
-Defined in: [src/airs/types.ts:63](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L63)
+Defined in: src/airs/types.ts:63

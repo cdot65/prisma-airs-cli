@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetCreateRequest
 
-Defined in: [src/airs/types.ts:253](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L253)
+Defined in: src/airs/types.ts:253
 
 Request to create a red team target.
 
@@ -10,7 +10,7 @@ Request to create a red team target.
 
 > `optional` **additional\_context?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:258](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L258)
+Defined in: src/airs/types.ts:258
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:258](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **background?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:257](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L257)
+Defined in: src/airs/types.ts:257
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:257](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **connection\_params**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:256](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L256)
+Defined in: src/airs/types.ts:256
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:256](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **metadata?**: `Record`\<`string`, `unknown`\>
 
-Defined in: [src/airs/types.ts:259](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L259)
+Defined in: src/airs/types.ts:259
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:259](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:254](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L254)
+Defined in: src/airs/types.ts:254
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: [src/airs/types.ts:254](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **target\_type**: `string`
 
-Defined in: [src/airs/types.ts:255](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L255)
+Defined in: src/airs/types.ts:255

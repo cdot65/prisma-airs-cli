@@ -28,6 +28,9 @@ export interface DataFilteringProfilesService {
   list(
     params?: import('@cdot65/prisma-airs-sdk').DataFilteringProfileListParams,
   ): Promise<import('@cdot65/prisma-airs-sdk').PageDataFilteringProfileResponse>;
+  listAll(
+    params?: import('@cdot65/prisma-airs-sdk').DataFilteringProfileListParams & { max?: number },
+  ): Promise<import('@cdot65/prisma-airs-sdk').DataFilteringProfileResponse[]>;
   get(id: string): Promise<import('@cdot65/prisma-airs-sdk').DataFilteringProfileResponse>;
   replace(
     id: string,
@@ -39,6 +42,9 @@ export interface DataPatternsService {
   list(
     params?: import('@cdot65/prisma-airs-sdk').DataPatternListParams,
   ): Promise<import('@cdot65/prisma-airs-sdk').PageDataPatternResponse>;
+  listAll(
+    params?: import('@cdot65/prisma-airs-sdk').DataPatternListParams & { max?: number },
+  ): Promise<import('@cdot65/prisma-airs-sdk').DataPatternResponse[]>;
   create(
     body: import('@cdot65/prisma-airs-sdk').DataPatternRequest,
   ): Promise<import('@cdot65/prisma-airs-sdk').DataPatternResponse>;
@@ -58,6 +64,9 @@ export interface DataProfilesService {
   list(
     params?: import('@cdot65/prisma-airs-sdk').DataProfileListParams,
   ): Promise<import('@cdot65/prisma-airs-sdk').PageDataProfileResponse>;
+  listAll(
+    params?: import('@cdot65/prisma-airs-sdk').DataProfileListParams & { max?: number },
+  ): Promise<import('@cdot65/prisma-airs-sdk').DataProfileResponse[]>;
   create(
     body: import('@cdot65/prisma-airs-sdk').AdvancedDataProfileRequest,
   ): Promise<import('@cdot65/prisma-airs-sdk').DataProfileResponse>;
@@ -82,6 +91,9 @@ export interface DictionariesService {
   list(
     params?: import('@cdot65/prisma-airs-sdk').DictionaryListParams,
   ): Promise<import('@cdot65/prisma-airs-sdk').PageDictionaryResponse>;
+  listAll(
+    params?: import('@cdot65/prisma-airs-sdk').DictionaryListParams & { max?: number },
+  ): Promise<import('@cdot65/prisma-airs-sdk').DictionaryResponse[]>;
   create(
     params: import('@cdot65/prisma-airs-sdk').DictionaryUploadParams,
   ): Promise<import('@cdot65/prisma-airs-sdk').DictionaryResponse>;

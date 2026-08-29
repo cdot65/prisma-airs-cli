@@ -1,7 +1,13 @@
 import type { Command } from 'commander';
 import { SdkDataPatternsService } from '../../../airs/dlp/data-patterns.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import { dlpPatterns, fail, type OutputFormat, usageError } from '../../renderer/index.js';
+import {
+  dlpPatterns,
+  fail,
+  type OutputFormat,
+  resolveOutput,
+  usageError,
+} from '../../renderer/index.js';
 import { buildPatternBody, repeatable } from './build-body.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
@@ -12,7 +18,7 @@ function listFlags<T extends Command>(cmd: T): T {
       Number.parseInt(v, 10),
     )
     .option('--sort <field,dir>', 'Sort criteria (repeatable)', repeatable)
-    .option('--output <fmt>', 'Output format', 'pretty');
+    .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml');
   registerPageAliases(cmd, { sizeFlag: '--size', sizeKey: 'size' });
   return cmd;
 }
@@ -52,9 +58,14 @@ export function register(dlp: Command): void {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataPatternsService();
+      const result = opts.all
+        ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
+        : undefined;
       dlpPatterns.renderList(
-        await svc.list({ page, size, sort: opts.sort }),
-        opts.output as OutputFormat,
+        result
+          ? { content: result, totalElements: result.length }
+          : await svc.list({ page, size, sort: opts.sort }),
+        await resolveOutput(listCmd, opts),
       );
     } catch (err) {
       fail(err);
@@ -74,15 +85,15 @@ export function register(dlp: Command): void {
     }
   });
 
-  group
+  const getCmd = group
     .command('get <id>')
     .description('Get a data pattern by id')
-    .option('--output <fmt>', 'Output format', 'pretty')
+    .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (id, opts) => {
       try {
         dlpPatterns.renderGet(
           await new SdkDataPatternsService().get(id),
-          opts.output as OutputFormat,
+          await resolveOutput(getCmd, opts),
         );
       } catch (err) {
         fail(err);

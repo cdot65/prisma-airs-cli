@@ -1,6 +1,6 @@
 # Interface: PromptSetDetail
 
-Defined in: [src/airs/types.ts:278](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L278)
+Defined in: src/airs/types.ts:278
 
 Normalized prompt set detail.
 
@@ -10,7 +10,7 @@ Normalized prompt set detail.
 
 > **active**: `boolean`
 
-Defined in: [src/airs/types.ts:281](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L281)
+Defined in: src/airs/types.ts:281
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:281](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **archive**: `boolean`
 
-Defined in: [src/airs/types.ts:282](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L282)
+Defined in: src/airs/types.ts:282
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:282](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **createdAt?**: `string`
 
-Defined in: [src/airs/types.ts:284](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L284)
+Defined in: src/airs/types.ts:284
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:284](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **description?**: `string`
 
-Defined in: [src/airs/types.ts:283](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L283)
+Defined in: src/airs/types.ts:283
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:283](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:280](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L280)
+Defined in: src/airs/types.ts:280
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:280](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **updatedAt?**: `string`
 
-Defined in: [src/airs/types.ts:285](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L285)
+Defined in: src/airs/types.ts:285
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: [src/airs/types.ts:285](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:279](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L279)
+Defined in: src/airs/types.ts:279

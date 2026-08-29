@@ -23,6 +23,10 @@ airs model-security rule-instances list [options] <groupUuid>
 | `--security-rule-uuid <uuid>` | No | — | Filter by security rule UUID |
 | `--state <state>` | No | — | Filter by state (DISABLED, ALLOWING, BLOCKING) |
 | `--limit <n>` | No | `20` | Max results |
+| `--offset <n>` | No | `0` | Starting offset |
+| `--all` | No | — | Walk every page |
+| `--max <n>` | No | `10000` | Safety cap for `--all`; `0` removes the cap |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 
@@ -59,6 +63,12 @@ airs model-security rule-instances get [options] <groupUuid> <instanceUuid>
 
 - `groupUuid` (required) —
 - `instanceUuid` (required) —
+
+#### Options
+
+| Flag | Required | Default | Description |
+|------|:--------:|---------|-------------|
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

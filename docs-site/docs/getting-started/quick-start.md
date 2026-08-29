@@ -18,6 +18,7 @@ airs doctor
 
 # Machine-readable results (exit 0 = healthy, 1 = any check failed)
 airs doctor --output json
+airs doctor --output markdown
 ```
 
 Warnings (e.g. no config file when using env vars only) do not fail the command — only hard failures like missing credentials or unreachable APIs exit non-zero.
@@ -38,7 +39,7 @@ airs runtime bulk-scan --profile my-security-profile --file prompts.txt --batch-
 
 `--batch-size` is a strict positive safe integer and defaults to 25. It controls the logical unit of work: each logical batch is submitted in AIRS SDK calls of at most 20 prompts, then fully polled before the next logical batch starts. The CSV always keeps one row per prompt in input order. Actions are exactly `allow`, `block`, or `failed`; failed/timed-out rows are retained and make the command exit 1.
 
-Bulk scan state is saved under `~/.prisma-airs/bulk-scans/`. Resume an interrupted job with `airs runtime resume-poll <stateFile>`. State files contain prompt text, so protect them as sensitive data; the CLI creates the state directory with mode `0700` and state files with mode `0600`. A per-state lock prevents overlapping runs. Bulk scanning requires `@cdot65/prisma-airs-sdk` 0.13.2 or later.
+Bulk scan state is saved under `~/.prisma-airs/bulk-scans/`. Resume an interrupted job with `airs runtime resume-poll <stateFile>`. State files contain prompt text, so protect them as sensitive data; the CLI creates the state directory with mode `0700` and state files with mode `0600`. A per-state lock prevents overlapping runs. Version 4 uses `@cdot65/prisma-airs-sdk` 0.18.0 or later.
 
 [Full runtime docs](../runtime/scanning.md)
 
@@ -126,8 +127,12 @@ airs model-security scans list
 Create, inspect, and update security profiles using CLI flags.
 
 ```bash
-# List all profiles
-airs runtime profiles list --output json
+# List every latest profile revision
+airs runtime profiles list --all --output json
+
+# Select historical revisions explicitly
+airs runtime profiles list --all --all-versions --output yaml
+airs runtime profiles get AI-Firewall-High-Security-Profile --revision 2 --output json
 
 # Get full configuration of a specific profile (by name or UUID)
 airs runtime profiles get AI-Firewall-High-Security-Profile
@@ -149,8 +154,8 @@ airs runtime profiles update <nameOrId> \
 ## Utility Commands
 
 ```bash
-# List all custom topics
-airs runtime topics list --output json
+# List all latest custom-topic revisions
+airs runtime topics list --all --output json
 
 # Debug API traffic
 airs --debug runtime scan --profile my-profile "test prompt"
@@ -177,7 +182,8 @@ Re-run after upgrading the CLI to pick up new commands.
 ## Quiet Mode
 
 The global `--quiet` flag suppresses status and decorative output (progress
-lines, headers, hints). Data — tables, results, and `--output json|yaml|csv`
+lines, headers, hints). Data — tables, results, and
+`--output table|markdown|csv|json|yaml`
 payloads — still prints, and errors always print:
 
 ```bash

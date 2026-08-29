@@ -118,7 +118,7 @@ iteration,prompt,category,result
 The CSV includes `topic_violation`, `injection`, `toxic_content`, `dlp`, `url_cats`, `malicious_code`, `source_code`, and `agent` detector columns. Actions are exactly `allow`, `block`, or `failed`. An AIRS failed or timed-out terminal result is recorded as `action=failed`; successful rows remain in the CSV and the command exits 1.
 
 :::info[SDK requirement]
-Reliable bulk scanning requires `@cdot65/prisma-airs-sdk` 0.13.2 or later. The CLI uses its 20-item async limit, structured failure metadata, and per-call retry controls.
+CLI v4 uses `@cdot65/prisma-airs-sdk` 0.18.0 or later. It relies on the SDK's 20-item async limit, structured failure metadata, retry controls, and unified list traversal.
 :::
 
 ### Submission Safety

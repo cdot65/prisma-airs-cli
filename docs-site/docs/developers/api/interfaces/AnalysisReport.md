@@ -1,6 +1,6 @@
 # Interface: AnalysisReport
 
-Defined in: [src/core/types.ts:83](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L83)
+Defined in: src/core/types.ts:83
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: [src/core/types.ts:83](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **falseNegativePatterns**: `string`[]
 
-Defined in: [src/core/types.ts:86](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L86)
+Defined in: src/core/types.ts:86
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: [src/core/types.ts:86](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **falsePositivePatterns**: `string`[]
 
-Defined in: [src/core/types.ts:85](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L85)
+Defined in: src/core/types.ts:85
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/core/types.ts:85](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **suggestions**: `string`[]
 
-Defined in: [src/core/types.ts:87](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L87)
+Defined in: src/core/types.ts:87
 
 ***
 
@@ -32,4 +32,4 @@ Defined in: [src/core/types.ts:87](https://github.com/cdot65/prisma-airs-cli/blo
 
 > **summary**: `string`
 
-Defined in: [src/core/types.ts:84](https://github.com/cdot65/prisma-airs-cli/blob/main/src/core/types.ts#L84)
+Defined in: src/core/types.ts:84

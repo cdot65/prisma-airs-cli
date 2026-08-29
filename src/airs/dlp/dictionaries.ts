@@ -21,6 +21,10 @@ export class SdkDictionariesService implements DictionariesService {
     return this.client.list(params);
   }
 
+  async listAll(params?: DictionaryListParams & { max?: number }): Promise<DictionaryResponse[]> {
+    return this.client.listAll(params);
+  }
+
   async create(params: DictionaryUploadParams): Promise<DictionaryResponse> {
     return this.client.create(params);
   }

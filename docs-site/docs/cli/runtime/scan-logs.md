@@ -21,7 +21,7 @@ airs runtime scan-logs query [options]
 | `--filter <filter>` | No | `all` | Filter: all, benign, threat |
 | `--limit <n>` | No | `50` | Max results per page (API page size) |
 | `--offset <n>` | No | `0` | Starting offset — rounds down to a page boundary |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 ### Examples
 

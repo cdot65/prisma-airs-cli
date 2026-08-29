@@ -100,9 +100,16 @@ export function parseAttackGoals(input: string): string[] {
 }
 
 /** Client-side slice for list commands whose API lacks pagination. */
-export function sliceClientSide<T>(items: T[], opts: { limit?: string; offset?: string }): T[] {
-  const offset = opts.offset !== undefined ? Number.parseInt(opts.offset, 10) : 0;
-  const limit = opts.limit !== undefined ? Number.parseInt(opts.limit, 10) : undefined;
+export function sliceClientSide<T>(
+  items: T[],
+  opts: { limit?: string | number; offset?: string | number; all?: boolean; max?: string | number },
+): T[] {
+  if (opts.all) {
+    const max = opts.max === undefined ? 10_000 : Number(opts.max);
+    return max === 0 ? items : items.slice(0, max);
+  }
+  const offset = opts.offset !== undefined ? Number.parseInt(String(opts.offset), 10) : 0;
+  const limit = opts.limit !== undefined ? Number.parseInt(String(opts.limit), 10) : undefined;
   return items.slice(offset, limit === undefined ? undefined : offset + limit);
 }
 
@@ -520,12 +527,16 @@ export function registerRedteamCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
-        const scans = await service.listScans({
+        const listOptions = {
           status: opts.status,
           jobType: opts.type,
           targetId: opts.target,
           limit: Number.parseInt(opts.limit, 10),
-        });
+          offset: Number(opts.offset ?? 0),
+        };
+        const scans = opts.all
+          ? await service.listAllScans({ ...listOptions, max: Number(opts.max) })
+          : await service.listScans(listOptions);
         renderScanList(scans, fmt);
       } catch (err) {
         fail(err);
@@ -1242,13 +1253,19 @@ export function registerRedteamCommand(program: Command): void {
     .command('backup')
     .description('Backup red team targets to local JSON/YAML files')
     .option('--output-dir <path>', 'Output directory')
-    .option('--output <format>', 'Output format: json or yaml', 'json')
+    .option('--file-format <format>', 'Backup file format: json or yaml', 'json')
     .option('--name <targetName>', 'Backup a single target by name');
+  registerDeprecatedAlias(targetsBackup, {
+    oldFlag: '--output <format>',
+    oldKey: 'output',
+    canonicalFlag: '--file-format',
+    canonicalKey: 'fileFormat',
+  });
   registerDeprecatedAlias(targetsBackup, {
     oldFlag: '--format <format>',
     oldKey: 'format',
-    canonicalFlag: '--output',
-    canonicalKey: 'output',
+    canonicalFlag: '--file-format',
+    canonicalKey: 'fileFormat',
   });
   targetsBackup.action(async (opts) => {
     resolveDeprecatedAliases(targetsBackup, opts);
@@ -1257,7 +1274,7 @@ export function registerRedteamCommand(program: Command): void {
       const outputDir = resolveOutputDir(opts.outputDir, 'targets');
       const results = await backupTargets({
         outputDir,
-        format: (opts.output ?? 'json') as BackupFormat,
+        format: (opts.fileFormat ?? 'json') as BackupFormat,
         name: opts.name,
       });
       renderBackupSummary(results, outputDir);
@@ -1361,11 +1378,15 @@ export function registerRedteamCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
-        const { adapters, totalItems } = await service.listAdapters({
+        const listOptions = {
           limit: opts.limit ? parsePositiveInt(opts.limit, '--limit') : undefined,
           offset: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
           search: opts.search,
-        });
+        };
+        const result = opts.all
+          ? { adapters: await service.listAllAdapters({ ...listOptions, max: Number(opts.max) }) }
+          : await service.listAdapters(listOptions);
+        const { adapters, totalItems } = result;
         renderAdapterList(adapters, fmt, totalItems);
       } catch (err) {
         fail(err);
@@ -1573,12 +1594,15 @@ export function registerRedteamCommand(program: Command): void {
         const fmt = opts.output as OutputFormat;
         if (fmt === 'pretty') renderRedteamHeader();
         const service = await createService();
-        const { channels: list } = await service.listChannels({
+        const listOptions = {
           limit: opts.limit ? parsePositiveInt(opts.limit, '--limit') : undefined,
           offset: opts.offset ? Number.parseInt(opts.offset, 10) : undefined,
           search: opts.search,
           status: opts.status,
-        });
+        };
+        const list = opts.all
+          ? await service.listAllChannels({ ...listOptions, max: Number(opts.max) })
+          : (await service.listChannels(listOptions)).channels;
         renderChannelList(list, fmt);
       } catch (err) {
         fail(err);

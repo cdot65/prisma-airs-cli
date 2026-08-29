@@ -1,6 +1,6 @@
 # Interface: RedTeamJob
 
-Defined in: [src/airs/types.ts:196](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L196)
+Defined in: src/airs/types.ts:196
 
 Normalized red team job/scan info.
 
@@ -10,7 +10,7 @@ Normalized red team job/scan info.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:204](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L204)
+Defined in: src/airs/types.ts:204
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:204](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **completed?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:206](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L206)
+Defined in: src/airs/types.ts:206
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:206](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **createdAt?**: `string` \| `null`
 
-Defined in: [src/airs/types.ts:207](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L207)
+Defined in: src/airs/types.ts:207
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:207](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **jobType**: `string`
 
-Defined in: [src/airs/types.ts:200](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L200)
+Defined in: src/airs/types.ts:200
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: [src/airs/types.ts:200](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **name**: `string`
 
-Defined in: [src/airs/types.ts:198](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L198)
+Defined in: src/airs/types.ts:198
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: [src/airs/types.ts:198](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:203](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L203)
+Defined in: src/airs/types.ts:203
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: [src/airs/types.ts:203](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **status**: `string`
 
-Defined in: [src/airs/types.ts:199](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L199)
+Defined in: src/airs/types.ts:199
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: [src/airs/types.ts:199](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **targetId**: `string`
 
-Defined in: [src/airs/types.ts:201](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L201)
+Defined in: src/airs/types.ts:201
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: [src/airs/types.ts:201](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **targetName?**: `string`
 
-Defined in: [src/airs/types.ts:202](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L202)
+Defined in: src/airs/types.ts:202
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: [src/airs/types.ts:202](https://github.com/cdot65/prisma-airs-cli/bl
 
 > `optional` **total?**: `number` \| `null`
 
-Defined in: [src/airs/types.ts:205](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L205)
+Defined in: src/airs/types.ts:205
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: [src/airs/types.ts:205](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:197](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L197)
+Defined in: src/airs/types.ts:197

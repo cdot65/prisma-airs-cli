@@ -32,6 +32,7 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_AI_GW_DATA_ENDPOINT', '');
     vi.stubEnv('PANW_AI_GW_ADMIN_ENDPOINT', '');
     vi.stubEnv('PANW_AI_GW_TOKEN_ENDPOINT', '');
+    vi.stubEnv('PANW_CLI_OUTPUT', '');
   });
 
   afterEach(async () => {
@@ -51,6 +52,14 @@ describe('loadConfig', () => {
     const config = await loadConfig({}, configPath);
     expect(config.airsApiKey).toBe('sk-env');
     expect(config.scanConcurrency).toBe(8);
+  });
+
+  it('reads PANW_CLI_OUTPUT and lets CLI overrides win', async () => {
+    vi.stubEnv('PANW_CLI_OUTPUT', 'markdown');
+    await expect(loadConfig({}, configPath)).resolves.toMatchObject({ defaultOutput: 'markdown' });
+    await expect(loadConfig({ defaultOutput: 'json' }, configPath)).resolves.toMatchObject({
+      defaultOutput: 'json',
+    });
   });
 
   it('reads config file JSON', async () => {

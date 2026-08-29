@@ -47,23 +47,30 @@ Verify the installation:
 
 ```bash
 $ airs --version
-1.0.6
+4.0.0
 
 $ airs --help
 Usage: airs [options] [command]
 
 CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red
-teaming, model security scanning
+teaming, model security scanning, profile audits
 
 Options:
-  -V, --version   output the version number
-  -h, --help      display help for command
+  --debug             Log AIRS/SCM API traffic to a redacted JSONL file
+  -h, --help          display help for command
+  --output <format>   Default output format for read commands
+  --quiet             Suppress status and decorative output
+  -V, --version       output the version number
 
 Commands:
-  runtime         Runtime prompt scanning against AIRS profiles
-  redteam         AI Red Team scan operations
-  model-security  AI Model Security operations — groups, rules, scans
-  help [command]  display help for command
+  aigateway           AI Gateway operations
+  completion <shell>  Generate a shell completion script
+  config              Manage CLI configuration
+  doctor              Check credentials, config, and API connectivity
+  help [command]      display help for command
+  model-security      AI Model Security operations — groups, rules, scans
+  redteam             AI Red Team scan operations
+  runtime             Runtime prompt scanning against AIRS profiles
 ```
 
 :::tip[Try without installing]

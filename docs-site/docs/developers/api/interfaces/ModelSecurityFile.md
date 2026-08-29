@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFile
 
-Defined in: [src/airs/types.ts:869](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L869)
+Defined in: src/airs/types.ts:881
 
 Normalized scanned file from a scan.
 
@@ -10,7 +10,7 @@ Normalized scanned file from a scan.
 
 > **formats**: `string`[]
 
-Defined in: [src/airs/types.ts:873](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L873)
+Defined in: src/airs/types.ts:885
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: [src/airs/types.ts:873](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **path**: `string`
 
-Defined in: [src/airs/types.ts:871](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L871)
+Defined in: src/airs/types.ts:883
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: [src/airs/types.ts:871](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **result**: `string`
 
-Defined in: [src/airs/types.ts:874](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L874)
+Defined in: src/airs/types.ts:886
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: [src/airs/types.ts:874](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **type**: `string`
 
-Defined in: [src/airs/types.ts:872](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L872)
+Defined in: src/airs/types.ts:884
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: [src/airs/types.ts:872](https://github.com/cdot65/prisma-airs-cli/bl
 
 > **uuid**: `string`
 
-Defined in: [src/airs/types.ts:870](https://github.com/cdot65/prisma-airs-cli/blob/main/src/airs/types.ts#L870)
+Defined in: src/airs/types.ts:882

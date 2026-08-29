@@ -223,9 +223,15 @@ export class SdkAiGatewayService implements AiGatewayService {
       workspaceSlug,
       days,
       totalCents: raw.data.total,
+      totalUsd: raw.data.total / 100,
       avgCents: raw.data.avg,
+      avgUsd: raw.data.avg / 100,
       quotaExceeded: raw.data.isQuotaExceeded,
-      records: raw.data.records.map((r) => ({ date: r.x, costCents: r.y })),
+      records: raw.data.records.map((r) => ({
+        date: r.x,
+        costCents: r.y,
+        costUsd: r.y / 100,
+      })),
     };
   }
 

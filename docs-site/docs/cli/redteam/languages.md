@@ -16,7 +16,7 @@ airs redteam languages [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--management` | No | — | Query the management-plane endpoint instead of the data plane |
-| `--output <format>` | No | `pretty` | Output format: pretty, table, csv, json, yaml |
+| `--output <format>` | No | `pretty` | Output format: pretty, table, markdown, csv, json, yaml |
 
 #### Examples
 

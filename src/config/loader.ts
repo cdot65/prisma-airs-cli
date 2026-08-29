@@ -31,6 +31,7 @@ function fromEnv(): Record<string, unknown> {
     aiGwAdminEndpoint: env.PANW_AI_GW_ADMIN_ENDPOINT,
     aiGwTokenEndpoint: env.PANW_AI_GW_TOKEN_ENDPOINT,
     scanConcurrency: env.SCAN_CONCURRENCY,
+    defaultOutput: env.PANW_CLI_OUTPUT,
     dataDir: env.DATA_DIR,
   };
 }

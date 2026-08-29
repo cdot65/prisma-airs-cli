@@ -64,3 +64,39 @@ describe('help examples', () => {
     expect(help).toContain('Examples:');
   });
 });
+
+describe('alphabetical help', () => {
+  const program = buildProgram();
+
+  function expectSorted(values: string[]): void {
+    expect(values).toEqual([...values].sort((a, b) => a.localeCompare(b)));
+  }
+
+  it('sorts root commands and options', () => {
+    const help = program.createHelp();
+    expectSorted(help.visibleCommands(program).map((command) => command.name()));
+    expectSorted(
+      help
+        .visibleOptions(program)
+        .map((option) =>
+          option.short ? option.short.replace(/^-/, '') : option.long.replace(/^--/, ''),
+        ),
+    );
+  });
+
+  it('sorts nested commands and options', () => {
+    const runtime = find(program, 'runtime');
+    const runtimeHelp = runtime.createHelp();
+    expectSorted(runtimeHelp.visibleCommands(runtime).map((command) => command.name()));
+
+    const list = find(program, 'runtime', 'profiles', 'list');
+    const listHelp = list.createHelp();
+    expectSorted(
+      listHelp
+        .visibleOptions(list)
+        .map((option) =>
+          option.short ? option.short.replace(/^-/, '') : option.long.replace(/^--/, ''),
+        ),
+    );
+  });
+});
