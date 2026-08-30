@@ -123,6 +123,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Development',
       items: [
+        'developers/ai-gateway-command-plan',
         'development/contributing',
         'development/testing',
         'development/local-setup',

@@ -29,7 +29,7 @@ const MASK = '***';
 
 /** Key names (headers, query params, JSON body fields) whose values are secrets. */
 const SENSITIVE_KEY_PATTERN =
-  /token|secret|password|passwd|credential|authorization|cookie|api[-_]?key/i;
+  /token|secret|password|passwd|credential|authorization|cookie|api[-_]?key|client[-_]?auth|^key$/i;
 
 function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERN.test(key);

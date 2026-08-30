@@ -6,6 +6,9 @@
 import type {
   CreateCustomTopicRequest,
   CreateSecurityProfileRequest,
+  GatewayDefaultsInput,
+  GatewayRateLimitInput,
+  GatewayUsageLimitInput,
   CustomTopic as SdkCustomTopic,
 } from '@cdot65/prisma-airs-sdk';
 
@@ -1413,10 +1416,10 @@ export interface AiGatewayWorkspaceCreateRequest {
   scopeName: string;
   description?: string;
   icon?: string;
-  defaults?: Record<string, unknown>;
+  defaults?: GatewayDefaultsInput;
   users?: string[];
-  usageLimits?: Array<Record<string, unknown>>;
-  rateLimits?: Array<Record<string, unknown>>;
+  usageLimits?: GatewayUsageLimitInput[];
+  rateLimits?: GatewayRateLimitInput[];
 }
 
 /** Partial update for an AI Gateway workspace — send only what changes. */
@@ -1424,9 +1427,9 @@ export interface AiGatewayWorkspaceUpdateRequest {
   name?: string;
   description?: string;
   icon?: string;
-  defaults?: Record<string, unknown>;
-  usageLimits?: Array<Record<string, unknown>>;
-  rateLimits?: Array<Record<string, unknown>>;
+  defaults?: GatewayDefaultsInput;
+  usageLimits?: GatewayUsageLimitInput[];
+  rateLimits?: GatewayRateLimitInput[];
 }
 
 /** Options for the AI Gateway telemetry cost query. */

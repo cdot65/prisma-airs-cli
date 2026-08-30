@@ -11,11 +11,11 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 1. **Runtime Security** — scan prompts against AIRS security profiles, manage profiles/topics/API keys
 2. **Guardrail Optimization** — atomic `runtime topics` commands for custom topic guardrails, driven by an external agent loop (no LLM layer; see the [guardrails docs](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/))
 3. **AI Red Teaming** — adversarial scans against targets with static/dynamic/custom attacks
-4. **AI Gateway** — manage scoped/admin workspaces and query workspace cost telemetry
+4. **AI Gateway** — manage workspaces, configs, guardrails, providers, API keys, integrations, MCP, deployments, plugins, and telemetry
 5. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 6. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files (subcommands under `redteam targets`)
 
-The binary is `airs`. Four top-level command groups: `runtime`, `redteam`, `aigateway`, `model-security` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl` (secrets redacted); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`, every `delete` accepts `rm`.
+The binary is `airs`. Four top-level command groups: `runtime`, `redteam`, `aigateway`, `model-security` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl` (secrets redacted); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
 
 ---
 
@@ -53,7 +53,7 @@ airs runtime profiles list
 airs redteam targets list
 
 # AI Gateway — should return workspaces visible to your role scope
-airs aigateway workspace list
+airs aigateway workspaces list
 
 # Model Security — should return groups
 airs model-security groups list
@@ -79,7 +79,7 @@ All list commands accept `--output <format>`:
 # Get parseable JSON output
 airs runtime profiles list --output json
 airs redteam targets list --output json
-airs aigateway workspace list --output json
+airs aigateway workspaces list --output json
 airs model-security groups list --output json
 ```
 
@@ -344,11 +344,11 @@ scope, while admin-plane reads and all writes require tenant-root AI Gateway adm
 #### Workspaces
 
 ```bash
-airs aigateway workspace list [--plane <data|admin>] [--status <active|archived>] [--all] [--output <format>]
-airs aigateway workspace get <uuidOrSlug> [--plane <data|admin>] [--output <pretty|json|yaml>]
-airs aigateway workspace create --name <name> --scope-name <scope> [workspace flags...] [--output <pretty|json|yaml>]
-airs aigateway workspace update <uuidOrSlug> [workspace flags...] [--output <pretty|json|yaml>]
-airs aigateway workspace delete <uuidOrSlug> [--force]
+airs aigateway workspaces list [--plane <data|admin>] [--status <active|archived>] [--all] [--output <format>]
+airs aigateway workspaces get <uuidOrSlug> [--plane <data|admin>] [--output <pretty|json|yaml>]
+airs aigateway workspaces create --name <name> --scope-name <scope> [workspace flags...] [--output <pretty|json|yaml>]
+airs aigateway workspaces update <uuidOrSlug> [workspace flags...] [--output <pretty|json|yaml>]
+airs aigateway workspaces archive <uuidOrSlug> [--force]
 ```
 
 Shared workspace write flags: `--description`, `--icon`, `--metadata <json>`,
@@ -358,20 +358,36 @@ requires at least one write flag.
 
 **Plane rules:**
 
-- Plain `workspace list` uses the data plane: active workspaces scoped to the caller.
+- Plain `workspaces list` uses the data plane: active workspaces scoped to the caller.
 - `--plane admin` sees the whole tenant; combine it with `--status active|archived`.
 - `--all` is shorthand for merging admin-plane active + archived results and cannot be combined
   with `--plane` or `--status`.
-- `workspace delete` is a soft delete (archive). The row remains visible with
-  `workspace list --plane admin --status archived`; a subsequent `get` returns 404 by design.
+- `workspaces archive` is a soft delete. The row remains visible with
+  `workspaces list --plane admin --status archived`; a subsequent `get` returns 404 by design.
 - `scope_name` is not derived from the display name. A workspace whose scope nobody holds will not
   appear in data-plane lists.
 
-#### Cost Telemetry
+#### Resources, mutations, and telemetry
 
 ```bash
+airs aigateway configs list --workspace <workspaceUuid> --output json
+airs aigateway providers get <providerId> --output json
+airs aigateway integrations models list <integrationId> --output json
+airs aigateway mcp integrations capabilities list <integrationId> --output json
+airs aigateway deployments get <deploymentId> --output json
 airs aigateway telemetry cost --workspace <slug> [--days <n>] [--output <pretty|json|yaml>]
+airs aigateway telemetry logs list --workspace <slug> --status-code 446 --output json
 ```
+
+Collection resources are `api-keys service|user`, `audit-logs`, `configs`, `deployments`,
+`guardrails`, `integrations`, `mcp integrations`, `organisations`, `plugins`, `providers`,
+`telemetry`, and `workspaces`. Mutations use named flags plus repeatable
+`--set <path=value>` / `--set-string <path=value>` for nested SDK request fields. Optional
+JSON/YAML `--file` input is an advanced base; command flags override it. Relationship `set`, hard
+`delete`, rotation, and archive operations require confirmation.
+API-key create/rotate and deployment create require `--secret-output <new-path>` (mode `0600`) or
+the deliberate `--show-secret` opt-in. Provider detail is redacted unless `--reveal-sensitive` is
+passed.
 
 `--days` defaults to `7` and must be a positive integer. AIRS reports costs in cents: pretty output
 converts to dollars, while JSON/YAML retain explicit `totalCents`, `avgCents`, and `costCents`
@@ -873,18 +889,18 @@ airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|
 
 ```bash
 # Scoped active workspaces (data plane)
-airs aigateway workspace list --output json
+airs aigateway workspaces list --output json
 
 # Whole tenant, including archived workspaces (admin plane)
-airs aigateway workspace list --all --output json
+airs aigateway workspaces list --all --output json
 
 # Create, partially update, and inspect cost
-airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0 --output json
-airs aigateway workspace update <slug> --description "Production workloads" --output json
+airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0 --output json
+airs aigateway workspaces update <slug> --description "Production workloads" --output json
 airs aigateway telemetry cost --workspace <slug> --days 30 --output json
 
 # Archive (soft delete)
-airs aigateway workspace delete <slug> --force
+airs aigateway workspaces archive <slug> --force
 ```
 
 ### Workflow 10: Create and validate a Red Team adapter

@@ -1,5 +1,33 @@
 # Release Notes
 
+## Unreleased (minor)
+
+### New
+
+- Expanded `airs aigateway` to the SDK 0.20.0 resource surface: API keys, audit logs, configs,
+  deployments, guardrails, provider integrations, MCP integrations, organisations, plugins,
+  providers, complete telemetry reads, and canonical plural `workspaces` commands.
+- Added SDK-schema-validated named mutation flags plus repeatable `--set` / `--set-string` dotted
+  values for nested configuration. JSON/YAML `--file` input remains an optional advanced base;
+  named and dotted flags override it.
+- Added confirmation-gated relationship replacement and destructive operations, protected `0600`
+  output for one-time credentials, operation-scoped auth/provider redaction, and a live E2E suite
+  with read inventory plus an exactly cleaned-up disposable config lifecycle.
+
+### Changed
+
+- Workspace soft removal is canonically `airs aigateway workspaces archive`; the legacy singular
+  `workspace delete` spelling remains as a warning-emitting compatibility path and has no `rm`
+  alias.
+- Pinned `@cdot65/prisma-airs-sdk` to `0.20.0`, using its exported write schemas, known-value
+  catalogs, prototype-safe dotted builders, and secret-field metadata.
+
+### Fixed
+
+- Preflight one-time-secret destinations before API mutations, normalize invalid structured input
+  to usage errors, make relationship `set` operations replace by default, and apply SDK operation
+  metadata to provider and deployment response redaction.
+
 ## v4.0.1 (2026-08-29)
 
 ### Fixed

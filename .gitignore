@@ -16,6 +16,8 @@ coverage/
 
 # Secrets
 .env
+.env.*.local
+*.local.secret.json
 
 # Red team target backups / exports — may contain API tokens (x-pan-token)
 redteam-backups/

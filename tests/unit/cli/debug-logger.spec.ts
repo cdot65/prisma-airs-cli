@@ -60,12 +60,16 @@ describe('redactDeep', () => {
     const input = {
       profile_name: 'demo',
       api_key: 'sk-live-12345',
+      client_auth: 'registration-secret',
+      key: 'provider-secret',
       nested: { client_secret: 'oauth-secret', ok: 'visible' },
       list: [{ password: 'hunter2' }, { token: 'tok' }, 'plain'],
     };
     const out = redactDeep(input) as Record<string, unknown>;
     expect(out.profile_name).toBe('demo');
     expect(out.api_key).toBe('***');
+    expect(out.client_auth).toBe('***');
+    expect(out.key).toBe('***');
     expect((out.nested as Record<string, unknown>).client_secret).toBe('***');
     expect((out.nested as Record<string, unknown>).ok).toBe('visible');
     const list = out.list as Array<Record<string, unknown> | string>;

@@ -255,7 +255,7 @@ synthetic / reserved-for-testing.
 
 ### B.6 — AI Gateway
 
-Two planes, two grants (see [aigateway workspace](../cli/aigateway/workspaces.md)): the data
+Two planes, two grants (see [aigateway workspaces](../cli/aigateway/workspaces.md)): the data
 plane needs a **workspace-scope** grant, the admin plane a **tenant-root admin** grant. A `403`
 with `errorCode: AB03` on the data-plane commands means the workspace-scope grant is missing —
 the CLI prints the exact fix. Reads verified live 2026-08-01 (admin plane; the reference
@@ -264,11 +264,11 @@ documented AB03 hint).
 
 ```bash
 # Workspaces — bare list is data-plane and shows only ACTIVE workspaces you are SCOPED to
-airs aigateway workspace list
-airs aigateway workspace list --plane admin                      # whole tenant
-airs aigateway workspace list --plane admin --status archived    # archived rows only
-airs aigateway workspace list --all                              # admin active + archived merged
-airs aigateway workspace get <slugOrUuid> --plane admin --output json
+airs aigateway workspaces list
+airs aigateway workspaces list --plane admin                      # whole tenant
+airs aigateway workspaces list --plane admin --status archived    # archived rows only
+airs aigateway workspaces list --all                              # admin active + archived merged
+airs aigateway workspaces get <slugOrUuid> --plane admin --output json
 
 # Telemetry (data plane; workspace SLUG, not UUID; costs are cents — pretty output shows dollars)
 airs aigateway telemetry cost --workspace <workspaceSlug>
@@ -630,23 +630,23 @@ row remains under `--status archived` forever. Use a throwaway name.
 ```bash
 # Create — scope_name is the SCM role scope, NOT derived from the name.
 # A scope nobody holds makes the workspace invisible to data-plane lists.
-airs aigateway workspace create --name sweep-test --scope-name ws_sweeptest_000000 \
+airs aigateway workspaces create --name sweep-test --scope-name ws_sweeptest_000000 \
   --description "full-cli-sweep test workspace" \
   --rate-limits '[{"type":"requests","unit":"rpm","value":10}]'
 
 # The CLI renders from a follow-up get (create's response omits half the record)
-airs aigateway workspace get <newSlug> --plane admin
+airs aigateway workspaces get <newSlug> --plane admin
 
 # Update is a partial patch; the API answers {} and the CLI re-reads for you
-airs aigateway workspace update <newSlug> --description "updated by sweep"
+airs aigateway workspaces update <newSlug> --description "updated by sweep"
 
 # Delete = archive (confirm prompt; --force for non-TTY)
-airs aigateway workspace delete <newSlug> --force
+airs aigateway workspaces archive <newSlug> --force
 
 # Verify: gone from the default list, present under archived…
-airs aigateway workspace list --plane admin --status archived
+airs aigateway workspaces list --plane admin --status archived
 # …and get now answers 404 AB08 on both planes — EXPECTED, not a bug
-airs aigateway workspace get <newSlug> --plane admin
+airs aigateway workspaces get <newSlug> --plane admin
 ```
 
 ## Section E — Long-running workflows
@@ -748,7 +748,7 @@ airs runtime dlp patterns delete <patternId>
 
 # 6. AI Gateway — workspaces can only be ARCHIVED, never destroyed (D.9's row
 #    stays under --status archived; nothing further to clean up)
-airs aigateway workspace delete <workspaceSlug> --force
+airs aigateway workspaces archive <workspaceSlug> --force
 ```
 
 ## Section H — Interpretation guide

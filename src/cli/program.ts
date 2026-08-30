@@ -39,7 +39,10 @@ const READ_COMMAND_NAMES = new Set([
 function applyListDeleteAliases(cmd: Command): void {
   for (const sub of cmd.commands) {
     if (sub.name() === 'list' && !sub.aliases().includes('ls')) sub.alias('ls');
-    if (sub.name() === 'delete' && !sub.aliases().includes('rm')) sub.alias('rm');
+    const isHiddenCompatibilityCommand =
+      sub.name() === 'delete' && Boolean((sub as Command & { _hidden?: boolean })._hidden);
+    if (sub.name() === 'delete' && !isHiddenCompatibilityCommand && !sub.aliases().includes('rm'))
+      sub.alias('rm');
     applyListDeleteAliases(sub);
   }
 }

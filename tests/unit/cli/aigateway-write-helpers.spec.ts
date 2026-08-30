@@ -50,6 +50,11 @@ describe('buildWorkspaceWriteRequest', () => {
   it('throws a usage error on invalid JSON', () => {
     expect(() => buildWorkspaceWriteRequest({ defaults: 'not-json' })).toThrow();
   });
+
+  it('rejects syntactically valid limits that do not match the SDK request schemas', () => {
+    expect(() => buildWorkspaceWriteRequest({ rateLimits: '[{"type":"requests"}]' })).toThrow();
+    expect(() => buildWorkspaceWriteRequest({ usageLimits: '[{}]' })).toThrow();
+  });
 });
 
 describe('scopeNameLooksUnrelated', () => {

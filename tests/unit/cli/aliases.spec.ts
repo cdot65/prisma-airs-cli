@@ -33,12 +33,19 @@ describe('list/delete aliases', () => {
     }
   });
 
-  it('every `delete` subcommand has an `rm` alias', () => {
-    const deletes = all.filter((e) => e.cmd.name() === 'delete');
+  it('every hard `delete` subcommand has an `rm` alias', () => {
+    const deletes = all.filter(
+      (entry) =>
+        entry.cmd.name() === 'delete' && entry.path.join(' ') !== 'aigateway workspaces delete',
+    );
     expect(deletes.length).toBeGreaterThanOrEqual(10);
     for (const { path, cmd } of deletes) {
       expect(cmd.aliases(), `missing rm alias on: ${path.join(' ')}`).toContain('rm');
     }
+  });
+
+  it('does not disguise the deprecated workspace archive compatibility path as rm', () => {
+    expect(find(program, 'aigateway', 'workspaces', 'delete').aliases()).not.toContain('rm');
   });
 
   it('spot-checks: named groups from the issue carry the aliases', () => {
