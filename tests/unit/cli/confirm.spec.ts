@@ -44,6 +44,18 @@ describe('confirmOrAbort', () => {
     expect(text).toContain('non-interactive');
   });
 
+  it('runs abort cleanup before exiting', async () => {
+    const exit = mockExit();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onAbort = vi.fn().mockResolvedValue(undefined);
+
+    await expect(
+      confirmOrAbort('Rotate credential?', false, { isTTY: false, onAbort }),
+    ).rejects.toThrow('process.exit(2)');
+    expect(onAbort).toHaveBeenCalledWith(2);
+    expect(onAbort.mock.invocationCallOrder[0]).toBeLessThan(exit.mock.invocationCallOrder[0]);
+  });
+
   it('proceeds when TTY prompt is confirmed', async () => {
     const promptFn = vi.fn().mockResolvedValue(true);
     await expect(

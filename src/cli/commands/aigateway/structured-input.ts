@@ -1,5 +1,7 @@
 import {
+  AISecSDKException,
   buildDottedObject,
+  ErrorType,
   type GatewayJsonObject,
   GatewayJsonObjectSchema,
   type GatewayJsonValue,
@@ -60,6 +62,12 @@ export function parseIntegerOption(value: unknown): number {
   if (!/^-?(0|[1-9]\d*)$/.test(text)) throw new CliUsageError('Expected an integer');
   const parsed = Number(text);
   if (!Number.isSafeInteger(parsed)) throw new CliUsageError('Expected a safe integer');
+  return parsed;
+}
+
+export function parseDateOption(value: unknown): Date {
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) throw new CliUsageError('Expected an ISO-8601 timestamp');
   return parsed;
 }
 
@@ -158,6 +166,21 @@ function schemaMessage(error: unknown): string {
     .join('; ');
 }
 
+function optionName(option: string): string {
+  return `--${option.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`)}`;
+}
+
+function asUsageError(error: unknown, prefix = 'Invalid AI Gateway request'): CliUsageError {
+  if (error instanceof CliUsageError) return error;
+  if (
+    error instanceof AISecSDKException &&
+    error.errorType === ErrorType.USER_REQUEST_PAYLOAD_ERROR
+  ) {
+    return new CliUsageError(`${prefix}: ${error.message}`);
+  }
+  return new CliUsageError(`${prefix}: ${schemaMessage(error)}`);
+}
+
 /**
  * Merge an optional request file, named CLI fields, and repeatable dotted assignments.
  * Precedence is file < named flags < --set/--set-string. The final SDK schema is parsed
@@ -168,43 +191,57 @@ export async function buildStructuredRequest<T>(
   schema: RequestSchema<T>,
   fields: readonly NamedRequestField[] = [],
 ): Promise<T> {
-  let body: GatewayJsonObject = {};
-  if (options.file) {
-    try {
-      body = GatewayJsonObjectSchema.parse(await readGatewayRequest(options.file));
-    } catch (error) {
-      if (error instanceof CliUsageError) throw error;
-      throw new CliUsageError(`Invalid AI Gateway request file: ${schemaMessage(error)}`);
-    }
-  }
-
-  for (const field of fields) {
-    const raw = options[field.option];
-    if (raw === undefined || (Array.isArray(raw) && raw.length === 0)) continue;
-    body = setDottedValue(
-      body,
-      field.path,
-      field.parse ? field.parse(raw) : (raw as GatewayJsonValue),
-    );
-  }
-  const assignments = [
-    ...(options.set ?? []).map((raw) => {
-      const [path, value] = parseAssignment(raw, false);
-      return { path, value };
-    }),
-    ...(options.setString ?? []).map((raw) => {
-      const [path, value] = parseAssignment(raw, true);
-      return { path, value };
-    }),
-  ];
-  // Validate the assignment set as a whole so duplicate paths and scalar/container
-  // collisions are errors instead of becoming order-dependent last-write-wins behavior.
-  buildDottedObject(assignments);
-  for (const { path, value } of assignments) body = setDottedValue(body, path, value);
-
   try {
+    let body: GatewayJsonObject = {};
+    if (options.file) {
+      body = GatewayJsonObjectSchema.parse(await readGatewayRequest(options.file));
+    }
+
+    for (const field of fields) {
+      const raw = options[field.option];
+      if (raw === undefined || (Array.isArray(raw) && raw.length === 0)) continue;
+      let value: GatewayJsonValue;
+      try {
+        value = field.parse ? field.parse(raw) : (raw as GatewayJsonValue);
+      } catch (error) {
+        if (error instanceof CliUsageError) {
+          throw new CliUsageError(`Invalid ${optionName(field.option)}: ${error.message}`);
+        }
+        throw error;
+      }
+      body = setDottedValue(body, field.path, value);
+    }
+    const assignments = [
+      ...(options.set ?? []).map((raw) => {
+        try {
+          const [path, value] = parseAssignment(raw, false);
+          return { path, value };
+        } catch (error) {
+          if (error instanceof CliUsageError) {
+            throw new CliUsageError(`Invalid --set '${raw}': ${error.message}`);
+          }
+          throw error;
+        }
+      }),
+      ...(options.setString ?? []).map((raw) => {
+        try {
+          const [path, value] = parseAssignment(raw, true);
+          return { path, value };
+        } catch (error) {
+          if (error instanceof CliUsageError) {
+            throw new CliUsageError(`Invalid --set-string '${raw}': ${error.message}`);
+          }
+          throw error;
+        }
+      }),
+    ];
+    // Validate the assignment set as a whole so duplicate paths and scalar/container
+    // collisions are errors instead of becoming order-dependent last-write-wins behavior.
+    buildDottedObject(assignments);
+    for (const { path, value } of assignments) body = setDottedValue(body, path, value);
+
     return schema.parse(body);
   } catch (error) {
-    throw new CliUsageError(`Invalid AI Gateway request: ${schemaMessage(error)}`);
+    throw asUsageError(error);
   }
 }

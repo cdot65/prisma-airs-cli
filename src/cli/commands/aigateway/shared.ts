@@ -1,4 +1,5 @@
-import { open, readFile } from 'node:fs/promises';
+import type { FileHandle } from 'node:fs/promises';
+import { open, readFile, unlink } from 'node:fs/promises';
 import { AIGatewayClient } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { dump, load } from 'js-yaml';
@@ -196,11 +197,27 @@ export async function runWrite(
   command: Command,
   opts: { output?: string },
   write: (client: AIGatewayClient) => Promise<unknown>,
+): Promise<void>;
+export async function runWrite<T>(
+  command: Command,
+  opts: { output?: string },
+  prepare: () => Promise<T>,
+  write: (client: AIGatewayClient, prepared: T) => Promise<unknown>,
+): Promise<void>;
+export async function runWrite<T>(
+  command: Command,
+  opts: { output?: string },
+  prepareOrWrite: (() => Promise<T>) | ((client: AIGatewayClient) => Promise<unknown>),
+  preparedWrite?: (client: AIGatewayClient, prepared: T) => Promise<unknown>,
 ): Promise<void> {
   try {
     const format = await resolveOutput(command, opts, { allowed: ['pretty', 'json', 'yaml'] });
+    const prepared = preparedWrite ? await (prepareOrWrite as () => Promise<T>)() : undefined;
     const client = await createAiGatewayClient();
-    renderGatewayDetail(await write(client), format);
+    const result = preparedWrite
+      ? await preparedWrite(client, prepared as T)
+      : await (prepareOrWrite as (client: AIGatewayClient) => Promise<unknown>)(client);
+    renderGatewayDetail(result, format);
   } catch (error) {
     failAiGateway(error);
   }
@@ -211,12 +228,30 @@ export async function runConfirmedWrite(
   opts: { force?: boolean; output?: string },
   prompt: string,
   write: (client: AIGatewayClient) => Promise<unknown>,
+): Promise<void>;
+export async function runConfirmedWrite<T>(
+  command: Command,
+  opts: { force?: boolean; output?: string },
+  prompt: string,
+  prepare: () => Promise<T>,
+  write: (client: AIGatewayClient, prepared: T) => Promise<unknown>,
+): Promise<void>;
+export async function runConfirmedWrite<T>(
+  command: Command,
+  opts: { force?: boolean; output?: string },
+  prompt: string,
+  prepareOrWrite: (() => Promise<T>) | ((client: AIGatewayClient) => Promise<unknown>),
+  preparedWrite?: (client: AIGatewayClient, prepared: T) => Promise<unknown>,
 ): Promise<void> {
   try {
     const format = await resolveOutput(command, opts, { allowed: ['pretty', 'json', 'yaml'] });
-    await confirmOrAbort(prompt, Boolean(opts.force), { action: prompt });
+    const prepared = preparedWrite ? await (prepareOrWrite as () => Promise<T>)() : undefined;
+    const action = prompt.replace(/\?$/, '').replace(/^./, (character) => character.toLowerCase());
+    await confirmOrAbort(prompt, Boolean(opts.force), { action });
     const client = await createAiGatewayClient();
-    const result = await write(client);
+    const result = preparedWrite
+      ? await preparedWrite(client, prepared as T)
+      : await (prepareOrWrite as (client: AIGatewayClient) => Promise<unknown>)(client);
     renderGatewayDetail(result ?? { success: true }, format);
   } catch (error) {
     failAiGateway(error);
@@ -230,39 +265,73 @@ interface SecretOutputOptions {
   showSecret?: boolean;
 }
 
-async function writeOwnerOnly(path: string, value: unknown): Promise<void> {
-  const handle = await open(path, 'wx', 0o600);
-  try {
-    await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  } finally {
-    await handle.close();
-  }
+interface SecretWriteSettings<T> {
+  /** Whether this particular request can return a one-time credential. */
+  requiresDestination?: (prepared: T) => boolean;
+  /** Redact an ordinary, non-secret-bearing response before rendering. */
+  redactResponse?: (result: unknown) => unknown;
 }
 
 /** Run a one-time-secret mutation only after its destination is explicit. */
-export async function runSecretWrite(
+export async function runSecretWrite<T>(
   command: Command,
   opts: SecretOutputOptions,
-  write: (client: AIGatewayClient) => Promise<unknown>,
+  prepare: () => Promise<T>,
+  write: (client: AIGatewayClient, prepared: T) => Promise<unknown>,
   prompt?: string,
+  settings: SecretWriteSettings<T> = {},
 ): Promise<void> {
+  let destinationHandle: FileHandle | undefined;
+  let destinationReserved = false;
+  let secretPersisted = false;
+  const cleanupReservedDestination = async () => {
+    if (destinationHandle) await destinationHandle.close().catch(() => undefined);
+    destinationHandle = undefined;
+    if (opts.secretOutput && destinationReserved && !secretPersisted) {
+      await unlink(opts.secretOutput).catch(() => undefined);
+    }
+    destinationReserved = false;
+  };
   try {
-    if (!opts.secretOutput && !opts.showSecret) {
+    const prepared = await prepare();
+    const requiresDestination = settings.requiresDestination?.(prepared) ?? true;
+    if (requiresDestination && !opts.secretOutput && !opts.showSecret) {
       throw new CliUsageError(
         'Choose --secret-output <path> (recommended) or --show-secret before requesting a one-time credential',
       );
     }
     const format = await resolveOutput(command, opts, { allowed: ['pretty', 'json', 'yaml'] });
-    if (prompt) await confirmOrAbort(prompt, Boolean(opts.force), { action: prompt });
+    // Reserve the destination before confirmation, OAuth, or the mutation. This guarantees
+    // an existing/unwritable path cannot consume a one-time credential.
+    if (requiresDestination && opts.secretOutput) {
+      destinationHandle = await open(opts.secretOutput, 'wx', 0o600);
+      destinationReserved = true;
+    }
+    if (prompt) {
+      const action = prompt
+        .replace(/\?$/, '')
+        .replace(/^./, (character) => character.toLowerCase());
+      await confirmOrAbort(prompt, Boolean(opts.force), {
+        action,
+        onAbort: cleanupReservedDestination,
+      });
+    }
     const client = await createAiGatewayClient();
-    const result = await write(client);
-    if (opts.secretOutput) {
-      await writeOwnerOnly(opts.secretOutput, result);
+    const result = await write(client, prepared);
+    if (requiresDestination && opts.secretOutput && destinationHandle) {
+      await destinationHandle.writeFile(`${JSON.stringify(result, null, 2)}\n`, 'utf8');
+      secretPersisted = true;
+      await destinationHandle.close();
+      destinationHandle = undefined;
       renderGatewayDetail({ saved_to: opts.secretOutput }, format);
       return;
     }
-    renderGatewayDetail(result, format);
+    renderGatewayDetail(
+      requiresDestination ? result : (settings.redactResponse?.(result) ?? result),
+      format,
+    );
   } catch (error) {
+    await cleanupReservedDestination();
     failAiGateway(error);
   }
 }

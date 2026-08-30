@@ -1,7 +1,10 @@
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
+import { config } from 'dotenv';
 import { describe, expect, it } from 'vitest';
+
+config({ path: '.env.ai-gateway.local', quiet: true });
 
 const execFileAsync = promisify(execFile);
 const hasCredentials = Boolean(

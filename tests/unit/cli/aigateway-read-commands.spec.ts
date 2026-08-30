@@ -22,6 +22,7 @@ const methods = {
   pluginsList: vi.fn(),
   providersGet: vi.fn(),
   providersList: vi.fn(),
+  telemetryRequests: vi.fn(),
 };
 
 function fakeClient(): AIGatewayClient {
@@ -53,6 +54,7 @@ function fakeClient(): AIGatewayClient {
     },
     plugins: { list: methods.pluginsList },
     providers: { get: methods.providersGet, list: methods.providersList },
+    telemetry: { requests: methods.telemetryRequests },
   } as unknown as AIGatewayClient;
 }
 
@@ -69,9 +71,14 @@ beforeEach(() => {
   methods.mcpMetadata.mockResolvedValue({ name: 'server' });
   methods.organisationsAuth.mockResolvedValue({ auth_type: 'local' });
   methods.organisationsSelf.mockResolvedValue({ id: 'organisation-1' });
-  methods.providersGet.mockResolvedValue({ id: 'provider-1', api_key: 'provider-secret' });
+  methods.providersGet.mockResolvedValue({
+    id: 'provider-1',
+    api_key: 'provider-secret',
+    model_config: { token: 'provider-model-secret' },
+  });
   restoreFactory = setAiGatewayClientFactoryForTest(async () => fakeClient());
   vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
 afterEach(() => {
@@ -125,8 +132,8 @@ describe('AI Gateway read command SDK mappings', () => {
     expect(methods.mcpMetadata).toHaveBeenCalledWith('mcp-1');
     await run('organisations', 'self', 'get');
     expect(methods.organisationsSelf).toHaveBeenCalledOnce();
-    await run('organisations', 'auth-settings', 'get', '--tsg-id', '1188256439');
-    expect(methods.organisationsAuth).toHaveBeenCalledWith('1188256439');
+    await run('organisations', 'auth-settings', 'get', '--tsg-id', '1234567890');
+    expect(methods.organisationsAuth).toHaveBeenCalledWith('1234567890');
   });
 
   it('emits structured data only on stdout for automation output', async () => {
@@ -146,6 +153,7 @@ describe('AI Gateway read command SDK mappings', () => {
       .mock.calls.map(([line]) => String(line))
       .join('\n');
     expect(stdout).not.toContain('provider-secret');
+    expect(stdout).not.toContain('provider-model-secret');
     expect(JSON.parse(stdout).api_key).toBe('***');
 
     vi.mocked(console.log).mockClear();
@@ -155,11 +163,12 @@ describe('AI Gateway read command SDK mappings', () => {
       .mock.calls.map(([line]) => String(line))
       .join('\n');
     expect(JSON.parse(stdout).api_key).toBe('provider-secret');
+    expect(stdout).toContain('provider-model-secret');
   });
 
   it('uses SDK operation metadata to redact organisation auth secrets by default', async () => {
     methods.organisationsAuth.mockResolvedValue({ auth_type: 'scim', scim_token: 'scim-secret' });
-    await run('organisations', 'auth-settings', 'get', '--tsg-id', '1188256439');
+    await run('organisations', 'auth-settings', 'get', '--tsg-id', '1234567890');
     let stdout = vi
       .mocked(console.log)
       .mock.calls.map(([line]) => String(line))
@@ -172,7 +181,7 @@ describe('AI Gateway read command SDK mappings', () => {
       'auth-settings',
       'get',
       '--tsg-id',
-      '1188256439',
+      '1234567890',
       '--reveal-sensitive',
     );
     stdout = vi
@@ -180,5 +189,29 @@ describe('AI Gateway read command SDK mappings', () => {
       .mock.calls.map(([line]) => String(line))
       .join('\n');
     expect(JSON.parse(stdout).scim_token).toBe('scim-secret');
+  });
+
+  it.each([
+    {
+      args: ['telemetry', 'requests', '--workspace', 'ws-test', '--days', 'abc'],
+      message: 'Invalid --days',
+    },
+    {
+      args: ['telemetry', 'requests', '--workspace', 'ws-test', '--start', 'not-a-date'],
+      message: 'Invalid --start',
+    },
+    {
+      args: ['audit-logs', 'list', '--end', 'not-a-date'],
+      message: 'Invalid --end',
+    },
+  ])('reports invalid time-window flags as usage errors: $message', async ({ args, message }) => {
+    const exit = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+
+    await expect(run(...args)).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain(message);
   });
 });

@@ -89,8 +89,9 @@ airs aigateway integrations update <integration-id> \
 ```
 
 The merged body is validated against the exported SDK operation schema. Relationship `set`
-commands replace access, models, or capabilities and therefore require confirmation; use `--force`
-only after inspecting the exact target id and options.
+commands replace access, models, or capabilities by default and therefore require confirmation;
+pass `--preserve-existing` only when workspace bindings should be additive. Use `--force` only
+after inspecting the exact target id and options.
 
 Hard `delete` operations also require confirmation and receive the `rm` alias. Workspace and
 deployment soft removal is named `archive`, never `rm`. Integration delete and deployment archive
@@ -98,8 +99,8 @@ also require `--organisation-id <numeric-tsg-id>`.
 
 ## One-time credentials
 
-API-key create/rotate and deployment create refuse to call the API until a secret destination is
-chosen:
+API-key create/rotate, deployment create, and deployment updates with `--rotate-auth true` refuse
+to call the API until a secret destination is chosen:
 
 ```bash
 airs aigateway api-keys service create \
@@ -115,9 +116,14 @@ airs aigateway deployments create \
   --type production \
   --organisation-id <numeric-tsg-id> \
   --secret-output ./deployment.secret.json
+
+airs aigateway deployments update <deployment-id> \
+  --rotate-auth true \
+  --secret-output ./rotated-deployment.secret.json
 ```
 
-`--secret-output` creates a new file with mode `0600` and will not overwrite an existing path.
+`--secret-output` reserves a new file with mode `0600` before confirmation or the API call and will
+not overwrite an existing path. API failure or declined confirmation removes that reserved file.
 `--show-secret` is available for deliberate piping. Debug API logs recursively redact tokens,
 secrets, credentials, passwords, authorization fields, and API keys. Provider detail and
 organisation authentication settings are redacted by default; their `--reveal-sensitive` flags are

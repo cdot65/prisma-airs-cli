@@ -15,7 +15,7 @@ All telemetry reads accept `--workspace <slug>`, `--days <n>` (default `7`), opt
 | `cache summary` / `cache trend` | Cache totals and hit-rate series |
 | `cost` | Spend totals and daily records |
 | `errors` / `error-trends` | Error count and trends |
-| `feedback distribution|models|trend|weighted` | Feedback analytics |
+| `feedback distribution` / `models` / `trend` / `weighted` | Feedback analytics |
 | `group-by <dimension>` | Aggregation by an SDK-supported dimension; `--columns` adds aggregates |
 | `latency` | Total and percentile latency series |
 | `logs list` | Request logs; supports `--page-size`, `--status-code`, and `--trace-id` |

@@ -1,6 +1,6 @@
 # Release Notes
 
-## v4.1.0 (2026-08-30)
+## Unreleased (minor)
 
 ### New
 
@@ -21,6 +21,12 @@
   alias.
 - Pinned `@cdot65/prisma-airs-sdk` to `0.20.0`, using its exported write schemas, known-value
   catalogs, prototype-safe dotted builders, and secret-field metadata.
+
+### Fixed
+
+- Preflight one-time-secret destinations before API mutations, normalize invalid structured input
+  to usage errors, make relationship `set` operations replace by default, and apply SDK operation
+  metadata to provider and deployment response redaction.
 
 ## v4.0.1 (2026-08-29)
 

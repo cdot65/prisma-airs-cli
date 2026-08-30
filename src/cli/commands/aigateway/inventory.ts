@@ -6,6 +6,7 @@ import {
   AI_GATEWAY_KNOWN_MCP_TRANSPORTS,
   AI_GATEWAY_MUTABLE_MCP_CAPABILITY_TYPES,
   type AIGatewayClient,
+  type AIGatewaySecretOperation,
   GatewayApiKeyRotateRequestSchema,
   GatewayApiKeyUpdateRequestSchema,
   GatewayConfigCreateRequestSchema,
@@ -33,6 +34,7 @@ import {
 } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { redactDeep } from '../../debug-logger.js';
+import { CliUsageError } from '../../renderer/index.js';
 import {
   addReadOutput,
   addWriteOutput,
@@ -52,6 +54,7 @@ import {
   parseBooleanOption,
   parseCapabilityBindingsOption,
   parseCsvOption,
+  parseDateOption,
   parseIntegerOption,
   parseJsonOption,
   parseModelBindingsOption,
@@ -68,7 +71,10 @@ function registerScopedReads(
   name: string,
   description: string,
   select: (client: AIGatewayClient) => ScopedClient,
-  options: { sensitiveDetail?: boolean } = {},
+  options: {
+    sensitiveDetail?: boolean;
+    sensitiveOperation?: AIGatewaySecretOperation;
+  } = {},
 ): Command {
   const group = showHelpOnEmpty(root.command(name).description(description));
   const list = addReadOutput(
@@ -90,7 +96,11 @@ function registerScopedReads(
   get.action((id, opts) =>
     runDetail(get, opts, async (client) => {
       const result = await select(client).get(id);
-      return options.sensitiveDetail && !opts.revealSensitive ? redactDeep(result) : result;
+      if (!options.sensitiveDetail || opts.revealSensitive) return result;
+      const metadataRedacted = options.sensitiveOperation
+        ? redactAIGatewaySecrets(options.sensitiveOperation, result, 'response')
+        : result;
+      return redactDeep(metadataRedacted);
     }),
   );
   return group;
@@ -101,6 +111,28 @@ interface RequestSchema<T> {
 }
 
 const knownValues = (values: readonly string[]): string => values.join(', ');
+
+function parseNamedDate(value: unknown, flag: string): Date {
+  try {
+    return parseDateOption(value);
+  } catch (error) {
+    throw new CliUsageError(
+      `Invalid ${flag}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+function parsePositiveInteger(value: unknown, flag: string): number {
+  try {
+    const parsed = parseIntegerOption(value);
+    if (parsed <= 0) throw new CliUsageError('Expected a positive integer');
+    return parsed;
+  } catch (error) {
+    throw new CliUsageError(
+      `Invalid ${flag}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
 
 function addCrudMutationNodes<TCreate, TUpdate>(
   group: Command,
@@ -122,20 +154,28 @@ function addCrudMutationNodes<TCreate, TUpdate>(
   let create = group.command('create').description(`Create a ${resource} from structured flags`);
   if (request.createOptions) create = request.createOptions(create);
   create = addWriteOutput(addStructuredInputOptions(create));
-  create.action(async (opts) => {
-    const body = await buildStructuredRequest(opts, request.createSchema, request.createFields);
-    return runWrite(create, opts, (client) => operations.create(client, body));
-  });
+  create.action((opts) =>
+    runWrite(
+      create,
+      opts,
+      () => buildStructuredRequest(opts, request.createSchema, request.createFields),
+      (client, body) => operations.create(client, body),
+    ),
+  );
 
   let update = group
     .command('update <id>')
     .description(`Update a ${resource} with structured flags`);
   if (request.updateOptions) update = request.updateOptions(update);
   update = addWriteOutput(addStructuredInputOptions(update));
-  update.action(async (id, opts) => {
-    const body = await buildStructuredRequest(opts, request.updateSchema, request.updateFields);
-    return runWrite(update, opts, (client) => operations.update(client, id, body));
-  });
+  update.action((id, opts) =>
+    runWrite(
+      update,
+      opts,
+      () => buildStructuredRequest(opts, request.updateSchema, request.updateFields),
+      (client, body) => operations.update(client, id, body),
+    ),
+  );
 
   const remove = addWriteOutput(
     group
@@ -204,21 +244,21 @@ function registerApiKeys(root: Command): void {
       .option('--show-secret', 'Print the one-time credential to stdout');
     if (kind === 'user') createCommand = createCommand.option('--user-id <uuid>', 'User UUID');
     const create = addWriteOutput(addStructuredInputOptions(createCommand));
-    create.action(async (opts) => {
+    create.action((opts) => {
       if (kind === 'service') {
-        const body = await buildStructuredRequest(
+        return runSecretWrite(
+          create,
           opts,
-          GatewayServiceApiKeyCreateRequestSchema,
-          createFields,
+          () => buildStructuredRequest(opts, GatewayServiceApiKeyCreateRequestSchema, createFields),
+          (client, body) => client.apiKeys.createService(body),
         );
-        return runSecretWrite(create, opts, (client) => client.apiKeys.createService(body));
       }
-      const body = await buildStructuredRequest(
+      return runSecretWrite(
+        create,
         opts,
-        GatewayUserApiKeyCreateRequestSchema,
-        createFields,
+        () => buildStructuredRequest(opts, GatewayUserApiKeyCreateRequestSchema, createFields),
+        (client, body) => client.apiKeys.createUser(body),
       );
-      return runSecretWrite(create, opts, (client) => client.apiKeys.createUser(body));
     });
 
     const update = addWriteOutput(
@@ -237,21 +277,25 @@ function registerApiKeys(root: Command): void {
           ),
       ),
     );
-    update.action(async (id, opts) => {
-      const body = await buildStructuredRequest(opts, GatewayApiKeyUpdateRequestSchema, [
-        { option: 'alertEmails', path: 'alert_emails', parse: parseCsvOption },
-        { option: 'description', path: 'description' },
-        { option: 'expiresAt', path: 'expires_at' },
-        { option: 'name', path: 'name' },
-        { option: 'resetUsage', path: 'reset_usage', parse: parseBooleanOption },
-        { option: 'scopes', path: 'scopes', parse: parseCsvOption },
-      ]);
-      return runWrite(update, opts, (client) =>
-        kind === 'service'
-          ? client.apiKeys.updateService(id, body)
-          : client.apiKeys.updateUser(id, body),
-      );
-    });
+    update.action((id, opts) =>
+      runWrite(
+        update,
+        opts,
+        () =>
+          buildStructuredRequest(opts, GatewayApiKeyUpdateRequestSchema, [
+            { option: 'alertEmails', path: 'alert_emails', parse: parseCsvOption },
+            { option: 'description', path: 'description' },
+            { option: 'expiresAt', path: 'expires_at' },
+            { option: 'name', path: 'name' },
+            { option: 'resetUsage', path: 'reset_usage', parse: parseBooleanOption },
+            { option: 'scopes', path: 'scopes', parse: parseCsvOption },
+          ]),
+        (client, body) =>
+          kind === 'service'
+            ? client.apiKeys.updateService(id, body)
+            : client.apiKeys.updateUser(id, body),
+      ),
+    );
 
     const remove = addWriteOutput(
       group
@@ -274,24 +318,25 @@ function registerApiKeys(root: Command): void {
         .option('--show-secret', 'Print the one-time credential to stdout')
         .option('--transition-ms <ms>', 'Credential overlap in milliseconds'),
     );
-    rotate.action(async (id, opts) => {
-      const body = await buildStructuredRequest(opts, GatewayApiKeyRotateRequestSchema, [
-        {
-          option: 'transitionMs',
-          path: 'key_transition_period_ms',
-          parse: parseIntegerOption,
-        },
-      ]);
-      return runSecretWrite(
+    rotate.action((id, opts) =>
+      runSecretWrite(
         rotate,
         opts,
-        (client) =>
+        () =>
+          buildStructuredRequest(opts, GatewayApiKeyRotateRequestSchema, [
+            {
+              option: 'transitionMs',
+              path: 'key_transition_period_ms',
+              parse: parseIntegerOption,
+            },
+          ]),
+        (client, body) =>
           kind === 'service'
             ? client.apiKeys.rotateService(id, body)
             : client.apiKeys.rotateUser(id, body),
         `Rotate ${kind} API key ${id}?`,
-      );
-    });
+      ),
+    );
   }
 }
 
@@ -309,11 +354,11 @@ function registerAuditLogs(root: Command): void {
       .option('--start <iso>', 'Window start as ISO-8601'),
   );
   list.action((opts) => {
-    const end = opts.end ? new Date(opts.end) : new Date();
-    const start = opts.start
-      ? new Date(opts.start)
-      : new Date(end.getTime() - Number.parseInt(opts.days, 10) * 86_400_000);
     return runList(list, opts, 'audit logs', async (client) => {
+      const end = opts.end ? parseNamedDate(opts.end, '--end') : new Date();
+      const start = opts.start
+        ? parseNamedDate(opts.start, '--start')
+        : new Date(end.getTime() - parsePositiveInteger(opts.days, '--days') * 86_400_000);
       const result = await client.auditLogs.list({ start, end });
       return opts.revealSensitive ? result : redactDeep(result);
     });
@@ -406,18 +451,23 @@ function registerDeployments(root: Command): void {
         .option('--show-secret', 'Print registration credentials to stdout'),
     ),
   );
-  create.action(async (opts) => {
-    const body = await buildStructuredRequest(opts, GatewayDeploymentCreateRequestSchema, [
-      { option: 'authSettings', path: 'auth_settings', parse: parseJsonOption },
-      { option: 'deploymentConfig', path: 'deployment_config', parse: parseJsonOption },
-      { option: 'isDefault', path: 'is_default', parse: parseBooleanOption },
-      { option: 'name', path: 'name' },
-      { option: 'organisationId', path: 'organisation_id' },
-      { option: 'slug', path: 'slug' },
-      { option: 'type', path: 'type' },
-    ]);
-    return runSecretWrite(create, opts, (client) => client.deployments.create(body));
-  });
+  create.action((opts) =>
+    runSecretWrite(
+      create,
+      opts,
+      () =>
+        buildStructuredRequest(opts, GatewayDeploymentCreateRequestSchema, [
+          { option: 'authSettings', path: 'auth_settings', parse: parseJsonOption },
+          { option: 'deploymentConfig', path: 'deployment_config', parse: parseJsonOption },
+          { option: 'isDefault', path: 'is_default', parse: parseBooleanOption },
+          { option: 'name', path: 'name' },
+          { option: 'organisationId', path: 'organisation_id' },
+          { option: 'slug', path: 'slug' },
+          { option: 'type', path: 'type' },
+        ]),
+      (client, body) => client.deployments.create(body),
+    ),
+  );
   const update = addWriteOutput(
     addStructuredInputOptions(
       group
@@ -429,6 +479,8 @@ function registerDeployments(root: Command): void {
         .option('--name <name>', 'Deployment name')
         .option('--override-existing <boolean>', 'Override an existing registration')
         .option('--rotate-auth <boolean>', 'Rotate deployment authentication')
+        .option('--secret-output <path>', 'Write rotated credentials to a new 0600 file')
+        .option('--show-secret', 'Print rotated credentials to stdout')
         .option(
           '--status <status>',
           `Deployment status: ${knownValues(AI_GATEWAY_DEPLOYMENT_STATUSES)}`,
@@ -436,19 +488,30 @@ function registerDeployments(root: Command): void {
         .option('--type <type>', `Deployment type: ${knownValues(AI_GATEWAY_DEPLOYMENT_TYPES)}`),
     ),
   );
-  update.action(async (id, opts) => {
-    const body = await buildStructuredRequest(opts, GatewayDeploymentUpdateRequestSchema, [
-      { option: 'authSettings', path: 'auth_settings', parse: parseJsonOption },
-      { option: 'deploymentConfig', path: 'deployment_config', parse: parseJsonOption },
-      { option: 'isDefault', path: 'is_default', parse: parseBooleanOption },
-      { option: 'name', path: 'name' },
-      { option: 'overrideExisting', path: 'override_existing', parse: parseBooleanOption },
-      { option: 'rotateAuth', path: 'rotate_auth', parse: parseBooleanOption },
-      { option: 'status', path: 'status' },
-      { option: 'type', path: 'type' },
-    ]);
-    return runWrite(update, opts, (client) => client.deployments.update(id, body));
-  });
+  update.action((id, opts) =>
+    runSecretWrite(
+      update,
+      opts,
+      () =>
+        buildStructuredRequest(opts, GatewayDeploymentUpdateRequestSchema, [
+          { option: 'authSettings', path: 'auth_settings', parse: parseJsonOption },
+          { option: 'deploymentConfig', path: 'deployment_config', parse: parseJsonOption },
+          { option: 'isDefault', path: 'is_default', parse: parseBooleanOption },
+          { option: 'name', path: 'name' },
+          { option: 'overrideExisting', path: 'override_existing', parse: parseBooleanOption },
+          { option: 'rotateAuth', path: 'rotate_auth', parse: parseBooleanOption },
+          { option: 'status', path: 'status' },
+          { option: 'type', path: 'type' },
+        ]),
+      (client, body) => client.deployments.update(id, body),
+      undefined,
+      {
+        requiresDestination: (body) => body.rotate_auth === true,
+        redactResponse: (result) =>
+          redactAIGatewaySecrets('deployments.update', result, 'response'),
+      },
+    ),
+  );
 }
 
 function registerIntegrations(root: Command): void {
@@ -502,14 +565,14 @@ function registerIntegrations(root: Command): void {
       ),
     ),
   );
-  create.action(async (opts) => {
-    const body = await buildStructuredRequest(
+  create.action((opts) =>
+    runWrite(
+      create,
       opts,
-      GatewayIntegrationCreateRequestSchema,
-      integrationFields,
-    );
-    return runWrite(create, opts, (client) => client.integrations.create(body));
-  });
+      () => buildStructuredRequest(opts, GatewayIntegrationCreateRequestSchema, integrationFields),
+      (client, body) => client.integrations.create(body),
+    ),
+  );
   const update = addWriteOutput(
     addStructuredInputOptions(
       addIntegrationUpdateFields(
@@ -517,14 +580,19 @@ function registerIntegrations(root: Command): void {
       ),
     ),
   );
-  update.action(async (id, opts) => {
-    const body = await buildStructuredRequest(
+  update.action((id, opts) =>
+    runWrite(
+      update,
       opts,
-      GatewayIntegrationUpdateRequestSchema,
-      integrationUpdateFields,
-    );
-    return runWrite(update, opts, (client) => client.integrations.update(id, body));
-  });
+      () =>
+        buildStructuredRequest(
+          opts,
+          GatewayIntegrationUpdateRequestSchema,
+          integrationUpdateFields,
+        ),
+      (client, body) => client.integrations.update(id, body),
+    ),
+  );
   const remove = addWriteOutput(
     group
       .command('delete <id>')
@@ -557,19 +625,19 @@ function registerIntegrations(root: Command): void {
         .option('--force', 'Skip confirmation prompt'),
     ),
   );
-  modelsSet.action(async (id, opts) => {
-    const body = await buildStructuredRequest(
+  modelsSet.action((id, opts) =>
+    runConfirmedWrite(
+      modelsSet,
       opts,
-      GatewayIntegrationModelsBulkUpdateRequestSchema,
-      [
-        { option: 'allowAllModels', path: 'allow_all_models', parse: parseBooleanOption },
-        { option: 'model', path: 'models', parse: parseModelBindingsOption },
-      ],
-    );
-    return runConfirmedWrite(modelsSet, opts, `Replace model bindings on ${id}?`, (client) =>
-      client.integrations.setModels(id, body),
-    );
-  });
+      `Replace model bindings on ${id}?`,
+      () =>
+        buildStructuredRequest(opts, GatewayIntegrationModelsBulkUpdateRequestSchema, [
+          { option: 'allowAllModels', path: 'allow_all_models', parse: parseBooleanOption },
+          { option: 'model', path: 'models', parse: parseModelBindingsOption },
+        ]),
+      (client, body) => client.integrations.setModels(id, body),
+    ),
+  );
 
   const workspaces = showHelpOnEmpty(
     group.command('workspaces').description('Inspect or replace workspace bindings'),
@@ -593,37 +661,41 @@ function registerIntegrations(root: Command): void {
         .option('--force', 'Skip confirmation prompt'),
     ),
   );
-  workspacesSet.action(async (id, opts) => {
-    const body = await buildStructuredRequest(
-      opts,
-      GatewayIntegrationWorkspacesBulkUpdateRequestSchema,
-      [
-        {
-          option: 'createDefaultProvider',
-          path: 'create_default_provider',
-          parse: parseBooleanOption,
-        },
-        { option: 'defaultProviderSlug', path: 'default_provider_slug' },
-        {
-          option: 'globalAccess',
-          path: 'global_workspace_access.enabled',
-          parse: parseBooleanOption,
-        },
-        {
-          option: 'preserveExisting',
-          path: 'override_existing_workspace_access',
-          parse: () => false,
-        },
-        { option: 'workspaceBinding', path: 'workspaces', parse: parseBooleanBindingsOption },
-      ],
-    );
-    return runConfirmedWrite(
+  workspacesSet.action((id, opts) =>
+    runConfirmedWrite(
       workspacesSet,
       opts,
       `Replace workspace bindings on ${id}?`,
-      (client) => client.integrations.setWorkspaces(id, body),
-    );
-  });
+      () =>
+        buildStructuredRequest(
+          {
+            ...opts,
+            overrideExistingWorkspaceAccess: !opts.preserveExisting,
+          },
+          GatewayIntegrationWorkspacesBulkUpdateRequestSchema,
+          [
+            {
+              option: 'createDefaultProvider',
+              path: 'create_default_provider',
+              parse: parseBooleanOption,
+            },
+            { option: 'defaultProviderSlug', path: 'default_provider_slug' },
+            {
+              option: 'globalAccess',
+              path: 'global_workspace_access.enabled',
+              parse: parseBooleanOption,
+            },
+            {
+              option: 'overrideExistingWorkspaceAccess',
+              path: 'override_existing_workspace_access',
+              parse: parseBooleanOption,
+            },
+            { option: 'workspaceBinding', path: 'workspaces', parse: parseBooleanBindingsOption },
+          ],
+        ),
+      (client, body) => client.integrations.setWorkspaces(id, body),
+    ),
+  );
 }
 
 function registerMcp(root: Command): void {
@@ -737,19 +809,18 @@ function registerMcp(root: Command): void {
         .option('--force', 'Skip confirmation prompt'),
     ),
   );
-  capabilitiesSet.action(async (id, opts) => {
-    const body = await buildStructuredRequest(
-      opts,
-      McpIntegrationCapabilitiesBulkUpdateRequestSchema,
-      [{ option: 'capability', path: 'capabilities', parse: parseCapabilityBindingsOption }],
-    );
-    return runConfirmedWrite(
+  capabilitiesSet.action((id, opts) =>
+    runConfirmedWrite(
       capabilitiesSet,
       opts,
       `Replace enabled MCP capabilities on ${id}?`,
-      (client) => client.mcpIntegrations.setCapabilities(id, body),
-    );
-  });
+      () =>
+        buildStructuredRequest(opts, McpIntegrationCapabilitiesBulkUpdateRequestSchema, [
+          { option: 'capability', path: 'capabilities', parse: parseCapabilityBindingsOption },
+        ]),
+      (client, body) => client.mcpIntegrations.setCapabilities(id, body),
+    ),
+  );
 
   const metadata = addReadOutput(
     group.command('metadata <id>').description('Get discovered MCP metadata'),
@@ -778,31 +849,35 @@ function registerMcp(root: Command): void {
         .option('--force', 'Skip confirmation prompt'),
     ),
   );
-  workspacesSet.action(async (id, opts) => {
-    const body = await buildStructuredRequest(
-      opts,
-      McpIntegrationWorkspacesBulkUpdateRequestSchema,
-      [
-        {
-          option: 'globalAccess',
-          path: 'global_workspace_access.enabled',
-          parse: parseBooleanOption,
-        },
-        {
-          option: 'preserveExisting',
-          path: 'override_existing_workspace_access',
-          parse: () => false,
-        },
-        { option: 'workspaceBinding', path: 'workspaces', parse: parseBooleanBindingsOption },
-      ],
-    );
-    return runConfirmedWrite(
+  workspacesSet.action((id, opts) =>
+    runConfirmedWrite(
       workspacesSet,
       opts,
       `Replace MCP workspace access on ${id}?`,
-      (client) => client.mcpIntegrations.setWorkspaces(id, body),
-    );
-  });
+      () =>
+        buildStructuredRequest(
+          {
+            ...opts,
+            overrideExistingWorkspaceAccess: !opts.preserveExisting,
+          },
+          McpIntegrationWorkspacesBulkUpdateRequestSchema,
+          [
+            {
+              option: 'globalAccess',
+              path: 'global_workspace_access.enabled',
+              parse: parseBooleanOption,
+            },
+            {
+              option: 'overrideExistingWorkspaceAccess',
+              path: 'override_existing_workspace_access',
+              parse: parseBooleanOption,
+            },
+            { option: 'workspaceBinding', path: 'workspaces', parse: parseBooleanBindingsOption },
+          ],
+        ),
+      (client, body) => client.mcpIntegrations.setWorkspaces(id, body),
+    ),
+  );
 }
 
 function registerOrganisations(root: Command): void {
@@ -822,12 +897,17 @@ function registerOrganisations(root: Command): void {
         .option('--name <name>', 'Organisation name'),
     ),
   );
-  selfUpdate.action(async (opts) => {
-    const body = await buildStructuredRequest(opts, GatewayOrganisationUpdateRequestSchema, [
-      { option: 'name', path: 'name' },
-    ]);
-    return runWrite(selfUpdate, opts, (client) => client.organisations.updateSelf(body));
-  });
+  selfUpdate.action((opts) =>
+    runWrite(
+      selfUpdate,
+      opts,
+      () =>
+        buildStructuredRequest(opts, GatewayOrganisationUpdateRequestSchema, [
+          { option: 'name', path: 'name' },
+        ]),
+      (client, body) => client.organisations.updateSelf(body),
+    ),
+  );
   const auth = showHelpOnEmpty(
     group.command('auth-settings').description('Manage organisation authentication settings'),
   );
@@ -857,20 +937,19 @@ function registerOrganisations(root: Command): void {
         .option('--scim-token <token>', 'SCIM token'),
     ),
   );
-  authUpdate.action(async (opts) => {
-    const body = await buildStructuredRequest(
+  authUpdate.action((opts) =>
+    runWrite(
+      authUpdate,
       opts,
-      GatewayOrganisationAuthSettingsUpdateRequestSchema,
-      [
-        { option: 'authSettings', path: 'auth_settings', parse: parseJsonOption },
-        { option: 'domains', path: 'domains', parse: parseCsvOption },
-        { option: 'scimToken', path: 'scim_token' },
-      ],
-    );
-    return runWrite(authUpdate, opts, (client) =>
-      client.organisations.updateAuthSettings(opts.tsgId, body),
-    );
-  });
+      () =>
+        buildStructuredRequest(opts, GatewayOrganisationAuthSettingsUpdateRequestSchema, [
+          { option: 'authSettings', path: 'auth_settings', parse: parseJsonOption },
+          { option: 'domains', path: 'domains', parse: parseCsvOption },
+          { option: 'scimToken', path: 'scim_token' },
+        ]),
+      (client, body) => client.organisations.updateAuthSettings(opts.tsgId, body),
+    ),
+  );
 }
 
 function registerPlugins(root: Command): void {
@@ -891,14 +970,19 @@ function registerPlugins(root: Command): void {
         .option('--organisation-id <tsg>', 'Numeric TSG id'),
     ),
   );
-  create.action(async (opts) => {
-    const body = await buildStructuredRequest(opts, GatewayPluginCreateRequestSchema, [
-      { option: 'credential', path: 'credentials', parse: parseStringMapOption },
-      { option: 'integrationId', path: 'integration_id' },
-      { option: 'organisationId', path: 'organisation_id' },
-    ]);
-    return runWrite(create, opts, (client) => client.plugins.create(body));
-  });
+  create.action((opts) =>
+    runWrite(
+      create,
+      opts,
+      () =>
+        buildStructuredRequest(opts, GatewayPluginCreateRequestSchema, [
+          { option: 'credential', path: 'credentials', parse: parseStringMapOption },
+          { option: 'integrationId', path: 'integration_id' },
+          { option: 'organisationId', path: 'organisation_id' },
+        ]),
+      (client, body) => client.plugins.create(body),
+    ),
+  );
 }
 
 /** Register SDK 0.20 inventory commands, in canonical alphabetical order. */
@@ -957,7 +1041,7 @@ export function registerAiGatewayInventory(root: Command): void {
     'providers',
     'Manage workspace provider bindings',
     (client) => client.providers,
-    { sensitiveDetail: true },
+    { sensitiveDetail: true, sensitiveOperation: 'providers.get' },
   );
   const providerFields: NamedRequestField[] = [
     { option: 'aiProviderId', path: 'ai_provider_id' },

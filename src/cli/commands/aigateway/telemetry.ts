@@ -1,6 +1,8 @@
 import type { AIGatewayWindowOptions } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
+import { CliUsageError } from '../../renderer/index.js';
 import { addReadOutput, runDetail, showHelpOnEmpty } from './shared.js';
+import { parseDateOption, parseIntegerOption } from './structured-input.js';
 
 interface WindowFlags {
   columns?: string;
@@ -25,10 +27,32 @@ function addWindowOptions(command: Command): Command {
 
 function windowFrom(opts: WindowFlags): AIGatewayWindowOptions {
   const window: AIGatewayWindowOptions = { workspaceSlug: opts.workspace };
-  if (opts.start) window.start = new Date(opts.start);
-  else window.days = Number.parseInt(opts.days ?? '7', 10);
-  if (opts.end) window.end = new Date(opts.end);
+  if (opts.start) window.start = parseNamedDate(opts.start, '--start');
+  else window.days = parsePositiveInteger(opts.days ?? '7', '--days');
+  if (opts.end) window.end = parseNamedDate(opts.end, '--end');
   return window;
+}
+
+function parsePositiveInteger(value: unknown, flag: string): number {
+  try {
+    const parsed = parseIntegerOption(value);
+    if (parsed <= 0) throw new CliUsageError('Expected a positive integer');
+    return parsed;
+  } catch (error) {
+    if (error instanceof CliUsageError)
+      throw new CliUsageError(`Invalid ${flag}: ${error.message}`);
+    throw error;
+  }
+}
+
+function parseNamedDate(value: unknown, flag: string): Date {
+  try {
+    return parseDateOption(value);
+  } catch (error) {
+    if (error instanceof CliUsageError)
+      throw new CliUsageError(`Invalid ${flag}: ${error.message}`);
+    throw error;
+  }
 }
 
 function registerMetric(
@@ -114,8 +138,10 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
     runDetail(logsList, opts, (client) =>
       client.telemetry.logs({
         ...windowFrom(opts),
-        pageSize: Number.parseInt(opts.pageSize ?? '50', 10),
-        ...(opts.statusCode ? { statusCode: Number.parseInt(opts.statusCode, 10) } : {}),
+        pageSize: parsePositiveInteger(opts.pageSize ?? '50', '--page-size'),
+        ...(opts.statusCode
+          ? { statusCode: parsePositiveInteger(opts.statusCode, '--status-code') }
+          : {}),
         ...(opts.traceId ? { traceId: opts.traceId } : {}),
       }),
     ),

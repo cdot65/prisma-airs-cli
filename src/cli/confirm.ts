@@ -20,6 +20,8 @@ export interface ConfirmOptions {
   promptFn?: PromptFn;
   /** TTY override (tests). Defaults to process.stdout.isTTY. */
   isTTY?: boolean;
+  /** Cleanup hook invoked before an abort exits the process. */
+  onAbort?: (code: 0 | 2) => Promise<void> | void;
 }
 
 /**
@@ -36,6 +38,7 @@ export async function confirmOrAbort(
 
   const interactive = options.isTTY ?? process.stdout.isTTY === true;
   if (!interactive) {
+    await options.onAbort?.(2);
     usageError(
       `refusing to ${options.action ?? 'proceed'} without --force in non-interactive mode`,
     );
@@ -45,6 +48,7 @@ export async function confirmOrAbort(
   const prompt = options.promptFn ?? (await import('@inquirer/prompts')).confirm;
   const confirmed = await prompt({ message, default: false });
   if (!confirmed) {
+    await options.onAbort?.(0);
     ui.info('Aborted');
     process.exit(0);
   }
