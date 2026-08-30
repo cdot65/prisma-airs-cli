@@ -66,6 +66,12 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'AI Gateway',
+      link: { type: 'doc', id: 'cli/aigateway/resources' },
+      items: ['cli/aigateway/workspaces', 'cli/aigateway/telemetry'],
+    },
+    {
+      type: 'category',
       label: 'Model Security',
       items: [
         'model-security/overview',

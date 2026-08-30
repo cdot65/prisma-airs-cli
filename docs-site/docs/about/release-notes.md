@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased (minor)
+## v4.1.0 (2026-08-30)
 
 ### New
 
