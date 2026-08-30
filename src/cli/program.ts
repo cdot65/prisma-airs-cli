@@ -39,7 +39,14 @@ const READ_COMMAND_NAMES = new Set([
 function applyListDeleteAliases(cmd: Command): void {
   for (const sub of cmd.commands) {
     if (sub.name() === 'list' && !sub.aliases().includes('ls')) sub.alias('ls');
-    if (sub.name() === 'delete' && !sub.aliases().includes('rm')) sub.alias('rm');
+    const isWorkspaceArchiveCompatibility =
+      sub.name() === 'delete' && sub.parent?.name() === 'workspaces';
+    if (
+      sub.name() === 'delete' &&
+      !isWorkspaceArchiveCompatibility &&
+      !sub.aliases().includes('rm')
+    )
+      sub.alias('rm');
     applyListDeleteAliases(sub);
   }
 }

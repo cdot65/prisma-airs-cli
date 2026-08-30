@@ -1,8 +1,8 @@
 ---
-sidebar_label: workspace
+sidebar_label: workspaces
 ---
 
-# aigateway workspace
+# aigateway workspaces
 
 Manage **AI Gateway workspaces** — the unit almost every other AI Gateway
 resource is keyed by. Credentials are shared with the management API
@@ -31,12 +31,15 @@ SCM's Access Management UI *edits* the existing role row by default — click
 
 :::
 
-### aigateway workspace list
+`workspace` is retained as a compatibility alias, but new scripts should use the canonical plural
+`workspaces` group.
+
+### aigateway workspaces list
 
 List workspaces.
 
 ```text
-airs aigateway workspace list [options]
+airs aigateway workspaces list [options]
 ```
 
 #### Options
@@ -54,13 +57,13 @@ single call returning both states, so `--all` merges two admin-plane reads.
 #### Examples
 
 ```bash
-airs aigateway workspace list
-airs aigateway workspace list --plane admin
-airs aigateway workspace list --plane admin --status archived
-airs aigateway workspace list --all --output json
+airs aigateway workspaces list
+airs aigateway workspaces list --plane admin
+airs aigateway workspaces list --plane admin --status archived
+airs aigateway workspaces list --all --output json
 ```
 
-### aigateway workspace get
+### aigateway workspaces get
 
 Get one workspace by UUID, slug, **or display name**, including the settings
 blocks list rows do not carry. (The API itself accepts only UUID/slug; the CLI
@@ -68,7 +71,7 @@ resolves display names against the workspace list — an ambiguous name errors
 with the matching slugs.)
 
 ```text
-airs aigateway workspace get <ref> [options]
+airs aigateway workspaces get <ref> [options]
 ```
 
 #### Options
@@ -94,16 +97,16 @@ and prefer the list value.
 #### Examples
 
 ```bash
-airs aigateway workspace get ws-main-a-349e0e
-airs aigateway workspace get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json
+airs aigateway workspaces get ws-main-a-349e0e
+airs aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json
 ```
 
-### aigateway workspace create
+### aigateway workspaces create
 
 Create a workspace. **Admin plane** — needs a tenant-root admin role.
 
 ```text
-airs aigateway workspace create --name <name> --scope-name <scope> [options]
+airs aigateway workspaces create --name <name> --scope-name <scope> [options]
 ```
 
 #### Options
@@ -137,20 +140,20 @@ write response.
 #### Examples
 
 ```bash
-airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0
-airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0 \
+airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0
+airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0 \
   --metadata '{"env":"production"}' \
   --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'
 ```
 
-### aigateway workspace update
+### aigateway workspaces update
 
 Partial update — send only what changes. **Admin plane.** `<ref>` accepts
 UUID, slug, or display name (a raw name sent to the API yields a misleading
 `400 AB01 "No update fields provided"` — the CLI resolves it for you).
 
 ```text
-airs aigateway workspace update <ref> [options]
+airs aigateway workspaces update <ref> [options]
 ```
 
 Takes the same writable flags as `create` (minus `--scope-name`, plus no
@@ -160,23 +163,24 @@ with an empty body, so the CLI re-reads the workspace and renders that.
 #### Examples
 
 ```bash
-airs aigateway workspace update ws-produc-985697 --description 'Production workloads, us-east'
-airs aigateway workspace update ws-produc-985697 --rate-limits '[{"type":"requests","unit":"rpm","value":50}]'
+airs aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'
+airs aigateway workspaces update ws-produc-985697 --rate-limits '[{"type":"requests","unit":"rpm","value":50}]'
 ```
 
-### aigateway workspace delete
+### aigateway workspaces archive
 
-Archive a workspace. **Admin plane.** Alias: `rm`.
+Archive a workspace. **Admin plane.** This intentionally has no `rm` alias because it is not a hard
+delete.
 
 ```text
-airs aigateway workspace delete <ref> [--force]
+airs aigateway workspaces archive <ref> [--force]
 ```
 
-:::warning delete archives; it does not destroy
+:::warning archive does not destroy
 
 There is **no hard delete** for workspaces. The row disappears from a default
 `list` but remains under `list --plane admin --status archived`. After the
-delete, `get` answers `404 AB08` for both the UUID and the slug on either plane
+archive, `get` answers `404 AB08` for both the UUID and the slug on either plane
 — that is expected, not an error.
 
 :::
@@ -186,6 +190,9 @@ Prompts for confirmation unless `--force`; non-TTY runs require `--force`.
 #### Examples
 
 ```bash
-airs aigateway workspace delete ws-produc-985697
-airs aigateway workspace delete ws-produc-985697 --force
+airs aigateway workspaces archive ws-produc-985697
+airs aigateway workspaces archive ws-produc-985697 --force
 ```
+
+The deprecated `airs aigateway workspace delete <ref>` compatibility spelling performs the same
+archive, prints a warning, and deliberately does not receive the `rm` alias.

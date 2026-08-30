@@ -7,6 +7,23 @@ sidebar_label: telemetry
 Runtime telemetry for AI Gateway workspaces — the data behind the SCM
 Observability tabs. Data plane; keyed by workspace **slug**, not UUID.
 
+All telemetry reads accept `--workspace <slug>`, `--days <n>` (default `7`), optional explicit
+`--start`/`--end` ISO-8601 timestamps, and the shared output formats.
+
+| Command | Result |
+| --- | --- |
+| `cache summary` / `cache trend` | Cache totals and hit-rate series |
+| `cost` | Spend totals and daily records |
+| `errors` / `error-trends` | Error count and trends |
+| `feedback distribution|models|trend|weighted` | Feedback analytics |
+| `group-by <dimension>` | Aggregation by an SDK-supported dimension; `--columns` adds aggregates |
+| `latency` | Total and percentile latency series |
+| `logs list` | Request logs; supports `--page-size`, `--status-code`, and `--trace-id` |
+| `requests` | Request count series |
+| `rescued-retries` | Requests recovered by retry behavior |
+| `tokens` | Token usage series |
+| `users` / `user-trends` | Unique-user count and trends |
+
 ### aigateway telemetry cost
 
 Total and per-day spend for a workspace.
@@ -39,5 +56,15 @@ airs aigateway telemetry cost --workspace ws-main-a-349e0e
 airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json
 ```
 
-The other telemetry surfaces (requests, tokens, latency, group-bys, raw logs)
-are not yet exposed by the CLI — scoped for a future release.
+Additional examples:
+
+```bash
+airs aigateway telemetry requests --workspace ws-main-a-349e0e --days 30 --output json
+airs aigateway telemetry group-by model --workspace ws-main-a-349e0e --columns cost,tokens
+airs aigateway telemetry logs list --workspace ws-main-a-349e0e --status-code 446 --output json
+airs aigateway telemetry feedback distribution --workspace ws-main-a-349e0e --days 7
+```
+
+An entirely empty latency window currently returns valid `null` aggregate values from SCM that SDK
+0.20.0 rejects during response validation. Choose a window containing traffic until the SDK schema
+accepts nullable empty-window aggregates.

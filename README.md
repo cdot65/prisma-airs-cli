@@ -19,7 +19,7 @@
 - **Runtime Scanning** — scan prompts and responses against AIRS security profiles, single or bulk with CSV export
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
-- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/workspaces/)** — scoped/admin workspace management and workspace cost telemetry
+- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/resources/)** — workspaces, configs, guardrails, providers, API keys, integrations, MCP, deployments, plugins, audit logs, and telemetry
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
 - **Unified automation output** — every read command supports `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`, with pipe-safe stdout
 - **Complete pagination** — consistent `--limit`, `--offset`, and `--all` traversal with a configurable safety cap
@@ -61,9 +61,13 @@ airs redteam report <job-id>
 # Red team custom target adapters
 airs redteam adapter list --output json
 
-# AI Gateway workspaces and cost telemetry
-airs aigateway workspace list --all --output json
-airs aigateway telemetry cost --workspace <workspace-slug> --days 30
+# AI Gateway inventory and telemetry
+airs aigateway workspaces list --all --output json
+airs aigateway configs list --workspace <workspace-uuid> --output json
+airs aigateway configs create --name primary --workspace <workspace-uuid> \
+  --set config.retry.attempts=3 --set config.strategy.mode=fallback --output json
+airs aigateway mcp integrations list --output json
+airs aigateway telemetry requests --workspace <workspace-slug> --days 30 --output json
 
 # Model security
 airs model-security scans create --config scan-config.json
@@ -73,7 +77,7 @@ airs runtime profiles list --all --output json | jq '.[].profileName'
 airs runtime topics list --all-versions --output markdown
 ```
 
-Bulk scans preserve one output row per input prompt in input order, including all eight runtime detector flags. Work is processed as sequential logical batches (`--batch-size 25` by default), with SDK requests capped at 20 prompts. Item-level state makes accepted and pending work resumable without duplicating CSV rows, and active jobs are locked against overlapping resumes. Runtime actions are exactly `allow`, `block`, or `failed`; failed or timed-out prompts make the command exit 1. Version 4 uses `@cdot65/prisma-airs-sdk` 0.18.0 or later.
+Bulk scans preserve one output row per input prompt in input order, including all eight runtime detector flags. Work is processed as sequential logical batches (`--batch-size 25` by default), with SDK requests capped at 20 prompts. Item-level state makes accepted and pending work resumable without duplicating CSV rows, and active jobs are locked against overlapping resumes. Runtime actions are exactly `allow`, `block`, or `failed`; failed or timed-out prompts make the command exit 1. Version 4 pins `@cdot65/prisma-airs-sdk` 0.20.0 for validated AI Gateway write schemas, typed catalogs, dotted request builders, and secret metadata.
 
 ## Read Output and Pagination
 
@@ -101,7 +105,7 @@ The full guides, complete CLI reference, configuration, and architecture live on
 - **[Runtime Security](https://cdot65.github.io/prisma-airs-cli/runtime/overview/)** — scanning, profiles, topics, and DLP management
 - **[Guardrail Optimization](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/)** — the agent-driven `topics create/apply/eval/revert` loop
 - **[AI Red Teaming](https://cdot65.github.io/prisma-airs-cli/redteam/overview/)** — static, dynamic, and custom adversarial scans
-- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/workspaces/)** — workspace CRUD, two-plane authorization, and cost telemetry
+- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/resources/)** — full SDK 0.20 resource CRUD, structured mutation flags, two-plane authorization, secret-safe writes, and telemetry
 - **[Model Security](https://cdot65.github.io/prisma-airs-cli/model-security/overview/)** — ML model supply-chain scanning
 - **[CLI Reference](https://cdot65.github.io/prisma-airs-cli/cli/)** — every command, flag, and example
 

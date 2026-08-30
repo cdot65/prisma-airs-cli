@@ -5,9 +5,9 @@ sidebar_position: 8
 
 # AI Gateway CLI command plan
 
-This document maps `@cdot65/prisma-airs-sdk` 0.19.0 onto a stable `airs aigateway` command tree.
-It is an implementation plan: commands marked **current** exist today; commands marked **planned**
-must be delivered test-first and live-validated before they are documented as available.
+This document maps `@cdot65/prisma-airs-sdk` 0.20.0 onto a stable `airs aigateway` command tree.
+The command surface described here is implemented. It remains the design contract for future AI
+Gateway additions and records the test-first delivery phases used for the SDK 0.20.0 expansion.
 
 ## Design rules
 
@@ -20,8 +20,9 @@ must be delivered test-first and live-validated before they are documented as av
   `servers` resource later without inventing another top-level spelling.
 - All reads support `--output pretty|table|markdown|csv|json|yaml` where the shape permits it.
 - Structured stdout contains data only. Status, warnings, and confirmation prompts use stderr.
-- Create/update payloads use explicit flags for common fields and `--file <json|yaml>` for nested
-  service-specific bodies. Command flags override file fields.
+- Create/update payloads use explicit flags for stable fields and repeatable `--set` /
+  `--set-string` dotted values for nested service-specific bodies. Optional `--file <json|yaml>` is
+  an advanced base; named and dotted flags override file fields.
 - `delete`, archive, revoke, rotation, and binding replacement require confirmation; `--force`
   permits non-interactive execution.
 - Provider details and one-time API-key/deployment credentials are redacted by default. Revealing
@@ -38,7 +39,7 @@ The command immediately after the resource is always an action:
 | --- | --- | --- |
 | Browse a collection | `list` (`ls`) | Never requires a positional id. |
 | Inspect one item | `get` | Takes one UUID or documented slug/ref. |
-| Add an item | `create` | Common fields as flags; nested bodies through `--file`. |
+| Add an item | `create` | Stable fields as flags; nested bodies through repeatable `--set`. |
 | Change an item | `update` | Partial update unless help explicitly says replacement. |
 | Replace a relationship | `set` | Help states whether existing bindings are preserved. |
 | Permanently remove | `delete` (`rm`) | Hard delete only; always confirmed. |
@@ -191,18 +192,18 @@ Shared helpers own these cross-cutting contracts:
 | --- | --- | --- | --- |
 | `workspaces` (`workspace`) | `gw.workspaces.*` | **Current** | Full lifecycle; canonical delete spelling becomes `archive`. |
 | `telemetry cost` | `gw.telemetry.cost()` | **Current** | Wire values are cents; pretty output converts to dollars. |
-| Remaining telemetry | `gw.telemetry.*` | Planned read | Share window flags and renderers. |
-| `configs` | `gw.configs.*` | Planned CRUD | `versions` maps to `listVersions()`. Hard delete. |
-| `guardrails` | `gw.guardrails.*` | Planned CRUD | Hard delete. Nested checks/actions favor file input. |
-| `providers` | `gw.providers.*` | Planned CRUD | Detail may contain credentials; redact by default. Hard delete. |
-| `api-keys service` | `gw.apiKeys.*Service()` | Planned CRUD | Create/rotate return one-time secrets. |
-| `api-keys user` | `gw.apiKeys.*User()` | Planned CRUD | Requires user-specific fields. |
-| `integrations` | `gw.integrations.*` | Planned CRUD | Include model and workspace binding subcommands. |
-| `mcp integrations` | `gw.mcpIntegrations.*` | Planned CRUD | Include metadata, capabilities, and workspace bindings. |
-| `deployments` | `gw.deployments.*` | Planned CRUD | Delete is named `archive`; create returns one-time credentials. |
-| `plugins` | `gw.plugins.list/create` | Planned partial | SDK has no verified get/update/delete yet. |
-| `organisations` | `gw.organisations.*` | Planned read/update | No destructive organisation lifecycle. |
-| `audit-logs` | `gw.auditLogs.list()` | Planned read | Never print unredacted request bodies by default. |
+| Remaining telemetry | `gw.telemetry.*` | **Current** | Shares window flags and structured renderers. |
+| `configs` | `gw.configs.*` | **Current** | `versions` maps to `listVersions()`. Hard delete. |
+| `guardrails` | `gw.guardrails.*` | **Current** | Hard delete. Nested checks/actions use file input. |
+| `providers` | `gw.providers.*` | **Current** | Detail credentials redact by default. Hard delete. |
+| `api-keys service` | `gw.apiKeys.*Service()` | **Current** | Create/rotate require explicit secret output. |
+| `api-keys user` | `gw.apiKeys.*User()` | **Current** | Requires user-specific fields. |
+| `integrations` | `gw.integrations.*` | **Current** | Includes model and workspace binding subcommands. |
+| `mcp integrations` | `gw.mcpIntegrations.*` | **Current** | Includes metadata, capabilities, and workspace bindings. |
+| `deployments` | `gw.deployments.*` | **Current** | Delete is named `archive`; create returns one-time credentials. |
+| `plugins` | `gw.plugins.list/create` | **Current partial** | SDK has no verified get/update/delete yet. |
+| `organisations` | `gw.organisations.*` | **Current** | No destructive organisation lifecycle. |
+| `audit-logs` | `gw.auditLogs.list()` | **Current** | Sensitive request fields redact by default. |
 
 ## Command contracts
 
@@ -223,10 +224,11 @@ used.
 ### Mutation conventions
 
 ```bash
-airs aigateway configs create --file config.json --output json
-airs aigateway providers update <provider-id> --file provider.json
+airs aigateway configs create --name primary --workspace <uuid> \
+  --set config.retry.attempts=3 --output json
+airs aigateway providers update <provider-id> --name vertex-primary
 airs aigateway mcp integrations workspaces set <integration-id> \
-  --workspace ws-development=disabled --preserve-existing --force
+  --workspace-binding ws-development=false --preserve-existing --force
 airs aigateway api-keys service rotate <key-id> \
   --transition-ms 1800000 --secret-output ./rotated-key.json --force
 airs aigateway deployments archive <deployment-id> --organisation-id <tsg> --force

@@ -19,7 +19,8 @@ override is configured; add `--output pretty` to reproduce that presentation reg
 configuration. JSON and YAML examples always specify their format explicitly.
 
 - [`airs aigateway telemetry`](aigateway/telemetry.md)
-- [`airs aigateway workspace`](aigateway/workspaces.md)
+- [`airs aigateway resources and CRUD`](aigateway/resources.md)
+- [`airs aigateway workspaces`](aigateway/workspaces.md)
 - [`airs model-security groups`](model-security/groups.md)
 - [`airs model-security install`](model-security/install.md)
 - [`airs model-security labels`](model-security/labels.md)

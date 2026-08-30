@@ -1413,10 +1413,10 @@ export interface AiGatewayWorkspaceCreateRequest {
   scopeName: string;
   description?: string;
   icon?: string;
-  defaults?: Record<string, unknown>;
+  defaults?: import('@cdot65/prisma-airs-sdk').GatewayDefaultsInput;
   users?: string[];
-  usageLimits?: Array<Record<string, unknown>>;
-  rateLimits?: Array<Record<string, unknown>>;
+  usageLimits?: import('@cdot65/prisma-airs-sdk').GatewayUsageLimitInput[];
+  rateLimits?: import('@cdot65/prisma-airs-sdk').GatewayRateLimitInput[];
 }
 
 /** Partial update for an AI Gateway workspace — send only what changes. */
@@ -1424,9 +1424,9 @@ export interface AiGatewayWorkspaceUpdateRequest {
   name?: string;
   description?: string;
   icon?: string;
-  defaults?: Record<string, unknown>;
-  usageLimits?: Array<Record<string, unknown>>;
-  rateLimits?: Array<Record<string, unknown>>;
+  defaults?: import('@cdot65/prisma-airs-sdk').GatewayDefaultsInput;
+  usageLimits?: import('@cdot65/prisma-airs-sdk').GatewayUsageLimitInput[];
+  rateLimits?: import('@cdot65/prisma-airs-sdk').GatewayRateLimitInput[];
 }
 
 /** Options for the AI Gateway telemetry cost query. */

@@ -1,6 +1,11 @@
+import {
+  GatewayDefaultsInputSchema,
+  GatewayRateLimitInputSchema,
+  GatewayUsageLimitInputSchema,
+} from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { aiGatewayGrantHint, SdkAiGatewayService } from '../../airs/aigateway.js';
-import type { AiGatewayPlane } from '../../airs/types.js';
+import type { AiGatewayPlane, AiGatewayWorkspaceUpdateRequest } from '../../airs/types.js';
 import { aiGatewayClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import { confirmOrAbort } from '../confirm.js';
@@ -16,6 +21,8 @@ import {
   ui,
   usageError,
 } from '../renderer/index.js';
+import { registerAiGatewayInventory } from './aigateway/inventory.js';
+import { registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
 
 /** Create an SdkAiGatewayService from config. */
 async function createService() {
@@ -55,21 +62,18 @@ function parseJsonFlag(raw: string | undefined, flag: string): unknown {
   }
 }
 
+type WorkspaceWriteRequest = Pick<
+  AiGatewayWorkspaceUpdateRequest,
+  'name' | 'description' | 'icon' | 'defaults' | 'usageLimits' | 'rateLimits'
+> & { users?: string[] };
+
 /**
  * Collect workspace write fields from command options. Only keys actually
  * passed are emitted, so update stays a true partial patch and create never
  * sends stray nulls. `--metadata` is sugar for `defaults.metadata` (where the
  * API really keeps it) and wins over `--defaults` on that key.
  */
-export function buildWorkspaceWriteRequest(opts: Record<string, unknown>): {
-  name?: string;
-  description?: string;
-  icon?: string;
-  defaults?: Record<string, unknown>;
-  users?: string[];
-  usageLimits?: Array<Record<string, unknown>>;
-  rateLimits?: Array<Record<string, unknown>>;
-} {
+export function buildWorkspaceWriteRequest(opts: Record<string, unknown>): WorkspaceWriteRequest {
   const out: Record<string, unknown> = {};
   for (const key of ['name', 'description', 'icon'] as const) {
     if (opts[key] !== undefined) out[key] = opts[key];
@@ -78,10 +82,10 @@ export function buildWorkspaceWriteRequest(opts: Record<string, unknown>): {
   const defaults = parseJsonFlag(opts.defaults as string | undefined, '--defaults');
   const metadata = parseJsonFlag(opts.metadata as string | undefined, '--metadata');
   if (defaults !== undefined || metadata !== undefined) {
-    out.defaults = {
+    out.defaults = GatewayDefaultsInputSchema.parse({
       ...(typeof defaults === 'object' && defaults !== null ? defaults : {}),
       ...(metadata !== undefined ? { metadata } : {}),
-    };
+    });
   }
 
   if (opts.users !== undefined) {
@@ -92,11 +96,11 @@ export function buildWorkspaceWriteRequest(opts: Record<string, unknown>): {
   }
 
   const usage = parseJsonFlag(opts.usageLimits as string | undefined, '--usage-limits');
-  if (usage !== undefined) out.usageLimits = usage;
+  if (usage !== undefined) out.usageLimits = GatewayUsageLimitInputSchema.array().parse(usage);
   const rate = parseJsonFlag(opts.rateLimits as string | undefined, '--rate-limits');
-  if (rate !== undefined) out.rateLimits = rate;
+  if (rate !== undefined) out.rateLimits = GatewayRateLimitInputSchema.array().parse(rate);
 
-  return out;
+  return out as WorkspaceWriteRequest;
 }
 
 /**
@@ -116,9 +120,18 @@ export function scopeNameLooksUnrelated(name: string, scopeName: string): boolea
 
 /** Register the `aigateway` command group. */
 export function registerAiGatewayCommand(program: Command): void {
-  const aigateway = program.command('aigateway').description('AI Gateway operations');
+  const aigateway = program
+    .command('aigateway')
+    .description('Manage and observe Prisma AIRS AI Gateway resources')
+    .action(() => aigateway.outputHelp());
 
-  const workspace = aigateway.command('workspace').description('Manage AI Gateway workspaces');
+  registerAiGatewayInventory(aigateway);
+
+  const workspace = aigateway
+    .command('workspaces')
+    .alias('workspace')
+    .description('Manage gateway workspaces')
+    .action(() => workspace.outputHelp());
 
   const workspaceList = workspace
     .command('list')
@@ -130,10 +143,10 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspace list',
-        'airs aigateway workspace list --plane admin',
-        'airs aigateway workspace list --plane admin --status archived',
-        'airs aigateway workspace list --all --output json',
+        'airs aigateway workspaces list',
+        'airs aigateway workspaces list --plane admin',
+        'airs aigateway workspaces list --plane admin --status archived',
+        'airs aigateway workspaces list --all --output json',
       ),
     )
     .action(async (opts) => {
@@ -170,8 +183,8 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspace get ws-main-a-349e0e',
-        'airs aigateway workspace get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json',
+        'airs aigateway workspaces get ws-main-a-349e0e',
+        'airs aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json',
       ),
     )
     .action(async (ref: string, opts) => {
@@ -209,8 +222,8 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0',
-        `airs aigateway workspace create --name Production --scope-name ws_production_bx7qw0 --metadata '{"env":"production"}' --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'`,
+        'airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0',
+        `airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0 --metadata '{"env":"production"}' --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'`,
       ),
     )
     .action(async (opts) => {
@@ -250,7 +263,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs aigateway workspace update ws-produc-985697 --description 'Production workloads, us-east'`,
+        `airs aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'`,
       ),
     )
     .action(async (ref: string, opts) => {
@@ -272,33 +285,49 @@ export function registerAiGatewayCommand(program: Command): void {
       }
     });
 
+  const archiveWorkspace = async (ref: string, opts: { force?: boolean }, deprecated: boolean) => {
+    try {
+      renderAiGatewayHeader();
+      if (deprecated) {
+        ui.warn(
+          '`aigateway workspace delete` is deprecated because this operation archives; use `aigateway workspaces archive`.',
+        );
+      }
+      await confirmOrAbort(
+        `Archive workspace ${ref}? (soft delete — the row remains under --status archived)`,
+        Boolean(opts.force),
+        { action: `archive workspace ${ref}` },
+      );
+      const service = await createService();
+      await service.deleteWorkspace(ref);
+      ui.success(`Workspace archived: ${ref}`);
+      ui.status(
+        'This is a soft delete — the workspace remains visible via `workspaces list --plane admin --status archived`. A `get` on it now answers 404; that is expected.',
+      );
+    } catch (err) {
+      failWithGrantHint(err);
+    }
+  };
+
   workspace
-    .command('delete <ref>')
+    .command('archive <ref>')
     .description('Archive a workspace (soft delete — there is no hard delete)')
     .option('--force', 'Skip confirmation prompt')
-    .addHelpText('after', examples('airs aigateway workspace delete ws-produc-985697 --force'))
-    .action(async (ref: string, opts) => {
-      try {
-        renderAiGatewayHeader();
-        await confirmOrAbort(
-          `Archive workspace ${ref}? (soft delete — the row remains under --status archived)`,
-          Boolean(opts.force),
-          { action: `archive workspace ${ref}` },
-        );
-        const service = await createService();
-        await service.deleteWorkspace(ref);
-        ui.success(`Workspace archived: ${ref}`);
-        ui.status(
-          'This is a soft delete — the workspace remains visible via `workspace list --plane admin --status archived`. A `get` on it now answers 404; that is expected.',
-        );
-      } catch (err) {
-        failWithGrantHint(err);
-      }
-    });
+    .addHelpText('after', examples('airs aigateway workspaces archive ws-produc-985697 --force'))
+    .action((ref: string, opts) => archiveWorkspace(ref, opts, false));
+
+  workspace
+    .command('delete <ref>', { hidden: true })
+    .description('Deprecated compatibility command for archive')
+    .option('--force', 'Skip confirmation prompt')
+    .action((ref: string, opts) => archiveWorkspace(ref, opts, true));
 
   const telemetry = aigateway
     .command('telemetry')
-    .description('AI Gateway runtime telemetry (data plane)');
+    .description('AI Gateway runtime telemetry (data plane)')
+    .action(() => telemetry.outputHelp());
+
+  registerAiGatewayTelemetryReads(telemetry);
 
   const cost = telemetry
     .command('cost')
