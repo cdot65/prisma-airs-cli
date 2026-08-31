@@ -1,5 +1,13 @@
 # Release Notes
 
+## v4.1.1 (2026-08-31)
+
+### Fixed
+
+- AI Gateway service and user API-key list/detail commands now redact stored key material by
+  default. Use the explicit `--reveal-sensitive` flag only when the value is intentionally needed.
+- Non-secret API-key metadata remains visible, including defaults and configuration identifiers.
+
 ## v4.1.0 (2026-08-30)
 
 ### New
