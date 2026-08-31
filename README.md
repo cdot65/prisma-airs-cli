@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs-site/static/img/logo-wordmark-dark.svg">
-    <img alt="prisma-airs-cli" src="docs-site/static/img/logo-wordmark.svg" width="400">
-  </picture>
+  <img alt="Prisma AIRS CLI shield with terminal and spectrum" src="https://raw.githubusercontent.com/cdot65/prisma-airs-cli/main/docs-site/static/img/logo.svg" width="320">
 </p>
 
 [![CI](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml)
