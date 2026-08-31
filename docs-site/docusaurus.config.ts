@@ -91,7 +91,7 @@ const config: Config = {
           label: 'CLI Reference',
         },
         {
-          to: '/cli/aigateway/resources/',
+          to: '/cli/aigateway/workflows/',
           label: 'AI Gateway',
           position: 'left',
         },
@@ -116,7 +116,7 @@ const config: Config = {
           items: [
             { label: 'Getting Started', to: '/getting-started/installation' },
             { label: 'CLI Reference', to: '/cli/' },
-            { label: 'AI Gateway', to: '/cli/aigateway/resources/' },
+            { label: 'AI Gateway', to: '/cli/aigateway/workflows/' },
             { label: 'Library', to: '/developers/library/getting-started' },
           ],
         },

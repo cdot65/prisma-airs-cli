@@ -1,5 +1,6 @@
 ---
 sidebar_label: telemetry
+sidebar_position: 4
 ---
 
 # aigateway telemetry
