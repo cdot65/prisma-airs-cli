@@ -112,6 +112,17 @@ interface RequestSchema<T> {
 
 const knownValues = (values: readonly string[]): string => values.join(', ');
 
+function redactApiKeyMaterial(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactApiKeyMaterial);
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
+      key,
+      key === 'key' ? '***' : redactApiKeyMaterial(entry),
+    ]),
+  );
+}
+
 function parseNamedDate(value: unknown, flag: string): Date {
   try {
     return parseDateOption(value);
@@ -200,20 +211,30 @@ function registerApiKeys(root: Command): void {
       group
         .command('list')
         .description(`List ${kind} API keys in a workspace (data plane)`)
-        .requiredOption('--workspace <uuid>', 'Workspace UUID'),
+        .requiredOption('--workspace <uuid>', 'Workspace UUID')
+        .option('--reveal-sensitive', 'Show API key material'),
     );
     list.action((opts) =>
-      runList(list, opts, `${kind} API keys`, (client) =>
-        kind === 'service'
+      runList(list, opts, `${kind} API keys`, async (client) => {
+        const result = await (kind === 'service'
           ? client.apiKeys.listService({ workspaceId: opts.workspace })
-          : client.apiKeys.listUser({ workspaceId: opts.workspace }),
-      ),
+          : client.apiKeys.listUser({ workspaceId: opts.workspace }));
+        return opts.revealSensitive ? result : redactApiKeyMaterial(result);
+      }),
     );
-    const get = addReadOutput(group.command('get <id>').description(`Get one ${kind} API key`));
+    const get = addReadOutput(
+      group
+        .command('get <id>')
+        .description(`Get one ${kind} API key`)
+        .option('--reveal-sensitive', 'Show API key material'),
+    );
     get.action((id, opts) =>
-      runDetail(get, opts, (client) =>
-        kind === 'service' ? client.apiKeys.getService(id) : client.apiKeys.getUser(id),
-      ),
+      runDetail(get, opts, async (client) => {
+        const result = await (kind === 'service'
+          ? client.apiKeys.getService(id)
+          : client.apiKeys.getUser(id));
+        return opts.revealSensitive ? result : redactApiKeyMaterial(result);
+      }),
     );
     const createFields: NamedRequestField[] = [
       { option: 'alertEmails', path: 'alert_emails', parse: parseCsvOption },
