@@ -1,9 +1,12 @@
 ---
 sidebar_label: resources and CRUD
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # AI Gateway resources and CRUD
+
+For task-oriented setup, workspace creation, and integration-binding examples, start with the
+[AI Gateway workflow cheat sheet](workflows.md).
 
 `airs aigateway` exposes the AI Gateway surface in SDK 0.20.0. Commands follow one grammar:
 

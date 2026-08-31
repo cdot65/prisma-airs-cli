@@ -1,5 +1,6 @@
 ---
 sidebar_label: workspaces
+sidebar_position: 3
 ---
 
 # aigateway workspaces
