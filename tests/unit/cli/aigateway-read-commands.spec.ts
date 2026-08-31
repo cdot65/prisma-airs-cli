@@ -4,7 +4,10 @@ import { setAiGatewayClientFactoryForTest } from '../../../src/cli/commands/aiga
 import { buildProgram } from '../../../src/cli/program.js';
 
 const methods = {
+  apiKeysGetService: vi.fn(),
+  apiKeysGetUser: vi.fn(),
   apiKeysListService: vi.fn(),
+  apiKeysListUser: vi.fn(),
   auditLogsList: vi.fn(),
   configsGet: vi.fn(),
   configsList: vi.fn(),
@@ -27,7 +30,12 @@ const methods = {
 
 function fakeClient(): AIGatewayClient {
   return {
-    apiKeys: { listService: methods.apiKeysListService },
+    apiKeys: {
+      getService: methods.apiKeysGetService,
+      getUser: methods.apiKeysGetUser,
+      listService: methods.apiKeysListService,
+      listUser: methods.apiKeysListUser,
+    },
     auditLogs: { list: methods.auditLogsList },
     configs: {
       get: methods.configsGet,
@@ -189,6 +197,57 @@ describe('AI Gateway read command SDK mappings', () => {
       .mock.calls.map(([line]) => String(line))
       .join('\n');
     expect(JSON.parse(stdout).scim_token).toBe('scim-secret');
+  });
+
+  it.each([
+    'service',
+    'user',
+  ] as const)('redacts %s API keys on list and detail reads unless explicitly revealed', async (kind) => {
+    const listMethod = kind === 'service' ? methods.apiKeysListService : methods.apiKeysListUser;
+    const getMethod = kind === 'service' ? methods.apiKeysGetService : methods.apiKeysGetUser;
+    listMethod.mockResolvedValue({
+      data: [{ api_key_defaults_id: 'defaults-1', id: 'key-1', key: 'live-list-secret' }],
+    });
+    getMethod.mockResolvedValue({
+      api_key_defaults_id: 'defaults-1',
+      id: 'key-1',
+      key: 'live-detail-secret',
+    });
+
+    await run('api-keys', kind, 'list', '--workspace', 'workspace-1');
+    let stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(stdout).not.toContain('live-list-secret');
+    expect(JSON.parse(stdout)[0].key).toBe('***');
+    expect(JSON.parse(stdout)[0].api_key_defaults_id).toBe('defaults-1');
+
+    vi.mocked(console.log).mockClear();
+    await run('api-keys', kind, 'get', 'key-1');
+    stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(stdout).not.toContain('live-detail-secret');
+    expect(JSON.parse(stdout).key).toBe('***');
+    expect(JSON.parse(stdout).api_key_defaults_id).toBe('defaults-1');
+
+    vi.mocked(console.log).mockClear();
+    await run('api-keys', kind, 'list', '--workspace', 'workspace-1', '--reveal-sensitive');
+    stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(JSON.parse(stdout)[0].key).toBe('live-list-secret');
+
+    vi.mocked(console.log).mockClear();
+    await run('api-keys', kind, 'get', 'key-1', '--reveal-sensitive');
+    stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(JSON.parse(stdout).key).toBe('live-detail-secret');
   });
 
   it.each([

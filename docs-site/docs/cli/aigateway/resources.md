@@ -128,9 +128,10 @@ airs aigateway deployments update <deployment-id> \
 `--secret-output` reserves a new file with mode `0600` before confirmation or the API call and will
 not overwrite an existing path. API failure or declined confirmation removes that reserved file.
 `--show-secret` is available for deliberate piping. Debug API logs recursively redact tokens,
-secrets, credentials, passwords, authorization fields, and API keys. Provider detail and
-organisation authentication settings are redacted by default; their `--reveal-sensitive` flags are
-explicit opt-ins. Operation-scoped secret paths come from SDK 0.20 metadata.
+secrets, credentials, passwords, authorization fields, and API keys. API-key list/detail reads,
+provider detail, and organisation authentication settings are redacted by default; their
+`--reveal-sensitive` flags are explicit opt-ins. Operation-scoped secret paths come from SDK 0.20
+metadata.
 
 ## Deployment health
 

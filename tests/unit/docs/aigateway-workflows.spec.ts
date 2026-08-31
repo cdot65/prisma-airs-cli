@@ -35,4 +35,12 @@ describe('AI Gateway workflow documentation', () => {
     expect(config).toContain("to: '/cli/aigateway/workflows/'");
     expect(home).toContain('(cli/aigateway/workflows.md)');
   });
+
+  it('documents safe defaults for API-key read commands', async () => {
+    const page = await read('docs/cli/aigateway/resources.md');
+
+    expect(page).toContain('API-key list/detail reads');
+    expect(page).toContain('redacted by default');
+    expect(page).toContain('`--reveal-sensitive`');
+  });
 });
