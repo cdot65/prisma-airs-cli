@@ -20,6 +20,8 @@ describe('AI Gateway workflow documentation', () => {
     expect(page).toContain('--preserve-existing');
     expect(page).toContain('replaces all existing workspace bindings');
     expect(page).toContain('AISEC_OAUTH_ERROR');
+    expect(page).toContain('::::tip[Configuration-file alternative]');
+    expect(page).not.toContain('\n:::tip ');
   });
 
   it('links the cheat sheet from primary AI Gateway navigation', async () => {

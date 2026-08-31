@@ -274,24 +274,6 @@ input:focus-visible, .navbar__link:focus-visible {
    4. Project-specific carryovers
    ============================================================ */
 
-/* Keep the mobile drawer native; move only the desktop docs navigation right. */
-@media (min-width: 997px) {
-  .theme-doc-sidebar-container {
-    order: 2;
-    border-right: 0;
-    border-left: 1px solid var(--ifm-toc-border-color);
-  }
-
-  /* Docusaurus's arrows assume a left sidebar, so reverse them for the right edge. */
-  .theme-doc-sidebar-container [aria-label='Collapse sidebar'] svg {
-    transform: rotate(0deg);
-  }
-
-  .theme-doc-sidebar-container [aria-label='Expand sidebar'] svg {
-    transform: rotate(180deg);
-  }
-}
-
 /* Mermaid diagrams centered with breathing room. */
 .docusaurus-mermaid-container {
   margin: 1.5em 0;

@@ -39,12 +39,12 @@ airs doctor
 optional API endpoint overrides. They are normally unset. They are not the URL of a privately
 deployed gateway.
 
-:::tip Configuration-file alternative
+::::tip[Configuration-file alternative]
 
 The corresponding config keys are `mgmtClientId`, `mgmtClientSecret`, and `mgmtTsgId`. Environment
 variables override values in `~/.prisma-airs/config.json`.
 
-:::
+::::
 
 ## Discover workspaces and integrations
 
