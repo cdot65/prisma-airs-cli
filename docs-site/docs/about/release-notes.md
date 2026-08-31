@@ -1,5 +1,14 @@
 # Release Notes
 
+## v4.1.2 (2026-08-31)
+
+### Changed
+
+- Replaced Prisma AIRS CLI branding across the README, Docusaurus navbar, home page, favicon, and
+  social preview with the new shield, terminal, beam, and spectrum logo.
+- Consolidated the previous icon and light/dark wordmark variants into one canonical SVG so every
+  published surface uses the same artwork.
+
 ## v4.1.1 (2026-08-31)
 
 ### Fixed
