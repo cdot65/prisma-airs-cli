@@ -1,12 +1,13 @@
 import { readFile } from 'node:fs/promises';
 
-import config from '../../../docs-site/docusaurus.config';
-
 describe('documentation sidebar layout', () => {
-  it('enables the native Docusaurus sidebar collapse control', () => {
-    const docsTheme = config.themeConfig?.docs as { sidebar?: { hideable?: boolean } } | undefined;
+  it('enables the native Docusaurus sidebar collapse control', async () => {
+    const config = await readFile(
+      new URL('../../../docs-site/docusaurus.config.ts', import.meta.url),
+      'utf8',
+    );
 
-    expect(docsTheme?.sidebar?.hideable).toBe(true);
+    expect(config).toMatch(/docs:\s*{\s*sidebar:\s*{\s*hideable:\s*true,?\s*},?\s*}/s);
   });
 
   it('places the sidebar on the right only at the desktop breakpoint', async () => {
