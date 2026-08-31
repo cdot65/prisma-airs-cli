@@ -61,6 +61,11 @@ const config: Config = {
 
   themeConfig: {
     image: 'img/social-card.png',
+    docs: {
+      sidebar: {
+        hideable: true,
+      },
+    },
     colorMode: {
       defaultMode: 'dark',
       disableSwitch: true,
