@@ -1,59 +1,37 @@
 ---
-sidebar_label: scan-logs
+sidebar_label: scan-logs (broken)
 ---
 
 # runtime scan-logs
 
-## runtime scan-logs query
+:::danger Broken legacy retrieval — under refactor
 
-Query scan logs
+The SDK's `ScanLogsClient` / `client.scanLogs.query()` and the legacy
+`/v1/mgmt/scanlogs` workflow must currently be considered broken. Live checks returned
+HTTP 400 for rejected queries and empty HTTP 200 bodies/objects for other queries despite
+known session activity. Neither response establishes that there were zero scans or threats.
 
-```text
-airs runtime scan-logs query [options]
-```
+CLI **5.0.0** deliberately makes `airs runtime scan-logs query` exit **1** with migration
+guidance, without calling this endpoint or emitting a misleading empty list. Its old flags
+remain recognizable, but changing a Scanner API key or time unit is not a verified repair.
 
-### Options
+:::
 
-| Flag | Required | Default | Description |
-|------|:--------:|---------|-------------|
-| `--interval <n>` | Yes | — | Time interval |
-| `--unit <unit>` | Yes | — | Time unit (hours) |
-| `--filter <filter>` | No | `all` | Filter: all, benign, threat |
-| `--limit <n>` | No | `50` | Max results per page (API page size) |
-| `--offset <n>` | No | `0` | Starting offset — rounds down to a page boundary |
-| `--output <format>` | No | Resolved | Output format: pretty, table, markdown, csv, json, yaml |
-
-### Examples
-
-*Empty result for a 24-hour window. The upstream `/v1/mgmt/scanlogs` endpoint only accepts a fixed set of (interval, unit) pairs — `(1, hours)`, `(24, hours)`, `(7, days)`, `(30, days)`. Anything else returns API 400.*
+## Use the verified SCM session workflow
 
 ```bash
-airs runtime scan-logs query --interval 24 --unit hours --limit 5 --output pretty
+# One page, or a bounded walk with completeness checks
+airs runtime sessions list --interval 1 --unit day --output json
+airs runtime sessions list --interval 1 --unit day --all --output json
+
+# Human-readable daily dashboard in your current directory
+airs runtime report
 ```
 
-```text
-Prisma AIRS — Runtime Configuration
-Security profile and topic management
+These commands use Management OAuth and the alternate SCM dashboard host. They retrieve
+sessions, not the old scan-log response shape. Migrate consumers explicitly; do not treat
+session counts as scan-action or detector-event counts.
 
-No scan logs found.
-```
-
-*JSON output uses the list contract even when the result is empty.*
-
-```bash
-airs runtime scan-logs query --interval 24 --unit hours --limit 5 --output json
-```
-
-```json
-[]
-```
-
-*YAML output uses the same bare-array shape.*
-
-```bash
-airs runtime scan-logs query --interval 24 --unit hours --limit 5 --output yaml
-```
-
-```yaml
-[]
-```
+See [session commands](sessions.md), [dashboard commands](dashboard.md), and the
+[daily report guide](../../runtime/daily-report.md). Session → transaction → stored-content
+drill-down is supported; sensitive content is fetched only when explicitly requested.

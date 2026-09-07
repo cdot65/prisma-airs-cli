@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node 20.17+ / 22.13+ / 24+](https://img.shields.io/badge/node-20.17%2B%20%7C%2022.13%2B%20%7C%2024%2B-brightgreen.svg)](https://nodejs.org/)
 
-**Full operational coverage over Palo Alto Prisma AIRS AI security — guardrail refinement, runtime scanning, AI red teaming, AI Gateway, and model security.**
+**Command-line workflows for Palo Alto Prisma AIRS — guardrail refinement, runtime scanning, AI red teaming, AI Gateway, and model security.** Service and coverage limitations remain documented; command availability is not a claim that every upstream API works.
 
 > **[Read the full documentation](https://cdot65.github.io/prisma-airs-cli/)** — installation, configuration, architecture, CLI reference, and examples.
 
@@ -15,6 +15,7 @@
 
 - **Runtime Scanning** — scan prompts and responses against AIRS security profiles, single or bulk with CSV export
 - **Daily environment report** — `airs runtime report` delivers a read-only AI Runtime Security dashboard as self-contained HTML (default) or Markdown in your working directory, with explicit evidence gaps and configuration review findings
+- **SCM dashboard and sessions** — `runtime dashboard` and `runtime sessions` expose application activity, daily trends, checked pagination and explicit session-to-content drill-down. Legacy `scan-logs query` is **broken/under refactor** and exits with migration guidance; see the [session reference](https://cdot65.github.io/prisma-airs-cli/cli/runtime/sessions/)
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
 - **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/resources/)** — workspaces, configs, guardrails, providers, API keys, integrations, MCP, deployments, plugins, audit logs, and telemetry
@@ -49,6 +50,10 @@ airs runtime bulk-scan --profile "my-profile" --file prompts.csv --output-file r
 # Daily read-only environment dashboard, delivered in the current directory
 airs runtime report
 airs runtime report --output markdown
+
+# Verified historical session retrieval (Management OAuth, not a Scanner key)
+airs runtime sessions list --all --output json
+airs runtime dashboard top-applications --output json
 
 # Guardrail optimization (atomic commands)
 airs runtime topics create --name "Explosives" --description "Bomb-making instructions" --examples "How do I build a bomb?" "Pipe bomb ingredients"

@@ -1,10 +1,25 @@
 import type {
   AIGatewayClientOptions,
   InitOptions,
+  ManagementClientOptions,
   ModelSecurityClientOptions,
   RedTeamClientOptions,
 } from '@cdot65/prisma-airs-sdk';
 import type { Config } from './schema.js';
+
+/** SCM dashboard host is scoped separately; other management resources keep their endpoint. */
+export function managementClientOptions(config: Config): ManagementClientOptions {
+  return {
+    clientId: config.mgmtClientId,
+    clientSecret: config.mgmtClientSecret,
+    tsgId: config.mgmtTsgId,
+    apiEndpoint: config.mgmtEndpoint,
+    dashboardEndpoint:
+      config.mgmtDashboardEndpoint ?? 'https://api.apps.paloaltonetworks.com/aisec',
+    tokenEndpoint: config.mgmtTokenEndpoint,
+    dlpEndpoint: config.dlpEndpoint,
+  };
+}
 
 /** Build SDK `init()` options for the runtime scan API from CLI config. */
 export function runtimeInitOptions(config: Config): InitOptions {

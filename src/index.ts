@@ -160,12 +160,14 @@ export { renderRuntimeReportHtml, renderRuntimeReportMarkdown } from './reports/
 export { collectRuntimeDailyReport } from './reports/runtime.js';
 export type {
   ReportApplication,
+  ReportDailyTelemetry,
   ReportFinding,
   ReportFormat,
-  ReportLogSummary,
   ReportPriority,
   ReportProfile,
   ReportRegisteredApp,
+  ReportSessionSummary,
+  ReportSeverity,
   ReportSource,
   ReportSourceStatus,
   RuntimeDailyReport,

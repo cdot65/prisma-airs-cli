@@ -2,6 +2,7 @@ import { lstat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Command } from 'commander';
 import { getOrCreateManagementClient } from '../../airs/management.js';
+import { managementClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import { writeReportFile } from '../../reports/io.js';
 import { renderRuntimeReportHtml, renderRuntimeReportMarkdown } from '../../reports/render.js';
@@ -20,7 +21,7 @@ export function registerRuntimeReportCommand(runtime: Command): void {
       'Destination (default: new timestamped file in CWD); - for stdout; never overwrite',
     )
     .option('--title <text>', 'Report title', 'Daily environment report')
-    .option('--max-pages <n>', 'Page budget per source, 1–100 (100 records/page)', '10')
+    .option('--max-pages <n>', 'Page budget per source, 1–100 (25 sessions/page)', '40')
     .option('--strict', 'Exit 1 after writing if any source is incomplete')
     .addHelpText(
       'after',
@@ -55,11 +56,7 @@ export function registerRuntimeReportCommand(runtime: Command): void {
         }
         const config = await loadConfig();
         const client = getOrCreateManagementClient({
-          clientId: config.mgmtClientId,
-          clientSecret: config.mgmtClientSecret,
-          tsgId: config.mgmtTsgId,
-          apiEndpoint: config.mgmtEndpoint,
-          tokenEndpoint: config.mgmtTokenEndpoint,
+          ...managementClientOptions(config),
           numRetries: 0,
         });
         ui.status('Collecting daily runtime activity and current configuration (read-only)...');

@@ -1,6 +1,6 @@
 # Interface: ReportFinding
 
-Defined in: src/reports/types.ts:25
+Defined in: src/reports/types.ts:31
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:25
 
 > **evidence**: `string`
 
-Defined in: src/reports/types.ts:28
+Defined in: src/reports/types.ts:34
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:28
 
 > **priority**: [`ReportPriority`](../type-aliases/ReportPriority.md)
 
-Defined in: src/reports/types.ts:26
+Defined in: src/reports/types.ts:32
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:26
 
 > **recommendation**: `string`
 
-Defined in: src/reports/types.ts:29
+Defined in: src/reports/types.ts:35
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/reports/types.ts:29
 
 > **source**: `string`
 
-Defined in: src/reports/types.ts:30
+Defined in: src/reports/types.ts:36
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: src/reports/types.ts:30
 
 > **title**: `string`
 
-Defined in: src/reports/types.ts:27
+Defined in: src/reports/types.ts:33

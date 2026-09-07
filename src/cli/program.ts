@@ -97,7 +97,7 @@ export function buildProgram(): Command {
       (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))
     )
       usageError(
-        'Disable --debug and PANW_AI_SEC_DEBUG for environment reports to avoid persisting scan-log content',
+        'Disable --debug and PANW_AI_SEC_DEBUG for environment reports to avoid persisting sensitive traffic content',
       );
     if (
       !isRuntimeReport &&

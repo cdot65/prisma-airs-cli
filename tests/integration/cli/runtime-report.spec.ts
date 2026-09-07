@@ -106,7 +106,7 @@ describe('airs runtime report command', () => {
   });
 
   it('writes useful partial reports successfully; strict mode then exits 1', async () => {
-    client.scanLogs.query.mockResolvedValue({});
+    client.dashboard.sessionsOverview.mockResolvedValue({});
     const first = join(directory, 'partial.html');
     await run(['--output-file', first]);
     expect(process.exitCode).toBeUndefined();
@@ -119,10 +119,9 @@ describe('airs runtime report command', () => {
 
   it('exits 1 and still creates a diagnostic report when no source is available', async () => {
     for (const method of [
-      client.dashboard.applicationsOverview,
+      ...Object.values(client.dashboard),
       client.profiles.list,
       client.customerApps.list,
-      client.scanLogs.query,
     ])
       method.mockRejectedValue(new Error('PRIVATE-ERROR'));
     const destination = join(directory, 'unavailable.html');

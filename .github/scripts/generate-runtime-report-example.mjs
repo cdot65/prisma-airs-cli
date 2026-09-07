@@ -9,8 +9,50 @@ import {
 } from '../../dist/index.js';
 
 export async function exampleReport() {
+  const sessionItems = Array.from({ length: 1300 }, (_, index) => ({
+    application_id: index < 860 ? 'a' : index < 1180 ? 'b' : 'c',
+    application_name:
+      index < 860 ? 'Customer support' : index < 1180 ? 'Engineering assistant' : 'Document search',
+    session_id: `synthetic-${index}`,
+    last_session_activity: '2026-09-07T07:00:00Z',
+    violation_status: index < 43 || (index >= 860 && index < 868) ? 'violated' : 'passed',
+  }));
   const client = {
     dashboard: {
+      sessionsOverview: async ({ offset, limit }) => ({
+        items: sessionItems.slice(offset, offset + limit),
+        pagination: { limit, skip: offset, total_items: sessionItems.length },
+      }),
+      sessionsChart: async () => ({
+        buckets: [
+          {
+            bucket_number: 0,
+            time: '2026-09-07T07:00:00Z',
+            total: 1300,
+            violating: 51,
+            violation_breakdown: { critical: 0, high: 0, medium: 52, low: 0, total: 52 },
+          },
+        ],
+      }),
+      topApplicationsViolations: async () => ({
+        applications: [
+          {
+            id: 'a',
+            name: 'Customer support',
+            total_violations: 52,
+            policy_violations: [{ detection_type: 'pi', total: 52 }],
+          },
+        ],
+      }),
+      applicationsViolationsTrend: async () => ({
+        violations: [
+          {
+            bucket_number: 0,
+            date: '2026-09-07T07:00:00Z',
+            violation_breakdown: { critical: 0, high: 0, medium: 52, low: 0, total: 52 },
+          },
+        ],
+      }),
       applicationsOverview: async () => ({
         items: [
           { id: 'a', name: 'Customer support', sessions_total: 860, sessions_violated: 43 },
@@ -86,14 +128,15 @@ export async function exampleReport() {
         ],
       }),
     },
-    scanLogs: { query: async () => ({}) },
   };
   const report = await collectRuntimeDailyReport(client, {
     title: 'Daily security review · Synthetic example',
     now: () => new Date('2026-09-07T08:00:00Z'),
+    maxPages: 60,
   });
   report.limitations.unshift(
     'SYNTHETIC EXAMPLE: all application names, counts, and configurations are fabricated documentation fixtures, not live customer data.',
+    'This fixture uses a 60-page budget to collect 1,300 sessions; CLI default is 40 pages and would explicitly mark that capped collection partial.',
   );
   return report;
 }

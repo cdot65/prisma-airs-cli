@@ -286,13 +286,19 @@ airs runtime deployment-profiles list [--unactivated] [--output <format>]
 
 (There is no standalone DLP-profile listing command — DLP profile names are supplied to a profile via the `--dlp-profiles` flag on `profiles create`/`update`.)
 
-#### Scan Logs
+#### SCM Dashboard and Sessions (CLI 5.0 / SDK 0.26)
+
+Use `runtime dashboard {applications,application,application-violations,top-applications,violations-trend,apps-list}` and `runtime sessions {list,chart,get,transaction,scan-content}` for read-only OAuth retrieval. The dashboard host defaults separately to `https://api.apps.paloaltonetworks.com/aisec`; override via `mgmtDashboardEndpoint` / `PANW_MGMT_DASHBOARD_ENDPOINT`. Preserve composite application/session identity, zero sub-request indexes, and session-vs-detector count semantics. Session list `--all` validates pagination; stored content requires exactly one of `--show-content` or private `--output-file`.
+
+`runtime report` now uses seven sources: daily application overview, profiles, registered apps, session inventory, session chart, top application violations and severity trend. Schema 2 replaces `logs` with `sessions` and adds `dailyTelemetry`. Default budget: 40 pages/source, 25 sessions/page and 100 application/configuration records/page. Never automatically fetch transaction attributes or stored content for deliverables. Debug dashboard/content bodies are always omitted.
+
+#### Scan Logs — broken, under refactor
 
 ```bash
 airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|threat>] [--limit <n>] [--offset <n>] [--output <format>]
 ```
 
-**Required:** `--interval`, `--unit`
+**Required:** `--interval`, `--unit`. Legacy command now exits 1 with migration guidance and performs no query. The SDK class remains deprecated for compatibility, but empty HTTP 200/400 observations must not be presented as zero activity. Use the verified session workflow above; its response schema differs.
 
 ---
 

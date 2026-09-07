@@ -45,6 +45,7 @@ docs-site/.docusaurus/
 
 # Private environment report validation artifacts
 /artifacts/runtime-report/
+/artifacts/runtime-dashboard/
 debug-api-*.jsonl
 airs-runtime-report-*.html
 airs-runtime-report-*.md

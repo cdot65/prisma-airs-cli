@@ -18,6 +18,7 @@ function fromEnv(): Record<string, unknown> {
     mgmtClientSecret: env.PANW_MGMT_CLIENT_SECRET,
     mgmtTsgId: env.PANW_MGMT_TSG_ID,
     mgmtEndpoint: env.PANW_MGMT_ENDPOINT,
+    mgmtDashboardEndpoint: env.PANW_MGMT_DASHBOARD_ENDPOINT,
     mgmtTokenEndpoint: env.PANW_MGMT_TOKEN_ENDPOINT,
     dlpEndpoint: env.PANW_DLP_ENDPOINT,
     redTeamDataEndpoint: env.PANW_RED_TEAM_DATA_ENDPOINT,

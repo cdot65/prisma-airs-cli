@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 /** Domains that indicate AIRS / Strata Cloud Manager API traffic. */
 const AIRS_DOMAINS = [
   'api.sase.paloaltonetworks.com',
+  'api.apps.paloaltonetworks.com',
   'service.api.aisecurity.paloaltonetworks.com',
   'auth.apps.paloaltonetworks.com',
   'api.dlp.paloaltonetworks.com',
@@ -159,13 +160,14 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     if (!isAirsUrl(url) && !inference) {
       return originalFetch(input, init);
     }
+    const dashboard = /\/v1\/mgmt\/(dashboard\/|reports\/scancontent(?:\?|$))/.test(url);
 
     const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
     const reqHeaders = redactHeaders(rawHeaders);
     const loggedUrl = redactUrl(url);
 
     let reqBody: unknown;
-    if (inference) reqBody = '[BODY OMITTED]';
+    if (inference || dashboard) reqBody = '[BODY OMITTED]';
     else if (init?.body) {
       try {
         reqBody = redactDeep(JSON.parse(String(init.body)));
@@ -205,7 +207,11 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     });
 
     // Clone so the original consumer can still read the body
-    if (inference || response.headers.get('content-type')?.includes('text/event-stream')) {
+    if (
+      inference ||
+      dashboard ||
+      response.headers.get('content-type')?.includes('text/event-stream')
+    ) {
       // Never consume/tee an inference stream before the SDK can read it. Besides retaining
       // sensitive prompt text, clone().text() would buffer the full stream and defeat cancellation.
       resBody = '[BODY OMITTED]';

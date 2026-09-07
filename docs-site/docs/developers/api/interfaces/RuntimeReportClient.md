@@ -10,13 +10,13 @@ Read-only SDK surface needed by the first product report.
 
 > **customerApps**: `Pick`\<`ManagementClient`\[`"customerApps"`\], `"list"`\>
 
-Defined in: src/reports/types.ts:7
+Defined in: src/reports/types.ts:14
 
 ***
 
 ### dashboard
 
-> **dashboard**: `Pick`\<`ManagementClient`\[`"dashboard"`\], `"applicationsOverview"`\>
+> **dashboard**: `Pick`\<`ManagementClient`\[`"dashboard"`\], `"applicationsOverview"` \| `"sessionsOverview"` \| `"sessionsChart"` \| `"topApplicationsViolations"` \| `"applicationsViolationsTrend"`\>
 
 Defined in: src/reports/types.ts:5
 
@@ -26,12 +26,4 @@ Defined in: src/reports/types.ts:5
 
 > **profiles**: `Pick`\<`ManagementClient`\[`"profiles"`\], `"list"`\>
 
-Defined in: src/reports/types.ts:6
-
-***
-
-### scanLogs
-
-> **scanLogs**: `Pick`\<`ManagementClient`\[`"scanLogs"`\], `"query"`\>
-
-Defined in: src/reports/types.ts:8
+Defined in: src/reports/types.ts:13

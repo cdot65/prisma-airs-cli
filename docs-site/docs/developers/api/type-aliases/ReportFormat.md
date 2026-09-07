@@ -2,4 +2,4 @@
 
 > **ReportFormat** = `"html"` \| `"markdown"`
 
-Defined in: src/reports/types.ts:13
+Defined in: src/reports/types.ts:19

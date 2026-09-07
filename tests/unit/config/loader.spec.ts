@@ -19,6 +19,7 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_MGMT_CLIENT_SECRET', '');
     vi.stubEnv('PANW_MGMT_TSG_ID', '');
     vi.stubEnv('PANW_MGMT_ENDPOINT', '');
+    vi.stubEnv('PANW_MGMT_DASHBOARD_ENDPOINT', '');
     vi.stubEnv('PANW_MGMT_TOKEN_ENDPOINT', '');
     vi.stubEnv('PANW_AI_SEC_API_TOKEN', '');
     vi.stubEnv('PANW_AI_SEC_API_ENDPOINT', '');
@@ -83,6 +84,20 @@ describe('loadConfig', () => {
 
     const config = await loadConfig({}, configPath);
     expect(config.scanConcurrency).toBe(7);
+  });
+
+  it('supports a separately scoped dashboard host with env over file precedence', async () => {
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        mgmtDashboardEndpoint: 'https://file.example',
+        mgmtEndpoint: 'https://mgmt.example',
+      }),
+    );
+    vi.stubEnv('PANW_MGMT_DASHBOARD_ENDPOINT', 'https://env.example/aisec');
+    const config = await loadConfig({}, configPath);
+    expect(config.mgmtDashboardEndpoint).toBe('https://env.example/aisec');
+    expect(config.mgmtEndpoint).toBe('https://mgmt.example');
   });
 
   it('reads endpoint/auth override env vars', async () => {

@@ -26,7 +26,7 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
   let env: NodeJS.ProcessEnv;
   let report: RuntimeDailyReport;
   const checks: string[] = [];
-  let scanLogDebugHttpStatus: number | undefined;
+  let sessionDebugHttpStatus: number | undefined;
   const digest = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 
   async function command(args: string[], cwd?: string) {
@@ -55,12 +55,14 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
       PRISMA_AIRS_CONFIG_PATH: configPath,
       PANW_AI_SEC_DEBUG: '0',
       PANW_AI_SEC_DEBUG_BODY: '0',
+      PANW_AI_SEC_TIMEOUT_MS: '20000',
     };
     for (const [field, name] of Object.entries({
       mgmtClientId: 'PANW_MGMT_CLIENT_ID',
       mgmtClientSecret: 'PANW_MGMT_CLIENT_SECRET',
       mgmtTsgId: 'PANW_MGMT_TSG_ID',
       mgmtEndpoint: 'PANW_MGMT_ENDPOINT',
+      mgmtDashboardEndpoint: 'PANW_MGMT_DASHBOARD_ENDPOINT',
       mgmtTokenEndpoint: 'PANW_MGMT_TOKEN_ENDPOINT',
     })) {
       if (config[field]) env[name] = config[field];
@@ -79,7 +81,7 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
           product: 'AI Runtime Security',
           readOnly: true,
           configUnchanged: unchanged,
-          scanLogDebugHttpStatus,
+          sessionDebugHttpStatus,
           checks,
           sources: report?.sources.map(({ name, status, records, pages }) => ({
             name,
@@ -109,15 +111,16 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
       clientSecret: config.mgmtClientSecret,
       tsgId: config.mgmtTsgId,
       apiEndpoint: config.mgmtEndpoint,
+      dashboardEndpoint:
+        config.mgmtDashboardEndpoint ?? 'https://api.apps.paloaltonetworks.com/aisec',
       tokenEndpoint: config.mgmtTokenEndpoint,
       numRetries: 0,
     });
     report = await collectRuntimeDailyReport(client);
-    expect(report.sources.slice(0, 3).map((source) => source.status)).toEqual([
-      'complete',
-      'complete',
-      'complete',
-    ]);
+    expect(report.sources).toHaveLength(7);
+    expect(report.sources.every((source) => source.status === 'complete')).toBe(true);
+    expect(report.sessions.entries).not.toBeNull();
+    expect(report.dailyTelemetry.chart.buckets.length).toBeGreaterThan(0);
     expect(report.health).not.toBe('unknown');
     checks.push('SDK daily activity and inventories');
   }, 180_000);
@@ -171,7 +174,7 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
     checks.push('Default HTML and Markdown delivered in caller CWD');
   }, 360_000);
 
-  it('runs the reported scan-log debug command with its log in CWD, not the credential directory', async () => {
+  it('runs the replacement session debug command with body-free logs in CWD', async () => {
     const cwd = join(outputDirectory, 'working-directory');
     const result = await runFile(
       process.execPath,
@@ -179,12 +182,12 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
         cliPath,
         '--quiet',
         'runtime',
-        'scan-logs',
-        'query',
+        'sessions',
+        'list',
         '--interval',
-        '128',
+        '1',
         '--unit',
-        'hours',
+        'day',
         '--debug',
         '--output',
         'json',
@@ -210,18 +213,14 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
       .trim()
       .split('\n')
       .map((line) => JSON.parse(line));
-    const queryEntry = entries.find((entry) => entry.request.url.includes('/scanlogs'));
+    const queryEntry = entries.find((entry) => entry.request.url.includes('/sessionsoverview'));
     expect(queryEntry).toBeDefined();
-    scanLogDebugHttpStatus = queryEntry.response.status;
-    if (scanLogDebugHttpStatus === 200) {
-      expect(result.code).toBe(0);
-      expect(Array.isArray(JSON.parse(result.stdout))).toBe(true);
-    } else {
-      // The reported 128-hour request is rejected by this deployment; logging must still work.
-      expect(scanLogDebugHttpStatus).toBe(400);
-      expect(result.code).toBe(1);
-    }
-    checks.push('128-hour scan-log debug regression and private CWD log');
+    sessionDebugHttpStatus = queryEntry.response.status;
+    expect(sessionDebugHttpStatus).toBe(200);
+    expect(queryEntry.response.body).toBe('[BODY OMITTED]');
+    expect(result.code).toBe(0);
+    expect(Array.isArray(JSON.parse(result.stdout))).toBe(true);
+    checks.push('Verified session debug workflow and private, body-free CWD log');
   }, 180_000);
 
   it('omits credential values and raw sensitive field names from deliverables', async () => {

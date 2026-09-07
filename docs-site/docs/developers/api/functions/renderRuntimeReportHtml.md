@@ -2,7 +2,7 @@
 
 > **renderRuntimeReportHtml**(`report`): `string`
 
-Defined in: src/reports/render.ts:234
+Defined in: src/reports/render.ts:266
 
 Standalone HTML: inline CSS/JS, no dependencies, external requests, or embedded raw data.
 

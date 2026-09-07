@@ -2,4 +2,4 @@
 
 > **ReportSourceStatus** = `"complete"` \| `"partial"` \| `"unavailable"`
 
-Defined in: src/reports/types.ts:11
+Defined in: src/reports/types.ts:17

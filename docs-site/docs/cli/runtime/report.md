@@ -16,7 +16,7 @@ airs runtime report [--output html|markdown] [--output-file <new-path|->]
 | `--output` | `html` | Self-contained HTML or Markdown |
 | `--output-file` | Timestamped, unique file in CWD | New destination; `-` streams to stdout |
 | `--title` | `Daily environment report` | 1–240 characters |
-| `--max-pages` | `10` | Page budget per source; 100 requested records/page |
+| `--max-pages` | `40` | Page budget per source; 25 sessions/page, 100 application/configuration records/page |
 | `--strict` | off | Exit 1 after generating the report if any source is incomplete |
 
 Requires Management API OAuth credentials, not a Scanner key. Reads the existing config without

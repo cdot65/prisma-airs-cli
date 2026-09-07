@@ -92,12 +92,12 @@ try {
     const contents = await readFile(livePath, 'utf8');
     assert.ok(contents.startsWith('<!doctype html>'));
     await page.goto(pathToFileURL(livePath).href);
-    assert.equal(await page.$$eval('#evidence tbody tr', (rows) => rows.length), 4);
+    assert.equal(await page.$$eval('#evidence tbody tr', (rows) => rows.length), 7);
     assert.equal(
       await page.$eval('html', (element) => element.classList.contains('js-ready')),
       true,
     );
-    results.push('Live generated HTML opens offline with four evidence sources');
+    results.push('Live generated HTML opens offline with seven evidence sources');
   }
   assert.equal(network.length, 0);
   assert.equal(errors.length, 0);

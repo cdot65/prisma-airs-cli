@@ -2,7 +2,7 @@
 
 > **renderRuntimeReportMarkdown**(`report`): `string`
 
-Defined in: src/reports/render.ts:144
+Defined in: src/reports/render.ts:176
 
 Render the same evidence model as a portable, inert Markdown deliverable.
 

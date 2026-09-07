@@ -1,11 +1,16 @@
 import type {
   CustomerAppWithKeys,
   DashboardApplicationsOverviewItem,
-  ScanResultEntry,
+  DashboardSessionOverviewItem,
+  DashboardSessionsChartBucket,
+  DashboardTopApplicationViolations,
+  DashboardViolationsTrendBucket,
   SecurityProfile,
+  ViolationSeverityCounts,
 } from '@cdot65/prisma-airs-sdk';
 import type {
   ReportFinding,
+  ReportSeverity,
   ReportSource,
   RuntimeDailyReport,
   RuntimeReportClient,
@@ -104,24 +109,34 @@ function total(values: Array<number | null>): number | null {
   return count(result);
 }
 
-function distribution(rows: ScanResultEntry[], key: 'action' | 'verdict') {
+function distribution(rows: DashboardSessionOverviewItem[]) {
   const groups = new Map<string, number>();
   for (const row of rows) {
-    const name = label(row[key]).toLowerCase();
+    const name = label(row.violation_status).toLowerCase();
     groups.set(name, (groups.get(name) ?? 0) + 1);
   }
   return [...groups].map(([name, n]) => ({ name, count: n })).sort((a, b) => b.count - a.count);
 }
 
+function severity(value: ViolationSeverityCounts): ReportSeverity {
+  return {
+    critical: count(value.critical),
+    high: count(value.high),
+    medium: count(value.medium),
+    low: count(value.low),
+    total: count(value.total),
+  };
+}
+
 /**
  * Build a daily environment report through SDK reads only. No scan submissions or mutations.
- * Application sessions, log entries and current inventory remain separate units of evidence.
+ * Application buckets, session inventory and detector violations remain separate units of evidence.
  */
 export async function collectRuntimeDailyReport(
   client: RuntimeReportClient,
   options: RuntimeReportOptions = {},
 ): Promise<RuntimeDailyReport> {
-  const maxPages = options.maxPages ?? 10;
+  const maxPages = options.maxPages ?? 40;
   if (!Number.isSafeInteger(maxPages) || maxPages < 1 || maxPages > 100) {
     throw new Error('maxPages must be an integer from 1 to 100');
   }
@@ -140,103 +155,150 @@ export async function collectRuntimeDailyReport(
     'Current configuration',
   );
   const appSource = source('Registered applications', 'customerApps.list', 'Current configuration');
-  const logSource = source(
-    'Scan log detail',
-    'scanLogs.query (read-only POST)',
-    'Rolling 24 hours',
+  const sessionSource = source(
+    'Daily session inventory',
+    'dashboard.sessionsOverview',
+    'Rolling 1 day',
   );
-  let pageToken: string | undefined;
-  const seenTokens = new Set<string>();
-  const [applications, profileRows, registered, rawLogs] = await Promise.all([
-    collect<DashboardApplicationsOverviewItem>(
-      activitySource,
-      maxPages,
-      async (offset) => {
-        const page = await client.dashboard.applicationsOverview({
-          timeInterval: 1,
-          timeUnit: 'day',
-          limit: PAGE_SIZE,
-          offset,
-        });
-        const size = page.items?.length ?? 0;
-        const totalItems = count(page.pagination?.total_items);
-        if (totalItems !== null && totalItems > offset + size && size === 0) {
-          throw new ReportDataError('The API returned an empty page before its advertised total.');
-        }
-        return {
-          items: page.items,
-          next:
-            totalItems !== null
-              ? offset + size < totalItems
-                ? offset + size
-                : undefined
-              : size === PAGE_SIZE
-                ? offset + size
-                : undefined,
-        };
-      },
-      (item) => JSON.stringify([item.id, item.name]),
-    ),
-    collect<SecurityProfile>(
-      profileSource,
-      maxPages,
-      async (offset) => {
-        const page = await client.profiles.list({ latest: true, limit: PAGE_SIZE, offset });
-        return {
-          items: page.ai_profiles,
-          next: inventoryNext(page.next_offset, page.ai_profiles.length, offset),
-        };
-      },
-      (item) => JSON.stringify([item.profile_name, item.revision]),
-    ),
-    collect<CustomerAppWithKeys>(
-      appSource,
-      maxPages,
-      async (offset) => {
-        const page = await client.customerApps.list({ limit: PAGE_SIZE, offset });
-        return {
-          items: page.customer_apps,
-          next: inventoryNext(page.next_offset, page.customer_apps?.length ?? 0, offset),
-        };
-      },
-      (item) => item.customer_appId,
-    ),
-    collect<ScanResultEntry>(
-      logSource,
-      maxPages,
-      async (offset) => {
-        const pageNumber = offset + 1;
-        const page = await client.scanLogs.query({
-          time_interval: 24,
-          time_unit: 'hours',
-          pageNumber,
-          pageSize: PAGE_SIZE,
-          filter: 'all',
-          page_token: pageToken,
-        });
-        const items = page.scan_result_for_dashboard?.scan_result_entries;
-        if (page.page_number !== undefined && page.page_number !== pageNumber) {
-          throw new ReportDataError(
-            'The scan-log response page number did not match the requested page.',
-          );
-        }
-        const totalPages = count(page.total_pages);
-        let next: number | undefined;
-        if (totalPages !== null) next = pageNumber < totalPages ? offset + 1 : undefined;
-        else if (page.page_token || items?.length === PAGE_SIZE) next = offset + 1;
-        if (next !== undefined && page.page_token) {
-          if (seenTokens.has(page.page_token))
+  const chartSource = source('Daily session chart', 'dashboard.sessionsChart', 'Rolling 1 day');
+  const rankingSource = source(
+    'Top application violations',
+    'dashboard.topApplicationsViolations',
+    'Rolling 1 day; server-ranked subset',
+  );
+  const trendSource = source(
+    'Daily violation trend',
+    'dashboard.applicationsViolationsTrend',
+    'Rolling 1 day',
+  );
+  const sources = [
+    activitySource,
+    profileSource,
+    appSource,
+    sessionSource,
+    chartSource,
+    rankingSource,
+    trendSource,
+  ];
+  const daily = { timeInterval: 1, timeUnit: 'day' } as const;
+  let expectedSessionTotal: number | undefined;
+  let expectedAppTotal: number | undefined;
+  const [applications, profileRows, registered, rawSessions, chart, rankings, trend] =
+    await Promise.all([
+      collect<DashboardApplicationsOverviewItem>(
+        activitySource,
+        maxPages,
+        async (offset) => {
+          const page = await client.dashboard.applicationsOverview({
+            timeInterval: 1,
+            timeUnit: 'day',
+            limit: PAGE_SIZE,
+            offset,
+          });
+          const size = page.items?.length ?? 0;
+          const totalItems = count(page.pagination?.total_items);
+          if (totalItems !== null) {
+            if (expectedAppTotal !== undefined && totalItems !== expectedAppTotal)
+              throw new ReportDataError(
+                'Application total changed during pagination; retry for a stable inventory.',
+              );
+            expectedAppTotal = totalItems;
+            if (offset + size > totalItems)
+              throw new ReportDataError('Application records exceed the advertised total.');
+          }
+          if (totalItems !== null && totalItems > offset + size && size === 0) {
             throw new ReportDataError(
-              'The scan-log continuation token repeated; collection stopped safely.',
+              'The API returned an empty page before its advertised total.',
             );
-          seenTokens.add(page.page_token);
-          pageToken = page.page_token;
-        }
-        return { items, next };
-      },
-      (item) => JSON.stringify([item.scan_id, item.scan_sub_req_id]),
-    ),
-  ]);
+          }
+          return {
+            items: page.items,
+            next:
+              totalItems !== null
+                ? offset + size < totalItems
+                  ? offset + size
+                  : undefined
+                : size === PAGE_SIZE
+                  ? offset + size
+                  : undefined,
+          };
+        },
+        (item) => JSON.stringify([item.id, item.name]),
+      ),
+      collect<SecurityProfile>(
+        profileSource,
+        maxPages,
+        async (offset) => {
+          const page = await client.profiles.list({ latest: true, limit: PAGE_SIZE, offset });
+          return {
+            items: page.ai_profiles,
+            next: inventoryNext(page.next_offset, page.ai_profiles.length, offset),
+          };
+        },
+        (item) => JSON.stringify([item.profile_name, item.revision]),
+      ),
+      collect<CustomerAppWithKeys>(
+        appSource,
+        maxPages,
+        async (offset) => {
+          const page = await client.customerApps.list({ limit: PAGE_SIZE, offset });
+          return {
+            items: page.customer_apps,
+            next: inventoryNext(page.next_offset, page.customer_apps?.length ?? 0, offset),
+          };
+        },
+        (item) => item.customer_appId,
+      ),
+      collect<DashboardSessionOverviewItem>(
+        sessionSource,
+        maxPages,
+        async (offset) => {
+          const page = await client.dashboard.sessionsOverview({ ...daily, limit: 25, offset });
+          const size = page.items?.length ?? 0;
+          const totalItems = count(page.pagination?.total_items);
+          if (
+            totalItems === null ||
+            page.pagination?.skip !== offset ||
+            page.pagination?.limit !== 25
+          )
+            throw new ReportDataError('Missing or mismatched session pagination metadata.');
+          if (expectedSessionTotal !== undefined && expectedSessionTotal !== totalItems)
+            throw new ReportDataError(
+              'Session total changed during pagination; retry for a stable inventory.',
+            );
+          expectedSessionTotal = totalItems;
+          if (offset + size > totalItems || size > 25 || (size === 0 && offset < totalItems))
+            throw new ReportDataError('Session page does not agree with its advertised total.');
+          return {
+            items: page.items,
+            next: offset + size < totalItems ? offset + size : undefined,
+          };
+        },
+        (item) => JSON.stringify([item.application_id, item.application_name, item.session_id]),
+      ),
+      collect<DashboardSessionsChartBucket>(
+        chartSource,
+        1,
+        async () => ({ items: (await client.dashboard.sessionsChart(daily)).buckets }),
+        (item) => String(item.bucket_number),
+      ),
+      collect<DashboardTopApplicationViolations>(
+        rankingSource,
+        1,
+        async () => ({
+          items: (await client.dashboard.topApplicationsViolations(daily)).applications,
+        }),
+        (item) => JSON.stringify([item.id, item.name]),
+      ),
+      collect<DashboardViolationsTrendBucket>(
+        trendSource,
+        1,
+        async () => ({
+          items: (await client.dashboard.applicationsViolationsTrend(daily)).violations,
+        }),
+        (item) => String(item.bucket_number),
+      ),
+    ]);
 
   const findings: ReportFinding[] = [];
   const add = (
@@ -248,7 +310,7 @@ export async function collectRuntimeDailyReport(
   ) => {
     findings.push({ priority, title, evidence, recommendation, source: evidenceSource });
   };
-  for (const s of [activitySource, profileSource, appSource, logSource]) {
+  for (const s of sources) {
     if (s.status !== 'complete')
       add(
         'review',
@@ -389,8 +451,8 @@ export async function collectRuntimeDailyReport(
 
   let missingTimestamps = 0;
   let outsideWindow = 0;
-  const logs = rawLogs.filter((row) => {
-    const timestamp = Date.parse(row.received_ts ?? '');
+  const sessionRows = rawSessions.filter((row) => {
+    const timestamp = Date.parse(row.last_session_activity ?? '');
     if (!Number.isFinite(timestamp)) {
       missingTimestamps++;
       return false;
@@ -404,28 +466,59 @@ export async function collectRuntimeDailyReport(
   if (missingTimestamps || outsideWindow)
     add(
       'review',
-      'Some log records excluded from daily analysis',
-      `${missingTimestamps} records lack a valid received timestamp; ${outsideWindow} fall outside the anchored UTC window.`,
-      'Verify ingestion timestamps and collection-window drift before using log counts as daily totals.',
-      logSource.name,
+      'Some session records excluded from daily analysis',
+      `${missingTimestamps} records lack a valid last-activity timestamp; ${outsideWindow} fall outside the anchored UTC window.`,
+      'Verify ingestion timestamps and collection-window drift before using session counts as daily totals.',
+      sessionSource.name,
     );
 
-  const failedLogs = logs.filter((row) =>
-    ['failed', 'error', 'timeout'].includes(row.status?.trim().toLowerCase() ?? ''),
+  const failedSessions = sessionRows.filter((row) =>
+    ['failed', 'error', 'timeout'].includes(row.violation_status.trim().toLowerCase()),
   ).length;
-  if (failedLogs)
+  if (failedSessions)
     add(
       'attention',
-      'Scan processing failures observed',
-      `${failedLogs} timestamp-eligible collected log entries explicitly report failed, error, or timeout status.`,
-      'Review these failures in SCM, check integration error handling, and verify whether the affected application fails open or closed. This is not a tenant-wide failure rate.',
-      logSource.name,
+      'Session processing failures observed',
+      `${failedSessions} timestamp-eligible collected sessions explicitly report failed, error, or timeout status.`,
+      'Review these sessions in SCM and check integration error handling. This is not a tenant-wide failure rate.',
+      sessionSource.name,
+    );
+  const chartSessions =
+    chartSource.status === 'unavailable' ? null : total(chart.map((bucket) => count(bucket.total)));
+  const chartViolatingSessions =
+    chartSource.status === 'unavailable'
+      ? null
+      : total(chart.map((bucket) => count(bucket.violating)));
+  if (
+    chartSessions !== null &&
+    sessionSource.status === 'complete' &&
+    chartSessions !== rawSessions.length
+  )
+    add(
+      'review',
+      'Session sources disagree',
+      `The chart reports ${chartSessions} sessions; the independently paginated inventory returned ${rawSessions.length}.`,
+      'Preserve both measurements and verify in SCM. Separate rolling queries are not a consistent snapshot; the discrepancy has no verified cause.',
+      chartSource.name,
+    );
+  const urgentViolations = total(
+    trend.map((bucket) =>
+      total([count(bucket.violation_breakdown.critical), count(bucket.violation_breakdown.high)]),
+    ),
+  );
+  if ((urgentViolations ?? 0) > 0)
+    add(
+      'attention',
+      'High or critical detector violations observed',
+      `${urgentViolations} high/critical detector violations in the returned daily trend. These are not distinct sessions.`,
+      'Investigate the affected applications and confirm enforcement decisions before assigning incident severity.',
+      trendSource.name,
     );
   const priorities = { attention: 0, review: 1, info: 2 };
   findings.sort((left, right) => priorities[left.priority] - priorities[right.priority]);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     product: 'Prisma AIRS AI Runtime Security',
     title: label(options.title ?? 'Daily environment report'),
     generatedAt: now().toISOString(),
@@ -436,16 +529,14 @@ export async function collectRuntimeDailyReport(
       description:
         'Rolling last 24 hours, UTC (approximate for server-relative application queries)',
     },
-    health: [activitySource, profileSource, appSource, logSource].every(
-      (s) => s.status === 'unavailable',
-    )
+    health: sources.every((s) => s.status === 'unavailable')
       ? 'unknown'
       : findings.some((f) => f.priority === 'attention')
         ? 'attention'
         : findings.some((f) => f.priority === 'review')
           ? 'review'
           : 'no-findings',
-    sources: [activitySource, profileSource, appSource, logSource],
+    sources,
     findings,
     activity: {
       sessions,
@@ -466,22 +557,48 @@ export async function collectRuntimeDailyReport(
         keyAssociations: app.api_keys_dp_info ? app.api_keys_dp_info.length : null,
       }))
       .sort((a, b) => a.name.localeCompare(b.name)),
-    logs: {
-      entries: logs.length,
-      actions: distribution(logs, 'action'),
-      verdicts: distribution(logs, 'verdict'),
-      tokens:
-        logSource.status === 'unavailable' ? null : total(logs.map((row) => count(row.tokens))),
+    sessions: {
+      entries: sessionSource.status === 'unavailable' ? null : sessionRows.length,
+      statuses: distribution(sessionRows),
+      violatingSessions:
+        sessionSource.status === 'unavailable'
+          ? null
+          : sessionRows.filter((row) => row.violation_status === 'violated').length,
       missingTimestamps,
       outsideWindow,
+    },
+    dailyTelemetry: {
+      chart: {
+        sessions: chartSessions,
+        violatingSessions: chartViolatingSessions,
+        buckets: chart.map((bucket) => ({
+          time: label(bucket.time),
+          sessions: count(bucket.total),
+          violatingSessions: count(bucket.violating),
+          violations: severity(bucket.violation_breakdown),
+        })),
+      },
+      topApplications: rankings.map((app) => ({
+        name: label(app.name),
+        violations: count(app.total_violations),
+        detectors: app.policy_violations.map((detector) => ({
+          name: label(detector.detection_type),
+          count: count(detector.total),
+        })),
+      })),
+      violationTrend: trend.map((bucket) => ({
+        time: label(bucket.date),
+        violations: severity(bucket.violation_breakdown),
+      })),
     },
     limitations: [
       'This is a read-only operational review, not an uptime SLA, compliance attestation, or proof that attacks succeeded or were blocked. No health score is invented.',
       'Application activity uses the API’s rolling one-day window; each paginated request evaluates its own server-relative window. Collection is not a transactionally consistent historical snapshot. Ingestion may lag.',
-      'Sessions, scan-log entries, text records, and API calls are different units. They are not added together. Log counters describe only collected, timestamp-eligible entries; absent data is unknown.',
+      'Application buckets, session inventory, chart sessions, and detector violations are different measurements. They are not added together. Session inventory summaries use timestamp-eligible entries only; absent data is unknown.',
       'Application buckets are keyed by registered application ID plus the literal scan metadata.app_name, which can differ from registered names. Do not sum session counts as unique users or unique tenant-wide sessions.',
       'Current configuration is not a configuration-change audit. Missing policy settings are unknown, not disabled. Inactive profiles can be intentional; current profile state may differ from the revision used by a historical scan.',
-      'Per-app token summaries and detector/severity breakdowns require 7/30/60-day windows, so they are not presented as daily metrics. No previous-day comparison or trend is inferred.',
+      'Daily charts, rankings and severity trends come from their own one-day endpoints. Rankings are a server-selected subset, not a complete inventory. Per-app token summaries and drill-downs require longer windows; no daily token usage or previous-day comparison is inferred.',
+      'The legacy ScanLogsClient / scan-logs query path is broken and under refactor. This report uses the verified dashboard session APIs instead. It never automatically fetches transactions or stored scan content.',
       'Prompts, responses, user identities/IPs, API keys, auth codes, tenant IDs, and raw errors are omitted. Application/profile names and configuration metadata remain confidential; review before sharing.',
     ],
   };

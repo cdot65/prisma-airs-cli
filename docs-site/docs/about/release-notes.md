@@ -1,5 +1,21 @@
 # Release Notes
 
+## v5.0.0 (2026-09-07)
+
+- Pin SDK 0.26.0. Add `runtime dashboard` application summaries and `runtime sessions` inventory, chart, session, transaction and explicit stored-content access across all eleven supplied SCM routes. Reuse Management OAuth with a separately configurable dashboard host; no browser token or Scanner key is required.
+- Replace the broken legacy scan-log source in daily reports with verified session inventory, chart, ranking and daily severity data. All seven sources expose completeness, window and collection evidence. Keep session counts distinct from detector events and surface inconsistencies instead of forcing reconciliation.
+- **Breaking library change:** report schema 2 replaces `logs` / `ReportLogSummary` with `sessions` / `ReportSessionSummary` and adds `dailyTelemetry`. Custom report clients now need five dashboard methods plus profile/application inventories. The default per-source page budget is 40; session pages request 25 rows.
+- **Breaking command behavior:** `runtime scan-logs query` now exits 1 with an explicit broken/refactor warning. Use `runtime sessions list`; this is a workflow migration, not a compatible wire-schema substitution.
+- Keep stored content opt-in (`--show-content` or private no-clobber `--output-file`). Suppress dashboard/content bodies in CLI debug logs as well as SDK logs. Reports never fetch transaction attributes or stored content.
+- Preserve self-contained HTML/Markdown, private CWD output, no-clobber publication and offline interactions. Update references, migration instructions and synthetic downloads; keep historical E2E failures clearly dated.
+
+See [daily report validation and migration](../runtime/daily-report.md),
+[dashboard commands](../cli/runtime/dashboard.md), and [session commands](../cli/runtime/sessions.md).
+The candidate passes all 1,354 regression tests against registry SDK 0.26.0, exact packed/installed
+payload checks and eleven native checks. Earlier live workflows pass; a later fresh installed
+run encounters an independently reproduced OAuth connection timeout. See the dated availability
+warning in the guide; this is not an all-green current service-availability claim.
+
 ## v4.5.0 (2026-09-07)
 
 - Add `airs runtime report`: read-only daily AI Runtime Security activity and current configuration, with evidence-backed attention/review findings and explicit complete/partial/unavailable sources. Self-contained HTML is the default; Markdown is also supported. No numeric health score or unsupported daily severity/token metrics are invented.

@@ -1,6 +1,6 @@
 # Interface: ReportProfile
 
-Defined in: src/reports/types.ts:40
+Defined in: src/reports/types.ts:46
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:40
 
 > **active**: `boolean` \| `null`
 
-Defined in: src/reports/types.ts:43
+Defined in: src/reports/types.ts:49
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:43
 
 > **modified**: `string` \| `null`
 
-Defined in: src/reports/types.ts:44
+Defined in: src/reports/types.ts:50
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:44
 
 > **name**: `string`
 
-Defined in: src/reports/types.ts:41
+Defined in: src/reports/types.ts:47
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/reports/types.ts:41
 
 > **revision**: `number` \| `null`
 
-Defined in: src/reports/types.ts:42
+Defined in: src/reports/types.ts:48
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: src/reports/types.ts:42
 
 > **storageMasking**: `string`
 
-Defined in: src/reports/types.ts:46
+Defined in: src/reports/types.ts:52
 
 ***
 
@@ -48,4 +48,4 @@ Defined in: src/reports/types.ts:46
 
 > **timeoutActions**: `string`[]
 
-Defined in: src/reports/types.ts:45
+Defined in: src/reports/types.ts:51

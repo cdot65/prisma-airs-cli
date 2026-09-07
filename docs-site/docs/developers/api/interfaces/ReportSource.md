@@ -1,6 +1,6 @@
 # Interface: ReportSource
 
-Defined in: src/reports/types.ts:15
+Defined in: src/reports/types.ts:21
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:15
 
 > **method**: `string`
 
-Defined in: src/reports/types.ts:17
+Defined in: src/reports/types.ts:23
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:17
 
 > **name**: `string`
 
-Defined in: src/reports/types.ts:16
+Defined in: src/reports/types.ts:22
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:16
 
 > **notes**: `string`[]
 
-Defined in: src/reports/types.ts:22
+Defined in: src/reports/types.ts:28
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/reports/types.ts:22
 
 > **pages**: `number`
 
-Defined in: src/reports/types.ts:21
+Defined in: src/reports/types.ts:27
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: src/reports/types.ts:21
 
 > **records**: `number`
 
-Defined in: src/reports/types.ts:20
+Defined in: src/reports/types.ts:26
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: src/reports/types.ts:20
 
 > **status**: [`ReportSourceStatus`](../type-aliases/ReportSourceStatus.md)
 
-Defined in: src/reports/types.ts:19
+Defined in: src/reports/types.ts:25
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: src/reports/types.ts:19
 
 > **window**: `string`
 
-Defined in: src/reports/types.ts:18
+Defined in: src/reports/types.ts:24

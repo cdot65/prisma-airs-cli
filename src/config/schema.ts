@@ -12,6 +12,7 @@ export const ConfigSchema = z.object({
   mgmtClientSecret: z.string().optional(),
   mgmtTsgId: z.string().optional(),
   mgmtEndpoint: z.string().optional(),
+  mgmtDashboardEndpoint: z.string().url().optional(),
   mgmtTokenEndpoint: z.string().optional(),
   dlpEndpoint: z.string().optional(),
 

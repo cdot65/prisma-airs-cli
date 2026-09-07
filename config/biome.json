@@ -9,6 +9,7 @@
       "!docs-site",
       "!config",
       "!artifacts/runtime-report",
+      "!artifacts/runtime-dashboard",
       "!**/debug-api-*.jsonl",
       "!**/airs-runtime-report-*.html",
       "!**/airs-runtime-report-*.md"

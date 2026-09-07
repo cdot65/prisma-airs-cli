@@ -12,7 +12,7 @@ import type {
   SecurityProfileInfo,
   SubmittedBatch,
 } from '../../airs/types.js';
-import { runtimeInitOptions } from '../../config/client-options.js';
+import { managementClientOptions, runtimeInitOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   buildProfileOverrides,
@@ -29,12 +29,7 @@ import {
 import { confirmOrAbort } from '../confirm.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { examples } from '../examples.js';
-import {
-  registerListFlags,
-  registerPageAliases,
-  resolveListParams,
-  resolvePageParams,
-} from '../pagination.js';
+import { registerListFlags, registerPageAliases, resolveListParams } from '../pagination.js';
 import { parseInputFile } from '../parse-input.js';
 import {
   emitDetail,
@@ -46,7 +41,6 @@ import {
   renderDeploymentProfileList,
   renderProfileDetail,
   renderRuntimeConfigHeader,
-  renderScanLogList,
   renderTopicDetail,
   resolveOutput,
   ui,
@@ -60,6 +54,7 @@ import {
 } from '../renderer/views/runtime.js';
 import { registerDlpCommands } from './dlp/index.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
+import { registerRuntimeDashboardCommands } from './runtime-dashboard.js';
 import { registerRuntimeReportCommand } from './runtime-report.js';
 import { registerApplyCommand } from './topics-apply.js';
 import { registerCreateCommand } from './topics-create.js';
@@ -177,12 +172,7 @@ function parsePositiveInteger(value: string, optionName: string): number {
 /** Create a management service from config. */
 export async function createMgmtService() {
   const config = await loadConfig();
-  return new SdkManagementService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
+  return new SdkManagementService(managementClientOptions(config));
 }
 
 export function registerRuntimeCommand(program: Command): void {
@@ -191,6 +181,7 @@ export function registerRuntimeCommand(program: Command): void {
     .description('Runtime prompt scanning against AIRS profiles');
 
   registerRuntimeReportCommand(runtime);
+  registerRuntimeDashboardCommands(runtime);
 
   // -----------------------------------------------------------------------
   // runtime api-keys — API key management subcommands
@@ -1084,11 +1075,13 @@ export function registerRuntimeCommand(program: Command): void {
   // -----------------------------------------------------------------------
   // runtime scan-logs — scan log query
   // -----------------------------------------------------------------------
-  const scanLogs = runtime.command('scan-logs').description('Query AIRS scan logs');
+  const scanLogs = runtime
+    .command('scan-logs')
+    .description('BROKEN legacy retrieval — under refactor; use runtime sessions');
 
   const scanLogsQuery = scanLogs
     .command('query')
-    .description('Query scan logs')
+    .description('Unavailable legacy query; use runtime sessions list')
     .requiredOption('--interval <n>', 'Time interval')
     .requiredOption('--unit <unit>', 'Time unit (hours)')
     .option('--filter <filter>', 'Filter: all, benign, threat', 'all')
@@ -1096,23 +1089,11 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--offset <n>', 'Starting offset — rounds down to a page boundary', '0')
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml');
   registerPageAliases(scanLogsQuery, { sizeFlag: '--page-size', sizeKey: 'pageSize' });
-  scanLogsQuery.action(async (opts) => {
-    try {
-      const { page, size } = resolvePageParams(scanLogsQuery, opts, { indexBase: 1 });
-      const fmt = await resolveOutput(scanLogsQuery, opts);
-      if (fmt === 'pretty') renderRuntimeConfigHeader();
-      const service = await createMgmtService();
-      const result = await service.queryScanLogs({
-        timeInterval: Number.parseInt(opts.interval, 10),
-        timeUnit: opts.unit,
-        pageNumber: page ?? 1,
-        pageSize: size ?? 50,
-        filter: opts.filter,
-      });
-      renderScanLogList(result.results, result.pageToken, fmt);
-    } catch (err) {
-      fail(err);
-    }
+  scanLogsQuery.action(() => {
+    ui.error(
+      'Legacy scan-logs retrieval is broken and under refactor. Empty results do not mean no activity. Use airs runtime sessions list --interval 1 --unit day --output json, or airs runtime report.',
+    );
+    process.exitCode = 1;
   });
 
   // -----------------------------------------------------------------------

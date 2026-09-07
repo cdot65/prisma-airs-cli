@@ -13,7 +13,7 @@ Rolling last 24 hours, UTC &#40;approximate for server-relative application quer
 - Sessions in collected app buckets: **1,300**
 - Violating sessions: **51**
 - Violation rate: **3.92%**
-- Complete evidence sources: **3 / 4**
+- Complete evidence sources: **7 / 7**
 
 ## What needs attention
 
@@ -24,14 +24,6 @@ Evidence: 51 violating sessions across 2 application buckets in the collected da
 Next step: Review the highest-volume applications in SCM, confirm intended enforcement, and investigate unexpected activity. Violations are not proof of a successful attack.
 
 Source: Daily application activity
-
-### REVIEW: Scan log detail: unavailable
-
-Evidence: The API returned no record array. An empty object or absent collection does not establish zero activity.
-
-Next step: Restore access or retry collection; do not treat missing data as zero. Increase --max-pages if the page budget was reached.
-
-Source: Scan log detail
 
 ### REVIEW: Timeout allows traffic: Staging availability
 
@@ -79,11 +71,38 @@ Current registered applications, separate from scan-metadata application buckets
 | Search service | production | gcp | Unknown | Unknown |
 | Support service | production | aws | Example model | 0 |
 
-## Collected scan-log observations
+## Collected session observations
 
-Source: unavailable. Timestamp-eligible entries: Unknown. Tokens across eligible collected entries: Unknown. Missing timestamps: 0; outside window: 0. These are sample/collection counts, not tenant totals.
+Source: complete. Timestamp-eligible entries: 1,300. Violated status: 51. Missing timestamps: 0; outside window: 0. These are collected session counts, not scan actions or detector events. No scan content is fetched.
 
-No rows available. Consult the source status before interpreting this as an empty result.
+| Session status | Entries |
+| --- | --- |
+| passed | 1,249 |
+| violated | 51 |
+
+## Daily session chart
+
+Independent chart totals: 1,300 sessions; 51 violating sessions. Do not force these counters to equal a separately paginated inventory.
+
+| Bucket time (UTC) | Sessions | Violating sessions | Detector violations |
+| --- | --- | --- | --- |
+| 2026-09-07T07:00:00Z | 1,300 | 51 | 52 |
+
+## Top applications by detector violations
+
+Server-ranked subset for one day, not a complete application inventory. Detector violations may exceed the number of violating sessions.
+
+| Application bucket | Detector violations | Detection types |
+| --- | --- | --- |
+| Customer support | 52 | pi: 52 |
+
+## Daily detector severity trend
+
+API-reported detector-policy events over the rolling day. Severity counts are preserved independently from distinct session counts; no previous-day comparison is inferred.
+
+| Bucket time (UTC) | Critical | High | Medium | Low | Total |
+| --- | --- | --- | --- | --- | --- |
+| 2026-09-07T07:00:00Z | 0 | 0 | 52 | 0 | 52 |
 
 ## Evidence and collection coverage
 
@@ -94,17 +113,22 @@ Complete means pagination finished for that source, not that the environment is 
 | Daily application activity — dashboard.applicationsOverview | Rolling 1 day | complete | 3 | 1 | Collection completed. |
 | Security profiles — profiles.list &#40;latest=true&#41; | Current configuration | complete | 3 | 1 | Collection completed. |
 | Registered applications — customerApps.list | Current configuration | complete | 3 | 1 | Collection completed. |
-| Scan log detail — scanLogs.query &#40;read-only POST&#41; | Rolling 24 hours | unavailable | 0 | 1 | The API returned no record array. An empty object or absent collection does not establish zero activity. |
+| Daily session inventory — dashboard.sessionsOverview | Rolling 1 day | complete | 1,300 | 52 | Collection completed. |
+| Daily session chart — dashboard.sessionsChart | Rolling 1 day | complete | 1 | 1 | Collection completed. |
+| Top application violations — dashboard.topApplicationsViolations | Rolling 1 day; server-ranked subset | complete | 1 | 1 | Collection completed. |
+| Daily violation trend — dashboard.applicationsViolationsTrend | Rolling 1 day | complete | 1 | 1 | Collection completed. |
 
 ## Scope, privacy, and limitations
 
 - SYNTHETIC EXAMPLE: all application names, counts, and configurations are fabricated documentation fixtures, not live customer data.
+- This fixture uses a 60-page budget to collect 1,300 sessions; CLI default is 40 pages and would explicitly mark that capped collection partial.
 - This is a read-only operational review, not an uptime SLA, compliance attestation, or proof that attacks succeeded or were blocked. No health score is invented.
 - Application activity uses the API’s rolling one-day window; each paginated request evaluates its own server-relative window. Collection is not a transactionally consistent historical snapshot. Ingestion may lag.
-- Sessions, scan-log entries, text records, and API calls are different units. They are not added together. Log counters describe only collected, timestamp-eligible entries; absent data is unknown.
+- Application buckets, session inventory, chart sessions, and detector violations are different measurements. They are not added together. Session inventory summaries use timestamp-eligible entries only; absent data is unknown.
 - Application buckets are keyed by registered application ID plus the literal scan metadata.app&#95;name, which can differ from registered names. Do not sum session counts as unique users or unique tenant-wide sessions.
 - Current configuration is not a configuration-change audit. Missing policy settings are unknown, not disabled. Inactive profiles can be intentional; current profile state may differ from the revision used by a historical scan.
-- Per-app token summaries and detector/severity breakdowns require 7/30/60-day windows, so they are not presented as daily metrics. No previous-day comparison or trend is inferred.
+- Daily charts, rankings and severity trends come from their own one-day endpoints. Rankings are a server-selected subset, not a complete inventory. Per-app token summaries and drill-downs require longer windows; no daily token usage or previous-day comparison is inferred.
+- The legacy ScanLogsClient / scan-logs query path is broken and under refactor. This report uses the verified dashboard session APIs instead. It never automatically fetches transactions or stored scan content.
 - Prompts, responses, user identities/IPs, API keys, auth codes, tenant IDs, and raw errors are omitted. Application/profile names and configuration metadata remain confidential; review before sharing.
 
-Generated by Prisma AIRS CLI · Report schema 1
+Generated by Prisma AIRS CLI · Report schema 2

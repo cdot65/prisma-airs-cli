@@ -47,6 +47,21 @@ describe('report deliverable renderers', () => {
     });
     report.sources[0].notes.push(attack);
     report.limitations.push(attack);
+    report.dailyTelemetry.topApplications.push({
+      name: attack,
+      violations: 40,
+      detectors: [{ name: attack, count: 40 }],
+    });
+    report.dailyTelemetry.violationTrend.push({
+      time: attack,
+      violations: { critical: 0, high: 0, medium: 26, low: 14, total: 40 },
+    });
+    report.dailyTelemetry.chart.buckets.push({
+      time: attack,
+      sessions: 174,
+      violatingSessions: 34,
+      violations: { critical: 0, high: 0, medium: 26, low: 14, total: 40 },
+    });
     const html = renderRuntimeReportHtml(report);
     expect(html.match(/<script>/g)).toHaveLength(1);
     expect(html).not.toContain('<img');
@@ -75,6 +90,7 @@ describe('report deliverable renderers', () => {
       expect(output).toContain('Current security profiles');
       expect(output).toContain('Evidence and collection coverage');
       expect(output).toContain('not a configuration-change audit');
+      expect(output).toContain('Report schema 2');
     }
   });
 
@@ -83,7 +99,7 @@ describe('report deliverable renderers', () => {
     client.dashboard.applicationsOverview.mockResolvedValue({});
     client.profiles.list.mockResolvedValue({ ai_profiles: [] });
     client.customerApps.list.mockResolvedValue({});
-    client.scanLogs.query.mockResolvedValue({});
+    client.dashboard.sessionsOverview.mockResolvedValue({});
     const report = await collectRuntimeDailyReport(client, { now: reportClock });
     for (const output of [renderRuntimeReportHtml(report), renderRuntimeReportMarkdown(report)]) {
       expect(output).toContain('Unknown');

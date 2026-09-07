@@ -1,11 +1,44 @@
 import { describe, expect, it } from 'vitest';
 import {
   aiGatewayClientOptions,
+  managementClientOptions,
   modelSecurityClientOptions,
   redTeamClientOptions,
   runtimeInitOptions,
 } from '../../../src/config/client-options.js';
 import { ConfigSchema } from '../../../src/config/schema.js';
+
+describe('managementClientOptions', () => {
+  it('defaults only the SCM dashboard host', () => {
+    const options = managementClientOptions(ConfigSchema.parse({}));
+    expect(options.dashboardEndpoint).toBe('https://api.apps.paloaltonetworks.com/aisec');
+    expect(options.apiEndpoint).toBeUndefined();
+  });
+
+  it('keeps endpoint overrides and OAuth credentials separate', () => {
+    expect(
+      managementClientOptions(
+        ConfigSchema.parse({
+          mgmtClientId: 'client',
+          mgmtClientSecret: 'secret',
+          mgmtTsgId: 'tenant',
+          mgmtEndpoint: 'https://management.example',
+          mgmtDashboardEndpoint: 'https://dashboard.example/aisec',
+          mgmtTokenEndpoint: 'https://auth.example/token',
+          dlpEndpoint: 'https://dlp.example',
+        }),
+      ),
+    ).toEqual({
+      clientId: 'client',
+      clientSecret: 'secret',
+      tsgId: 'tenant',
+      apiEndpoint: 'https://management.example',
+      dashboardEndpoint: 'https://dashboard.example/aisec',
+      tokenEndpoint: 'https://auth.example/token',
+      dlpEndpoint: 'https://dlp.example',
+    });
+  });
+});
 
 describe('runtimeInitOptions', () => {
   it('maps airs* keys to SDK init options', () => {

@@ -1,6 +1,6 @@
 # Interface: ReportRegisteredApp
 
-Defined in: src/reports/types.ts:49
+Defined in: src/reports/types.ts:55
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:49
 
 > **cloud**: `string`
 
-Defined in: src/reports/types.ts:52
+Defined in: src/reports/types.ts:58
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:52
 
 > **environment**: `string`
 
-Defined in: src/reports/types.ts:51
+Defined in: src/reports/types.ts:57
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:51
 
 > **keyAssociations**: `number` \| `null`
 
-Defined in: src/reports/types.ts:54
+Defined in: src/reports/types.ts:60
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/reports/types.ts:54
 
 > **model**: `string`
 
-Defined in: src/reports/types.ts:53
+Defined in: src/reports/types.ts:59
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: src/reports/types.ts:53
 
 > **name**: `string`
 
-Defined in: src/reports/types.ts:50
+Defined in: src/reports/types.ts:56

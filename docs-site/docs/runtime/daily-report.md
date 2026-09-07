@@ -4,6 +4,17 @@ title: Daily Environment Report
 
 # Daily environment report
 
+Available in CLI **5.0.0**, backed by SDK **0.26.0**. The exported report model is schema **2**.
+
+:::danger Legacy scan-logs is broken and under refactor
+
+`ScanLogsClient` and `airs runtime scan-logs query` are not reliable historical retrieval paths.
+Empty HTTP 200 responses are not evidence of zero activity. CLI 5.0.0 disables that command
+with an explicit exit-1 migration message. This report now uses the verified SCM
+[session workflow](../cli/runtime/sessions.md); it does not call the broken route.
+
+:::
+
 `airs runtime report` retrieves **AI Runtime Security** activity and configuration through the
 SDK and produces a deliverable for a human review. It does not submit scans, change profiles,
 rotate keys, or modify your credential file.
@@ -45,7 +56,8 @@ These download samples are **synthetic fixtures**, not customer data:
 - [Download the example Markdown report](pathname:///examples/runtime-daily-report.md)
 
 The sample has 1,300 application-bucket sessions and 51 violating sessions, plus an explicit
-scan-log visibility gap. It demonstrates how a useful report can coexist with incomplete evidence.
+configuration review findings. Session inventory, chart measurements and detector events are
+displayed separately, not forced into application-bucket totals.
 
 ## What the report tells you
 
@@ -56,7 +68,10 @@ scan-log visibility gap. It demonstrates how a useful report can coexist with in
 | Daily application activity | Rolling one-day application buckets, ranked by violating sessions |
 | Current security profiles | Latest returned revision by name, active state, timeout action, storage masking, modification timestamp |
 | Registered application inventory | Current names, environment, cloud, model, and counts of key associations—not key values |
-| Collected scan-log observations | Action/verdict counts and tokens from collected, timestamp-eligible log entries, when available |
+| Collected session observations | Status counts from timestamp-eligible session inventory entries; no scan text |
+| Daily session chart | Independently measured sessions, violating sessions, and detector violations by time bucket |
+| Top applications by detector violations | API-ranked subset with detector counts; not a complete inventory |
+| Daily detector severity trend | Critical/high/medium/low detector events from the one-day trend endpoint |
 | Evidence and collection coverage | SDK method, window, page count, record count, and complete/partial/unavailable status for every source |
 
 Findings are review guidance, **not an invented numeric health score**. A violating session is
@@ -69,14 +84,17 @@ Only Management API credentials are required: `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_
 and `PANW_MGMT_TSG_ID`, or `mgmtClientId`, `mgmtClientSecret`, and `mgmtTsgId` in the existing
 `~/.prisma-airs/config.json`. Normal environment-over-file precedence applies. The config is read,
 not written; it can remain on a read-only mount. Endpoint overrides use the normal Management API
-configuration. Scanner API keys are not needed.
+configuration. `mgmtDashboardEndpoint` / `PANW_MGMT_DASHBOARD_ENDPOINT` defaults to
+`https://api.apps.paloaltonetworks.com/aisec`, independently of `mgmtEndpoint` for profiles and
+registered applications. Scanner API keys are not needed.
 
 The report projects only approved fields. It omits raw API responses, prompts, responses, user
 identities/IP addresses, API keys, auth codes, tenant IDs, and raw exception text. Strings are
 escaped for HTML/Markdown, and HTML uses a restrictive content-security policy with hash-pinned
 inline scripts and styles. **Names and configuration metadata can still be confidential.** Review
 the artifact before distributing it. Debug logging (`--debug` or enabled `PANW_AI_SEC_DEBUG`) is
-refused for this command so raw scan-log content is not persisted alongside a shareable report.
+refused for this command so traffic content is not persisted alongside a shareable report.
+Session transaction and stored-content APIs are never fetched by this report.
 
 ## Windows, limits, and incomplete evidence
 
@@ -85,21 +103,28 @@ anchored UTC start/end and collection timestamps. The application API evaluates 
 one-day window separately on each request, so pages can drift during collection and telemetry
 can arrive late. Historical date selection and previous-day comparisons are not claimed.
 
-The collector uses four independent SDK reads, 100 requested records per page, and a default
-10-page budget per source. `--max-pages` accepts 1–100. It stops repeated/non-advancing pagination,
+The collector uses **seven independent sources**: application overview, profiles, registered
+applications, session inventory, session chart, top application violations, and severity trend.
+It requests 25 sessions per page and 100 records per page for application/configuration
+inventories, with a default **40-page budget per source**. `--max-pages` accepts 1–100.
+It stops repeated/non-advancing pagination,
 deduplicates identities, and preserves earlier pages when a later request fails. A full page
 without pagination metadata is followed by another page to avoid silent truncation. The SDK
 enforces request deadlines (`PANW_AI_SEC_TIMEOUT_MS`, default 60,000 milliseconds); automatic
 retries are disabled for this bounded report collection.
 
-The application's daily session data is kept separate from scan entries and current inventory.
-Scan logs use `24 hours`; only entries with usable received timestamps inside the anchored
-half-open interval `[start, end)` contribute to the log summary. No tenant-wide totals are inferred
+The application's daily session data is kept separate from session inventory and current
+configuration. Session inventory uses `1 day`; only entries with usable `last_session_activity`
+timestamps inside the anchored half-open interval `[start, end)` contribute to its summary.
+Session pagination also checks stable totals, exact offsets, early empty pages and overlapping
+composite identities. No tenant-wide totals are inferred
 from a capped collection. Missing or inconsistent counters suppress the affected rate/total.
 
 The SDK's per-application consumption and detector/severity breakdown endpoints require
-7/30/60-day windows; their figures are **not** presented as daily metrics. Session time buckets
-are not summed into a trend because the observed bucket semantics need further verification.
+7/30/60-day windows; their figures are **not** presented as daily metrics. The new one-day
+session chart and detector trend are independent sources. Their counters are retained, and
+chart/inventory disagreements are flagged for review without inventing a cause or correcting
+the data. Application overview buckets are not used to reconstruct their top-level totals.
 Configuration snapshots are not configuration-change audit logs, and this report is not an
 availability SLA or compliance attestation.
 
@@ -114,6 +139,39 @@ HTML deliverable. Explicit global `--output` is honored if it is `html` or `mark
 command-local `--output` wins.
 
 ## Validated live output
+
+**CLI 5.0.0 / SDK 0.26.0 candidate, 2026-09-07 at 17:39 UTC:** all seven read-only report
+workflow tests pass. Every source is complete: **6 daily application buckets, 19 profiles,
+17 registered applications, 677 session entries across 28 pages, 10 session-chart buckets,
+3 ranked applications, and 10 severity-trend buckets**. Application activity reports
+**677 sessions and 81 violating sessions**. These are timestamped observations, not constants
+or a guarantee that separately fetched counters always agree.
+
+Validation covers direct SDK collection; built CLI HTML/Markdown; strict completeness status;
+atomic no-clobber files; default CWD deliverables; the replacement session debug command
+(HTTP 200, body-free private log in CWD); and credential/raw-field exclusion. The credential
+file's hash is unchanged. Private live artifacts are not included in these downloads.
+
+:::warning Later authentication availability check
+
+At **18:06 UTC**, the installed CLI 5.0.0 candidate using registry SDK 0.26.0 could not start
+a new live dashboard workflow: the OAuth host timed out before returning HTTP. Curl and
+published SDK 0.25.0 reproduced the same failure, while the dashboard API remained reachable
+with unauthenticated HTTP 401. The earlier successful tests are retained as dated evidence,
+not relabeled as a passing latest run. No credentials, DNS or tenant configuration were changed.
+
+:::
+
+## Migrating from CLI 4.5
+
+CLI 5.0 is a major version because the exported `RuntimeDailyReport` changes from schema 1
+to schema 2. Replace `report.logs` / `ReportLogSummary` with `report.sessions` /
+`ReportSessionSummary`; use `report.dailyTelemetry` for chart/ranking/severity evidence.
+Injected `RuntimeReportClient` implementations must provide the five dashboard reads in the
+new interface, plus profiles/customer-app inventory. HTML remains the default and Markdown,
+private CWD destinations, no-clobber behavior and strict completeness exits remain supported.
+
+## Historical CLI 4.5 validation
 
 Read-only validation on **2026-09-07 at 15:19 UTC** used the existing config without changing it,
 through both the published-registry installation and the user's installed CLI **4.5.0**. Neither

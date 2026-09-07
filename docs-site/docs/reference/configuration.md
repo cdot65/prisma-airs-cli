@@ -53,6 +53,7 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
 | `mgmtClientSecret` | `PANW_MGMT_CLIENT_SECRET` | Shared OAuth client secret |
 | `mgmtTsgId` | `PANW_MGMT_TSG_ID` | Tenant service group ID |
 | `mgmtEndpoint` | `PANW_MGMT_ENDPOINT` | Management API endpoint |
+| `mgmtDashboardEndpoint` | `PANW_MGMT_DASHBOARD_ENDPOINT` | Dashboard-only host; defaults to `https://api.apps.paloaltonetworks.com/aisec` |
 | `mgmtTokenEndpoint` | `PANW_MGMT_TOKEN_ENDPOINT` | Management OAuth endpoint |
 | `dlpEndpoint` | `PANW_DLP_ENDPOINT` | DLP API endpoint |
 | `redTeamDataEndpoint` | `PANW_RED_TEAM_DATA_ENDPOINT` | Red Team data-plane endpoint |

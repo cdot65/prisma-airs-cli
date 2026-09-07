@@ -2,4 +2,4 @@
 
 > **ReportPriority** = `"attention"` \| `"review"` \| `"info"`
 
-Defined in: src/reports/types.ts:12
+Defined in: src/reports/types.ts:18

@@ -2,10 +2,16 @@ import type { ManagementClient } from '@cdot65/prisma-airs-sdk';
 
 /** Read-only SDK surface needed by the first product report. */
 export interface RuntimeReportClient {
-  dashboard: Pick<ManagementClient['dashboard'], 'applicationsOverview'>;
+  dashboard: Pick<
+    ManagementClient['dashboard'],
+    | 'applicationsOverview'
+    | 'sessionsOverview'
+    | 'sessionsChart'
+    | 'topApplicationsViolations'
+    | 'applicationsViolationsTrend'
+  >;
   profiles: Pick<ManagementClient['profiles'], 'list'>;
   customerApps: Pick<ManagementClient['customerApps'], 'list'>;
-  scanLogs: Pick<ManagementClient['scanLogs'], 'query'>;
 }
 
 export type ReportSourceStatus = 'complete' | 'partial' | 'unavailable';
@@ -54,18 +60,44 @@ export interface ReportRegisteredApp {
   keyAssociations: number | null;
 }
 
-export interface ReportLogSummary {
-  entries: number;
-  actions: Array<{ name: string; count: number }>;
-  verdicts: Array<{ name: string; count: number }>;
-  tokens: number | null;
+export interface ReportSessionSummary {
+  entries: number | null;
+  statuses: Array<{ name: string; count: number }>;
+  violatingSessions: number | null;
   missingTimestamps: number;
   outsideWindow: number;
 }
 
+export interface ReportSeverity {
+  critical: number | null;
+  high: number | null;
+  medium: number | null;
+  low: number | null;
+  total: number | null;
+}
+
+export interface ReportDailyTelemetry {
+  chart: {
+    sessions: number | null;
+    violatingSessions: number | null;
+    buckets: Array<{
+      time: string;
+      sessions: number | null;
+      violatingSessions: number | null;
+      violations: ReportSeverity;
+    }>;
+  };
+  topApplications: Array<{
+    name: string;
+    violations: number | null;
+    detectors: Array<{ name: string; count: number | null }>;
+  }>;
+  violationTrend: Array<{ time: string; violations: ReportSeverity }>;
+}
+
 /** Allowlisted, credential-free projection; never contains raw responses or scan content. */
 export interface RuntimeDailyReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   product: 'Prisma AIRS AI Runtime Security';
   title: string;
   generatedAt: string;
@@ -82,13 +114,14 @@ export interface RuntimeDailyReport {
   };
   profiles: ReportProfile[];
   registeredApps: ReportRegisteredApp[];
-  logs: ReportLogSummary;
+  sessions: ReportSessionSummary;
+  dailyTelemetry: ReportDailyTelemetry;
   limitations: string[];
 }
 
 export interface RuntimeReportOptions {
   title?: string;
-  /** Per-source page budget (1–100); partial results are explicitly marked. Default 10. */
+  /** Per-source page budget (1–100); partial results are explicitly marked. Default 40. */
   maxPages?: number;
   /** Inject a clock for deterministic tests. */
   now?: () => Date;

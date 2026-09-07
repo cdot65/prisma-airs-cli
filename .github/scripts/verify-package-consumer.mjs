@@ -76,6 +76,21 @@ for (const name of [
 const reportHelp = command('runtime', 'report', '--help');
 for (const flag of ['--output', '--output-file', '--title', '--max-pages', '--strict'])
   assert.ok(reportHelp.includes(flag));
+const dashboardHelp = command('runtime', 'dashboard', '--help');
+for (const name of [
+  'applications',
+  'application-violations',
+  'top-applications',
+  'violations-trend',
+  'apps-list',
+])
+  assert.ok(dashboardHelp.includes(name));
+const sessionsHelp = command('runtime', 'sessions', '--help');
+for (const name of ['chart', 'list', 'get', 'transaction', 'scan-content'])
+  assert.ok(sessionsHelp.includes(name));
+const contentHelp = command('runtime', 'sessions', 'scan-content', '--help');
+for (const flag of ['--scan-id', '--scan-sub-req-id', '--show-content', '--output-file'])
+  assert.ok(contentHelp.includes(flag));
 for (const metric of ['requests', 'cost', 'tokens', 'latency', 'group-by']) {
   const flags = command('aigateway', 'telemetry', metric, '--help');
   for (const flag of [
@@ -114,6 +129,7 @@ console.log(
       versionAndInferenceHelpPassed: true,
       groupFilterHelpPassed: true,
       runtimeReportHelpPassed: true,
+      runtimeDashboardAndSessionHelpPassed: true,
       runtimeWarnings: [...diagnostics],
       passed: true,
     },
