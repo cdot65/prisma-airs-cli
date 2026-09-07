@@ -1,6 +1,6 @@
 # Interface: EulaStatus
 
-Defined in: src/airs/types.ts:412
+Defined in: prisma-airs-cli/src/airs/types.ts:415
 
 Normalized EULA acceptance status.
 
@@ -10,7 +10,7 @@ Normalized EULA acceptance status.
 
 > `optional` **acceptedAt?**: `string`
 
-Defined in: src/airs/types.ts:414
+Defined in: prisma-airs-cli/src/airs/types.ts:417
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:414
 
 > `optional` **acceptedByUserId?**: `string`
 
-Defined in: src/airs/types.ts:415
+Defined in: prisma-airs-cli/src/airs/types.ts:418
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:415
 
 > **isAccepted**: `boolean`
 
-Defined in: src/airs/types.ts:413
+Defined in: prisma-airs-cli/src/airs/types.ts:416

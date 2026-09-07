@@ -1,6 +1,6 @@
 # Interface: DeleteResponse
 
-Defined in: src/airs/types.ts:1089
+Defined in: prisma-airs-cli/src/airs/types.ts:1092
 
 Delete response from profile/topic deletion.
 
@@ -10,4 +10,4 @@ Delete response from profile/topic deletion.
 
 > **message**: `string`
 
-Defined in: src/airs/types.ts:1090
+Defined in: prisma-airs-cli/src/airs/types.ts:1093

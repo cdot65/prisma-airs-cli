@@ -8,7 +8,10 @@ sidebar_position: 2
 For task-oriented setup, workspace creation, and integration-binding examples, start with the
 [AI Gateway workflow cheat sheet](workflows.md).
 
-`airs aigateway` exposes the AI Gateway surface in SDK 0.20.0. Commands follow one grammar:
+`airs aigateway` exposes the SDK's SCM management surface plus separate runtime inference commands
+in this local candidate. The published dependency pin remains SDK 0.20.0; see
+[candidate verification and release ordering](inference.md#validated-candidate-and-release-ordering).
+Commands follow one grammar:
 
 ```text
 airs aigateway <resource> <action> [id]

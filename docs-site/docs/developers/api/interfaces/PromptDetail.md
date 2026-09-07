@@ -1,6 +1,6 @@
 # Interface: PromptDetail
 
-Defined in: src/airs/types.ts:300
+Defined in: prisma-airs-cli/src/airs/types.ts:303
 
 Normalized individual prompt.
 
@@ -10,7 +10,7 @@ Normalized individual prompt.
 
 > **active**: `boolean`
 
-Defined in: src/airs/types.ts:304
+Defined in: prisma-airs-cli/src/airs/types.ts:307
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:304
 
 > `optional` **goal?**: `string`
 
-Defined in: src/airs/types.ts:303
+Defined in: prisma-airs-cli/src/airs/types.ts:306
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:303
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:302
+Defined in: prisma-airs-cli/src/airs/types.ts:305
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:302
 
 > **promptSetId**: `string`
 
-Defined in: src/airs/types.ts:305
+Defined in: prisma-airs-cli/src/airs/types.ts:308
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: src/airs/types.ts:305
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:301
+Defined in: prisma-airs-cli/src/airs/types.ts:304

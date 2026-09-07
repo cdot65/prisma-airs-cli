@@ -1,6 +1,6 @@
 # Interface: PropertyValueList
 
-Defined in: src/airs/types.ts:309
+Defined in: prisma-airs-cli/src/airs/types.ts:312
 
 Values for a single property name (SDK 0.10.0 shape).
 
@@ -10,7 +10,7 @@ Values for a single property name (SDK 0.10.0 shape).
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:310
+Defined in: prisma-airs-cli/src/airs/types.ts:313
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:310
 
 > **values**: `string`[]
 
-Defined in: src/airs/types.ts:311
+Defined in: prisma-airs-cli/src/airs/types.ts:314

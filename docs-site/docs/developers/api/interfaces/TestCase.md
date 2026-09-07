@@ -1,6 +1,6 @@
 # Interface: TestCase
 
-Defined in: src/core/types.ts:38
+Defined in: prisma-airs-cli/src/core/types.ts:38
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/core/types.ts:38
 
 > **category**: `string`
 
-Defined in: src/core/types.ts:41
+Defined in: prisma-airs-cli/src/core/types.ts:41
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/core/types.ts:41
 
 > **expectedTriggered**: `boolean`
 
-Defined in: src/core/types.ts:40
+Defined in: prisma-airs-cli/src/core/types.ts:40
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/core/types.ts:40
 
 > **prompt**: `string`
 
-Defined in: src/core/types.ts:39
+Defined in: prisma-airs-cli/src/core/types.ts:39
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/core/types.ts:39
 
 > `optional` **source?**: `"generated"` \| `"carried-fp"` \| `"carried-fn"` \| `"regression"`
 
-Defined in: src/core/types.ts:43
+Defined in: prisma-airs-cli/src/core/types.ts:43
 
 How this test entered the suite. Default: 'generated'.
 
@@ -42,6 +42,6 @@ How this test entered the suite. Default: 'generated'.
 
 > `optional` **targetTopic?**: `string`
 
-Defined in: src/core/types.ts:45
+Defined in: prisma-airs-cli/src/core/types.ts:45
 
 Which topic this test targets (used by audit).

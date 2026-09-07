@@ -1,6 +1,6 @@
 # Interface: TargetAuthValidationResult
 
-Defined in: src/airs/types.ts:430
+Defined in: prisma-airs-cli/src/airs/types.ts:433
 
 Result of target auth validation.
 
@@ -10,7 +10,7 @@ Result of target auth validation.
 
 > `optional` **expiresIn?**: `number`
 
-Defined in: src/airs/types.ts:433
+Defined in: prisma-airs-cli/src/airs/types.ts:436
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:433
 
 > `optional` **tokenPreview?**: `string`
 
-Defined in: src/airs/types.ts:432
+Defined in: prisma-airs-cli/src/airs/types.ts:435
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:432
 
 > **validated**: `boolean`
 
-Defined in: src/airs/types.ts:431
+Defined in: prisma-airs-cli/src/airs/types.ts:434

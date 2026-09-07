@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleInstanceListOptions
 
-Defined in: src/airs/types.ts:816
+Defined in: prisma-airs-cli/src/airs/types.ts:819
 
 Filter options for listing rule instances.
 
@@ -10,7 +10,7 @@ Filter options for listing rule instances.
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:820
+Defined in: prisma-airs-cli/src/airs/types.ts:823
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:820
 
 > `optional` **securityRuleUuid?**: `string`
 
-Defined in: src/airs/types.ts:817
+Defined in: prisma-airs-cli/src/airs/types.ts:820
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:817
 
 > `optional` **skip?**: `number`
 
-Defined in: src/airs/types.ts:819
+Defined in: prisma-airs-cli/src/airs/types.ts:822
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:819
 
 > `optional` **state?**: `string`
 
-Defined in: src/airs/types.ts:818
+Defined in: prisma-airs-cli/src/airs/types.ts:821

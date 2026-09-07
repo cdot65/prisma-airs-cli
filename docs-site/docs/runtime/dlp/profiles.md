@@ -4,7 +4,11 @@ title: Data Profiles
 
 # Data Profiles
 
-Manage Data Profiles on the DLP service. Profiles define detection rules using two rule types: `expression_tree` (recursive boolean logic over detection techniques) and `multi_profile` (composition of other profiles). CRUD is available except DELETE — profiles are archived by patching `profile_status`.
+Manage Data Profiles on the DLP service. Profiles define detection rules using `expression_tree` or `multi_profile`. The contract exposes create/read/update but no supported DELETE; status-based retirement is not live-verified.
+
+:::warning[September 6 live SDK validation]
+Advanced-profile creation succeeded, but PATCH/PUT retirement returned HTTP 500. OPTIONS advertised DELETE, yet an owned-fixture DELETE returned HTTP 501. One unbound test profile remains journaled and active. Do not treat a status patch as proven cleanup or repeat creates while cleanup is failing. See the SDK's [captured example results](https://cdot65.github.io/prisma-airs-sdk/guides/examples) for the workflow and its explicit limitations.
+:::
 
 ## Commands
 
@@ -15,7 +19,7 @@ Manage Data Profiles on the DLP service. Profiles define detection rules using t
 | `get` | Fetch a single profile by ID | 1 on error |
 | `replace` | Full PUT: update all fields of a profile | 1 on error |
 | `patch` | JSON Merge Patch: update only specified fields | 1 on error |
-| `delete` | **Stub** — API has no DELETE; prints the patch idiom and exits 2 | always 2 |
+| `delete` | **Stub** — explains the unsupported cleanup path; sends no API request | always 2 |
 
 ## list
 
@@ -206,7 +210,8 @@ airs runtime dlp profiles patch 1234567890 \
   --set profile_type='"advanced"' \
   --set description='"Patched description"'
 
-# Soft-delete via profile_status
+# Attempt lifecycle retirement only after verifying support in your environment.
+# The latest live test returned HTTP 500; this is not a verified cleanup workflow.
 airs runtime dlp profiles patch 1234567890 \
   --set name='"High-risk PII"' \
   --set profile_type='"advanced"' \
@@ -219,14 +224,14 @@ airs runtime dlp profiles patch 1234567890 \
 
 ## delete
 
-Stub command — the DLP API does **not** expose DELETE for data profiles. Invoking it prints the soft-delete patch idiom on stderr and exits with code **2**, so scripts can distinguish it from a real success or a transient error (exit 1):
+Stub command — the supplied DLP contract does not expose DELETE. It explains the cleanup limitation, sends no API request, and exits **2**, which is not a successful deletion:
 
 ```bash
 airs runtime dlp profiles delete 1234567890
 # exit code: 2
 ```
 
-To actually archive a profile, fetch its current `name + profile_type` first, then patch:
+The following historical status-patch idiom is **not live-verified**. The September 6 check returned HTTP 500 and left the owned profile active. Inspect the current state before any environment-specific investigation:
 
 ```bash
 airs runtime dlp profiles get 1234567890 --output json
@@ -249,7 +254,7 @@ EOF
 - **Expression tree nesting**: Build complex detection logic using `and` / `or` operators with nested `sub_expressions` and leaf `rule_item` nodes. Each leaf carries the detection technique and technique-specific thresholds.
 - **Multi-profile composition**: Use `multi_profile` to combine multiple existing profiles with a single operator (`and` or `or`). The composed profile auto-promotes to `profile_type: 'advanced'` server-side.
 - **Merge Patch semantics**: On PATCH, `name` and `profile_type` are required. Arrays like `detection_rules` are replaced wholesale if sent; omit to preserve. Send `null` to clear optional fields like `description`.
-- **No DELETE**: Profiles cannot be deleted via API. To archive, PATCH with `--set profile_status='"deleted"'` (must also include `--set name=...` and `--set profile_type=...`), or use the Strata Cloud Manager UI.
+- **No supported DELETE**: Do not assume `profile_status: 'deleted'` was applied. A successful response followed by an independent state check is required before claiming retirement.
 
 ## See also
 

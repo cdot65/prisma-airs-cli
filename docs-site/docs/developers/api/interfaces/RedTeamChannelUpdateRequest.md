@@ -1,6 +1,6 @@
 # Interface: RedTeamChannelUpdateRequest
 
-Defined in: src/airs/types.ts:504
+Defined in: prisma-airs-cli/src/airs/types.ts:507
 
 Request to update a network broker channel.
 
@@ -10,7 +10,7 @@ Request to update a network broker channel.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:506
+Defined in: prisma-airs-cli/src/airs/types.ts:509
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:506
 
 > `optional` **name?**: `string`
 
-Defined in: src/airs/types.ts:505
+Defined in: prisma-airs-cli/src/airs/types.ts:508

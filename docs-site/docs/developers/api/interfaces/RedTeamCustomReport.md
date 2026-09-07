@@ -1,6 +1,6 @@
 # Interface: RedTeamCustomReport
 
-Defined in: src/airs/types.ts:364
+Defined in: prisma-airs-cli/src/airs/types.ts:367
 
 Normalized custom attack report summary.
 
@@ -10,7 +10,7 @@ Normalized custom attack report summary.
 
 > **asr**: `number`
 
-Defined in: src/airs/types.ts:370
+Defined in: prisma-airs-cli/src/airs/types.ts:373
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:370
 
 > **failedAttacks**: `number`
 
-Defined in: src/airs/types.ts:368
+Defined in: prisma-airs-cli/src/airs/types.ts:371
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:368
 
 > **promptSets**: `object`[]
 
-Defined in: src/airs/types.ts:371
+Defined in: prisma-airs-cli/src/airs/types.ts:374
 
 #### promptSetId
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:371
 
 > **score**: `number`
 
-Defined in: src/airs/types.ts:369
+Defined in: prisma-airs-cli/src/airs/types.ts:372
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:369
 
 > **totalAttacks**: `number`
 
-Defined in: src/airs/types.ts:366
+Defined in: prisma-airs-cli/src/airs/types.ts:369
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:366
 
 > **totalPrompts**: `number`
 
-Defined in: src/airs/types.ts:365
+Defined in: prisma-airs-cli/src/airs/types.ts:368
 
 ***
 
@@ -82,4 +82,4 @@ Defined in: src/airs/types.ts:365
 
 > **totalThreats**: `number`
 
-Defined in: src/airs/types.ts:367
+Defined in: prisma-airs-cli/src/airs/types.ts:370

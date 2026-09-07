@@ -1,6 +1,6 @@
 # Interface: RedTeamAttack
 
-Defined in: src/airs/types.ts:382
+Defined in: prisma-airs-cli/src/airs/types.ts:385
 
 Normalized attack list item (static/dynamic scans).
 
@@ -10,7 +10,7 @@ Normalized attack list item (static/dynamic scans).
 
 > `optional` **category?**: `string`
 
-Defined in: src/airs/types.ts:386
+Defined in: prisma-airs-cli/src/airs/types.ts:389
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:386
 
 > **id**: `string`
 
-Defined in: src/airs/types.ts:383
+Defined in: prisma-airs-cli/src/airs/types.ts:386
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:383
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:384
+Defined in: prisma-airs-cli/src/airs/types.ts:387
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:384
 
 > `optional` **severity?**: `string`
 
-Defined in: src/airs/types.ts:385
+Defined in: prisma-airs-cli/src/airs/types.ts:388
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:385
 
 > `optional` **subCategory?**: `string`
 
-Defined in: src/airs/types.ts:387
+Defined in: prisma-airs-cli/src/airs/types.ts:390
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:387
 
 > `optional` **subCategoryDisplayName?**: `string`
 
-Defined in: src/airs/types.ts:388
+Defined in: prisma-airs-cli/src/airs/types.ts:391
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:388
 
 > **successful**: `boolean`
 
-Defined in: src/airs/types.ts:389
+Defined in: prisma-airs-cli/src/airs/types.ts:392

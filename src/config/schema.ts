@@ -30,6 +30,11 @@ export const ConfigSchema = z.object({
   aiGwDataEndpoint: z.string().optional(),
   aiGwAdminEndpoint: z.string().optional(),
   aiGwTokenEndpoint: z.string().optional(),
+  // Runtime inference has separate key authentication, never management OAuth.
+  aiGwInferenceEndpoint: z.string().optional(),
+  aiGwInferenceApiKey: z.string().optional(),
+  aiGwInferenceModel: z.string().optional(),
+  aiGwEmbeddingModel: z.string().optional(),
 
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),

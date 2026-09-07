@@ -1,6 +1,6 @@
 # Interface: PromptSetVersionInfo
 
-Defined in: src/airs/types.ts:289
+Defined in: prisma-airs-cli/src/airs/types.ts:292
 
 Prompt set version info with stats.
 
@@ -10,7 +10,7 @@ Prompt set version info with stats.
 
 > **stats**: `object`
 
-Defined in: src/airs/types.ts:292
+Defined in: prisma-airs-cli/src/airs/types.ts:295
 
 #### active
 
@@ -30,7 +30,7 @@ Defined in: src/airs/types.ts:292
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:290
+Defined in: prisma-airs-cli/src/airs/types.ts:293
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: src/airs/types.ts:290
 
 > **version**: `number`
 
-Defined in: src/airs/types.ts:291
+Defined in: prisma-airs-cli/src/airs/types.ts:294

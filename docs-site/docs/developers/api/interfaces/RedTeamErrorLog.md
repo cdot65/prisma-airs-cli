@@ -1,6 +1,6 @@
 # Interface: RedTeamErrorLog
 
-Defined in: src/airs/types.ts:532
+Defined in: prisma-airs-cli/src/airs/types.ts:535
 
 Normalized target-profile error log entry.
 
@@ -10,7 +10,7 @@ Normalized target-profile error log entry.
 
 > `optional` **attackId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:538
+Defined in: prisma-airs-cli/src/airs/types.ts:541
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:538
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:533
+Defined in: prisma-airs-cli/src/airs/types.ts:536
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:533
 
 > `optional` **errorMessage?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:541
+Defined in: prisma-airs-cli/src/airs/types.ts:544
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:541
 
 > `optional` **errorSource?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:540
+Defined in: prisma-airs-cli/src/airs/types.ts:543
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:540
 
 > `optional` **errorType?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:539
+Defined in: prisma-airs-cli/src/airs/types.ts:542
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:539
 
 > `optional` **extraInfo?**: `Record`\<`string`, `unknown`\> \| `null`
 
-Defined in: src/airs/types.ts:543
+Defined in: prisma-airs-cli/src/airs/types.ts:546
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:543
 
 > `optional` **jobId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:535
+Defined in: prisma-airs-cli/src/airs/types.ts:538
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:535
 
 > `optional` **targetId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:536
+Defined in: prisma-airs-cli/src/airs/types.ts:539
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:536
 
 > `optional` **targetObject?**: `Record`\<`string`, `unknown`\> \| `null`
 
-Defined in: src/airs/types.ts:542
+Defined in: prisma-airs-cli/src/airs/types.ts:545
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:542
 
 > `optional` **targetVersion?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:537
+Defined in: prisma-airs-cli/src/airs/types.ts:540
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:537
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:534
+Defined in: prisma-airs-cli/src/airs/types.ts:537
 
 ***
 
@@ -98,4 +98,4 @@ Defined in: src/airs/types.ts:534
 
 > `optional` **version?**: `number`
 
-Defined in: src/airs/types.ts:544
+Defined in: prisma-airs-cli/src/airs/types.ts:547

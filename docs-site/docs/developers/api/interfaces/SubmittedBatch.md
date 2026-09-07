@@ -1,6 +1,6 @@
 # Interface: SubmittedBatch
 
-Defined in: src/airs/types.ts:73
+Defined in: prisma-airs-cli/src/airs/types.ts:76
 
 Receipt for exactly one SDK async submission (at most twenty prompts).
 
@@ -10,7 +10,7 @@ Receipt for exactly one SDK async submission (at most twenty prompts).
 
 > **entries**: [`BatchEntry`](BatchEntry.md)[]
 
-Defined in: src/airs/types.ts:76
+Defined in: prisma-airs-cli/src/airs/types.ts:79
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:76
 
 > `optional` **reportId?**: `string`
 
-Defined in: src/airs/types.ts:75
+Defined in: prisma-airs-cli/src/airs/types.ts:78
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:75
 
 > **scanId**: `string`
 
-Defined in: src/airs/types.ts:74
+Defined in: prisma-airs-cli/src/airs/types.ts:77

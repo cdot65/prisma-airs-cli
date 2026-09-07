@@ -1,6 +1,6 @@
 # Interface: ConsumptionQueryOptions
 
-Defined in: src/airs/types.ts:1180
+Defined in: prisma-airs-cli/src/airs/types.ts:1183
 
 Options for [ManagementService.getCustomerAppConsumption](ManagementService.md#getcustomerappconsumption).
 
@@ -10,4 +10,4 @@ Options for [ManagementService.getCustomerAppConsumption](ManagementService.md#g
 
 > `optional` **timeInterval?**: [`ConsumptionTimeInterval`](../type-aliases/ConsumptionTimeInterval.md)
 
-Defined in: src/airs/types.ts:1181
+Defined in: prisma-airs-cli/src/airs/types.ts:1184

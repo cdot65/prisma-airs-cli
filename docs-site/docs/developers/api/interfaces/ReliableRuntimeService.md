@@ -1,6 +1,6 @@
 # Interface: ReliableRuntimeService
 
-Defined in: src/airs/types.ts:97
+Defined in: prisma-airs-cli/src/airs/types.ts:100
 
 Runtime scanning contract with item-correlated, resumable bulk operations.
 
@@ -14,7 +14,7 @@ Runtime scanning contract with item-correlated, resumable bulk operations.
 
 > **pollBatch**(`batch`, `intervalMs?`, `retryOpts?`): `Promise`\<[`BulkScanResult`](BulkScanResult.md)[]\>
 
-Defined in: src/airs/types.ts:112
+Defined in: prisma-airs-cli/src/airs/types.ts:115
 
 Poll one async submission and return one result per prompt, ordered by input index.
 
@@ -60,7 +60,7 @@ Poll one async submission and return one result per prompt, ordered by input ind
 
 > **pollResults**(`scanIds`, `intervalMs?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)[]\>
 
-Defined in: src/airs/types.ts:93
+Defined in: prisma-airs-cli/src/airs/types.ts:96
 
 #### Parameters
 
@@ -90,7 +90,7 @@ Use ReliableRuntimeService.pollBatch to preserve per-prompt correlation.
 
 > **scanPrompt**(`profileName`, `prompt`, `response?`): `Promise`\<[`RuntimeScanResult`](RuntimeScanResult.md)\>
 
-Defined in: src/airs/types.ts:89
+Defined in: prisma-airs-cli/src/airs/types.ts:92
 
 Scan a single prompt (and optional response) synchronously.
 
@@ -122,7 +122,7 @@ Scan a single prompt (and optional response) synchronously.
 
 > **submitBatch**(`profileName`, `prompts`, `sessionId?`, `retryOpts?`): `Promise`\<[`SubmittedBatch`](SubmittedBatch.md)\>
 
-Defined in: src/airs/types.ts:99
+Defined in: prisma-airs-cli/src/airs/types.ts:102
 
 Submit one SDK-sized group of indexed prompts for async scanning.
 
@@ -172,7 +172,7 @@ Submit one SDK-sized group of indexed prompts for async scanning.
 
 > **submitBulkScan**(`profileName`, `prompts`, `sessionId?`): `Promise`\<`string`[]\>
 
-Defined in: src/airs/types.ts:91
+Defined in: prisma-airs-cli/src/airs/types.ts:94
 
 #### Parameters
 

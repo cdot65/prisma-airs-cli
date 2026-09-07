@@ -24,7 +24,7 @@ workspace UUID.
 
 ## Authenticate once
 
-AI Gateway reuses the same SCM OAuth client ID, client secret, and TSG ID as the management, Red
+AI Gateway **management** reuses the same SCM OAuth client ID, client secret, and TSG ID as the management, Red
 Team, and Model Security APIs. It does not require a second AI Gateway credential set:
 
 ```bash
@@ -38,6 +38,9 @@ airs doctor
 `PANW_AI_GW_DATA_ENDPOINT`, `PANW_AI_GW_ADMIN_ENDPOINT`, and `PANW_AI_GW_TOKEN_ENDPOINT` are
 optional API endpoint overrides. They are normally unset. They are not the URL of a privately
 deployed gateway.
+
+[Runtime inference](inference.md) is a separate credential plane: it uses the deployed gateway
+URL and `PANW_AI_GW_INFERENCE_API_KEY`, not management OAuth.
 
 ::::tip[Configuration-file alternative]
 
@@ -63,6 +66,12 @@ included. A bare workspace list uses the data plane and only returns active work
 the caller's SCM workspace scope.
 
 ## Create a workspace
+
+The September 6 live verification did **not** establish successful workspace creation: SCM
+returned HTTP 400 (AB01), including explicit defaults and a metadata variant. The command below
+documents the interface, not a passing provisioning recipe. An unused SCM-provisioned scope or a
+known-good request is still needed to distinguish provisioning requirements from a contract change.
+Do not change existing workspace/IAM bindings to bypass this failure.
 
 Choose a human-readable display name and an SCM role scope. The server generates the UUID and
 slug; `--scope-name` is not derived from `--name`:

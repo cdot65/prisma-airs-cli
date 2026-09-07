@@ -34,6 +34,21 @@ describe('isAirsUrl', () => {
 });
 
 describe('redactHeaders', () => {
+  it('masks opaque gateway routing/configuration header values', () => {
+    expect(
+      redactHeaders({
+        'x-portkey-api-key': 'key',
+        'x-portkey-config': '{"api_key":"nested-secret"}',
+        'X-Portkey-Metadata': '{"private":"data"}',
+        'x-portkey-forward-headers': 'Authorization',
+      }),
+    ).toEqual({
+      'x-portkey-api-key': '***',
+      'x-portkey-config': '***',
+      'X-Portkey-Metadata': '***',
+      'x-portkey-forward-headers': '***',
+    });
+  });
   it('fully masks sensitive headers with no value prefix retained', () => {
     const out = redactHeaders({
       Authorization: 'Bearer abcdefghijklmnop',
@@ -139,6 +154,39 @@ describe('installDebugLogger redaction integration', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+  });
+
+  it('logs a private gateway without consuming its stream or retaining prompts and credentials', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'airs-debug-runtime-'));
+    const logPath = join(dir, 'debug-api-test.jsonl');
+    const response = new Response(new ReadableStream(), {
+      headers: { 'content-type': 'text/event-stream' },
+    });
+    const clone = vi.spyOn(response, 'clone');
+    try {
+      globalThis.fetch = vi.fn(async () => response) as typeof fetch;
+      const { teardown } = installDebugLogger(logPath);
+      const result = await fetch('https://private-gateway.example/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'x-portkey-api-key': 'runtime-secret',
+          'x-portkey-config': '{"api_key":"provider-secret"}',
+        },
+        body: '{"messages":[{"content":"private prompt"}]}',
+      });
+      teardown();
+      expect(result).toBe(response);
+      expect(clone).not.toHaveBeenCalled();
+      const raw = readFileSync(logPath, 'utf8');
+      for (const secret of ['runtime-secret', 'provider-secret', 'private prompt'])
+        expect(raw).not.toContain(secret);
+      expect(JSON.parse(raw).request.body).toBe('[BODY OMITTED]');
+      expect(JSON.parse(raw).response.body).toBe('[BODY OMITTED]');
+    } finally {
+      await response.body?.cancel();
+      clone.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('writes redacted request/response bodies, headers, and URLs to the log', async () => {

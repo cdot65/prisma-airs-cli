@@ -1,6 +1,6 @@
 # Interface: ScanResult
 
-Defined in: src/airs/types.ts:30
+Defined in: prisma-airs-cli/src/airs/types.ts:33
 
 Normalized output from a single AIRS prompt scan.
 
@@ -10,7 +10,7 @@ Normalized output from a single AIRS prompt scan.
 
 > **action**: `"allow"` \| `"block"`
 
-Defined in: src/airs/types.ts:33
+Defined in: prisma-airs-cli/src/airs/types.ts:36
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:33
 
 > `optional` **category?**: `string`
 
-Defined in: src/airs/types.ts:36
+Defined in: prisma-airs-cli/src/airs/types.ts:39
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:36
 
 > `optional` **raw?**: `unknown`
 
-Defined in: src/airs/types.ts:37
+Defined in: prisma-airs-cli/src/airs/types.ts:40
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:37
 
 > **reportId**: `string`
 
-Defined in: src/airs/types.ts:32
+Defined in: prisma-airs-cli/src/airs/types.ts:35
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:32
 
 > **scanId**: `string`
 
-Defined in: src/airs/types.ts:31
+Defined in: prisma-airs-cli/src/airs/types.ts:34
 
 ***
 
@@ -50,6 +50,6 @@ Defined in: src/airs/types.ts:31
 
 > **triggered**: `boolean`
 
-Defined in: src/airs/types.ts:35
+Defined in: prisma-airs-cli/src/airs/types.ts:38
 
 Whether the topic guardrail was triggered for this prompt.

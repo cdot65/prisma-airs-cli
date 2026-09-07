@@ -66,6 +66,7 @@ airs aigateway telemetry logs list --workspace ws-main-a-349e0e --status-code 44
 airs aigateway telemetry feedback distribution --workspace ws-main-a-349e0e --days 7
 ```
 
-An entirely empty latency window currently returns valid `null` aggregate values from SCM that SDK
-0.20.0 rejects during response validation. Choose a window containing traffic until the SDK schema
-accepts nullable empty-window aggregates.
+SCM can return `null` aggregate values for an empty latency window. The locally tested SDK candidate
+accepts those nullable response fields; SDK 0.20.0, still the CLI's published dependency pin, rejects
+them. Check the installed SDK version when diagnosing this error. Do not manufacture traffic merely
+to make an empty-window response validate.

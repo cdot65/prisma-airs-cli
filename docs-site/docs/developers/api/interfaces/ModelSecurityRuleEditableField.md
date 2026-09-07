@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleEditableField
 
-Defined in: src/airs/types.ts:786
+Defined in: prisma-airs-cli/src/airs/types.ts:789
 
 Editable field spec for a security rule.
 
@@ -10,7 +10,7 @@ Editable field spec for a security rule.
 
 > **attributeName**: `string`
 
-Defined in: src/airs/types.ts:787
+Defined in: prisma-airs-cli/src/airs/types.ts:790
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:787
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:791
+Defined in: prisma-airs-cli/src/airs/types.ts:794
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:791
 
 > **displayName**: `string`
 
-Defined in: src/airs/types.ts:789
+Defined in: prisma-airs-cli/src/airs/types.ts:792
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:789
 
 > **displayType**: `string`
 
-Defined in: src/airs/types.ts:790
+Defined in: prisma-airs-cli/src/airs/types.ts:793
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:790
 
 > `optional` **dropdownValues?**: `object`[]
 
-Defined in: src/airs/types.ts:792
+Defined in: prisma-airs-cli/src/airs/types.ts:795
 
 #### label
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:792
 
 > **type**: `string`
 
-Defined in: src/airs/types.ts:788
+Defined in: prisma-airs-cli/src/airs/types.ts:791

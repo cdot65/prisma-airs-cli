@@ -337,7 +337,13 @@ Removes the topic from the profile and deletes the topic definition.
 
 ### AI Gateway
 
-All AI Gateway commands use Management API OAuth2 credentials. The data and admin planes
+AI Gateway management commands use Management API OAuth2 credentials. Runtime `aigateway inference`
+commands instead require `PANW_AI_GW_INFERENCE_ENDPOINT` and `PANW_AI_GW_INFERENCE_API_KEY`, or
+their `aiGwInferenceEndpoint` / `aiGwInferenceApiKey` config counterparts. No runtime key flag is
+accepted; commands do not alter config. Models come from `--model`, a JSON `--file`, or
+`PANW_AI_GW_INFERENCE_MODEL` / `PANW_AI_GW_EMBEDDING_MODEL`. `--stream --output json` emits JSONL,
+not one JSON document. Runtime bodies are omitted from debug logs, and retries default to zero.
+The management data and admin planes
 require different SCM grants: data-plane reads show only active workspaces in the caller's role
 scope, while admin-plane reads and all writes require tenant-root AI Gateway admin access.
 

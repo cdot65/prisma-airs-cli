@@ -4,6 +4,10 @@ title: Data Dictionaries
 
 # Data Dictionaries
 
+:::warning[Latest SDK example validation]
+The September 6 live dictionary list passed, but multipart creation returned HTTP 400. The remaining create/replace/delete steps were therefore not certified by that example. JSON Blob and text-part probes are documented in the SDK's [live results](https://cdot65.github.io/prisma-airs-sdk/developer/live-validation-results). Examples below describe the contract, not a currently passing write lifecycle.
+:::
+
 Manage Dictionaries on the DLP service. Dictionaries provide keyword-list-driven detection for DLP patterns. Create and replace use multipart upload (metadata + keyword file). Full CRUD is available: list, create, get, replace, patch, delete.
 
 ## Commands

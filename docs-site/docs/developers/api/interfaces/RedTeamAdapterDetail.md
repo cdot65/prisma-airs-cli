@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterDetail
 
-Defined in: src/airs/types.ts:1476
+Defined in: prisma-airs-cli/src/airs/types.ts:1479
 
 Full adapter record.
 
@@ -10,7 +10,7 @@ Full adapter record.
 
 > `optional` **createdAt?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1486
+Defined in: prisma-airs-cli/src/airs/types.ts:1489
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1486
 
 > `optional` **createdByUserId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1488
+Defined in: prisma-airs-cli/src/airs/types.ts:1491
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1488
 
 > `optional` **description?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1482
+Defined in: prisma-airs-cli/src/airs/types.ts:1485
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1482
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1479
+Defined in: prisma-airs-cli/src/airs/types.ts:1482
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:1479
 
 > `optional` **networkBrokerChannelUuid?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1483
+Defined in: prisma-airs-cli/src/airs/types.ts:1486
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:1483
 
 > **scriptB64**: `string`
 
-Defined in: src/airs/types.ts:1480
+Defined in: prisma-airs-cli/src/airs/types.ts:1483
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:1480
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:1481
+Defined in: prisma-airs-cli/src/airs/types.ts:1484
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:1481
 
 > `optional` **targetCount?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:1485
+Defined in: prisma-airs-cli/src/airs/types.ts:1488
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:1485
 
 > `optional` **tsgId?**: `string`
 
-Defined in: src/airs/types.ts:1478
+Defined in: prisma-airs-cli/src/airs/types.ts:1481
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:1478
 
 > `optional` **updatedAt?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1487
+Defined in: prisma-airs-cli/src/airs/types.ts:1490
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:1487
 
 > `optional` **updatedByUserId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1489
+Defined in: prisma-airs-cli/src/airs/types.ts:1492
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/airs/types.ts:1489
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:1477
+Defined in: prisma-airs-cli/src/airs/types.ts:1480
 
 ***
 
@@ -106,4 +106,4 @@ Defined in: src/airs/types.ts:1477
 
 > **variables**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: src/airs/types.ts:1484
+Defined in: prisma-airs-cli/src/airs/types.ts:1487

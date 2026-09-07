@@ -1,6 +1,6 @@
 # Interface: DeploymentProfileInfo
 
-Defined in: src/airs/types.ts:1208
+Defined in: prisma-airs-cli/src/airs/types.ts:1211
 
 Normalized deployment profile.
 
@@ -10,4 +10,4 @@ Normalized deployment profile.
 
 > **raw**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:1209
+Defined in: prisma-airs-cli/src/airs/types.ts:1212

@@ -1,6 +1,6 @@
 # Interface: RedTeamStaticReport
 
-Defined in: src/airs/types.ts:333
+Defined in: prisma-airs-cli/src/airs/types.ts:336
 
 Normalized static report summary.
 
@@ -10,7 +10,7 @@ Normalized static report summary.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:335
+Defined in: prisma-airs-cli/src/airs/types.ts:338
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:335
 
 > **categories**: `object`[]
 
-Defined in: src/airs/types.ts:342
+Defined in: prisma-airs-cli/src/airs/types.ts:345
 
 #### asr
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:342
 
 > `optional` **reportSummary?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:341
+Defined in: prisma-airs-cli/src/airs/types.ts:344
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:341
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:334
+Defined in: prisma-airs-cli/src/airs/types.ts:337
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:334
 
 > **severityBreakdown**: `object`[]
 
-Defined in: src/airs/types.ts:336
+Defined in: prisma-airs-cli/src/airs/types.ts:339
 
 #### failed
 

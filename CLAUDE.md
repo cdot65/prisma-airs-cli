@@ -263,6 +263,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime dlp generate` — generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX; no auth (local only)
 
 ### AI Gateway (`src/airs/aigateway.ts`)
+- Runtime inference lives separately in `src/cli/commands/aigateway/inference.ts`: `airs aigateway inference {chat,responses,embeddings}` uses an explicit runtime endpoint/API key, not SCM OAuth. Config keys `aiGwInferenceEndpoint`, `aiGwInferenceApiKey`, `aiGwInferenceModel`, `aiGwEmbeddingModel` map to `PANW_AI_GW_INFERENCE_ENDPOINT`, `PANW_AI_GW_INFERENCE_API_KEY`, `PANW_AI_GW_INFERENCE_MODEL`, `PANW_AI_GW_EMBEDDING_MODEL`. JSON streaming means JSONL; pretty streaming means text. Preserve cancellation/backpressure, cleanup before exit helpers, zero automatic retries, and omission of runtime bodies in debug logs. Release the SDK changeset before updating the CLI pin.
 - `SdkAiGatewayService` wraps `AiGatewayClient` for workspace CRUD and cost telemetry, using the existing `PANW_MGMT_*` OAuth credentials plus optional `PANW_AI_GW_{DATA,ADMIN,TOKEN}_ENDPOINT` overrides.
 - Two authorization planes: data-plane reads return active workspaces in the caller's SCM role scope; admin-plane reads and all writes require the tenant-root AI Gateway admin grant. A 403 is decorated with the missing-grant hint.
 - CLI: `airs aigateway workspace {list,get,create,update,delete}` and `airs aigateway telemetry cost`.

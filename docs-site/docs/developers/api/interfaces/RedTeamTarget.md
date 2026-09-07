@@ -1,6 +1,6 @@
 # Interface: RedTeamTarget
 
-Defined in: src/airs/types.ts:211
+Defined in: prisma-airs-cli/src/airs/types.ts:214
 
 Normalized red team target info.
 
@@ -14,7 +14,7 @@ Normalized red team target info.
 
 > **active**: `boolean`
 
-Defined in: src/airs/types.ts:216
+Defined in: prisma-airs-cli/src/airs/types.ts:219
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: src/airs/types.ts:216
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:213
+Defined in: prisma-airs-cli/src/airs/types.ts:216
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: src/airs/types.ts:213
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:214
+Defined in: prisma-airs-cli/src/airs/types.ts:217
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: src/airs/types.ts:214
 
 > `optional` **targetType?**: `string`
 
-Defined in: src/airs/types.ts:215
+Defined in: prisma-airs-cli/src/airs/types.ts:218
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: src/airs/types.ts:215
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:212
+Defined in: prisma-airs-cli/src/airs/types.ts:215

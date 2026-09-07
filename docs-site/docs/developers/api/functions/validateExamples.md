@@ -2,7 +2,7 @@
 
 > **validateExamples**(`examples`): [`ValidationError`](../interfaces/ValidationError.md)[]
 
-Defined in: src/core/constraints.ts:56
+Defined in: prisma-airs-cli/src/core/constraints.ts:56
 
 ## Parameters
 

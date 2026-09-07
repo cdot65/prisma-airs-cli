@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFile
 
-Defined in: src/airs/types.ts:881
+Defined in: prisma-airs-cli/src/airs/types.ts:884
 
 Normalized scanned file from a scan.
 
@@ -10,7 +10,7 @@ Normalized scanned file from a scan.
 
 > **formats**: `string`[]
 
-Defined in: src/airs/types.ts:885
+Defined in: prisma-airs-cli/src/airs/types.ts:888
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:885
 
 > **path**: `string`
 
-Defined in: src/airs/types.ts:883
+Defined in: prisma-airs-cli/src/airs/types.ts:886
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:883
 
 > **result**: `string`
 
-Defined in: src/airs/types.ts:886
+Defined in: prisma-airs-cli/src/airs/types.ts:889
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:886
 
 > **type**: `string`
 
-Defined in: src/airs/types.ts:884
+Defined in: prisma-airs-cli/src/airs/types.ts:887
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: src/airs/types.ts:884
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:882
+Defined in: prisma-airs-cli/src/airs/types.ts:885

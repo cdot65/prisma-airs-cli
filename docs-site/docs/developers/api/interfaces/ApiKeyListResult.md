@@ -1,6 +1,6 @@
 # Interface: ApiKeyListResult
 
-Defined in: src/airs/types.ts:1115
+Defined in: prisma-airs-cli/src/airs/types.ts:1118
 
 Paginated API key list.
 
@@ -10,7 +10,7 @@ Paginated API key list.
 
 > **apiKeys**: [`ApiKeyInfo`](ApiKeyInfo.md)[]
 
-Defined in: src/airs/types.ts:1116
+Defined in: prisma-airs-cli/src/airs/types.ts:1119
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:1116
 
 > `optional` **nextOffset?**: `number`
 
-Defined in: src/airs/types.ts:1117
+Defined in: prisma-airs-cli/src/airs/types.ts:1120

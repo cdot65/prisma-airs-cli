@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterCreateRequest
 
-Defined in: src/airs/types.ts:1498
+Defined in: prisma-airs-cli/src/airs/types.ts:1501
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/airs/types.ts:1498
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:1503
+Defined in: prisma-airs-cli/src/airs/types.ts:1506
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/airs/types.ts:1503
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1499
+Defined in: prisma-airs-cli/src/airs/types.ts:1502
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/airs/types.ts:1499
 
 > `optional` **networkBrokerChannelUuid?**: `string`
 
-Defined in: src/airs/types.ts:1505
+Defined in: prisma-airs-cli/src/airs/types.ts:1508
 
 Optional while DRAFT; required to activate (validate: true).
 
@@ -34,7 +34,7 @@ Optional while DRAFT; required to activate (validate: true).
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:1502
+Defined in: prisma-airs-cli/src/airs/types.ts:1505
 
 Sample prompt used to exercise the adapter during validation. Not stored.
 
@@ -44,7 +44,7 @@ Sample prompt used to exercise the adapter during validation. Not stored.
 
 > **scriptB64**: `string`
 
-Defined in: src/airs/types.ts:1500
+Defined in: prisma-airs-cli/src/airs/types.ts:1503
 
 ***
 
@@ -52,4 +52,4 @@ Defined in: src/airs/types.ts:1500
 
 > `optional` **variables?**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: src/airs/types.ts:1506
+Defined in: prisma-airs-cli/src/airs/types.ts:1509

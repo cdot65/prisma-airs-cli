@@ -1,6 +1,6 @@
 # Interface: TargetAuthValidationRequest
 
-Defined in: src/airs/types.ts:423
+Defined in: prisma-airs-cli/src/airs/types.ts:426
 
 Request to validate target auth credentials.
 
@@ -10,7 +10,7 @@ Request to validate target auth credentials.
 
 > **authConfig**: `unknown`
 
-Defined in: src/airs/types.ts:425
+Defined in: prisma-airs-cli/src/airs/types.ts:428
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:425
 
 > **authType**: `string`
 
-Defined in: src/airs/types.ts:424
+Defined in: prisma-airs-cli/src/airs/types.ts:427
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:424
 
 > `optional` **targetId?**: `string`
 
-Defined in: src/airs/types.ts:426
+Defined in: prisma-airs-cli/src/airs/types.ts:429

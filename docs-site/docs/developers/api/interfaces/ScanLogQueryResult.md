@@ -1,6 +1,6 @@
 # Interface: ScanLogQueryResult
 
-Defined in: src/airs/types.ts:1227
+Defined in: prisma-airs-cli/src/airs/types.ts:1230
 
 Scan log query result.
 
@@ -10,7 +10,7 @@ Scan log query result.
 
 > `optional` **pageToken?**: `string`
 
-Defined in: src/airs/types.ts:1229
+Defined in: prisma-airs-cli/src/airs/types.ts:1232
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1229
 
 > **raw**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:1230
+Defined in: prisma-airs-cli/src/airs/types.ts:1233
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:1230
 
 > **results**: `Record`\<`string`, `unknown`\>[]
 
-Defined in: src/airs/types.ts:1228
+Defined in: prisma-airs-cli/src/airs/types.ts:1231

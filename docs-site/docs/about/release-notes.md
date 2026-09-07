@@ -1,5 +1,20 @@
 # Release Notes
 
+## v4.2.0 (2026-09-07)
+
+### New
+
+- Add `airs aigateway inference chat`, `responses` and `embeddings`, with explicit runtime endpoint/key configuration separate from SCM OAuth.
+- Support streamed text and JSONL, stdout backpressure, signal cancellation and secret-safe diagnostics. Runtime requests default to zero automatic retries.
+- Pin SDK `0.21.0` for the typed runtime API, expanded AIRS contracts, OAuth deadline recovery and transport hardening.
+
+### Validation and limitations
+
+- Pre-release CLI validation passes 1,033 tests and 8/8 live inference checks using the prescribed dev workspace and models. Actual sanitized output is included in the [inference examples](../cli/aigateway/inference.md).
+- Correct DLP cleanup help: the unsupported delete command exits 2 without API traffic; a failing status-patch workflow is not presented as verified retirement.
+- This release is authorized with known AI Gateway gaps. The SDK matches 137/242 upstream operations (56.61%), and experimental methods and backend failures remain documented. The complete primary SDK example run has 18 passing and 3 failing scripts; publication does not claim all-green E2E or 99% full AI Gateway coverage.
+- Live gateway evidence uses the documented TLS-verified LAN path; public WAN reachability remains uncertified. See the [SDK conformance report](https://cdot65.github.io/prisma-airs-sdk/developer/openapi-conformance/).
+
 ## v4.1.2 (2026-08-31)
 
 ### Changed

@@ -1,6 +1,6 @@
 # Interface: RedTeamLanguages
 
-Defined in: src/airs/types.ts:525
+Defined in: prisma-airs-cli/src/airs/types.ts:528
 
 Normalized tenant language configuration.
 
@@ -10,7 +10,7 @@ Normalized tenant language configuration.
 
 > **languages**: `object`[]
 
-Defined in: src/airs/types.ts:528
+Defined in: prisma-airs-cli/src/airs/types.ts:531
 
 #### code
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:528
 
 > **multilingualEnabled**: `boolean`
 
-Defined in: src/airs/types.ts:526
+Defined in: prisma-airs-cli/src/airs/types.ts:529
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:526
 
 > **supportedJobTypes**: `string`[]
 
-Defined in: src/airs/types.ts:527
+Defined in: prisma-airs-cli/src/airs/types.ts:530

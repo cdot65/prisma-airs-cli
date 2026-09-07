@@ -39,7 +39,8 @@ function isSensitiveKey(key: string): boolean {
 export function redactHeaders(headers: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(headers)) {
-    out[k] = isSensitiveKey(k) ? MASK : v;
+    out[k] =
+      isSensitiveKey(k) || /^x-portkey-(config|metadata|forward-headers)$/i.test(k) ? MASK : v;
   }
   return out;
 }
@@ -134,8 +135,8 @@ const KEEP_DEBUG_LOGS = 10;
  * Returns the log file path and a teardown function.
  */
 export function installDebugLogger(logPath: string): { teardown: () => void } {
-  mkdirSync(dirname(logPath), { recursive: true });
-  writeFileSync(logPath, '', 'utf-8'); // truncate / create
+  mkdirSync(dirname(logPath), { recursive: true, mode: 0o700 });
+  writeFileSync(logPath, '', { encoding: 'utf8', mode: 0o600 }); // truncate / create
   pruneDebugLogs(dirname(logPath), KEEP_DEBUG_LOGS);
 
   const originalFetch = globalThis.fetch;
@@ -151,16 +152,23 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
           ? input.toString()
           : (input as Request).url;
 
-    if (!isAirsUrl(url)) {
+    const rawHeaders = headersToRecord(
+      init?.headers ?? (input instanceof Request ? input.headers : undefined),
+    );
+    const inference = Object.keys(rawHeaders).some(
+      (name) => name.toLowerCase() === 'x-portkey-api-key',
+    );
+    if (!isAirsUrl(url) && !inference) {
       return originalFetch(input, init);
     }
 
     const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
-    const reqHeaders = redactHeaders(headersToRecord(init?.headers));
+    const reqHeaders = redactHeaders(rawHeaders);
     const loggedUrl = redactUrl(url);
 
     let reqBody: unknown;
-    if (init?.body) {
+    if (inference) reqBody = '[BODY OMITTED]';
+    else if (init?.body) {
       try {
         reqBody = redactDeep(JSON.parse(String(init.body)));
       } catch {
@@ -178,7 +186,11 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     try {
       response = await originalFetch(input, init);
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      error = inference
+        ? 'Runtime request failed'
+        : err instanceof Error
+          ? err.message
+          : String(err);
       const entry = JSON.stringify({
         timestamp: ts,
         durationMs: Date.now() - startMs,
@@ -196,16 +208,22 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     });
 
     // Clone so the original consumer can still read the body
-    const clone = response.clone();
-    try {
-      const text = await clone.text();
+    if (inference || response.headers.get('content-type')?.includes('text/event-stream')) {
+      // Never consume/tee an inference stream before the SDK can read it. Besides retaining
+      // sensitive prompt text, clone().text() would buffer the full stream and defeat cancellation.
+      resBody = '[BODY OMITTED]';
+    } else {
+      const clone = response.clone();
       try {
-        resBody = redactDeep(JSON.parse(text));
+        const text = await clone.text();
+        try {
+          resBody = redactDeep(JSON.parse(text));
+        } catch {
+          resBody = text;
+        }
       } catch {
-        resBody = text;
+        resBody = '<unreadable>';
       }
-    } catch {
-      resBody = '<unreadable>';
     }
 
     const entry = JSON.stringify({

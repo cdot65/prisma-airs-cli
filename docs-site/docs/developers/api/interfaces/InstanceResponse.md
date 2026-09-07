@@ -1,6 +1,6 @@
 # Interface: InstanceResponse
 
-Defined in: src/airs/types.ts:449
+Defined in: prisma-airs-cli/src/airs/types.ts:452
 
 Normalized instance response.
 
@@ -10,7 +10,7 @@ Normalized instance response.
 
 > `optional` **appId?**: `string`
 
-Defined in: src/airs/types.ts:452
+Defined in: prisma-airs-cli/src/airs/types.ts:455
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:452
 
 > `optional` **isSuccess?**: `boolean`
 
-Defined in: src/airs/types.ts:453
+Defined in: prisma-airs-cli/src/airs/types.ts:456
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:453
 
 > `optional` **tenantId?**: `string`
 
-Defined in: src/airs/types.ts:451
+Defined in: prisma-airs-cli/src/airs/types.ts:454
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:451
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:450
+Defined in: prisma-airs-cli/src/airs/types.ts:453

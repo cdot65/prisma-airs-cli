@@ -1,6 +1,6 @@
 # Interface: EfficacyMetrics
 
-Defined in: src/core/types.ts:69
+Defined in: prisma-airs-cli/src/core/types.ts:69
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/core/types.ts:69
 
 > **accuracy**: `number`
 
-Defined in: src/core/types.ts:76
+Defined in: prisma-airs-cli/src/core/types.ts:76
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/core/types.ts:76
 
 > **coverage**: `number`
 
-Defined in: src/core/types.ts:77
+Defined in: prisma-airs-cli/src/core/types.ts:77
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/core/types.ts:77
 
 > **f1Score**: `number`
 
-Defined in: src/core/types.ts:78
+Defined in: prisma-airs-cli/src/core/types.ts:78
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/core/types.ts:78
 
 > **falseNegatives**: `number`
 
-Defined in: src/core/types.ts:73
+Defined in: prisma-airs-cli/src/core/types.ts:73
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: src/core/types.ts:73
 
 > **falsePositives**: `number`
 
-Defined in: src/core/types.ts:72
+Defined in: prisma-airs-cli/src/core/types.ts:72
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: src/core/types.ts:72
 
 > **regressionCount**: `number`
 
-Defined in: src/core/types.ts:80
+Defined in: prisma-airs-cli/src/core/types.ts:80
 
 Count of regression-tier tests that failed (previously correct, now wrong).
 
@@ -58,7 +58,7 @@ Count of regression-tier tests that failed (previously correct, now wrong).
 
 > **trueNegativeRate**: `number`
 
-Defined in: src/core/types.ts:75
+Defined in: prisma-airs-cli/src/core/types.ts:75
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/core/types.ts:75
 
 > **trueNegatives**: `number`
 
-Defined in: src/core/types.ts:71
+Defined in: prisma-airs-cli/src/core/types.ts:71
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/core/types.ts:71
 
 > **truePositiveRate**: `number`
 
-Defined in: src/core/types.ts:74
+Defined in: prisma-airs-cli/src/core/types.ts:74
 
 ***
 
@@ -82,4 +82,4 @@ Defined in: src/core/types.ts:74
 
 > **truePositives**: `number`
 
-Defined in: src/core/types.ts:70
+Defined in: prisma-airs-cli/src/core/types.ts:70

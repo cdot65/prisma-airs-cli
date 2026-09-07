@@ -1,6 +1,6 @@
 # Interface: InstanceDetail
 
-Defined in: src/airs/types.ts:457
+Defined in: prisma-airs-cli/src/airs/types.ts:460
 
 Normalized instance detail (from GET).
 
@@ -10,7 +10,7 @@ Normalized instance detail (from GET).
 
 > **appId**: `string`
 
-Defined in: src/airs/types.ts:460
+Defined in: prisma-airs-cli/src/airs/types.ts:463
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:460
 
 > **region**: `string`
 
-Defined in: src/airs/types.ts:461
+Defined in: prisma-airs-cli/src/airs/types.ts:464
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:461
 
 > **tenantId**: `string`
 
-Defined in: src/airs/types.ts:459
+Defined in: prisma-airs-cli/src/airs/types.ts:462
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:459
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:458
+Defined in: prisma-airs-cli/src/airs/types.ts:461

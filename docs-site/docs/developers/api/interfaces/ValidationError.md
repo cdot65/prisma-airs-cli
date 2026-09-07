@@ -1,6 +1,6 @@
 # Interface: ValidationError
 
-Defined in: src/core/constraints.ts:3
+Defined in: prisma-airs-cli/src/core/constraints.ts:3
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/core/constraints.ts:3
 
 > **field**: `string`
 
-Defined in: src/core/constraints.ts:4
+Defined in: prisma-airs-cli/src/core/constraints.ts:4
 
 ***
 
@@ -16,4 +16,4 @@ Defined in: src/core/constraints.ts:4
 
 > **message**: `string`
 
-Defined in: src/core/constraints.ts:5
+Defined in: prisma-airs-cli/src/core/constraints.ts:5

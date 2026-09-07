@@ -49,7 +49,10 @@ function writeFlags<T extends Command>(cmd: T): T {
 
 async function resolveWriteBody(opts: Record<string, unknown>): Promise<unknown> {
   if (opts.body || opts.bodyFile) {
-    const body = await parseBody({ body: opts.body as string, bodyFile: opts.bodyFile as string });
+    const body = await parseBody({
+      body: opts.body as string,
+      bodyFile: opts.bodyFile as string,
+    });
     if (!body) throw new Error('--body or --body-file was empty');
     return body;
   }
@@ -60,7 +63,7 @@ export function register(dlp: Command): void {
   const group = dlp
     .command('profiles')
     .description(
-      'DLP data profiles. DELETE is not exposed by the DLP API. To remove a profile, patch with profile_status: "deleted".',
+      'DLP data profiles. No supported DELETE; status-based retirement is not live-verified.',
     );
 
   const listCmd = listFlags(group.command('list').description('List data profiles'));
@@ -156,14 +159,14 @@ export function register(dlp: Command): void {
 
   group
     .command('delete <id>')
-    .description('Not supported — prints the patch idiom and exits 2')
+    .description('Not supported — explains the cleanup limitation and exits 2')
     .action((id) => {
       usageError(
         `This DLP API has no DELETE for data profiles.\n` +
-          `  To soft-delete, fetch the profile to get its name + profile_type, then patch:\n\n` +
-          `    airs runtime dlp profiles get ${id} --output json\n` +
-          `    airs runtime dlp profiles patch ${id} --set profile_status='"deleted"' \\\n` +
-          `      --set name='"<existing-name>"' --set profile_type='"<existing-type>"'`,
+          `  Status-based retirement is not live-verified: the latest owned-fixture\n` +
+          `  PATCH/PUT returned HTTP 500; an advertised DELETE returned HTTP 501.\n` +
+          `  No API request was sent by this command. Do not assume the profile was removed.\n` +
+          `  Inspect current state with: airs runtime dlp profiles get ${id} --output json`,
       );
     });
 }

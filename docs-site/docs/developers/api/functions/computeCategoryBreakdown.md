@@ -2,7 +2,7 @@
 
 > **computeCategoryBreakdown**(`results`): [`CategoryBreakdown`](../interfaces/CategoryBreakdown.md)[]
 
-Defined in: src/core/metrics.ts:56
+Defined in: prisma-airs-cli/src/core/metrics.ts:56
 
 Compute per-category error breakdown from test results. Sorted by error rate descending.
 

@@ -1,6 +1,6 @@
 # Interface: RedTeamJob
 
-Defined in: src/airs/types.ts:196
+Defined in: prisma-airs-cli/src/airs/types.ts:199
 
 Normalized red team job/scan info.
 
@@ -10,7 +10,7 @@ Normalized red team job/scan info.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:204
+Defined in: prisma-airs-cli/src/airs/types.ts:207
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:204
 
 > `optional` **completed?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:206
+Defined in: prisma-airs-cli/src/airs/types.ts:209
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:206
 
 > `optional` **createdAt?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:207
+Defined in: prisma-airs-cli/src/airs/types.ts:210
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:207
 
 > **jobType**: `string`
 
-Defined in: src/airs/types.ts:200
+Defined in: prisma-airs-cli/src/airs/types.ts:203
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:200
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:198
+Defined in: prisma-airs-cli/src/airs/types.ts:201
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:198
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:203
+Defined in: prisma-airs-cli/src/airs/types.ts:206
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:203
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:199
+Defined in: prisma-airs-cli/src/airs/types.ts:202
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:199
 
 > **targetId**: `string`
 
-Defined in: src/airs/types.ts:201
+Defined in: prisma-airs-cli/src/airs/types.ts:204
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:201
 
 > `optional` **targetName?**: `string`
 
-Defined in: src/airs/types.ts:202
+Defined in: prisma-airs-cli/src/airs/types.ts:205
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:202
 
 > `optional` **total?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:205
+Defined in: prisma-airs-cli/src/airs/types.ts:208
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: src/airs/types.ts:205
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:197
+Defined in: prisma-airs-cli/src/airs/types.ts:200

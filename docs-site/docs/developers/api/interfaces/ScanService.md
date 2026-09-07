@@ -1,6 +1,6 @@
 # Interface: ScanService
 
-Defined in: src/airs/types.ts:130
+Defined in: prisma-airs-cli/src/airs/types.ts:133
 
 Contract for AIRS prompt scanning operations.
 
@@ -10,7 +10,7 @@ Contract for AIRS prompt scanning operations.
 
 > **scan**(`profileName`, `prompt`, `sessionId?`): `Promise`\<[`ScanResult`](ScanResult.md)\>
 
-Defined in: src/airs/types.ts:132
+Defined in: prisma-airs-cli/src/airs/types.ts:135
 
 Scan a single prompt against a security profile.
 
@@ -38,7 +38,7 @@ Scan a single prompt against a security profile.
 
 > **scanBatch**(`profileName`, `prompts`, `concurrency?`, `sessionId?`): `Promise`\<[`ScanResult`](ScanResult.md)[]\>
 
-Defined in: src/airs/types.ts:134
+Defined in: prisma-airs-cli/src/airs/types.ts:137
 
 Scan multiple prompts with concurrency control.
 

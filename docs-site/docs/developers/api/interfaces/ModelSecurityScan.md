@@ -1,6 +1,6 @@
 # Interface: ModelSecurityScan
 
-Defined in: src/airs/types.ts:830
+Defined in: prisma-airs-cli/src/airs/types.ts:833
 
 Normalized model security scan.
 
@@ -10,7 +10,7 @@ Normalized model security scan.
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:842
+Defined in: prisma-airs-cli/src/airs/types.ts:845
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:842
 
 > **evalOutcome**: `string`
 
-Defined in: src/airs/types.ts:832
+Defined in: prisma-airs-cli/src/airs/types.ts:835
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:832
 
 > **evalSummary**: \{ `rulesFailed`: `number`; `rulesPassed`: `number`; `totalRules`: `number`; \} \| `null`
 
-Defined in: src/airs/types.ts:837
+Defined in: prisma-airs-cli/src/airs/types.ts:840
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:837
 
 > **labels**: `object`[]
 
-Defined in: src/airs/types.ts:844
+Defined in: prisma-airs-cli/src/airs/types.ts:847
 
 #### key
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:844
 
 > **modelUri**: `string`
 
-Defined in: src/airs/types.ts:833
+Defined in: prisma-airs-cli/src/airs/types.ts:836
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:833
 
 > **scanOrigin**: `string`
 
-Defined in: src/airs/types.ts:834
+Defined in: prisma-airs-cli/src/airs/types.ts:837
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:834
 
 > **securityGroupName**: `string`
 
-Defined in: src/airs/types.ts:836
+Defined in: prisma-airs-cli/src/airs/types.ts:839
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:836
 
 > **sourceType**: `string`
 
-Defined in: src/airs/types.ts:835
+Defined in: prisma-airs-cli/src/airs/types.ts:838
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:835
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:843
+Defined in: prisma-airs-cli/src/airs/types.ts:846
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: src/airs/types.ts:843
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:831
+Defined in: prisma-airs-cli/src/airs/types.ts:834

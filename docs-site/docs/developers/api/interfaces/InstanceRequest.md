@@ -1,6 +1,6 @@
 # Interface: InstanceRequest
 
-Defined in: src/airs/types.ts:441
+Defined in: prisma-airs-cli/src/airs/types.ts:444
 
 Request to create/update an instance.
 
@@ -10,7 +10,7 @@ Request to create/update an instance.
 
 > **appId**: `string`
 
-Defined in: src/airs/types.ts:444
+Defined in: prisma-airs-cli/src/airs/types.ts:447
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:444
 
 > **region**: `string`
 
-Defined in: src/airs/types.ts:445
+Defined in: prisma-airs-cli/src/airs/types.ts:448
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:445
 
 > **tenantId**: `string`
 
-Defined in: src/airs/types.ts:443
+Defined in: prisma-airs-cli/src/airs/types.ts:446
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:443
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:442
+Defined in: prisma-airs-cli/src/airs/types.ts:445

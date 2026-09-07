@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterVar
 
-Defined in: src/airs/types.ts:1457
+Defined in: prisma-airs-cli/src/airs/types.ts:1460
 
 An adapter configuration variable. Secrets are masked; key off `isRedacted`, not the value.
 
@@ -10,7 +10,7 @@ An adapter configuration variable. Secrets are masked; key off `isRedacted`, not
 
 > `optional` **isRedacted?**: `boolean`
 
-Defined in: src/airs/types.ts:1461
+Defined in: prisma-airs-cli/src/airs/types.ts:1464
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1461
 
 > **key**: `string`
 
-Defined in: src/airs/types.ts:1458
+Defined in: prisma-airs-cli/src/airs/types.ts:1461
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1458
 
 > **type**: `"VAR"` \| `"SECRET"`
 
-Defined in: src/airs/types.ts:1460
+Defined in: prisma-airs-cli/src/airs/types.ts:1463
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:1460
 
 > `optional` **value?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1459
+Defined in: prisma-airs-cli/src/airs/types.ts:1462

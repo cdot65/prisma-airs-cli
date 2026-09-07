@@ -8,7 +8,7 @@ title: DLP
 
 - **[Filtering Profiles](filtering-profiles.md)** — Bind data profiles to scan policy (file vs non-file, log severity, direction). Read + full-replace only; no create or delete.
 - **[Patterns](patterns.md)** — Detection primitives: regex, weighted_regex, dictionary, EDM, classifier. Full CRUD; `delete` is soft (archive).
-- **[Profiles](profiles.md)** — Boolean compositions of patterns or other profiles via `expression_tree` / `multi_profile`. No DELETE — soft-delete via `profile_status: "deleted"` patch.
+- **[Profiles](profiles.md)** — Boolean compositions via `expression_tree` / `multi_profile`. No supported DELETE; lifecycle retirement remains unverified after live HTTP 500/501 failures.
 - **[Dictionaries](dictionaries.md)** — Keyword lists for `dictionary`-technique detection. Multipart upload (metadata + keyword file). PUT may return 200 or 204.
 
 ## Authentication
@@ -36,7 +36,7 @@ All twenty commands at a glance:
 | [dictionaries](dictionaries.md) | ✅ | ✅ multipart | ✅ | ✅ multipart | ✅ | ✅ |
 
 :::note[Why the gaps]
-`filtering-profiles` and `profiles` API surfaces do not expose DELETE. `filtering-profiles` has no `delete` subcommand at all; `profiles delete <id>` is a stub that prints the patch idiom and exits with code 2. Soft-delete a profile by PATCHing `profile_status: "deleted"`. Patterns soft-delete (archive) on `delete` — the entry stays resolvable via `get` with `status: "deleted"`.
+`filtering-profiles` and `profiles` contracts do not expose DELETE. `profiles delete <id>` is a stub that explains the cleanup limitation and exits 2 without API traffic. The September 6 profile status-patch attempt returned 500, and an advertised DELETE returned 501. Pattern deletion was verified separately: the entry remains readable with `status: "deleted"`.
 :::
 
 ## Resource model
@@ -76,7 +76,7 @@ If you patch anything else, include the required fields via `--set` as well.
 
 - **Quote string-5 in `--set`**: `--set count='"5"'` to force a JSON string. `--set count=5` becomes a number; `--set count=true` becomes a boolean.
 - **`--set k=null` is rejected** — use `--clear k` instead (the CLI catches this and errors before sending).
-- **`profiles delete` is a stub** — exits 2, prints the patch idiom. The real soft-delete:
+- **`profiles delete` is a stub** — exits 2 without HTTP traffic. The historical status-patch idiom below is not verified cleanup; it returned HTTP 500 in the latest owned-fixture test:
 
     ```bash
     airs runtime dlp profiles patch <id> --body-file - <<'EOF'

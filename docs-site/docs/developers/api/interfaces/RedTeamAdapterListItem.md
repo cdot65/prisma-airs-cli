@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterListItem
 
-Defined in: src/airs/types.ts:1465
+Defined in: prisma-airs-cli/src/airs/types.ts:1468
 
 Adapter list row — no script, description, or variables; `get` for the full record.
 
@@ -10,7 +10,7 @@ Adapter list row — no script, description, or variables; `get` for the full re
 
 > `optional` **createdAt?**: `string`
 
-Defined in: src/airs/types.ts:1469
+Defined in: prisma-airs-cli/src/airs/types.ts:1472
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1469
 
 > `optional` **createdByUserId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1471
+Defined in: prisma-airs-cli/src/airs/types.ts:1474
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1471
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1467
+Defined in: prisma-airs-cli/src/airs/types.ts:1470
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1467
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:1468
+Defined in: prisma-airs-cli/src/airs/types.ts:1471
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:1468
 
 > `optional` **targetCount?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:1472
+Defined in: prisma-airs-cli/src/airs/types.ts:1475
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:1472
 
 > `optional` **updatedAt?**: `string`
 
-Defined in: src/airs/types.ts:1470
+Defined in: prisma-airs-cli/src/airs/types.ts:1473
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:1470
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:1466
+Defined in: prisma-airs-cli/src/airs/types.ts:1469

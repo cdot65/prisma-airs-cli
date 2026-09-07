@@ -414,7 +414,7 @@ airs runtime dlp profiles delete [options] <id>
 
 #### Examples
 
-*Stub — DLP data profiles have no DELETE endpoint; soft-delete via patch*
+*Stub — no supported DELETE or verified status-based retirement; exits 2 without API traffic*
 
 ```bash
 airs runtime dlp profiles delete 00000001
@@ -422,9 +422,8 @@ airs runtime dlp profiles delete 00000001
 
 ```text
 This DLP API has no DELETE for data profiles.
-To soft-delete, fetch the profile to get its name + profile_type, then patch:
-
-  airs runtime dlp profiles get 00000001 --output json
-  airs runtime dlp profiles patch 00000001 --set profile_status='"deleted"' \
-    --set name='"<existing-name>"' --set profile_type='"<existing-type>"'
+Status-based retirement is not live-verified: the latest owned-fixture
+PATCH/PUT returned HTTP 500; an advertised DELETE returned HTTP 501.
+No API request was sent by this command. Do not assume the profile was removed.
+Inspect current state with: airs runtime dlp profiles get 00000001 --output json
 ```

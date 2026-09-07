@@ -1,6 +1,6 @@
 # Interface: ModelSecurityModelVersion
 
-Defined in: src/airs/types.ts:941
+Defined in: prisma-airs-cli/src/airs/types.ts:944
 
 Normalized model version.
 
@@ -10,7 +10,7 @@ Normalized model version.
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:946
+Defined in: prisma-airs-cli/src/airs/types.ts:949
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:946
 
 > `optional` **fileCount?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:949
+Defined in: prisma-airs-cli/src/airs/types.ts:952
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:949
 
 > `optional` **fingerprint?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:948
+Defined in: prisma-airs-cli/src/airs/types.ts:951
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:948
 
 > `optional` **hfCommitAuthors?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:954
+Defined in: prisma-airs-cli/src/airs/types.ts:957
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:954
 
 > `optional` **hfCommitSha?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:952
+Defined in: prisma-airs-cli/src/airs/types.ts:955
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:952
 
 > `optional` **hfCommitTitle?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:953
+Defined in: prisma-airs-cli/src/airs/types.ts:956
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:953
 
 > `optional` **hfModelName?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:955
+Defined in: prisma-airs-cli/src/airs/types.ts:958
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:955
 
 > `optional` **hfOrganization?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:956
+Defined in: prisma-airs-cli/src/airs/types.ts:959
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:956
 
 > `optional` **lastEvalOutcome?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:959
+Defined in: prisma-airs-cli/src/airs/types.ts:962
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:959
 
 > `optional` **lastEvalSummary?**: \{ `rulesFailed`: `number`; `rulesPassed`: `number`; `totalRules`: `number`; \} \| `null`
 
-Defined in: src/airs/types.ts:960
+Defined in: prisma-airs-cli/src/airs/types.ts:963
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:960
 
 > `optional` **latestScanTime?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:951
+Defined in: prisma-airs-cli/src/airs/types.ts:954
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/airs/types.ts:951
 
 > `optional` **license?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:950
+Defined in: prisma-airs-cli/src/airs/types.ts:953
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: src/airs/types.ts:950
 
 > `optional` **modelFormats?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:957
+Defined in: prisma-airs-cli/src/airs/types.ts:960
 
 ***
 
@@ -114,7 +114,7 @@ Defined in: src/airs/types.ts:957
 
 > **modelUuid**: `string`
 
-Defined in: src/airs/types.ts:944
+Defined in: prisma-airs-cli/src/airs/types.ts:947
 
 ***
 
@@ -122,7 +122,7 @@ Defined in: src/airs/types.ts:944
 
 > **revision**: `string`
 
-Defined in: src/airs/types.ts:945
+Defined in: prisma-airs-cli/src/airs/types.ts:948
 
 ***
 
@@ -130,7 +130,7 @@ Defined in: src/airs/types.ts:945
 
 > `optional` **sourceTypes?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:958
+Defined in: prisma-airs-cli/src/airs/types.ts:961
 
 ***
 
@@ -138,7 +138,7 @@ Defined in: src/airs/types.ts:958
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:943
+Defined in: prisma-airs-cli/src/airs/types.ts:946
 
 ***
 
@@ -146,7 +146,7 @@ Defined in: src/airs/types.ts:943
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:947
+Defined in: prisma-airs-cli/src/airs/types.ts:950
 
 ***
 
@@ -154,4 +154,4 @@ Defined in: src/airs/types.ts:947
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:942
+Defined in: prisma-airs-cli/src/airs/types.ts:945

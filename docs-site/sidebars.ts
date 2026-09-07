@@ -70,6 +70,7 @@ const sidebars: SidebarsConfig = {
       link: { type: 'doc', id: 'cli/aigateway/workflows' },
       items: [
         'cli/aigateway/resources',
+        'cli/aigateway/inference',
         'cli/aigateway/workspaces',
         'cli/aigateway/telemetry',
       ],

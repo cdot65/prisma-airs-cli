@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupCreateRequest
 
-Defined in: src/airs/types.ts:743
+Defined in: prisma-airs-cli/src/airs/types.ts:746
 
 Request to create a security group.
 
@@ -10,7 +10,7 @@ Request to create a security group.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:746
+Defined in: prisma-airs-cli/src/airs/types.ts:749
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:746
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:744
+Defined in: prisma-airs-cli/src/airs/types.ts:747
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:744
 
 > `optional` **ruleConfigurations?**: `Record`\<`string`, `Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:747
+Defined in: prisma-airs-cli/src/airs/types.ts:750
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:747
 
 > **sourceType**: `string`
 
-Defined in: src/airs/types.ts:745
+Defined in: prisma-airs-cli/src/airs/types.ts:748

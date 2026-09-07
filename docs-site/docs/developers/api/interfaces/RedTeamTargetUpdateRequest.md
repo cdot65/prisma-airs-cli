@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetUpdateRequest
 
-Defined in: src/airs/types.ts:263
+Defined in: prisma-airs-cli/src/airs/types.ts:266
 
 Request to update a red team target.
 
@@ -10,7 +10,7 @@ Request to update a red team target.
 
 > `optional` **additional\_context?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:268
+Defined in: prisma-airs-cli/src/airs/types.ts:271
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:268
 
 > `optional` **background?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:267
+Defined in: prisma-airs-cli/src/airs/types.ts:270
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:267
 
 > `optional` **connection\_params?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:266
+Defined in: prisma-airs-cli/src/airs/types.ts:269
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:266
 
 > `optional` **metadata?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:269
+Defined in: prisma-airs-cli/src/airs/types.ts:272
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:269
 
 > `optional` **name?**: `string`
 
-Defined in: src/airs/types.ts:264
+Defined in: prisma-airs-cli/src/airs/types.ts:267
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: src/airs/types.ts:264
 
 > `optional` **target\_type?**: `string`
 
-Defined in: src/airs/types.ts:265
+Defined in: prisma-airs-cli/src/airs/types.ts:268

@@ -1,6 +1,6 @@
 # Interface: ModelSecurityModel
 
-Defined in: src/airs/types.ts:914
+Defined in: prisma-airs-cli/src/airs/types.ts:917
 
 Normalized model catalog entry.
 
@@ -10,7 +10,7 @@ Normalized model catalog entry.
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:918
+Defined in: prisma-airs-cli/src/airs/types.ts:921
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:918
 
 > `optional` **latestVersionFingerprint?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:921
+Defined in: prisma-airs-cli/src/airs/types.ts:924
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:921
 
 > `optional` **latestVersionFormats?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:925
+Defined in: prisma-airs-cli/src/airs/types.ts:928
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:925
 
 > `optional` **latestVersionHfCommitSha?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:923
+Defined in: prisma-airs-cli/src/airs/types.ts:926
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:923
 
 > `optional` **latestVersionOutcome?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:924
+Defined in: prisma-airs-cli/src/airs/types.ts:927
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:924
 
 > `optional` **latestVersionRevision?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:922
+Defined in: prisma-airs-cli/src/airs/types.ts:925
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:922
 
 > `optional` **latestVersionScanTime?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:927
+Defined in: prisma-airs-cli/src/airs/types.ts:930
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:927
 
 > `optional` **latestVersionSourceTypes?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:926
+Defined in: prisma-airs-cli/src/airs/types.ts:929
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:926
 
 > `optional` **latestVersionUuid?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:920
+Defined in: prisma-airs-cli/src/airs/types.ts:923
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:920
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:917
+Defined in: prisma-airs-cli/src/airs/types.ts:920
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:917
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:916
+Defined in: prisma-airs-cli/src/airs/types.ts:919
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/airs/types.ts:916
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:919
+Defined in: prisma-airs-cli/src/airs/types.ts:922
 
 ***
 
@@ -106,4 +106,4 @@ Defined in: src/airs/types.ts:919
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:915
+Defined in: prisma-airs-cli/src/airs/types.ts:918

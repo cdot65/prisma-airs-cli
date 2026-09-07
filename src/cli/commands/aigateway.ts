@@ -21,6 +21,7 @@ import {
   ui,
   usageError,
 } from '../renderer/index.js';
+import { registerAiGatewayInference } from './aigateway/inference.js';
 import { registerAiGatewayInventory } from './aigateway/inventory.js';
 import { registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
 
@@ -126,6 +127,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .action(() => aigateway.outputHelp());
 
   registerAiGatewayInventory(aigateway);
+  registerAiGatewayInference(aigateway);
 
   const workspace = aigateway
     .command('workspaces')

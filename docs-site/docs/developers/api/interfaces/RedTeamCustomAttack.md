@@ -1,6 +1,6 @@
 # Interface: RedTeamCustomAttack
 
-Defined in: src/airs/types.ts:393
+Defined in: prisma-airs-cli/src/airs/types.ts:396
 
 Normalized custom attack item (custom prompt set scans).
 
@@ -10,7 +10,7 @@ Normalized custom attack item (custom prompt set scans).
 
 > `optional` **asr?**: `number`
 
-Defined in: src/airs/types.ts:398
+Defined in: prisma-airs-cli/src/airs/types.ts:401
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:398
 
 > `optional` **goal?**: `string`
 
-Defined in: src/airs/types.ts:396
+Defined in: prisma-airs-cli/src/airs/types.ts:399
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:396
 
 > **promptId**: `string`
 
-Defined in: src/airs/types.ts:394
+Defined in: prisma-airs-cli/src/airs/types.ts:397
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:394
 
 > `optional` **promptSetName?**: `string`
 
-Defined in: src/airs/types.ts:399
+Defined in: prisma-airs-cli/src/airs/types.ts:402
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:399
 
 > **promptText**: `string`
 
-Defined in: src/airs/types.ts:395
+Defined in: prisma-airs-cli/src/airs/types.ts:398
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: src/airs/types.ts:395
 
 > **threat**: `boolean`
 
-Defined in: src/airs/types.ts:397
+Defined in: prisma-airs-cli/src/airs/types.ts:400

@@ -1,6 +1,6 @@
 # Interface: RedTeamChannelStats
 
-Defined in: src/airs/types.ts:510
+Defined in: prisma-airs-cli/src/airs/types.ts:513
 
 Normalized network broker channel statistics.
 
@@ -10,7 +10,7 @@ Normalized network broker channel statistics.
 
 > `optional` **clientVersion?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:517
+Defined in: prisma-airs-cli/src/airs/types.ts:520
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:517
 
 > `optional` **dockerImage?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:514
+Defined in: prisma-airs-cli/src/airs/types.ts:517
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:514
 
 > `optional` **dockerRegistry?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:512
+Defined in: prisma-airs-cli/src/airs/types.ts:515
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:512
 
 > `optional` **helmChart?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:513
+Defined in: prisma-airs-cli/src/airs/types.ts:516
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:513
 
 > `optional` **onlineChannels?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:515
+Defined in: prisma-airs-cli/src/airs/types.ts:518
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:515
 
 > `optional` **serverDomain?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:511
+Defined in: prisma-airs-cli/src/airs/types.ts:514
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:511
 
 > `optional` **totalChannels?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:516
+Defined in: prisma-airs-cli/src/airs/types.ts:519

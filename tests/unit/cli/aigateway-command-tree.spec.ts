@@ -21,6 +21,7 @@ describe('AI Gateway command tree', () => {
       'configs',
       'deployments',
       'guardrails',
+      'inference',
       'integrations',
       'mcp',
       'organisations',

@@ -1,6 +1,6 @@
 # Interface: CustomerAppConsumption
 
-Defined in: src/airs/types.ts:1142
+Defined in: prisma-airs-cli/src/airs/types.ts:1145
 
 Per-app consumption + violation snapshot, normalized from the SDK's dashboard endpoints.
 Time window is fixed at construction.
@@ -11,7 +11,7 @@ Time window is fixed at construction.
 
 > **appId**: `string`
 
-Defined in: src/airs/types.ts:1143
+Defined in: prisma-airs-cli/src/airs/types.ts:1146
 
 ***
 
@@ -19,7 +19,7 @@ Defined in: src/airs/types.ts:1143
 
 > **appName**: `string`
 
-Defined in: src/airs/types.ts:1144
+Defined in: prisma-airs-cli/src/airs/types.ts:1147
 
 ***
 
@@ -27,7 +27,7 @@ Defined in: src/airs/types.ts:1144
 
 > `optional` **cloud?**: `string`
 
-Defined in: src/airs/types.ts:1145
+Defined in: prisma-airs-cli/src/airs/types.ts:1148
 
 ***
 
@@ -35,7 +35,7 @@ Defined in: src/airs/types.ts:1145
 
 > **detectors**: `object`[]
 
-Defined in: src/airs/types.ts:1164
+Defined in: prisma-airs-cli/src/airs/types.ts:1167
 
 Per-detector violation severity counts, one entry per detection_type.
 
@@ -69,7 +69,7 @@ Per-detector violation severity counts, one entry per detection_type.
 
 > `optional` **monitoringSince?**: `string`
 
-Defined in: src/airs/types.ts:1148
+Defined in: prisma-airs-cli/src/airs/types.ts:1151
 
 ISO timestamp of first monitoring (corresponds to SCM panel's "Monitoring Since").
 
@@ -79,7 +79,7 @@ ISO timestamp of first monitoring (corresponds to SCM panel's "Monitoring Since"
 
 > **profiles**: `string`[]
 
-Defined in: src/airs/types.ts:1150
+Defined in: prisma-airs-cli/src/airs/types.ts:1153
 
 Attached security profile names.
 
@@ -89,7 +89,7 @@ Attached security profile names.
 
 > **sessions**: `object`
 
-Defined in: src/airs/types.ts:1159
+Defined in: prisma-airs-cli/src/airs/types.ts:1162
 
 Session activity counts over the window.
 
@@ -107,7 +107,7 @@ Session activity counts over the window.
 
 > `optional` **source?**: `string`
 
-Defined in: src/airs/types.ts:1146
+Defined in: prisma-airs-cli/src/airs/types.ts:1149
 
 ***
 
@@ -115,7 +115,7 @@ Defined in: src/airs/types.ts:1146
 
 > **tokens**: `object`
 
-Defined in: src/airs/types.ts:1152
+Defined in: prisma-airs-cli/src/airs/types.ts:1155
 
 Token consumption stats with scale qualifier (K = thousands, M = millions).
 
@@ -141,6 +141,6 @@ Token consumption stats with scale qualifier (K = thousands, M = millions).
 
 > **totalViolating**: `number`
 
-Defined in: src/airs/types.ts:1173
+Defined in: prisma-airs-cli/src/airs/types.ts:1176
 
 Sum of violating sessions across all detectors (mirrors SCM panel's badge).

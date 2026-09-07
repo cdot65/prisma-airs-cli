@@ -1,6 +1,6 @@
 # Interface: RegistryCredentials
 
-Defined in: src/airs/types.ts:465
+Defined in: prisma-airs-cli/src/airs/types.ts:468
 
 Registry credentials.
 
@@ -10,7 +10,7 @@ Registry credentials.
 
 > **expiry**: `string`
 
-Defined in: src/airs/types.ts:467
+Defined in: prisma-airs-cli/src/airs/types.ts:470
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:467
 
 > **token**: `string`
 
-Defined in: src/airs/types.ts:466
+Defined in: prisma-airs-cli/src/airs/types.ts:469

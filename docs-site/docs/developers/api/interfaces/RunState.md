@@ -1,6 +1,6 @@
 # Interface: RunState
 
-Defined in: src/core/types.ts:104
+Defined in: prisma-airs-cli/src/core/types.ts:104
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/core/types.ts:104
 
 > **bestCoverage**: `number`
 
-Defined in: src/core/types.ts:112
+Defined in: prisma-airs-cli/src/core/types.ts:112
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/core/types.ts:112
 
 > **bestIteration**: `number`
 
-Defined in: src/core/types.ts:111
+Defined in: prisma-airs-cli/src/core/types.ts:111
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/core/types.ts:111
 
 > `optional` **companionTopic?**: [`CustomTopic`](CustomTopic.md)
 
-Defined in: src/core/types.ts:117
+Defined in: prisma-airs-cli/src/core/types.ts:117
 
 Companion allow topic created for block-intent two-phase generation.
 
@@ -34,7 +34,7 @@ Companion allow topic created for block-intent two-phase generation.
 
 > **consecutiveRegressions**: `number`
 
-Defined in: src/core/types.ts:113
+Defined in: prisma-airs-cli/src/core/types.ts:113
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/core/types.ts:113
 
 > **createdAt**: `string`
 
-Defined in: src/core/types.ts:106
+Defined in: prisma-airs-cli/src/core/types.ts:106
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/core/types.ts:106
 
 > **currentIteration**: `number`
 
-Defined in: src/core/types.ts:110
+Defined in: prisma-airs-cli/src/core/types.ts:110
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/core/types.ts:110
 
 > **hasRevertedToBest**: `boolean`
 
-Defined in: src/core/types.ts:114
+Defined in: prisma-airs-cli/src/core/types.ts:114
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/core/types.ts:114
 
 > **hasTriedSimplification**: `boolean`
 
-Defined in: src/core/types.ts:115
+Defined in: prisma-airs-cli/src/core/types.ts:115
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/core/types.ts:115
 
 > **id**: `string`
 
-Defined in: src/core/types.ts:105
+Defined in: prisma-airs-cli/src/core/types.ts:105
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/core/types.ts:105
 
 > **iterations**: [`IterationResult`](IterationResult.md)[]
 
-Defined in: src/core/types.ts:109
+Defined in: prisma-airs-cli/src/core/types.ts:109
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/core/types.ts:109
 
 > **status**: `"failed"` \| `"completed"` \| `"running"` \| `"paused"`
 
-Defined in: src/core/types.ts:118
+Defined in: prisma-airs-cli/src/core/types.ts:118
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/core/types.ts:118
 
 > **updatedAt**: `string`
 
-Defined in: src/core/types.ts:107
+Defined in: prisma-airs-cli/src/core/types.ts:107
 
 ***
 
@@ -106,4 +106,4 @@ Defined in: src/core/types.ts:107
 
 > **userInput**: [`UserInput`](UserInput.md)
 
-Defined in: src/core/types.ts:108
+Defined in: prisma-airs-cli/src/core/types.ts:108

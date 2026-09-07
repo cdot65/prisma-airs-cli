@@ -1,6 +1,6 @@
 # Interface: PromptSetDetail
 
-Defined in: src/airs/types.ts:278
+Defined in: prisma-airs-cli/src/airs/types.ts:281
 
 Normalized prompt set detail.
 
@@ -10,7 +10,7 @@ Normalized prompt set detail.
 
 > **active**: `boolean`
 
-Defined in: src/airs/types.ts:281
+Defined in: prisma-airs-cli/src/airs/types.ts:284
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:281
 
 > **archive**: `boolean`
 
-Defined in: src/airs/types.ts:282
+Defined in: prisma-airs-cli/src/airs/types.ts:285
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:282
 
 > `optional` **createdAt?**: `string`
 
-Defined in: src/airs/types.ts:284
+Defined in: prisma-airs-cli/src/airs/types.ts:287
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:284
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:283
+Defined in: prisma-airs-cli/src/airs/types.ts:286
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:283
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:280
+Defined in: prisma-airs-cli/src/airs/types.ts:283
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:280
 
 > `optional` **updatedAt?**: `string`
 
-Defined in: src/airs/types.ts:285
+Defined in: prisma-airs-cli/src/airs/types.ts:288
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:285
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:279
+Defined in: prisma-airs-cli/src/airs/types.ts:282
