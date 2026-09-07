@@ -6,7 +6,9 @@ sidebar_label: generate
 
 :::info CLI 4.3.1 validation
 
-The 4.3.1 release candidate passes 11/11 native checks at `2026-09-07T10:07:03.221Z`, including all five formats, 26 signatures, the manifest and machine-readable output. Optional sharp is updated to 0.35.4. The historical CLI 4.3.0 check at `2026-09-07T09:24:03.285Z` emitted a human-readable summary instead of JSON; 4.3.1 fixes this. See the [workflow details](../../../runtime/dlp/generate.md) for font prerequisites and output precedence.
+The independently registry-installed CLI **4.3.1** passes **11/11** native public-CLI checks at **2026-09-07T10:29:23.947Z**: all five formats, 26 file signatures, manifest counts, JSON stdout, output precedence and rejection of invalid input before file creation. It uses sharp **0.35.4** / libvips **8.18.6**. Both the frozen production tree and fresh registry install report zero known advisories. This host uses its existing process-only font configuration; credential settings are unchanged, and temporary corpora are cleaned up before success is recorded.
+
+Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files at **2026-09-07T09:24:03.285Z**, but emitted a human-readable summary instead of JSON. That failure is retained in the release assessment; 4.3.1 fixes it.
 
 :::
 
@@ -45,11 +47,26 @@ airs runtime dlp generate --types all --count 1 --seed 431 --output json
   "manifestPath": "<temporary-corpus>/manifest.json",
   "seed": 431,
   "byFormat": {
-    "pdf": { "clean": 1, "dirty": 5 },
-    "png": { "clean": 1, "dirty": 4 },
-    "jpeg": { "clean": 1, "dirty": 4 },
-    "svg": { "clean": 1, "dirty": 4 },
-    "docx": { "clean": 1, "dirty": 4 }
+    "pdf": {
+      "clean": 1,
+      "dirty": 5
+    },
+    "png": {
+      "clean": 1,
+      "dirty": 4
+    },
+    "jpeg": {
+      "clean": 1,
+      "dirty": 4
+    },
+    "svg": {
+      "clean": 1,
+      "dirty": 4
+    },
+    "docx": {
+      "clean": 1,
+      "dirty": 4
+    }
   }
 }
 ```

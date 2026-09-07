@@ -105,7 +105,7 @@ These syntax examples are not fabricated response captures. The read-only instal
 
 ## Verified chart-filter output
 
-The independently installed CLI **4.3.0**, with SDK **0.24.0**, passed **54/54** read-only checks at **2026-09-07T09:20:57.909Z**: installed-version verification, an owned positive control and 13 positive/empty-cohort pairs for each of four charts. Every pair runs the public CLI executable.
+The independently installed CLI **4.3.1**, with SDK **0.24.0**, passed **54/54** read-only checks at **2026-09-07T10:32:02.882Z**: installed-version verification, an owned positive control and 13 positive/empty-cohort pairs for each of four charts. Every pair runs the public CLI executable.
 
 Existing owned positive traffic only. Inclusive bounds, singleton/CSV-OR alternatives and combined filters are checked on each chart with an empty negative cohort. No trace IDs, keys, metadata values or tenant counts are published. This does not establish full upstream analytics equivalence.
 
@@ -543,13 +543,13 @@ This certifies the listed filters on these four Prisma SCM chart adapters, not e
 
 ## Verified empty-window output
 
-The separately installed CLI 4.3.0 passed **3/3** read-only checks at **2026-09-07T09:19:46.233Z**, including actual JSON and YAML commands with SDK 0.24.0. No traffic or key was created to populate the empty window.
+The separately installed CLI 4.3.1 passed **3/3** read-only checks at **2026-09-07T10:31:01.470Z**, including actual JSON and YAML commands with SDK 0.24.0. No traffic or key was created to populate the empty window.
 
 Actual installed CLI JSON/YAML output projected to exit status, period aggregate values and a zero-bucket check. No tenant identifiers, count aggregates or credentials are published. This historical empty-window check does not test new CLI filter flags.
 
 ```json
 {
-  "version": "4.3.0",
+  "version": "4.3.1",
   "sdkVersion": "0.24.0",
   "json": {
     "exitCode": 0,

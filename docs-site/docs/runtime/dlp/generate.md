@@ -2,9 +2,9 @@
 
 :::info CLI 4.3.1 validation
 
-The 4.3.1 release candidate passes 11/11 native public-CLI checks at `2026-09-07T10:07:03.221Z`: all five formats, 26 file signatures, manifest counts, JSON stdout, output precedence and rejection of invalid input before file creation. It uses sharp 0.35.4 / libvips 8.18.6; the frozen production dependency audit is clean. This host uses its existing process-only font configuration, not a changed credential file.
+The independently registry-installed CLI **4.3.1** passes **11/11** native public-CLI checks at **2026-09-07T10:29:23.947Z**: all five formats, 26 file signatures, manifest counts, JSON stdout, output precedence and rejection of invalid input before file creation. It uses sharp **0.35.4** / libvips **8.18.6**. Both the frozen production tree and fresh registry install report zero known advisories. This host uses its existing process-only font configuration; credential settings are unchanged, and temporary corpora are cleaned up before success is recorded.
 
-Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files, but emitted a human-readable summary instead of JSON. That failure is retained in the release assessment; it is fixed in 4.3.1.
+Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files at **2026-09-07T09:24:03.285Z**, but emitted a human-readable summary instead of JSON. That failure is retained in the release assessment; 4.3.1 fixes it.
 
 :::
 
@@ -44,7 +44,9 @@ skipped optional deps (`--no-optional`), this command exits with an install hint
 pnpm add sharp pdf-lib docx piexifjs
 ```
 
-Visible raster text also needs system fontconfig and fonts. Minimal Alpine installs can use `apk add --no-cache fontconfig ttf-dejavu`; the official container includes these. An existing `FONTCONFIG_FILE` can select a font configuration for a single process. No credential configuration is needed.
+Visible raster text also needs system fontconfig, fonts and a writable font cache. Minimal Alpine installs can use `apk add --no-cache fontconfig ttf-dejavu`; the official container includes these. An existing `FONTCONFIG_FILE` can select a font configuration for a single process. No credential configuration is needed.
+
+Node 20.17 can emit its dependency JSON-module `ExperimentalWarning` on **stderr** while JSON stdout remains valid. The native test records that exact known warning and rejects other diagnostics; it does not disable runtime warnings. JSON modules became stable in [Node 20.18.3](https://nodejs.org/en/blog/release/v20.18.3).
 :::
 
 ## Output

@@ -9,6 +9,8 @@
 - Include fontconfig/DejaVu in the minimal Alpine runtime and allow only required build inputs into the Docker context. The native smoke verifies all five DLP formats, 26 file signatures, manifest counts and structured-output/validation behavior. Local validation uses an existing process-only font configuration because this host has no system fonts.
 - Keep SDK 0.24.0 pinned. The full-spec assessment remains 5/10: direct AI Gateway coverage is still 138/242 (57.02%), and the documented upstream service/model limitations are not fixed by this patch.
 
+The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678594) passes all seven jobs, including Node 20.17/22.13/24 native consumers. The [container workflow](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110815270) passes 11/11 native checks on each architecture and verifies `4.3`/`latest` at digest `sha256:c113c58d457e0152b5f51c1cab850d771b7ddeac9ca88d8020b74442791cfadf`. Registry and user-installed packages independently match all seven payload files and 19 exports; registry production audit and 11/11 native checks pass. The exact [native output](../cli/runtime/dlp/generate.md) is captured after registry installation, not copied from a mock.
+
 ## v4.3.0 (2026-09-07)
 
 - Add verified trace, string-metadata, status-code, API-key-ID, provider/model, total-token and cost-range filters to `aigateway telemetry requests`, `cost`, `tokens` and `latency`. Lists use OR; different filters use AND; numeric bounds are inclusive. Cost bounds are in cents, including fractional cents.
