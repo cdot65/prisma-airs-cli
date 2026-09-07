@@ -1,5 +1,11 @@
 # DLP Test-File Generation
 
+:::warning CLI 4.3.0 verified limitation
+
+The installed CLI generated five valid PNG and five valid JPEG files in the September 7, 2026 smoke check (one clean and four dirty files per format; seed `430`). File signatures were checked at `09:24:03 UTC`. However, the same command's explicit `--output json` still emitted a human-readable summary. Do not pipe that summary into a JSON parser; `manifest.json` remains the generated corpus manifest. This output-format defect and the optional sharp dependency advisory remain open follow-ups, not passing JSON/security checks.
+
+:::
+
 `airs runtime dlp generate` generates **DLP test corpora** — clean carrier files plus "dirty"
 copies with **synthetic** sensitive data embedded via multiple hiding techniques. Use it to
 measure how well a content scanner detects sensitive data across file formats and channels.

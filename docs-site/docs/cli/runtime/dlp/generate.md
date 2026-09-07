@@ -4,6 +4,12 @@ sidebar_label: generate
 
 # runtime dlp generate
 
+:::warning CLI 4.3.0 verified limitation
+
+The installed CLI's PNG/JPEG smoke produced five valid files per format (one clean and four dirty), verified at `2026-09-07T09:24:03.285Z`. Native generation passed, but `--output json` emitted a human-readable summary instead of JSON. The generated `manifest.json` is available; the summary format and optional sharp advisory still require remediation. See the [workflow details](../../../runtime/dlp/generate.md).
+
+:::
+
 ## runtime dlp generate
 
 Generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX
