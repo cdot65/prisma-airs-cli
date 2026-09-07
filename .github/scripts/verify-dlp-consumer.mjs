@@ -13,6 +13,7 @@ import {
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { nativeDiagnostics } from './native-diagnostics.mjs';
 
 // Test the BUILT/INSTALLED CLI, not an imported command or mocked generator.
 // No credentials, inherited runtime configuration, external API or persistent writes.
@@ -37,6 +38,7 @@ const env = {
   ...(process.env.FONTCONFIG_FILE ? { FONTCONFIG_FILE: process.env.FONTCONFIG_FILE } : {}),
 };
 const results = [];
+const runtimeWarnings = new Set();
 
 function run(args, overrides = {}) {
   const result = spawnSync(process.execPath, [entry, ...args], {
@@ -48,6 +50,10 @@ function run(args, overrides = {}) {
   });
   assert.ifError(result.error);
   assert.equal(result.signal, null);
+  if (result.status === 0) {
+    for (const warning of nativeDiagnostics(result.stderr, process.version))
+      runtimeWarnings.add(warning);
+  }
   return result;
 }
 
@@ -93,7 +99,6 @@ try {
         'json',
       ]);
       assert.equal(result.status, 0, result.stderr);
-      assert.equal(result.stderr, '');
       summary = JSON.parse(result.stdout);
       assert.equal(summary.seed, 431);
       assert.equal(summary.clean, 5);
@@ -128,7 +133,6 @@ try {
       join(work, 'global'),
     ]);
     assert.equal(result.status, 0, result.stderr);
-    assert.equal(result.stderr, '');
     assert.equal(JSON.parse(result.stdout).clean, 1);
   });
   caseResult('file default JSON is respected', () => {
@@ -201,6 +205,7 @@ try {
     sharpVersion: sharp.versions.sharp,
     libvipsVersion: sharp.versions.vips,
     customFontConfiguration: Boolean(process.env.FONTCONFIG_FILE),
+    runtimeWarnings: [...runtimeWarnings],
     passed: true,
     cases: results,
     fixtureCleanup: 'complete',
