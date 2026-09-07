@@ -92,7 +92,7 @@ Streaming chat/Responses, both embedding encodings, invalid-input exit codes and
 
 This run used an opt-in, process-only DNS accommodation in the test workspace: fully qualified service lookups and the gateway's existing LAN ingress address, independently verified through its configured secondary DNS resolver. The original HTTPS hostname/SNI, certificate verification and gateway authentication were preserved. No infrastructure settings changed. The public WAN path timed out from this workspace and is not certified by these results.
 
-## Validation and release dependency
+## Validation and release dependency {#validated-candidate-and-release-ordering}
 
 On September 6, 2026 the built CLI passed 8/8 live inference checks using a temporary
 SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
