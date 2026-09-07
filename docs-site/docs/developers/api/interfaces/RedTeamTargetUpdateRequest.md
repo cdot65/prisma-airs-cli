@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetUpdateRequest
 
-Defined in: src/airs/types.ts:266
+Defined in: src/airs/types.ts:267
 
 Request to update a red team target.
 
@@ -10,7 +10,7 @@ Request to update a red team target.
 
 > `optional` **additional\_context?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:271
+Defined in: src/airs/types.ts:272
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:271
 
 > `optional` **background?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:270
+Defined in: src/airs/types.ts:271
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:270
 
 > `optional` **connection\_params?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:269
+Defined in: src/airs/types.ts:270
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:269
 
 > `optional` **metadata?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:272
+Defined in: src/airs/types.ts:273
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:272
 
 > `optional` **name?**: `string`
 
-Defined in: src/airs/types.ts:267
+Defined in: src/airs/types.ts:268
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: src/airs/types.ts:267
 
 > `optional` **target\_type?**: `string`
 
-Defined in: src/airs/types.ts:268
+Defined in: src/airs/types.ts:269

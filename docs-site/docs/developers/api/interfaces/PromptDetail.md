@@ -1,6 +1,6 @@
 # Interface: PromptDetail
 
-Defined in: src/airs/types.ts:303
+Defined in: src/airs/types.ts:304
 
 Normalized individual prompt.
 
@@ -10,7 +10,7 @@ Normalized individual prompt.
 
 > **active**: `boolean`
 
-Defined in: src/airs/types.ts:307
+Defined in: src/airs/types.ts:308
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:307
 
 > `optional` **goal?**: `string`
 
-Defined in: src/airs/types.ts:306
+Defined in: src/airs/types.ts:307
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:306
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:305
+Defined in: src/airs/types.ts:306
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:305
 
 > **promptSetId**: `string`
 
-Defined in: src/airs/types.ts:308
+Defined in: src/airs/types.ts:309
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: src/airs/types.ts:308
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:304
+Defined in: src/airs/types.ts:305

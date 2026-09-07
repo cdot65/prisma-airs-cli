@@ -1,6 +1,6 @@
 # Interface: InstanceRequest
 
-Defined in: src/airs/types.ts:444
+Defined in: src/airs/types.ts:445
 
 Request to create/update an instance.
 
@@ -10,7 +10,7 @@ Request to create/update an instance.
 
 > **appId**: `string`
 
-Defined in: src/airs/types.ts:447
+Defined in: src/airs/types.ts:448
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:447
 
 > **region**: `string`
 
-Defined in: src/airs/types.ts:448
+Defined in: src/airs/types.ts:449
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:448
 
 > **tenantId**: `string`
 
-Defined in: src/airs/types.ts:446
+Defined in: src/airs/types.ts:447
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:446
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:445
+Defined in: src/airs/types.ts:446

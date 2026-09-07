@@ -1,6 +1,6 @@
 # Interface: RuntimeScanResult
 
-Defined in: src/airs/types.ts:48
+Defined in: src/airs/types.ts:49
 
 Normalized result from a runtime prompt scan (sync or async).
 
@@ -10,7 +10,7 @@ Normalized result from a runtime prompt scan (sync or async).
 
 > **action**: `"allow"` \| `"block"`
 
-Defined in: src/airs/types.ts:53
+Defined in: src/airs/types.ts:54
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:53
 
 > **category**: `string`
 
-Defined in: src/airs/types.ts:54
+Defined in: src/airs/types.ts:55
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:54
 
 > **detections**: `Record`\<`string`, `boolean`\>
 
-Defined in: src/airs/types.ts:56
+Defined in: src/airs/types.ts:57
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:56
 
 > `optional` **error?**: `string`
 
-Defined in: src/airs/types.ts:57
+Defined in: src/airs/types.ts:58
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:57
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:49
+Defined in: src/airs/types.ts:50
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:49
 
 > **reportId**: `string`
 
-Defined in: src/airs/types.ts:52
+Defined in: src/airs/types.ts:53
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:52
 
 > `optional` **response?**: `string`
 
-Defined in: src/airs/types.ts:50
+Defined in: src/airs/types.ts:51
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:50
 
 > **scanId**: `string`
 
-Defined in: src/airs/types.ts:51
+Defined in: src/airs/types.ts:52
 
 ***
 
@@ -74,4 +74,4 @@ Defined in: src/airs/types.ts:51
 
 > **triggered**: `boolean`
 
-Defined in: src/airs/types.ts:55
+Defined in: src/airs/types.ts:56

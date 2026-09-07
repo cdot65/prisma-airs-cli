@@ -23,7 +23,8 @@ function makeMockClient() {
   };
 }
 
-vi.mock('@cdot65/prisma-airs-sdk', () => ({
+vi.mock('@cdot65/prisma-airs-sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cdot65/prisma-airs-sdk')>()),
   AIGatewayClient: vi.fn().mockImplementation(() => makeMockClient()),
 }));
 

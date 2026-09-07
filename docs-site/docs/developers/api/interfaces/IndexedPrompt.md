@@ -1,6 +1,6 @@
 # Interface: IndexedPrompt
 
-Defined in: src/airs/types.ts:64
+Defined in: src/airs/types.ts:65
 
 A prompt paired with its stable position and AIRS request ID.
 
@@ -14,7 +14,7 @@ A prompt paired with its stable position and AIRS request ID.
 
 > **index**: `number`
 
-Defined in: src/airs/types.ts:65
+Defined in: src/airs/types.ts:66
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: src/airs/types.ts:65
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:66
+Defined in: src/airs/types.ts:67

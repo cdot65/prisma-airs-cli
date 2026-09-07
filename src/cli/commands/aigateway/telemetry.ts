@@ -1,8 +1,13 @@
-import type { AIGatewayWindowOptions } from '@cdot65/prisma-airs-sdk';
+import type { AIGatewayChartOptions, AIGatewayWindowOptions } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { CliUsageError } from '../../renderer/index.js';
-import { addReadOutput, runDetail, showHelpOnEmpty } from './shared.js';
+import { addReadOutput, failAiGateway, runDetail, showHelpOnEmpty } from './shared.js';
 import { parseDateOption, parseIntegerOption } from './structured-input.js';
+import {
+  addChartFilterOptions,
+  type ChartFilterFlags,
+  chartFiltersFrom,
+} from './telemetry-filters.js';
 
 interface WindowFlags {
   columns?: string;
@@ -33,7 +38,7 @@ function windowFrom(opts: WindowFlags): AIGatewayWindowOptions {
   return window;
 }
 
-function parsePositiveInteger(value: unknown, flag: string): number {
+export function parsePositiveInteger(value: unknown, flag: string): number {
   try {
     const parsed = parseIntegerOption(value);
     if (parsed <= 0) throw new CliUsageError('Expected a positive integer');
@@ -59,20 +64,31 @@ function registerMetric(
   telemetry: Command,
   name: string,
   description: string,
-  method:
-    | 'errorTrends'
-    | 'errors'
-    | 'latency'
-    | 'requests'
-    | 'rescuedRetries'
-    | 'tokens'
-    | 'userTrends'
-    | 'users',
+  method: 'errorTrends' | 'errors' | 'rescuedRetries' | 'userTrends' | 'users',
 ): void {
   const command = addWindowOptions(telemetry.command(name).description(description));
   command.action((opts: WindowFlags) =>
     runDetail(command, opts, (client) => client.telemetry[method](windowFrom(opts))),
   );
+}
+
+function registerFilteredMetric(
+  telemetry: Command,
+  name: 'latency' | 'requests' | 'tokens',
+  description: string,
+): void {
+  const command = addChartFilterOptions(
+    addWindowOptions(telemetry.command(name).description(description)),
+  );
+  command.action(async (opts: WindowFlags & ChartFilterFlags) => {
+    let options: AIGatewayChartOptions;
+    try {
+      options = { ...windowFrom(opts), ...chartFiltersFrom(opts) };
+    } catch (error) {
+      failAiGateway(error);
+    }
+    await runDetail(command, opts, (client) => client.telemetry[name](options));
+  });
 }
 
 /** Register all SDK telemetry reads except the legacy cost renderer. */
@@ -123,7 +139,7 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
     ),
   );
 
-  registerMetric(telemetry, 'latency', 'Get latency telemetry', 'latency');
+  registerFilteredMetric(telemetry, 'latency', 'Get latency telemetry');
 
   const logs = showHelpOnEmpty(telemetry.command('logs').description('Inspect request logs'));
   const logsList = addWindowOptions(
@@ -147,9 +163,9 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
     ),
   );
 
-  registerMetric(telemetry, 'requests', 'Get request count', 'requests');
+  registerFilteredMetric(telemetry, 'requests', 'Get request count');
   registerMetric(telemetry, 'rescued-retries', 'Get rescued retry telemetry', 'rescuedRetries');
-  registerMetric(telemetry, 'tokens', 'Get token usage', 'tokens');
+  registerFilteredMetric(telemetry, 'tokens', 'Get token usage');
   registerMetric(telemetry, 'user-trends', 'Get user trends', 'userTrends');
   registerMetric(telemetry, 'users', 'Get unique-user count', 'users');
 }

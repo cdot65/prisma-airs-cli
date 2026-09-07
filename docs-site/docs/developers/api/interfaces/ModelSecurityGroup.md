@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroup
 
-Defined in: src/airs/types.ts:735
+Defined in: src/airs/types.ts:736
 
 Normalized security group.
 
@@ -10,7 +10,7 @@ Normalized security group.
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:741
+Defined in: src/airs/types.ts:742
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:741
 
 > **description**: `string`
 
-Defined in: src/airs/types.ts:738
+Defined in: src/airs/types.ts:739
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:738
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:737
+Defined in: src/airs/types.ts:738
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:737
 
 > **sourceType**: `string`
 
-Defined in: src/airs/types.ts:739
+Defined in: src/airs/types.ts:740
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:739
 
 > **state**: `string`
 
-Defined in: src/airs/types.ts:740
+Defined in: src/airs/types.ts:741
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:740
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:742
+Defined in: src/airs/types.ts:743
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:742
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:736
+Defined in: src/airs/types.ts:737

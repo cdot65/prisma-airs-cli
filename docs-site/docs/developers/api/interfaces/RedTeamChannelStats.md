@@ -1,6 +1,6 @@
 # Interface: RedTeamChannelStats
 
-Defined in: src/airs/types.ts:513
+Defined in: src/airs/types.ts:514
 
 Normalized network broker channel statistics.
 
@@ -10,7 +10,7 @@ Normalized network broker channel statistics.
 
 > `optional` **clientVersion?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:520
+Defined in: src/airs/types.ts:521
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:520
 
 > `optional` **dockerImage?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:517
+Defined in: src/airs/types.ts:518
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:517
 
 > `optional` **dockerRegistry?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:515
+Defined in: src/airs/types.ts:516
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:515
 
 > `optional` **helmChart?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:516
+Defined in: src/airs/types.ts:517
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:516
 
 > `optional` **onlineChannels?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:518
+Defined in: src/airs/types.ts:519
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:518
 
 > `optional` **serverDomain?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:514
+Defined in: src/airs/types.ts:515
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:514
 
 > `optional` **totalChannels?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:519
+Defined in: src/airs/types.ts:520

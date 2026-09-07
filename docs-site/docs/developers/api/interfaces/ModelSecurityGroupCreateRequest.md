@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupCreateRequest
 
-Defined in: src/airs/types.ts:746
+Defined in: src/airs/types.ts:747
 
 Request to create a security group.
 
@@ -10,7 +10,7 @@ Request to create a security group.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:749
+Defined in: src/airs/types.ts:750
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:749
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:747
+Defined in: src/airs/types.ts:748
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:747
 
 > `optional` **ruleConfigurations?**: `Record`\<`string`, `Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:750
+Defined in: src/airs/types.ts:751
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:750
 
 > **sourceType**: `string`
 
-Defined in: src/airs/types.ts:748
+Defined in: src/airs/types.ts:749

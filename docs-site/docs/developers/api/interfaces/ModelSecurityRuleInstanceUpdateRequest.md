@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleInstanceUpdateRequest
 
-Defined in: src/airs/types.ts:827
+Defined in: src/airs/types.ts:828
 
 Request to update a rule instance.
 
@@ -10,7 +10,7 @@ Request to update a rule instance.
 
 > `optional` **fieldValues?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:829
+Defined in: src/airs/types.ts:830
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:829
 
 > `optional` **state?**: `string`
 
-Defined in: src/airs/types.ts:828
+Defined in: src/airs/types.ts:829

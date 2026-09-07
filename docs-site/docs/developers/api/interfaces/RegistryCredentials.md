@@ -1,6 +1,6 @@
 # Interface: RegistryCredentials
 
-Defined in: src/airs/types.ts:468
+Defined in: src/airs/types.ts:469
 
 Registry credentials.
 
@@ -10,7 +10,7 @@ Registry credentials.
 
 > **expiry**: `string`
 
-Defined in: src/airs/types.ts:470
+Defined in: src/airs/types.ts:471
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:470
 
 > **token**: `string`
 
-Defined in: src/airs/types.ts:469
+Defined in: src/airs/types.ts:470

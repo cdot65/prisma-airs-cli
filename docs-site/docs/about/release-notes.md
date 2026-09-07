@@ -1,5 +1,12 @@
 # Release Notes
 
+## v4.3.0 (2026-09-07)
+
+- Add verified trace, string-metadata, status-code, API-key-ID, provider/model, total-token and cost-range filters to `aigateway telemetry requests`, `cost`, `tokens` and `latency`. Lists use OR; different filters use AND; numeric bounds are inclusive. Cost bounds are in cents, including fractional cents.
+- Pin published SDK `0.24.0` and use its exported filter schema before creating a CLI client or resolving a cost workspace. Malformed input exits 2 without authenticated requests or input values in diagnostics.
+- Reject partially parsed day counts such as `7junk`; resolve cost workspace UUIDs to telemetry slugs. Existing pretty-dollar and explicit JSON/YAML cents/USD fields remain compatible. The cost command retains its rolling-day window.
+- These verified query options do not establish full upstream analytics equivalence. Direct gateway coverage remains 138/242 (57.02%); provider/service limitations remain in the [SDK assessment](https://cdot65.github.io/prisma-airs-sdk/developer/openapi-conformance/).
+
 ## v4.2.2 (2026-09-07)
 
 - Pin SDK `0.23.0`, correcting empty latency response validation. `aigateway telemetry latency` preserves null period mean/percentiles in JSON and YAML instead of failing on a valid empty cohort.

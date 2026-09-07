@@ -1,6 +1,6 @@
 # Interface: SubmittedBatch
 
-Defined in: src/airs/types.ts:76
+Defined in: src/airs/types.ts:77
 
 Receipt for exactly one SDK async submission (at most twenty prompts).
 
@@ -10,7 +10,7 @@ Receipt for exactly one SDK async submission (at most twenty prompts).
 
 > **entries**: [`BatchEntry`](BatchEntry.md)[]
 
-Defined in: src/airs/types.ts:79
+Defined in: src/airs/types.ts:80
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:79
 
 > `optional` **reportId?**: `string`
 
-Defined in: src/airs/types.ts:78
+Defined in: src/airs/types.ts:79
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:78
 
 > **scanId**: `string`
 
-Defined in: src/airs/types.ts:77
+Defined in: src/airs/types.ts:78

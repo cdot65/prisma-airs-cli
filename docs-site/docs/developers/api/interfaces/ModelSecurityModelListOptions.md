@@ -1,6 +1,6 @@
 # Interface: ModelSecurityModelListOptions
 
-Defined in: src/airs/types.ts:934
+Defined in: src/airs/types.ts:935
 
 Filter options for listing models.
 
@@ -10,7 +10,7 @@ Filter options for listing models.
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:940
+Defined in: src/airs/types.ts:941
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:940
 
 > `optional` **search?**: `string`
 
-Defined in: src/airs/types.ts:935
+Defined in: src/airs/types.ts:936
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:935
 
 > `optional` **searchQuery?**: `string`
 
-Defined in: src/airs/types.ts:936
+Defined in: src/airs/types.ts:937
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:936
 
 > `optional` **skip?**: `number`
 
-Defined in: src/airs/types.ts:939
+Defined in: src/airs/types.ts:940
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:939
 
 > `optional` **sortField?**: `string`
 
-Defined in: src/airs/types.ts:937
+Defined in: src/airs/types.ts:938
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: src/airs/types.ts:937
 
 > `optional` **sortOrder?**: `string`
 
-Defined in: src/airs/types.ts:938
+Defined in: src/airs/types.ts:939

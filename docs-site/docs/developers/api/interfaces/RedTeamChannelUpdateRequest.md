@@ -1,6 +1,6 @@
 # Interface: RedTeamChannelUpdateRequest
 
-Defined in: src/airs/types.ts:507
+Defined in: src/airs/types.ts:508
 
 Request to update a network broker channel.
 
@@ -10,7 +10,7 @@ Request to update a network broker channel.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:509
+Defined in: src/airs/types.ts:510
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:509
 
 > `optional` **name?**: `string`
 
-Defined in: src/airs/types.ts:508
+Defined in: src/airs/types.ts:509

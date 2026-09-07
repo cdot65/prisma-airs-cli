@@ -1,6 +1,6 @@
 # Interface: PromptSetService
 
-Defined in: src/airs/types.ts:146
+Defined in: src/airs/types.ts:147
 
 Contract for custom prompt set operations in AI Red Team.
 
@@ -10,7 +10,7 @@ Contract for custom prompt set operations in AI Red Team.
 
 > **addPrompt**(`promptSetId`, `prompt`, `goal?`): `Promise`\<\{ `prompt`: `string`; `uuid`: `string`; \}\>
 
-Defined in: src/airs/types.ts:150
+Defined in: src/airs/types.ts:151
 
 Add a prompt to an existing prompt set.
 
@@ -38,7 +38,7 @@ Add a prompt to an existing prompt set.
 
 > **archivePromptSet**(`uuid`, `archive`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:165
+Defined in: src/airs/types.ts:166
 
 Archive or unarchive a prompt set.
 
@@ -62,7 +62,7 @@ Archive or unarchive a prompt set.
 
 > **createPromptSet**(`name`, `description?`): `Promise`\<\{ `name`: `string`; `uuid`: `string`; \}\>
 
-Defined in: src/airs/types.ts:148
+Defined in: src/airs/types.ts:149
 
 Create a new custom prompt set.
 
@@ -86,7 +86,7 @@ Create a new custom prompt set.
 
 > **createPropertyName**(`name`): `Promise`\<[`MutationResponse`](MutationResponse.md)\>
 
-Defined in: src/airs/types.ts:187
+Defined in: src/airs/types.ts:188
 
 Create a property name.
 
@@ -106,7 +106,7 @@ Create a property name.
 
 > **createPropertyValue**(`name`, `value`): `Promise`\<[`MutationResponse`](MutationResponse.md)\>
 
-Defined in: src/airs/types.ts:191
+Defined in: src/airs/types.ts:192
 
 Create a property value.
 
@@ -130,7 +130,7 @@ Create a property value.
 
 > **deletePrompt**(`setUuid`, `promptUuid`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:183
+Defined in: src/airs/types.ts:184
 
 Delete a prompt.
 
@@ -154,7 +154,7 @@ Delete a prompt.
 
 > **downloadTemplate**(`uuid`): `Promise`\<`string`\>
 
-Defined in: src/airs/types.ts:169
+Defined in: src/airs/types.ts:170
 
 Download CSV template for a prompt set.
 
@@ -174,7 +174,7 @@ Download CSV template for a prompt set.
 
 > **getPrompt**(`setUuid`, `promptUuid`): `Promise`\<[`PromptDetail`](PromptDetail.md)\>
 
-Defined in: src/airs/types.ts:175
+Defined in: src/airs/types.ts:176
 
 Get a single prompt.
 
@@ -198,7 +198,7 @@ Get a single prompt.
 
 > **getPromptSet**(`uuid`): `Promise`\<[`PromptSetDetail`](PromptSetDetail.md)\>
 
-Defined in: src/airs/types.ts:158
+Defined in: src/airs/types.ts:159
 
 Get prompt set details.
 
@@ -218,7 +218,7 @@ Get prompt set details.
 
 > **getPromptSetVersionInfo**(`uuid`): `Promise`\<[`PromptSetVersionInfo`](PromptSetVersionInfo.md)\>
 
-Defined in: src/airs/types.ts:167
+Defined in: src/airs/types.ts:168
 
 Get prompt set version info with stats.
 
@@ -238,7 +238,7 @@ Get prompt set version info with stats.
 
 > **getPropertyNames**(): `Promise`\<`string`[]\>
 
-Defined in: src/airs/types.ts:185
+Defined in: src/airs/types.ts:186
 
 List property names.
 
@@ -252,7 +252,7 @@ List property names.
 
 > **getPropertyValues**(`name`): `Promise`\<[`PropertyValueList`](PropertyValueList.md)\>
 
-Defined in: src/airs/types.ts:189
+Defined in: src/airs/types.ts:190
 
 Get values for a property.
 
@@ -272,7 +272,7 @@ Get values for a property.
 
 > **listPrompts**(`setUuid`, `opts?`): `Promise`\<[`PromptDetail`](PromptDetail.md)[]\>
 
-Defined in: src/airs/types.ts:173
+Defined in: src/airs/types.ts:174
 
 List prompts in a prompt set.
 
@@ -302,7 +302,7 @@ List prompts in a prompt set.
 
 > **listPromptSets**(): `Promise`\<`object`[]\>
 
-Defined in: src/airs/types.ts:156
+Defined in: src/airs/types.ts:157
 
 List all custom prompt sets.
 
@@ -316,7 +316,7 @@ List all custom prompt sets.
 
 > **updatePrompt**(`setUuid`, `promptUuid`, `request`): `Promise`\<[`PromptDetail`](PromptDetail.md)\>
 
-Defined in: src/airs/types.ts:177
+Defined in: src/airs/types.ts:178
 
 Update a prompt.
 
@@ -350,7 +350,7 @@ Update a prompt.
 
 > **updatePromptSet**(`uuid`, `request`): `Promise`\<[`PromptSetDetail`](PromptSetDetail.md)\>
 
-Defined in: src/airs/types.ts:160
+Defined in: src/airs/types.ts:161
 
 Update prompt set name/description.
 
@@ -380,7 +380,7 @@ Update prompt set name/description.
 
 > **uploadPromptsCsv**(`uuid`, `file`): `Promise`\<\{ `message`: `string`; `status`: `number`; \}\>
 
-Defined in: src/airs/types.ts:171
+Defined in: src/airs/types.ts:172
 
 Upload CSV file to a prompt set.
 

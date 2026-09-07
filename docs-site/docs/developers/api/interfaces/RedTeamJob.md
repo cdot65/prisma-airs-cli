@@ -1,6 +1,6 @@
 # Interface: RedTeamJob
 
-Defined in: src/airs/types.ts:199
+Defined in: src/airs/types.ts:200
 
 Normalized red team job/scan info.
 
@@ -10,7 +10,7 @@ Normalized red team job/scan info.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:207
+Defined in: src/airs/types.ts:208
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:207
 
 > `optional` **completed?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:209
+Defined in: src/airs/types.ts:210
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:209
 
 > `optional` **createdAt?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:210
+Defined in: src/airs/types.ts:211
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:210
 
 > **jobType**: `string`
 
-Defined in: src/airs/types.ts:203
+Defined in: src/airs/types.ts:204
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:203
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:201
+Defined in: src/airs/types.ts:202
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:201
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:206
+Defined in: src/airs/types.ts:207
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:206
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:202
+Defined in: src/airs/types.ts:203
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:202
 
 > **targetId**: `string`
 
-Defined in: src/airs/types.ts:204
+Defined in: src/airs/types.ts:205
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:204
 
 > `optional` **targetName?**: `string`
 
-Defined in: src/airs/types.ts:205
+Defined in: src/airs/types.ts:206
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:205
 
 > `optional` **total?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:208
+Defined in: src/airs/types.ts:209
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: src/airs/types.ts:208
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:200
+Defined in: src/airs/types.ts:201

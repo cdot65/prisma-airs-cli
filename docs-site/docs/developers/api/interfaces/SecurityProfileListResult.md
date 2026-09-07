@@ -1,6 +1,6 @@
 # Interface: SecurityProfileListResult
 
-Defined in: src/airs/types.ts:1086
+Defined in: src/airs/types.ts:1087
 
 Paginated profile list result.
 
@@ -10,7 +10,7 @@ Paginated profile list result.
 
 > `optional` **nextOffset?**: `number`
 
-Defined in: src/airs/types.ts:1088
+Defined in: src/airs/types.ts:1089
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:1088
 
 > **profiles**: [`SecurityProfileInfo`](SecurityProfileInfo.md)[]
 
-Defined in: src/airs/types.ts:1087
+Defined in: src/airs/types.ts:1088

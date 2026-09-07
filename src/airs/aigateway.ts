@@ -1,4 +1,5 @@
 import {
+  AIGatewayChartFiltersSchema,
   AIGatewayClient,
   type AIGatewayClientOptions,
   type GatewayWorkspaceCreateRequest,
@@ -183,7 +184,11 @@ export class SdkAiGatewayService implements AiGatewayService {
    * Match a user-supplied ref against the workspace list so name | slug |
    * uuid all work. Unmatched refs pass through so the API's own error stands.
    */
-  private async resolveWorkspaceRef(ref: string, planes: AiGatewayPlane[]): Promise<string> {
+  private async resolveWorkspaceRef(
+    ref: string,
+    planes: AiGatewayPlane[],
+    requireSlug = false,
+  ): Promise<string> {
     for (const plane of planes) {
       let rows: AiGatewayWorkspace[];
       try {
@@ -191,7 +196,8 @@ export class SdkAiGatewayService implements AiGatewayService {
       } catch {
         continue; // e.g. missing grant on this plane — try the next one
       }
-      if (rows.some((w) => w.id === ref || w.slug === ref)) return ref;
+      const byRef = rows.find((w) => w.id === ref || w.slug === ref);
+      if (byRef) return requireSlug ? byRef.slug : ref;
       const byName = rows.filter((w) => w.name === ref);
       if (byName.length > 1) {
         throw new Error(
@@ -204,11 +210,15 @@ export class SdkAiGatewayService implements AiGatewayService {
   }
 
   async getTelemetryCost(opts: AiGatewayCostOptions): Promise<AiGatewayCostReport> {
-    const days = opts.days ?? 7;
-    const workspaceSlug = await this.resolveWorkspaceRef(opts.workspaceSlug, ['data', 'admin']);
+    const { workspaceSlug: workspaceRef, days = 7, ...rawFilters } = opts;
+    const filters = AIGatewayChartFiltersSchema.parse(rawFilters);
+    if (!Number.isSafeInteger(days) || days <= 0)
+      throw new Error('Expected days to be a positive integer');
+    const workspaceSlug = await this.resolveWorkspaceRef(workspaceRef, ['data', 'admin'], true);
     const raw = (await this.client.telemetry.cost({
       workspaceSlug,
       days,
+      ...filters,
     })) as {
       data: {
         isQuotaExceeded: boolean;

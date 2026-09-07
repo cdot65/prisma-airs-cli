@@ -1,6 +1,6 @@
 # Interface: TargetAuthValidationRequest
 
-Defined in: src/airs/types.ts:426
+Defined in: src/airs/types.ts:427
 
 Request to validate target auth credentials.
 
@@ -10,7 +10,7 @@ Request to validate target auth credentials.
 
 > **authConfig**: `unknown`
 
-Defined in: src/airs/types.ts:428
+Defined in: src/airs/types.ts:429
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:428
 
 > **authType**: `string`
 
-Defined in: src/airs/types.ts:427
+Defined in: src/airs/types.ts:428
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:427
 
 > `optional` **targetId?**: `string`
 
-Defined in: src/airs/types.ts:429
+Defined in: src/airs/types.ts:430

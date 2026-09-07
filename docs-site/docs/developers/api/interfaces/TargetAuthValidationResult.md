@@ -1,6 +1,6 @@
 # Interface: TargetAuthValidationResult
 
-Defined in: src/airs/types.ts:433
+Defined in: src/airs/types.ts:434
 
 Result of target auth validation.
 
@@ -10,7 +10,7 @@ Result of target auth validation.
 
 > `optional` **expiresIn?**: `number`
 
-Defined in: src/airs/types.ts:436
+Defined in: src/airs/types.ts:437
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:436
 
 > `optional` **tokenPreview?**: `string`
 
-Defined in: src/airs/types.ts:435
+Defined in: src/airs/types.ts:436
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:435
 
 > **validated**: `boolean`
 
-Defined in: src/airs/types.ts:434
+Defined in: src/airs/types.ts:435

@@ -1,6 +1,6 @@
 # Interface: InstanceResponse
 
-Defined in: src/airs/types.ts:452
+Defined in: src/airs/types.ts:453
 
 Normalized instance response.
 
@@ -10,7 +10,7 @@ Normalized instance response.
 
 > `optional` **appId?**: `string`
 
-Defined in: src/airs/types.ts:455
+Defined in: src/airs/types.ts:456
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:455
 
 > `optional` **isSuccess?**: `boolean`
 
-Defined in: src/airs/types.ts:456
+Defined in: src/airs/types.ts:457
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:456
 
 > `optional` **tenantId?**: `string`
 
-Defined in: src/airs/types.ts:454
+Defined in: src/airs/types.ts:455
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:454
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:453
+Defined in: src/airs/types.ts:454

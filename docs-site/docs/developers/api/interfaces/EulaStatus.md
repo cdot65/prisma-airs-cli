@@ -1,6 +1,6 @@
 # Interface: EulaStatus
 
-Defined in: src/airs/types.ts:415
+Defined in: src/airs/types.ts:416
 
 Normalized EULA acceptance status.
 
@@ -10,7 +10,7 @@ Normalized EULA acceptance status.
 
 > `optional` **acceptedAt?**: `string`
 
-Defined in: src/airs/types.ts:417
+Defined in: src/airs/types.ts:418
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:417
 
 > `optional` **acceptedByUserId?**: `string`
 
-Defined in: src/airs/types.ts:418
+Defined in: src/airs/types.ts:419
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:418
 
 > **isAccepted**: `boolean`
 
-Defined in: src/airs/types.ts:416
+Defined in: src/airs/types.ts:417

@@ -23,7 +23,8 @@ import {
 } from '../renderer/index.js';
 import { registerAiGatewayInference } from './aigateway/inference.js';
 import { registerAiGatewayInventory } from './aigateway/inventory.js';
-import { registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
+import { parsePositiveInteger, registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
+import { addChartFilterOptions, chartFiltersFrom } from './aigateway/telemetry-filters.js';
 
 /** Create an SdkAiGatewayService from config. */
 async function createService() {
@@ -331,34 +332,37 @@ export function registerAiGatewayCommand(program: Command): void {
 
   registerAiGatewayTelemetryReads(telemetry);
 
-  const cost = telemetry
-    .command('cost')
-    .description(
-      'Total and per-day spend for a workspace (API reports cents; pretty output shows dollars)',
-    )
-    .requiredOption('--workspace <slug>', 'Workspace slug (not UUID), e.g. ws-main-a-349e0e')
-    .option('--days <n>', 'Rolling window in days, counted back from now', '7')
-    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
-    .addHelpText(
-      'after',
-      examples(
-        'airs aigateway telemetry cost --workspace ws-main-a-349e0e',
-        'airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
+  const cost = addChartFilterOptions(
+    telemetry
+      .command('cost')
+      .description(
+        'Total and per-day spend for a workspace (API reports cents; pretty output shows dollars)',
+      )
+      .requiredOption('--workspace <ref>', 'Workspace slug, UUID, or unique display name')
+      .option('--days <n>', 'Rolling window in days, counted back from now', '7')
+      .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
+      .addHelpText(
+        'after',
+        examples(
+          'airs aigateway telemetry cost --workspace ws-main-a-349e0e',
+          'airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
+        ),
       ),
-    )
-    .action(async (opts) => {
-      try {
-        const fmt = await resolveOutput(cost, opts);
-        if (fmt === 'pretty') renderAiGatewayHeader();
-        const days = Number.parseInt(opts.days, 10);
-        if (!Number.isFinite(days) || days <= 0) {
-          usageError(`Invalid --days '${opts.days}'. Expected a positive integer`);
-        }
-        const service = await createService();
-        const report = await service.getTelemetryCost({ workspaceSlug: opts.workspace, days });
-        renderCostReport(report, fmt);
-      } catch (err) {
-        failWithGrantHint(err);
-      }
-    });
+  ).action(async (opts) => {
+    try {
+      const days = parsePositiveInteger(opts.days, '--days');
+      const filters = chartFiltersFrom(opts);
+      const fmt = await resolveOutput(cost, opts);
+      if (fmt === 'pretty') renderAiGatewayHeader();
+      const service = await createService();
+      const report = await service.getTelemetryCost({
+        workspaceSlug: opts.workspace,
+        days,
+        ...filters,
+      });
+      renderCostReport(report, fmt);
+    } catch (err) {
+      failWithGrantHint(err);
+    }
+  });
 }

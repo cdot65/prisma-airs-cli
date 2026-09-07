@@ -1,6 +1,6 @@
 # Interface: DeleteResponse
 
-Defined in: src/airs/types.ts:1092
+Defined in: src/airs/types.ts:1093
 
 Delete response from profile/topic deletion.
 
@@ -10,4 +10,4 @@ Delete response from profile/topic deletion.
 
 > **message**: `string`
 
-Defined in: src/airs/types.ts:1093
+Defined in: src/airs/types.ts:1094

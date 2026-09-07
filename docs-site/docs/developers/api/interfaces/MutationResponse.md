@@ -1,6 +1,6 @@
 # Interface: MutationResponse
 
-Defined in: src/airs/types.ts:318
+Defined in: src/airs/types.ts:319
 
 Generic write-op response from custom-attack endpoints (SDK BaseResponseSchema).
 
@@ -10,7 +10,7 @@ Generic write-op response from custom-attack endpoints (SDK BaseResponseSchema).
 
 > **message**: `string`
 
-Defined in: src/airs/types.ts:319
+Defined in: src/airs/types.ts:320
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:319
 
 > `optional` **status?**: `number`
 
-Defined in: src/airs/types.ts:320
+Defined in: src/airs/types.ts:321

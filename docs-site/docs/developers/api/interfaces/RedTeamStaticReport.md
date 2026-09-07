@@ -1,6 +1,6 @@
 # Interface: RedTeamStaticReport
 
-Defined in: src/airs/types.ts:336
+Defined in: src/airs/types.ts:337
 
 Normalized static report summary.
 
@@ -10,7 +10,7 @@ Normalized static report summary.
 
 > `optional` **asr?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:338
+Defined in: src/airs/types.ts:339
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:338
 
 > **categories**: `object`[]
 
-Defined in: src/airs/types.ts:345
+Defined in: src/airs/types.ts:346
 
 #### asr
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:345
 
 > `optional` **reportSummary?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:344
+Defined in: src/airs/types.ts:345
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:344
 
 > `optional` **score?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:337
+Defined in: src/airs/types.ts:338
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:337
 
 > **severityBreakdown**: `object`[]
 
-Defined in: src/airs/types.ts:339
+Defined in: src/airs/types.ts:340
 
 #### failed
 

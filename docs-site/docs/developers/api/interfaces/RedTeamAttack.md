@@ -1,6 +1,6 @@
 # Interface: RedTeamAttack
 
-Defined in: src/airs/types.ts:385
+Defined in: src/airs/types.ts:386
 
 Normalized attack list item (static/dynamic scans).
 
@@ -10,7 +10,7 @@ Normalized attack list item (static/dynamic scans).
 
 > `optional` **category?**: `string`
 
-Defined in: src/airs/types.ts:389
+Defined in: src/airs/types.ts:390
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:389
 
 > **id**: `string`
 
-Defined in: src/airs/types.ts:386
+Defined in: src/airs/types.ts:387
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:386
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:387
+Defined in: src/airs/types.ts:388
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:387
 
 > `optional` **severity?**: `string`
 
-Defined in: src/airs/types.ts:388
+Defined in: src/airs/types.ts:389
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:388
 
 > `optional` **subCategory?**: `string`
 
-Defined in: src/airs/types.ts:390
+Defined in: src/airs/types.ts:391
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:390
 
 > `optional` **subCategoryDisplayName?**: `string`
 
-Defined in: src/airs/types.ts:391
+Defined in: src/airs/types.ts:392
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:391
 
 > **successful**: `boolean`
 
-Defined in: src/airs/types.ts:392
+Defined in: src/airs/types.ts:393

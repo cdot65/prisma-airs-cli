@@ -1,6 +1,6 @@
 # Interface: ModelSecurityModel
 
-Defined in: src/airs/types.ts:917
+Defined in: src/airs/types.ts:918
 
 Normalized model catalog entry.
 
@@ -10,7 +10,7 @@ Normalized model catalog entry.
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:921
+Defined in: src/airs/types.ts:922
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:921
 
 > `optional` **latestVersionFingerprint?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:924
+Defined in: src/airs/types.ts:925
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:924
 
 > `optional` **latestVersionFormats?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:928
+Defined in: src/airs/types.ts:929
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:928
 
 > `optional` **latestVersionHfCommitSha?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:926
+Defined in: src/airs/types.ts:927
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:926
 
 > `optional` **latestVersionOutcome?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:927
+Defined in: src/airs/types.ts:928
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:927
 
 > `optional` **latestVersionRevision?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:925
+Defined in: src/airs/types.ts:926
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:925
 
 > `optional` **latestVersionScanTime?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:930
+Defined in: src/airs/types.ts:931
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:930
 
 > `optional` **latestVersionSourceTypes?**: `string`[] \| `null`
 
-Defined in: src/airs/types.ts:929
+Defined in: src/airs/types.ts:930
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:929
 
 > `optional` **latestVersionUuid?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:923
+Defined in: src/airs/types.ts:924
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:923
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:920
+Defined in: src/airs/types.ts:921
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:920
 
 > **tsgId**: `string`
 
-Defined in: src/airs/types.ts:919
+Defined in: src/airs/types.ts:920
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/airs/types.ts:919
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:922
+Defined in: src/airs/types.ts:923
 
 ***
 
@@ -106,4 +106,4 @@ Defined in: src/airs/types.ts:922
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:918
+Defined in: src/airs/types.ts:919

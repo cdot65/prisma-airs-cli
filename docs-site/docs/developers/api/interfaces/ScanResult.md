@@ -1,6 +1,6 @@
 # Interface: ScanResult
 
-Defined in: src/airs/types.ts:33
+Defined in: src/airs/types.ts:34
 
 Normalized output from a single AIRS prompt scan.
 
@@ -10,7 +10,7 @@ Normalized output from a single AIRS prompt scan.
 
 > **action**: `"allow"` \| `"block"`
 
-Defined in: src/airs/types.ts:36
+Defined in: src/airs/types.ts:37
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:36
 
 > `optional` **category?**: `string`
 
-Defined in: src/airs/types.ts:39
+Defined in: src/airs/types.ts:40
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:39
 
 > `optional` **raw?**: `unknown`
 
-Defined in: src/airs/types.ts:40
+Defined in: src/airs/types.ts:41
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:40
 
 > **reportId**: `string`
 
-Defined in: src/airs/types.ts:35
+Defined in: src/airs/types.ts:36
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:35
 
 > **scanId**: `string`
 
-Defined in: src/airs/types.ts:34
+Defined in: src/airs/types.ts:35
 
 ***
 
@@ -50,6 +50,6 @@ Defined in: src/airs/types.ts:34
 
 > **triggered**: `boolean`
 
-Defined in: src/airs/types.ts:38
+Defined in: src/airs/types.ts:39
 
 Whether the topic guardrail was triggered for this prompt.

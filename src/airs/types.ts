@@ -4,6 +4,7 @@
  */
 
 import type {
+  AIGatewayChartFilters,
   CreateCustomTopicRequest,
   CreateSecurityProfileRequest,
   GatewayDefaultsInput,
@@ -1433,8 +1434,8 @@ export interface AiGatewayWorkspaceUpdateRequest {
 }
 
 /** Options for the AI Gateway telemetry cost query. */
-export interface AiGatewayCostOptions {
-  /** Workspace slug (not UUID) — required by every telemetry endpoint. */
+export interface AiGatewayCostOptions extends AIGatewayChartFilters {
+  /** Workspace slug, UUID or unique display name; resolved to the telemetry slug. */
   workspaceSlug: string;
   /** Rolling window in days, counted back from now. Defaults to 7. */
   days?: number;

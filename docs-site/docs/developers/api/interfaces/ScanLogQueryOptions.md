@@ -1,6 +1,6 @@
 # Interface: ScanLogQueryOptions
 
-Defined in: src/airs/types.ts:1220
+Defined in: src/airs/types.ts:1221
 
 Options for querying scan logs.
 
@@ -10,7 +10,7 @@ Options for querying scan logs.
 
 > **filter**: `string`
 
-Defined in: src/airs/types.ts:1225
+Defined in: src/airs/types.ts:1226
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1225
 
 > **pageNumber**: `number`
 
-Defined in: src/airs/types.ts:1223
+Defined in: src/airs/types.ts:1224
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1223
 
 > **pageSize**: `number`
 
-Defined in: src/airs/types.ts:1224
+Defined in: src/airs/types.ts:1225
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1224
 
 > `optional` **pageToken?**: `string`
 
-Defined in: src/airs/types.ts:1226
+Defined in: src/airs/types.ts:1227
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:1226
 
 > **timeInterval**: `number`
 
-Defined in: src/airs/types.ts:1221
+Defined in: src/airs/types.ts:1222
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: src/airs/types.ts:1221
 
 > **timeUnit**: `string`
 
-Defined in: src/airs/types.ts:1222
+Defined in: src/airs/types.ts:1223

@@ -1,6 +1,6 @@
 # Interface: RedTeamTargetDetail
 
-Defined in: src/airs/types.ts:223
+Defined in: src/airs/types.ts:224
 
 Detailed target info with connection params and metadata.
 
@@ -14,7 +14,7 @@ Detailed target info with connection params and metadata.
 
 > **active**: `boolean`
 
-Defined in: src/airs/types.ts:219
+Defined in: src/airs/types.ts:220
 
 #### Inherited from
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:219
 
 > `optional` **additionalContext?**: `object`
 
-Defined in: src/airs/types.ts:239
+Defined in: src/airs/types.ts:240
 
 #### documents?
 
@@ -46,7 +46,7 @@ Defined in: src/airs/types.ts:239
 
 > `optional` **apiEndpointType?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:225
+Defined in: src/airs/types.ts:226
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: src/airs/types.ts:225
 
 > `optional` **authConfig?**: `Record`\<`string`, `unknown`\> \| `null`
 
-Defined in: src/airs/types.ts:228
+Defined in: src/airs/types.ts:229
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: src/airs/types.ts:228
 
 > `optional` **authType?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:227
+Defined in: src/airs/types.ts:228
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: src/airs/types.ts:227
 
 > `optional` **background?**: `object`
 
-Defined in: src/airs/types.ts:234
+Defined in: src/airs/types.ts:235
 
 #### competitors?
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:234
 
 > `optional` **connectionParams?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:233
+Defined in: src/airs/types.ts:234
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/airs/types.ts:233
 
 > `optional` **connectionType?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:224
+Defined in: src/airs/types.ts:225
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: src/airs/types.ts:224
 
 > `optional` **description?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:232
+Defined in: src/airs/types.ts:233
 
 ***
 
@@ -114,7 +114,7 @@ Defined in: src/airs/types.ts:232
 
 > `optional` **extraInfo?**: `Record`\<`string`, `unknown`\> \| `null`
 
-Defined in: src/airs/types.ts:231
+Defined in: src/airs/types.ts:232
 
 ***
 
@@ -122,7 +122,7 @@ Defined in: src/airs/types.ts:231
 
 > `optional` **metadata?**: `object`
 
-Defined in: src/airs/types.ts:244
+Defined in: src/airs/types.ts:245
 
 #### api\_endpoint\_type?
 
@@ -158,7 +158,7 @@ Defined in: src/airs/types.ts:244
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:216
+Defined in: src/airs/types.ts:217
 
 #### Inherited from
 
@@ -170,7 +170,7 @@ Defined in: src/airs/types.ts:216
 
 > `optional` **networkBrokerChannelUuid?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:229
+Defined in: src/airs/types.ts:230
 
 ***
 
@@ -178,7 +178,7 @@ Defined in: src/airs/types.ts:229
 
 > `optional` **responseMode?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:226
+Defined in: src/airs/types.ts:227
 
 ***
 
@@ -186,7 +186,7 @@ Defined in: src/airs/types.ts:226
 
 > `optional` **sessionSupported?**: `boolean`
 
-Defined in: src/airs/types.ts:230
+Defined in: src/airs/types.ts:231
 
 ***
 
@@ -194,7 +194,7 @@ Defined in: src/airs/types.ts:230
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:217
+Defined in: src/airs/types.ts:218
 
 #### Inherited from
 
@@ -206,7 +206,7 @@ Defined in: src/airs/types.ts:217
 
 > `optional` **targetType?**: `string`
 
-Defined in: src/airs/types.ts:218
+Defined in: src/airs/types.ts:219
 
 #### Inherited from
 
@@ -218,7 +218,7 @@ Defined in: src/airs/types.ts:218
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:215
+Defined in: src/airs/types.ts:216
 
 #### Inherited from
 

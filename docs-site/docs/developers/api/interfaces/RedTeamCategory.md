@@ -1,6 +1,6 @@
 # Interface: RedTeamCategory
 
-Defined in: src/airs/types.ts:324
+Defined in: src/airs/types.ts:325
 
 Normalized attack category with subcategories.
 
@@ -10,7 +10,7 @@ Normalized attack category with subcategories.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:327
+Defined in: src/airs/types.ts:328
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:327
 
 > **displayName**: `string`
 
-Defined in: src/airs/types.ts:326
+Defined in: src/airs/types.ts:327
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:326
 
 > **id**: `string`
 
-Defined in: src/airs/types.ts:325
+Defined in: src/airs/types.ts:326
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:325
 
 > **subCategories**: `object`[]
 
-Defined in: src/airs/types.ts:328
+Defined in: src/airs/types.ts:329
 
 #### description?
 

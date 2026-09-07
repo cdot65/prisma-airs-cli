@@ -1,6 +1,6 @@
 # Interface: PromptSetVersionInfo
 
-Defined in: src/airs/types.ts:292
+Defined in: src/airs/types.ts:293
 
 Prompt set version info with stats.
 
@@ -10,7 +10,7 @@ Prompt set version info with stats.
 
 > **stats**: `object`
 
-Defined in: src/airs/types.ts:295
+Defined in: src/airs/types.ts:296
 
 #### active
 
@@ -30,7 +30,7 @@ Defined in: src/airs/types.ts:295
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:293
+Defined in: src/airs/types.ts:294
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: src/airs/types.ts:293
 
 > **version**: `number`
 
-Defined in: src/airs/types.ts:294
+Defined in: src/airs/types.ts:295

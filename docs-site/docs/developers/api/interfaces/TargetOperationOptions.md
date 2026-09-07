@@ -1,6 +1,6 @@
 # Interface: TargetOperationOptions
 
-Defined in: src/airs/types.ts:276
+Defined in: src/airs/types.ts:277
 
 Options for target create/update operations.
 
@@ -10,4 +10,4 @@ Options for target create/update operations.
 
 > `optional` **validate?**: `boolean`
 
-Defined in: src/airs/types.ts:277
+Defined in: src/airs/types.ts:278

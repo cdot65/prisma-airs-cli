@@ -1,6 +1,6 @@
 # Interface: RedTeamLanguages
 
-Defined in: src/airs/types.ts:528
+Defined in: src/airs/types.ts:529
 
 Normalized tenant language configuration.
 
@@ -10,7 +10,7 @@ Normalized tenant language configuration.
 
 > **languages**: `object`[]
 
-Defined in: src/airs/types.ts:531
+Defined in: src/airs/types.ts:532
 
 #### code
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:531
 
 > **multilingualEnabled**: `boolean`
 
-Defined in: src/airs/types.ts:529
+Defined in: src/airs/types.ts:530
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:529
 
 > **supportedJobTypes**: `string`[]
 
-Defined in: src/airs/types.ts:530
+Defined in: src/airs/types.ts:531
