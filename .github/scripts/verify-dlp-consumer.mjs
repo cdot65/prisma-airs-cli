@@ -4,6 +4,7 @@ import {
   accessSync,
   constants,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -25,10 +26,14 @@ const sharp = consumerRequire('sharp');
 assert.ok(sharp.versions.vips, 'Native libvips must load from this consumer.');
 const work = mkdtempSync(join(tmpdir(), 'prisma-airs-dlp-consumer-'));
 const config = join(work, 'config.json');
+const cache = join(work, 'cache');
+mkdirSync(cache);
 const env = {
   PATH: process.env.PATH,
   PRISMA_AIRS_CONFIG_PATH: config,
   NO_COLOR: '1',
+  // Give fontconfig a writable, disposable cache without inheriting the user's home.
+  XDG_CACHE_HOME: cache,
   ...(process.env.FONTCONFIG_FILE ? { FONTCONFIG_FILE: process.env.FONTCONFIG_FILE } : {}),
 };
 const results = [];
