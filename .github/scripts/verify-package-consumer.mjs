@@ -70,10 +70,17 @@ for (const name of [
   'collectRuntimeDailyReport',
   'renderRuntimeReportHtml',
   'renderRuntimeReportMarkdown',
+  'collectRedTeamEnvironmentReport',
+  'renderRedTeamReportHtml',
+  'renderRedTeamReportMarkdown',
   'writeReportFile',
 ])
   assert.equal(typeof library[name], 'function');
 const reportHelp = command('runtime', 'report', '--help');
+const redTeamDashboardHelp = command('redteam', 'dashboard', '--help');
+for (const flag of ['--output', '--output-file', '--title', '--max-pages', '--strict'])
+  assert.ok(redTeamDashboardHelp.includes(flag));
+assert.equal(typeof sdk.RedTeamClient.prototype.getQuotaSummary, 'function');
 for (const flag of ['--output', '--output-file', '--title', '--max-pages', '--strict'])
   assert.ok(reportHelp.includes(flag));
 const dashboardHelp = command('runtime', 'dashboard', '--help');
@@ -149,6 +156,7 @@ console.log(
       versionAndInferenceHelpPassed: true,
       groupFilterHelpPassed: true,
       runtimeReportHelpPassed: true,
+      redTeamDashboardHelpAndQuotaMethodPassed: true,
       runtimeDashboardAndSessionHelpPassed: true,
       runtimeTimeUnitValidationPassed: true,
       runtimeWarnings: [...diagnostics],

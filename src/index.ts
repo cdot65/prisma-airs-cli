@@ -156,6 +156,13 @@ export type {
   UserInput,
 } from './core/types.js';
 export { writeReportFile } from './reports/io.js';
+export type {
+  RedTeamEnvironmentReport,
+  RedTeamReportClient,
+  RedTeamReportTable,
+} from './reports/redteam.js';
+export { collectRedTeamEnvironmentReport } from './reports/redteam.js';
+export { renderRedTeamReportHtml, renderRedTeamReportMarkdown } from './reports/redteam-render.js';
 export { renderRuntimeReportHtml, renderRuntimeReportMarkdown } from './reports/render.js';
 export { collectRuntimeDailyReport } from './reports/runtime.js';
 export type {

@@ -57,6 +57,7 @@ import {
   usageError,
 } from '../renderer/index.js';
 import { backupTargets } from './backup.js';
+import { registerRedTeamDashboardCommand } from './redteam-dashboard.js';
 import { restoreTargets } from './restore.js';
 
 /** Create an SdkRedTeamService from config. */
@@ -257,6 +258,7 @@ export function parseAdapterVariables(
 /** Register the `redteam` command group. */
 export function registerRedteamCommand(program: Command): void {
   const redteam = program.command('redteam').description('AI Red Team scan operations');
+  registerRedTeamDashboardCommand(redteam);
 
   // -----------------------------------------------------------------------
   // redteam abort — abort a running scan

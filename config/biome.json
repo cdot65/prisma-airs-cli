@@ -10,6 +10,11 @@
       "!config",
       "!artifacts/runtime-report",
       "!artifacts/runtime-dashboard",
+      "!artifacts/redteam-dashboard",
+      "!artifacts/redteam-dashboard-tests.json",
+      "!artifacts/redteam-dashboard-release-tests.json",
+      "!**/airs-redteam-report-*.html",
+      "!**/airs-redteam-report-*.md",
       "!**/debug-api-*.jsonl",
       "!**/airs-runtime-report-*.html",
       "!**/airs-runtime-report-*.md"

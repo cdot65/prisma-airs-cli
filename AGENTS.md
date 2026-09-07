@@ -431,6 +431,18 @@ slug.
 
 All red team commands require Management API credentials.
 
+#### Environment dashboard (CLI 5.1.0 / SDK 0.27.0)
+
+`airs redteam dashboard [--output html|markdown] [--output-file <new-path|->]
+[--max-pages <1-100>] [--title <text>] [--strict]` collects seven read-only SDK feeds.
+Default artifacts are private (0600), no-clobber files in CWD. Debug logging is refused.
+The existing `redteam report <jobId>` remains the individual scan report. Dashboard statistics
+use an unverified server-default window; only scan creation timestamps are filtered locally
+to 24 hours. Missing/partial sources are explicit; strict exits 1 after delivering partial output.
+GET quota uses SDK 0.27.0's additive `getQuotaSummary()`. SDK 0.26.0 lacks that method
+and reports quota unavailable without falling back to POST. See the dashboard CLI docs
+for real command output and verification evidence.
+
 #### Scans
 
 ```bash

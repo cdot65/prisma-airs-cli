@@ -90,17 +90,18 @@ export function buildProgram(): Command {
   program.hook('preAction', async (_thisCommand, actionCommand) => {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
-    const isRuntimeReport =
-      actionCommand.name() === 'report' && actionCommand.parent?.name() === 'runtime';
+    const isEnvironmentReport =
+      (actionCommand.name() === 'report' && actionCommand.parent?.name() === 'runtime') ||
+      (actionCommand.name() === 'dashboard' && actionCommand.parent?.name() === 'redteam');
     if (
-      isRuntimeReport &&
+      isEnvironmentReport &&
       (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))
     )
       usageError(
         'Disable --debug and PANW_AI_SEC_DEBUG for environment reports to avoid persisting sensitive traffic content',
       );
     if (
-      !isRuntimeReport &&
+      !isEnvironmentReport &&
       READ_COMMAND_NAMES.has(actionCommand.name()) &&
       actionCommand.options.some((option) => option.long === '--output')
     ) {

@@ -1,5 +1,21 @@
 # Release Notes
 
+## v5.1.0 (2026-09-07) — Red Team environment dashboard
+
+- Add `airs redteam dashboard` with HTML (default) and Markdown deliverables. Preserve
+  `redteam report <jobId>` for individual scans.
+- Pin SDK 0.27.0 and collect seven read-only Red Team feeds, including GET quota. Explicit
+  pagination budgets and source completeness prevent missing evidence from becoming zero activity.
+- Keep server-default statistics separate from the local 24-hour scan-creation window. Do not
+  infer broker outages or quota exhaustion from incomplete or unlimited counters.
+- Produce private, atomic, no-clobber files in CWD. Refuse debug logging and exclude raw
+  configuration, credentials, scripts, prompts and scan identities from deliverables.
+- Provide inline CSS/JS, hash-based CSP, offline/mobile/no-JS rendering, priority filters and
+  print support. Include actual CLI stdout in the [command examples](../cli/redteam/dashboard.md).
+
+The local implementation passed 1,406 tests and four built-CLI live E2E tests; release validation
+also exercises the registry SDK and package consumer rather than relying on a local dependency link.
+
 ## v5.0.1 (2026-09-07)
 
 Runtime dashboard/session commands reject unsupported time units before config loading,
