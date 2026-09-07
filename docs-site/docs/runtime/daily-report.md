@@ -155,8 +155,10 @@ file's hash is unchanged. Private live artifacts are not included in these downl
 :::warning Later authentication availability check
 
 At **18:15 UTC**, the complete eight-test live suite was rerun through the user's installed,
-published CLI **5.0.0** with registry SDK **0.26.0**: **2 passed / 6 failed**. OAuth timed out
-before returning HTTP, so no fresh positive downstream read was certified. The protected
+published CLI **5.0.0** with registry SDK **0.26.0**: **2 passed / 6 failed**. Most fresh OAuth
+attempts timed out before returning HTTP. The strict-mode request did succeed, returning
+all seven sources complete and **709 session entries across 29 pages**; no-clobber also passed.
+Authentication is therefore intermittent, not completely unavailable. The protected
 content check also could not run to completion because the earlier generation test did not
 produce its Markdown input. Independent credential scans still pass. Curl and
 published SDK 0.25.0 reproduced the same failure, while the dashboard API remained reachable

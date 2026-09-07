@@ -153,7 +153,11 @@ All authorized release actions are delivered:
 ### Final full installed live suite — 18:15 UTC
 
 The complete eight-test suite ran against the user's **published** CLI 5.0.0 / SDK 0.26.0:
-**2 passed / 6 failed**. Diagnostic strict-mode delivery and no-clobber protection passed.
+**2 passed / 6 failed**. Strict-mode delivery and no-clobber protection passed. Inspection of
+that strict artifact confirms a successful authenticated request: all seven sources are complete,
+including 709 sessions across 29 pages, 6 application buckets, 19 profiles and 17 registered apps.
+Authentication is intermittent rather than completely unavailable. This successful installed
+report is retained as `strict.html`; it does not turn the six failed checks into passes.
 Fresh SDK collection, positive HTML/Markdown delivery, positive default CWD delivery, session
 debug retrieval and all-route drill-down failed because authentication timed out before HTTP.
 The content-exclusion test could not finish because the earlier positive-generation test did
