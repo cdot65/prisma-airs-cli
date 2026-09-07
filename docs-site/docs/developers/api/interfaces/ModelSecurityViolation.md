@@ -1,6 +1,6 @@
 # Interface: ModelSecurityViolation
 
-Defined in: prisma-airs-cli/src/airs/types.ts:872
+Defined in: src/airs/types.ts:872
 
 Normalized violation from a scan.
 
@@ -10,7 +10,7 @@ Normalized violation from a scan.
 
 > **description**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:874
+Defined in: src/airs/types.ts:874
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:874
 
 > **file**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:877
+Defined in: src/airs/types.ts:877
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:877
 
 > **ruleDescription**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:879
+Defined in: src/airs/types.ts:879
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:879
 
 > **ruleInstanceState**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:880
+Defined in: src/airs/types.ts:880
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:880
 
 > **ruleName**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:878
+Defined in: src/airs/types.ts:878
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:878
 
 > **threat**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:875
+Defined in: src/airs/types.ts:875
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:875
 
 > **threatDescription**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:876
+Defined in: src/airs/types.ts:876
 
 ***
 
@@ -66,4 +66,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:876
 
 > **uuid**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:873
+Defined in: src/airs/types.ts:873

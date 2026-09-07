@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFileListOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:893
+Defined in: src/airs/types.ts:893
 
 Filter options for listing scanned files.
 
@@ -10,7 +10,7 @@ Filter options for listing scanned files.
 
 > `optional` **limit?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:897
+Defined in: src/airs/types.ts:897
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:897
 
 > `optional` **result?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:895
+Defined in: src/airs/types.ts:895
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:895
 
 > `optional` **skip?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:896
+Defined in: src/airs/types.ts:896
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:896
 
 > `optional` **type?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:894
+Defined in: src/airs/types.ts:894

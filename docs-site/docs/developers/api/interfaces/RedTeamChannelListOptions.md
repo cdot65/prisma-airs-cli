@@ -1,6 +1,6 @@
 # Interface: RedTeamChannelListOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:493
+Defined in: src/airs/types.ts:493
 
 Filters for listing network broker channels.
 
@@ -10,7 +10,7 @@ Filters for listing network broker channels.
 
 > `optional` **limit?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:494
+Defined in: src/airs/types.ts:494
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:494
 
 > `optional` **offset?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:495
+Defined in: src/airs/types.ts:495
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:495
 
 > `optional` **search?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:496
+Defined in: src/airs/types.ts:496
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:496
 
 > `optional` **status?**: `string` \| `string`[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:497
+Defined in: src/airs/types.ts:497

@@ -1,6 +1,6 @@
 # Interface: BulkScanResult
 
-Defined in: prisma-airs-cli/src/airs/types.ts:83
+Defined in: src/airs/types.ts:83
 
 A normalized async result with its stable input position and AIRS request ID.
 
@@ -14,7 +14,7 @@ A normalized async result with its stable input position and AIRS request ID.
 
 > **action**: [`BulkScanAction`](../type-aliases/BulkScanAction.md)
 
-Defined in: prisma-airs-cli/src/airs/types.ts:86
+Defined in: src/airs/types.ts:86
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:86
 
 > **category**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:54
+Defined in: src/airs/types.ts:54
 
 #### Inherited from
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:54
 
 > **detections**: `Record`\<`string`, `boolean`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:56
+Defined in: src/airs/types.ts:56
 
 #### Inherited from
 
@@ -46,7 +46,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:56
 
 > `optional` **error?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:57
+Defined in: src/airs/types.ts:57
 
 #### Inherited from
 
@@ -58,7 +58,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:57
 
 > **index**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:84
+Defined in: src/airs/types.ts:84
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:84
 
 > **prompt**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:49
+Defined in: src/airs/types.ts:49
 
 #### Inherited from
 
@@ -78,7 +78,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:49
 
 > **reportId**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:52
+Defined in: src/airs/types.ts:52
 
 #### Inherited from
 
@@ -90,7 +90,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:52
 
 > **reqId**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:85
+Defined in: src/airs/types.ts:85
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:85
 
 > `optional` **response?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:50
+Defined in: src/airs/types.ts:50
 
 #### Inherited from
 
@@ -110,7 +110,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:50
 
 > **scanId**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:51
+Defined in: src/airs/types.ts:51
 
 #### Inherited from
 
@@ -122,7 +122,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:51
 
 > **triggered**: `boolean`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:55
+Defined in: src/airs/types.ts:55
 
 #### Inherited from
 

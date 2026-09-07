@@ -1,6 +1,6 @@
 # Interface: CustomerAppInfo
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1128
+Defined in: src/airs/types.ts:1128
 
 Normalized customer app.
 
@@ -10,7 +10,7 @@ Normalized customer app.
 
 > `optional` **description?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1131
+Defined in: src/airs/types.ts:1131
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1131
 
 > `optional` **id?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1129
+Defined in: src/airs/types.ts:1129
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1129
 
 > **name**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1130
+Defined in: src/airs/types.ts:1130
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1130
 
 > **raw**: `Record`\<`string`, `unknown`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1132
+Defined in: src/airs/types.ts:1132

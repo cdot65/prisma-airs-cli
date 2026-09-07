@@ -1,6 +1,6 @@
 # Interface: BackupResult
 
-Defined in: prisma-airs-cli/src/backup/types.ts:16
+Defined in: src/backup/types.ts:16
 
 Per-target result reported after a backup run.
 
@@ -10,7 +10,7 @@ Per-target result reported after a backup run.
 
 > `optional` **error?**: `string`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:20
+Defined in: src/backup/types.ts:20
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/backup/types.ts:20
 
 > **filename**: `string`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:18
+Defined in: src/backup/types.ts:18
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/backup/types.ts:18
 
 > **name**: `string`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:17
+Defined in: src/backup/types.ts:17
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: prisma-airs-cli/src/backup/types.ts:17
 
 > **status**: `"failed"` \| `"ok"`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:19
+Defined in: src/backup/types.ts:19

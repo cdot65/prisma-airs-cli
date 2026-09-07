@@ -1,6 +1,6 @@
 # Interface: IterationResult
 
-Defined in: prisma-airs-cli/src/core/types.ts:93
+Defined in: src/core/types.ts:93
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:93
 
 > **analysis**: [`AnalysisReport`](AnalysisReport.md)
 
-Defined in: prisma-airs-cli/src/core/types.ts:100
+Defined in: src/core/types.ts:100
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:100
 
 > **durationMs**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:101
+Defined in: src/core/types.ts:101
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:101
 
 > **iteration**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:94
+Defined in: src/core/types.ts:94
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:94
 
 > **metrics**: [`EfficacyMetrics`](EfficacyMetrics.md)
 
-Defined in: prisma-airs-cli/src/core/types.ts:99
+Defined in: src/core/types.ts:99
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:99
 
 > **testCases**: [`TestCase`](TestCase.md)[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:97
+Defined in: src/core/types.ts:97
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:97
 
 > **testResults**: [`TestResult`](TestResult.md)[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:98
+Defined in: src/core/types.ts:98
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:98
 
 > **timestamp**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:95
+Defined in: src/core/types.ts:95
 
 ***
 
@@ -64,4 +64,4 @@ Defined in: prisma-airs-cli/src/core/types.ts:95
 
 > **topic**: [`CustomTopic`](CustomTopic.md)
 
-Defined in: prisma-airs-cli/src/core/types.ts:96
+Defined in: src/core/types.ts:96

@@ -2,7 +2,7 @@
 
 > **readBackupFile**\<`T`\>(`filePath`): [`BackupEnvelope`](../interfaces/BackupEnvelope.md)\<`T`\>
 
-Defined in: prisma-airs-cli/src/backup/io.ts:44
+Defined in: src/backup/io.ts:44
 
 Read and parse a single backup file. Detects format from extension.
 

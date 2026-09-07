@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleListOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:799
+Defined in: src/airs/types.ts:799
 
 Filter options for listing security rules.
 
@@ -10,7 +10,7 @@ Filter options for listing security rules.
 
 > `optional` **limit?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:803
+Defined in: src/airs/types.ts:803
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:803
 
 > `optional` **searchQuery?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:801
+Defined in: src/airs/types.ts:801
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:801
 
 > `optional` **skip?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:802
+Defined in: src/airs/types.ts:802
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:802
 
 > `optional` **sourceType?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:800
+Defined in: src/airs/types.ts:800

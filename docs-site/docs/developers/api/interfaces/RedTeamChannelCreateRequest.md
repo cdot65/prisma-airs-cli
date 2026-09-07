@@ -1,6 +1,6 @@
 # Interface: RedTeamChannelCreateRequest
 
-Defined in: prisma-airs-cli/src/airs/types.ts:501
+Defined in: src/airs/types.ts:501
 
 Request to create a network broker channel.
 
@@ -10,7 +10,7 @@ Request to create a network broker channel.
 
 > `optional` **description?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:503
+Defined in: src/airs/types.ts:503
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:503
 
 > **name**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:502
+Defined in: src/airs/types.ts:502

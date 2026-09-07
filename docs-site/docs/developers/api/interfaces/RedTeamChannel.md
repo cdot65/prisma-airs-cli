@@ -1,6 +1,6 @@
 # Interface: RedTeamChannel
 
-Defined in: prisma-airs-cli/src/airs/types.ts:478
+Defined in: src/airs/types.ts:478
 
 Normalized network broker channel.
 
@@ -10,7 +10,7 @@ Normalized network broker channel.
 
 > `optional` **addedBy?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:483
+Defined in: src/airs/types.ts:483
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:483
 
 > `optional` **connectedClientsCount?**: `number` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:487
+Defined in: src/airs/types.ts:487
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:487
 
 > `optional` **createdAt?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:484
+Defined in: src/airs/types.ts:484
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:484
 
 > `optional` **description?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:481
+Defined in: src/airs/types.ts:481
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:481
 
 > `optional` **features?**: `Record`\<`string`, `boolean`\> \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:489
+Defined in: src/airs/types.ts:489
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:489
 
 > `optional` **lastOnlineAt?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:486
+Defined in: src/airs/types.ts:486
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:486
 
 > `optional` **name?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:480
+Defined in: src/airs/types.ts:480
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:480
 
 > `optional` **outdatedClientsCount?**: `number` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:488
+Defined in: src/airs/types.ts:488
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:488
 
 > `optional` **status?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:482
+Defined in: src/airs/types.ts:482
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:482
 
 > `optional` **updatedAt?**: `string` \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:485
+Defined in: src/airs/types.ts:485
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:485
 
 > `optional` **uuid?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:479
+Defined in: src/airs/types.ts:479

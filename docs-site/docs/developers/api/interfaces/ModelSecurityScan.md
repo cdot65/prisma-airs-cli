@@ -1,6 +1,6 @@
 # Interface: ModelSecurityScan
 
-Defined in: prisma-airs-cli/src/airs/types.ts:833
+Defined in: src/airs/types.ts:833
 
 Normalized model security scan.
 
@@ -10,7 +10,7 @@ Normalized model security scan.
 
 > **createdAt**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:845
+Defined in: src/airs/types.ts:845
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:845
 
 > **evalOutcome**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:835
+Defined in: src/airs/types.ts:835
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:835
 
 > **evalSummary**: \{ `rulesFailed`: `number`; `rulesPassed`: `number`; `totalRules`: `number`; \} \| `null`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:840
+Defined in: src/airs/types.ts:840
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:840
 
 > **labels**: `object`[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:847
+Defined in: src/airs/types.ts:847
 
 #### key
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:847
 
 > **modelUri**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:836
+Defined in: src/airs/types.ts:836
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:836
 
 > **scanOrigin**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:837
+Defined in: src/airs/types.ts:837
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:837
 
 > **securityGroupName**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:839
+Defined in: src/airs/types.ts:839
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:839
 
 > **sourceType**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:838
+Defined in: src/airs/types.ts:838
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:838
 
 > **updatedAt**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:846
+Defined in: src/airs/types.ts:846
 
 ***
 
@@ -90,4 +90,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:846
 
 > **uuid**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:834
+Defined in: src/airs/types.ts:834

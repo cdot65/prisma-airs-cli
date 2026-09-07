@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupUpdateRequest
 
-Defined in: prisma-airs-cli/src/airs/types.ts:754
+Defined in: src/airs/types.ts:754
 
 Request to update a security group.
 
@@ -10,7 +10,7 @@ Request to update a security group.
 
 > `optional` **description?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:756
+Defined in: src/airs/types.ts:756
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:756
 
 > `optional` **name?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:755
+Defined in: src/airs/types.ts:755

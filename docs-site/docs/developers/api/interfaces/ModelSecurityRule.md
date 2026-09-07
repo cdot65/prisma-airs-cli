@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRule
 
-Defined in: prisma-airs-cli/src/airs/types.ts:771
+Defined in: src/airs/types.ts:771
 
 Normalized security rule.
 
@@ -10,7 +10,7 @@ Normalized security rule.
 
 > **compatibleSources**: `string`[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:776
+Defined in: src/airs/types.ts:776
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:776
 
 > **constantValues**: `Record`\<`string`, `unknown`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:784
+Defined in: src/airs/types.ts:784
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:784
 
 > **defaultState**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:777
+Defined in: src/airs/types.ts:777
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:777
 
 > **defaultValues**: `Record`\<`string`, `unknown`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:785
+Defined in: src/airs/types.ts:785
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:785
 
 > **description**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:774
+Defined in: src/airs/types.ts:774
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:774
 
 > **editableFields**: [`ModelSecurityRuleEditableField`](ModelSecurityRuleEditableField.md)[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:783
+Defined in: src/airs/types.ts:783
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:783
 
 > **name**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:773
+Defined in: src/airs/types.ts:773
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:773
 
 > **remediation**: `object`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:778
+Defined in: src/airs/types.ts:778
 
 #### description
 
@@ -86,7 +86,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:778
 
 > **ruleType**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:775
+Defined in: src/airs/types.ts:775
 
 ***
 
@@ -94,4 +94,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:775
 
 > **uuid**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:772
+Defined in: src/airs/types.ts:772

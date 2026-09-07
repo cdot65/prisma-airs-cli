@@ -1,6 +1,6 @@
 # Class: AirsScanService
 
-Defined in: prisma-airs-cli/src/airs/scanner.ts:7
+Defined in: src/airs/scanner.ts:7
 
 Scans prompts against AIRS security profiles via the Prisma AIRS SDK.
 
@@ -14,7 +14,7 @@ Scans prompts against AIRS security profiles via the Prisma AIRS SDK.
 
 > **new AirsScanService**(`opts`): `AirsScanService`
 
-Defined in: prisma-airs-cli/src/airs/scanner.ts:10
+Defined in: src/airs/scanner.ts:10
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: prisma-airs-cli/src/airs/scanner.ts:10
 
 > **scan**(`profileName`, `prompt`, `sessionId?`): `Promise`\<[`ScanResult`](../interfaces/ScanResult.md)\>
 
-Defined in: prisma-airs-cli/src/airs/scanner.ts:16
+Defined in: src/airs/scanner.ts:16
 
 Scan a single prompt synchronously and return the normalized result.
 
@@ -64,7 +64,7 @@ Scan a single prompt synchronously and return the normalized result.
 
 > **scanBatch**(`profileName`, `prompts`, `concurrency?`, `sessionId?`): `Promise`\<[`ScanResult`](../interfaces/ScanResult.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/scanner.ts:40
+Defined in: src/airs/scanner.ts:40
 
 Scan multiple prompts concurrently (default 5) and return results in order.
 

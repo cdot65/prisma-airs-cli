@@ -1,6 +1,6 @@
 # Interface: ModelSecurityModelVersionListOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:967
+Defined in: src/airs/types.ts:967
 
 Filter options for listing model versions.
 
@@ -10,7 +10,7 @@ Filter options for listing model versions.
 
 > `optional` **limit?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:970
+Defined in: src/airs/types.ts:970
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:970
 
 > `optional` **skip?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:969
+Defined in: src/airs/types.ts:969
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:969
 
 > `optional` **sortOrder?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:968
+Defined in: src/airs/types.ts:968

@@ -1,6 +1,6 @@
 # Interface: PaginationOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1097
+Defined in: src/airs/types.ts:1097
 
 Pagination options for list operations.
 
@@ -10,7 +10,7 @@ Pagination options for list operations.
 
 > `optional` **latest?**: `boolean`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1100
+Defined in: src/airs/types.ts:1100
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1100
 
 > `optional` **limit?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1099
+Defined in: src/airs/types.ts:1099
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1099
 
 > `optional` **offset?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1098
+Defined in: src/airs/types.ts:1098

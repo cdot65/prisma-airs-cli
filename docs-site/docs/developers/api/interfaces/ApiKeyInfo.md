@@ -1,6 +1,6 @@
 # Interface: ApiKeyInfo
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1108
+Defined in: src/airs/types.ts:1108
 
 Normalized API key.
 
@@ -10,7 +10,7 @@ Normalized API key.
 
 > `optional` **apiKey?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1111
+Defined in: src/airs/types.ts:1111
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1111
 
 > `optional` **createdAt?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1113
+Defined in: src/airs/types.ts:1113
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1113
 
 > `optional` **expiresAt?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1114
+Defined in: src/airs/types.ts:1114
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1114
 
 > **id**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1109
+Defined in: src/airs/types.ts:1109
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1109
 
 > `optional` **last8?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1112
+Defined in: src/airs/types.ts:1112
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1112
 
 > **name**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1110
+Defined in: src/airs/types.ts:1110

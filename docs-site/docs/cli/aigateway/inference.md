@@ -44,7 +44,7 @@ redacted headers but omit request/response bodies and never consume a stream ahe
 
 ## Latest verified example output
 
-Captured **2026-09-07T02:01:20.260Z** from the built CLI against the freshly packed SDK candidate.
+Captured **2026-09-07T02:52:01.411Z** from actual CLI execution against AI Gateway.
 Actual built CLI JSON stdout from the passing live suite; response identifiers are redacted. No runtime key or configuration value is retained.
 
 The chat command above returned:
@@ -64,7 +64,7 @@ The chat command above returned:
       }
     }
   ],
-  "created": 1788746472,
+  "created": 1788749512,
   "model": "gpt-5.6-terra",
   "system_fingerprint": null,
   "object": "chat.completion",
@@ -88,7 +88,7 @@ The chat command above returned:
 }
 ```
 
-Streaming chat/Responses, both embedding encodings, invalid-input exit codes and temporary-key cleanup passed in the same 8/8 suite. This is candidate evidence, not a published release.
+Streaming chat/Responses, both embedding encodings, invalid-input exit codes and temporary-key cleanup passed in the same 8/8 suite. This verifies those workflows, not the missing or failed AI Gateway operations.
 
 This run used an opt-in, process-only DNS accommodation in the test workspace: fully qualified service lookups and the gateway's existing LAN ingress address, independently verified through its configured secondary DNS resolver. The original HTTPS hostname/SNI, certificate verification and gateway authentication were preserved. No infrastructure settings changed. The public WAN path timed out from this workspace and is not certified by these results.
 
@@ -98,8 +98,9 @@ On September 6, 2026 the built CLI passed 8/8 live inference checks using a temp
 SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
 The key was removed afterward and the user's config remained unchanged.
 
-The capture above is pre-release evidence from the locally packed SDK candidate. CLI 4.2.0 targets
-the published SDK 0.21.0 with an exact dependency pin; SDK publication precedes CLI publication.
+The latest capture above comes from a fresh npm installation of CLI 4.2.0 and SDK 0.21.0,
+not the earlier development link. Both packages are published, with an exact SDK dependency pin.
+SDK publication preceded CLI publication; an independent inventory check confirmed the temporary key absent.
 Known AI Gateway gaps remain explicit in the [release notes](../../about/release-notes.md).
 The SDK's `scripts/e2e-cli-inference.ts --writes` reproduces the live check from read-only
 SCM credentials without persisting a runtime key.

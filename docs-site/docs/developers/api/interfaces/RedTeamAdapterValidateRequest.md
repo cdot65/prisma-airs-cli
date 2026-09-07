@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterValidateRequest
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1527
+Defined in: src/airs/types.ts:1527
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1527
 
 > `optional` **adapterUuid?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1533
+Defined in: src/airs/types.ts:1533
 
 Resolve redacted/null variable values from this stored adapter before the run.
 
@@ -18,7 +18,7 @@ Resolve redacted/null variable values from this stored adapter before the run.
 
 > **networkBrokerChannelUuid**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1529
+Defined in: src/airs/types.ts:1529
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1529
 
 > **prompt**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1530
+Defined in: src/airs/types.ts:1530
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1530
 
 > **scriptB64**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1528
+Defined in: src/airs/types.ts:1528
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1528
 
 > `optional` **variables?**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1531
+Defined in: src/airs/types.ts:1531

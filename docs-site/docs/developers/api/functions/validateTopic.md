@@ -2,7 +2,7 @@
 
 > **validateTopic**(`topic`): [`ValidationError`](../interfaces/ValidationError.md)[]
 
-Defined in: prisma-airs-cli/src/core/constraints.ts:76
+Defined in: src/core/constraints.ts:76
 
 ## Parameters
 

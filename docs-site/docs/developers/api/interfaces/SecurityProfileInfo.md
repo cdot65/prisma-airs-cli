@@ -1,6 +1,6 @@
 # Interface: SecurityProfileInfo
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1074
+Defined in: src/airs/types.ts:1074
 
 Normalized security profile.
 
@@ -10,7 +10,7 @@ Normalized security profile.
 
 > `optional` **active?**: `boolean`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1078
+Defined in: src/airs/types.ts:1078
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1078
 
 > `optional` **createdBy?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1079
+Defined in: src/airs/types.ts:1079
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1079
 
 > `optional` **lastModifiedTs?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1081
+Defined in: src/airs/types.ts:1081
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1081
 
 > `optional` **policy?**: `Record`\<`string`, `unknown`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1082
+Defined in: src/airs/types.ts:1082
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1082
 
 > **profileId**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1075
+Defined in: src/airs/types.ts:1075
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1075
 
 > **profileName**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1076
+Defined in: src/airs/types.ts:1076
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1076
 
 > `optional` **revision?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1077
+Defined in: src/airs/types.ts:1077
 
 ***
 
@@ -66,4 +66,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1077
 
 > `optional` **updatedBy?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1080
+Defined in: src/airs/types.ts:1080

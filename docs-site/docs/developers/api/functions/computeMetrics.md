@@ -2,7 +2,7 @@
 
 > **computeMetrics**(`results`): [`EfficacyMetrics`](../interfaces/EfficacyMetrics.md)
 
-Defined in: prisma-airs-cli/src/core/metrics.ts:11
+Defined in: src/core/metrics.ts:11
 
 Classify test results into TP/TN/FP/FN and compute efficacy metrics.
 

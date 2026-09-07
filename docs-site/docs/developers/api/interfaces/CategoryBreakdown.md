@@ -1,6 +1,6 @@
 # Interface: CategoryBreakdown
 
-Defined in: prisma-airs-cli/src/core/types.ts:49
+Defined in: src/core/types.ts:49
 
 Per-category error breakdown from a previous iteration's results.
 
@@ -10,7 +10,7 @@ Per-category error breakdown from a previous iteration's results.
 
 > **category**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:50
+Defined in: src/core/types.ts:50
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:50
 
 > **errorRate**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:54
+Defined in: src/core/types.ts:54
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:54
 
 > **fn**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:53
+Defined in: src/core/types.ts:53
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:53
 
 > **fp**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:52
+Defined in: src/core/types.ts:52
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: prisma-airs-cli/src/core/types.ts:52
 
 > **total**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:51
+Defined in: src/core/types.ts:51

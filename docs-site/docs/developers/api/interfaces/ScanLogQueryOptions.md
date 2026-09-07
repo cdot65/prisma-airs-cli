@@ -1,6 +1,6 @@
 # Interface: ScanLogQueryOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1220
+Defined in: src/airs/types.ts:1220
 
 Options for querying scan logs.
 
@@ -10,7 +10,7 @@ Options for querying scan logs.
 
 > **filter**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1225
+Defined in: src/airs/types.ts:1225
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1225
 
 > **pageNumber**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1223
+Defined in: src/airs/types.ts:1223
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1223
 
 > **pageSize**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1224
+Defined in: src/airs/types.ts:1224
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1224
 
 > `optional` **pageToken?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1226
+Defined in: src/airs/types.ts:1226
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1226
 
 > **timeInterval**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1221
+Defined in: src/airs/types.ts:1221
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1221
 
 > **timeUnit**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1222
+Defined in: src/airs/types.ts:1222

@@ -1,6 +1,6 @@
 # Interface: TestResult
 
-Defined in: prisma-airs-cli/src/core/types.ts:57
+Defined in: src/core/types.ts:57
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:57
 
 > **actualTriggered**: `boolean`
 
-Defined in: prisma-airs-cli/src/core/types.ts:59
+Defined in: src/core/types.ts:59
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:59
 
 > **correct**: `boolean`
 
-Defined in: prisma-airs-cli/src/core/types.ts:63
+Defined in: src/core/types.ts:63
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:63
 
 > **reportId**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:62
+Defined in: src/core/types.ts:62
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:62
 
 > **scanAction**: `"allow"` \| `"block"`
 
-Defined in: prisma-airs-cli/src/core/types.ts:60
+Defined in: src/core/types.ts:60
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:60
 
 > **scanId**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:61
+Defined in: src/core/types.ts:61
 
 ***
 
@@ -48,4 +48,4 @@ Defined in: prisma-airs-cli/src/core/types.ts:61
 
 > **testCase**: [`TestCase`](TestCase.md)
 
-Defined in: prisma-airs-cli/src/core/types.ts:58
+Defined in: src/core/types.ts:58

@@ -1,6 +1,6 @@
 # Interface: UserInput
 
-Defined in: prisma-airs-cli/src/core/types.ts:17
+Defined in: src/core/types.ts:17
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:17
 
 > `optional` **accumulateTests?**: `boolean`
 
-Defined in: prisma-airs-cli/src/core/types.ts:27
+Defined in: src/core/types.ts:27
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:27
 
 > `optional` **createPromptSet?**: `boolean`
 
-Defined in: prisma-airs-cli/src/core/types.ts:29
+Defined in: src/core/types.ts:29
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:29
 
 > **intent**: `"allow"` \| `"block"`
 
-Defined in: prisma-airs-cli/src/core/types.ts:19
+Defined in: src/core/types.ts:19
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:19
 
 > `optional` **maxAccumulatedTests?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:28
+Defined in: src/core/types.ts:28
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:28
 
 > `optional` **maxIterations?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:22
+Defined in: src/core/types.ts:22
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:22
 
 > `optional` **maxRegressions?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:24
+Defined in: src/core/types.ts:24
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:24
 
 > `optional` **plateauBand?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:26
+Defined in: src/core/types.ts:26
 
 ***
 
@@ -64,7 +64,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:26
 
 > `optional` **plateauWindow?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:25
+Defined in: src/core/types.ts:25
 
 ***
 
@@ -72,7 +72,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:25
 
 > **profileName**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:21
+Defined in: src/core/types.ts:21
 
 ***
 
@@ -80,7 +80,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:21
 
 > `optional` **promptSetName?**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:30
+Defined in: src/core/types.ts:30
 
 ***
 
@@ -88,7 +88,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:30
 
 > `optional` **scanRate?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:32
+Defined in: src/core/types.ts:32
 
 Max AIRS scan API calls per second. Undefined = unlimited.
 
@@ -98,7 +98,7 @@ Max AIRS scan API calls per second. Undefined = unlimited.
 
 > `optional` **seedExamples?**: `string`[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:20
+Defined in: src/core/types.ts:20
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:20
 
 > `optional` **targetCoverage?**: `number`
 
-Defined in: prisma-airs-cli/src/core/types.ts:23
+Defined in: src/core/types.ts:23
 
 ***
 
@@ -114,4 +114,4 @@ Defined in: prisma-airs-cli/src/core/types.ts:23
 
 > **topicDescription**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:18
+Defined in: src/core/types.ts:18

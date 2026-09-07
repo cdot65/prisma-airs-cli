@@ -2,7 +2,7 @@
 
 > **validateName**(`name`): [`ValidationError`](../interfaces/ValidationError.md)[]
 
-Defined in: prisma-airs-cli/src/core/constraints.ts:20
+Defined in: src/core/constraints.ts:20
 
 ## Parameters
 

@@ -1,6 +1,6 @@
 # Interface: CustomTopic
 
-Defined in: prisma-airs-cli/src/core/types.ts:8
+Defined in: src/core/types.ts:8
 
 Core domain types — shared across all Prisma AIRS CLI modules.
 
@@ -10,7 +10,7 @@ Core domain types — shared across all Prisma AIRS CLI modules.
 
 > **description**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:10
+Defined in: src/core/types.ts:10
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:10
 
 > **examples**: `string`[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:11
+Defined in: src/core/types.ts:11
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: prisma-airs-cli/src/core/types.ts:11
 
 > **name**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:9
+Defined in: src/core/types.ts:9

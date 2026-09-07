@@ -1,6 +1,6 @@
 # Interface: BatchEntry
 
-Defined in: prisma-airs-cli/src/airs/types.ts:70
+Defined in: src/airs/types.ts:70
 
 Correlation data for one prompt accepted in an async AIRS submission.
 
@@ -14,7 +14,7 @@ Correlation data for one prompt accepted in an async AIRS submission.
 
 > **index**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:65
+Defined in: src/airs/types.ts:65
 
 #### Inherited from
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:65
 
 > **prompt**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:66
+Defined in: src/airs/types.ts:66
 
 #### Inherited from
 
@@ -38,7 +38,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:66
 
 > **reqId**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:72
+Defined in: src/airs/types.ts:72
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:72
 
 > **scanId**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:71
+Defined in: src/airs/types.ts:71

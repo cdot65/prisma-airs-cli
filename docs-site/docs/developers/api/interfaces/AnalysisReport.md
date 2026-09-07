@@ -1,6 +1,6 @@
 # Interface: AnalysisReport
 
-Defined in: prisma-airs-cli/src/core/types.ts:83
+Defined in: src/core/types.ts:83
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:83
 
 > **falseNegativePatterns**: `string`[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:86
+Defined in: src/core/types.ts:86
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:86
 
 > **falsePositivePatterns**: `string`[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:85
+Defined in: src/core/types.ts:85
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: prisma-airs-cli/src/core/types.ts:85
 
 > **suggestions**: `string`[]
 
-Defined in: prisma-airs-cli/src/core/types.ts:87
+Defined in: src/core/types.ts:87
 
 ***
 
@@ -32,4 +32,4 @@ Defined in: prisma-airs-cli/src/core/types.ts:87
 
 > **summary**: `string`
 
-Defined in: prisma-airs-cli/src/core/types.ts:84
+Defined in: src/core/types.ts:84

@@ -1,6 +1,6 @@
 # Interface: ModelSecurityService
 
-Defined in: prisma-airs-cli/src/airs/types.ts:980
+Defined in: src/airs/types.ts:980
 
 Contract for Model Security operations.
 
@@ -10,7 +10,7 @@ Contract for Model Security operations.
 
 > **addLabels**(`scanUuid`, `labels`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1037
+Defined in: src/airs/types.ts:1037
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1037
 
 > **createGroup**(`request`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:988
+Defined in: src/airs/types.ts:988
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:988
 
 > **createScan**(`request`): `Promise`\<[`ModelSecurityScan`](ModelSecurityScan.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1011
+Defined in: src/airs/types.ts:1011
 
 #### Parameters
 
@@ -68,7 +68,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1011
 
 > **deleteGroup**(`uuid`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:990
+Defined in: src/airs/types.ts:990
 
 #### Parameters
 
@@ -86,7 +86,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:990
 
 > **deleteLabels**(`scanUuid`, `keys`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1039
+Defined in: src/airs/types.ts:1039
 
 #### Parameters
 
@@ -108,7 +108,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1039
 
 > **getEvaluation**(`uuid`): `Promise`\<[`ModelSecurityEvaluation`](ModelSecurityEvaluation.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1024
+Defined in: src/airs/types.ts:1024
 
 #### Parameters
 
@@ -126,7 +126,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1024
 
 > **getEvaluations**(`scanUuid`, `opts?`): `Promise`\<\{ `evaluations`: [`ModelSecurityEvaluation`](ModelSecurityEvaluation.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1020
+Defined in: src/airs/types.ts:1020
 
 #### Parameters
 
@@ -154,7 +154,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1020
 
 > **getFiles**(`scanUuid`, `opts?`): `Promise`\<\{ `files`: [`ModelSecurityFile`](ModelSecurityFile.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1032
+Defined in: src/airs/types.ts:1032
 
 #### Parameters
 
@@ -176,7 +176,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1032
 
 > **getGroup**(`uuid`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:987
+Defined in: src/airs/types.ts:987
 
 #### Parameters
 
@@ -194,7 +194,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:987
 
 > **getLabelKeys**(`opts?`): `Promise`\<\{ `keys`: `string`[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1040
+Defined in: src/airs/types.ts:1040
 
 #### Parameters
 
@@ -218,7 +218,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1040
 
 > **getLabelValues**(`key`, `opts?`): `Promise`\<\{ `totalItems`: `number`; `values`: `string`[]; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1044
+Defined in: src/airs/types.ts:1044
 
 #### Parameters
 
@@ -246,7 +246,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1044
 
 > **getModel**(`uuid`): `Promise`\<[`ModelSecurityModel`](ModelSecurityModel.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1057
+Defined in: src/airs/types.ts:1057
 
 #### Parameters
 
@@ -264,7 +264,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1057
 
 > **getModelVersion**(`uuid`): `Promise`\<[`ModelSecurityModelVersion`](ModelSecurityModelVersion.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1062
+Defined in: src/airs/types.ts:1062
 
 #### Parameters
 
@@ -282,7 +282,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1062
 
 > **getPyPIAuth**(): `Promise`\<[`ModelSecurityPyPIAuth`](ModelSecurityPyPIAuth.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1049
+Defined in: src/airs/types.ts:1049
 
 #### Returns
 
@@ -294,7 +294,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1049
 
 > **getRule**(`uuid`): `Promise`\<[`ModelSecurityRule`](ModelSecurityRule.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1009
+Defined in: src/airs/types.ts:1009
 
 #### Parameters
 
@@ -312,7 +312,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1009
 
 > **getRuleInstance**(`groupUuid`, `instanceUuid`): `Promise`\<[`ModelSecurityRuleInstance`](ModelSecurityRuleInstance.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:996
+Defined in: src/airs/types.ts:996
 
 #### Parameters
 
@@ -334,7 +334,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:996
 
 > **getScan**(`uuid`): `Promise`\<[`ModelSecurityScan`](ModelSecurityScan.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1018
+Defined in: src/airs/types.ts:1018
 
 #### Parameters
 
@@ -352,7 +352,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1018
 
 > **getViolation**(`uuid`): `Promise`\<[`ModelSecurityViolation`](ModelSecurityViolation.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1030
+Defined in: src/airs/types.ts:1030
 
 #### Parameters
 
@@ -370,7 +370,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1030
 
 > **getViolations**(`scanUuid`, `opts?`): `Promise`\<\{ `totalItems`: `number`; `violations`: [`ModelSecurityViolation`](ModelSecurityViolation.md)[]; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1026
+Defined in: src/airs/types.ts:1026
 
 #### Parameters
 
@@ -398,7 +398,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1026
 
 > **listAllGroups**(`opts?`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:984
+Defined in: src/airs/types.ts:984
 
 #### Parameters
 
@@ -416,7 +416,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:984
 
 > **listAllModels**(`opts?`): `Promise`\<[`ModelSecurityModel`](ModelSecurityModel.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1054
+Defined in: src/airs/types.ts:1054
 
 #### Parameters
 
@@ -434,7 +434,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1054
 
 > **listAllRules**(`opts?`): `Promise`\<[`ModelSecurityRule`](ModelSecurityRule.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1006
+Defined in: src/airs/types.ts:1006
 
 #### Parameters
 
@@ -452,7 +452,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1006
 
 > **listAllScans**(`opts?`): `Promise`\<[`ModelSecurityScan`](ModelSecurityScan.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1015
+Defined in: src/airs/types.ts:1015
 
 #### Parameters
 
@@ -470,7 +470,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1015
 
 > **listGroups**(`opts?`): `Promise`\<\{ `groups`: [`ModelSecurityGroup`](ModelSecurityGroup.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:981
+Defined in: src/airs/types.ts:981
 
 #### Parameters
 
@@ -488,7 +488,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:981
 
 > **listModels**(`opts?`): `Promise`\<\{ `models`: [`ModelSecurityModel`](ModelSecurityModel.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1051
+Defined in: src/airs/types.ts:1051
 
 #### Parameters
 
@@ -506,7 +506,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1051
 
 > **listModelVersionFiles**(`modelVersionUuid`, `opts?`): `Promise`\<\{ `files`: [`ModelSecurityFile`](ModelSecurityFile.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1063
+Defined in: src/airs/types.ts:1063
 
 #### Parameters
 
@@ -534,7 +534,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1063
 
 > **listModelVersions**(`modelUuid`, `opts?`): `Promise`\<\{ `totalItems`: `number`; `versions`: [`ModelSecurityModelVersion`](ModelSecurityModelVersion.md)[]; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1058
+Defined in: src/airs/types.ts:1058
 
 #### Parameters
 
@@ -556,7 +556,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1058
 
 > **listRuleInstances**(`groupUuid`, `opts?`): `Promise`\<\{ `ruleInstances`: [`ModelSecurityRuleInstance`](ModelSecurityRuleInstance.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:992
+Defined in: src/airs/types.ts:992
 
 #### Parameters
 
@@ -578,7 +578,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:992
 
 > **listRules**(`opts?`): `Promise`\<\{ `rules`: [`ModelSecurityRule`](ModelSecurityRule.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1003
+Defined in: src/airs/types.ts:1003
 
 #### Parameters
 
@@ -596,7 +596,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1003
 
 > **listScans**(`opts?`): `Promise`\<\{ `scans`: [`ModelSecurityScan`](ModelSecurityScan.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1012
+Defined in: src/airs/types.ts:1012
 
 #### Parameters
 
@@ -614,7 +614,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1012
 
 > **setLabels**(`scanUuid`, `labels`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1038
+Defined in: src/airs/types.ts:1038
 
 #### Parameters
 
@@ -636,7 +636,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1038
 
 > **updateGroup**(`uuid`, `request`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:989
+Defined in: src/airs/types.ts:989
 
 #### Parameters
 
@@ -658,7 +658,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:989
 
 > **updateRuleInstance**(`groupUuid`, `instanceUuid`, `request`): `Promise`\<[`ModelSecurityRuleInstance`](ModelSecurityRuleInstance.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:997
+Defined in: src/airs/types.ts:997
 
 #### Parameters
 

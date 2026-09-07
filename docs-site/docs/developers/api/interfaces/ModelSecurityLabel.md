@@ -1,6 +1,6 @@
 # Interface: ModelSecurityLabel
 
-Defined in: prisma-airs-cli/src/airs/types.ts:901
+Defined in: src/airs/types.ts:901
 
 Label key-value pair.
 
@@ -10,7 +10,7 @@ Label key-value pair.
 
 > **key**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:902
+Defined in: src/airs/types.ts:902
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:902
 
 > **value**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:903
+Defined in: src/airs/types.ts:903

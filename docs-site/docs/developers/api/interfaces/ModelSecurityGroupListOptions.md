@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupListOptions
 
-Defined in: prisma-airs-cli/src/airs/types.ts:760
+Defined in: src/airs/types.ts:760
 
 Filter options for listing security groups.
 
@@ -10,7 +10,7 @@ Filter options for listing security groups.
 
 > `optional` **enabledRules?**: `string`[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:765
+Defined in: src/airs/types.ts:765
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:765
 
 > `optional` **limit?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:767
+Defined in: src/airs/types.ts:767
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:767
 
 > `optional` **searchQuery?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:762
+Defined in: src/airs/types.ts:762
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:762
 
 > `optional` **skip?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:766
+Defined in: src/airs/types.ts:766
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:766
 
 > `optional` **sortDir?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:764
+Defined in: src/airs/types.ts:764
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:764
 
 > `optional` **sortField?**: `string`
 
-Defined in: prisma-airs-cli/src/airs/types.ts:763
+Defined in: src/airs/types.ts:763
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: prisma-airs-cli/src/airs/types.ts:763
 
 > `optional` **sourceTypes?**: `string`[]
 
-Defined in: prisma-airs-cli/src/airs/types.ts:761
+Defined in: src/airs/types.ts:761

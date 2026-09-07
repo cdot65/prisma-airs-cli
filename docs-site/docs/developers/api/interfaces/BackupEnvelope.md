@@ -1,6 +1,6 @@
 # Interface: BackupEnvelope\<T\>
 
-Defined in: prisma-airs-cli/src/backup/types.ts:8
+Defined in: src/backup/types.ts:8
 
 Envelope wrapping any backed-up resource.
 
@@ -16,7 +16,7 @@ Envelope wrapping any backed-up resource.
 
 > **data**: `T`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:12
+Defined in: src/backup/types.ts:12
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: prisma-airs-cli/src/backup/types.ts:12
 
 > **exportedAt**: `string`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:11
+Defined in: src/backup/types.ts:11
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: prisma-airs-cli/src/backup/types.ts:11
 
 > **resourceType**: `"redteam-target"`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:10
+Defined in: src/backup/types.ts:10
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: prisma-airs-cli/src/backup/types.ts:10
 
 > **version**: `string`
 
-Defined in: prisma-airs-cli/src/backup/types.ts:9
+Defined in: src/backup/types.ts:9

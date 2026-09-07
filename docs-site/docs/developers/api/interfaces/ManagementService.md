@@ -1,6 +1,6 @@
 # Interface: ManagementService
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1241
+Defined in: src/airs/types.ts:1241
 
 Contract for AIRS topic CRUD, profile CRUD, and profile linking operations.
 
@@ -10,7 +10,7 @@ Contract for AIRS topic CRUD, profile CRUD, and profile linking operations.
 
 > **assignTopicsToProfile**(`profileName`, `topics`, `guardrailAction?`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1266
+Defined in: src/airs/types.ts:1266
 
 Assign multiple topics to a security profile's topic-guardrails.
 
@@ -38,7 +38,7 @@ Assign multiple topics to a security profile's topic-guardrails.
 
 > **assignTopicToProfile**(`profileName`, `topicId`, `topicName`, `action`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1259
+Defined in: src/airs/types.ts:1259
 
 Assign a topic to a security profile's topic-guardrails.
 
@@ -70,7 +70,7 @@ Assign a topic to a security profile's topic-guardrails.
 
 > **createApiKey**(`request`): `Promise`\<[`ApiKeyInfo`](ApiKeyInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1299
+Defined in: src/airs/types.ts:1299
 
 #### Parameters
 
@@ -88,7 +88,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1299
 
 > **createProfile**(`request`): `Promise`\<[`SecurityProfileInfo`](SecurityProfileInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1285
+Defined in: src/airs/types.ts:1285
 
 Create a security profile.
 
@@ -108,7 +108,7 @@ Create a security profile.
 
 > **createTopic**(`request`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1243
+Defined in: src/airs/types.ts:1243
 
 Create a new custom topic.
 
@@ -128,7 +128,7 @@ Create a new custom topic.
 
 > **deleteApiKey**(`apiKeyName`, `updatedBy`): `Promise`\<[`DeleteResponse`](DeleteResponse.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1301
+Defined in: src/airs/types.ts:1301
 
 #### Parameters
 
@@ -150,7 +150,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1301
 
 > **deleteCustomerApp**(`appName`, `updatedBy`): `Promise`\<[`CustomerAppInfo`](CustomerAppInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1308
+Defined in: src/airs/types.ts:1308
 
 #### Parameters
 
@@ -172,7 +172,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1308
 
 > **deleteProfile**(`profileId`): `Promise`\<[`DeleteResponse`](DeleteResponse.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1292
+Defined in: src/airs/types.ts:1292
 
 Delete a security profile.
 
@@ -192,7 +192,7 @@ Delete a security profile.
 
 > **deleteTopic**(`topicId`): `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1247
+Defined in: src/airs/types.ts:1247
 
 Delete a custom topic by ID.
 
@@ -212,7 +212,7 @@ Delete a custom topic by ID.
 
 > **forceDeleteProfile**(`profileId`, `updatedBy`): `Promise`\<[`DeleteResponse`](DeleteResponse.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1294
+Defined in: src/airs/types.ts:1294
 
 Force-delete a security profile (removes from referencing policies).
 
@@ -236,7 +236,7 @@ Force-delete a security profile (removes from referencing policies).
 
 > **forceDeleteTopic**(`topicId`, `updatedBy?`): `Promise`\<[`DeleteResponse`](DeleteResponse.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1249
+Defined in: src/airs/types.ts:1249
 
 Force-delete a custom topic (removes from all referencing profiles).
 
@@ -260,7 +260,7 @@ Force-delete a custom topic (removes from all referencing profiles).
 
 > **getCustomerApp**(`appName`): `Promise`\<[`CustomerAppInfo`](CustomerAppInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1306
+Defined in: src/airs/types.ts:1306
 
 #### Parameters
 
@@ -278,7 +278,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1306
 
 > **getCustomerAppConsumption**(`appName`, `opts?`): `Promise`\<[`CustomerAppConsumption`](CustomerAppConsumption.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1310
+Defined in: src/airs/types.ts:1310
 
 Get per-app token consumption + violation breakdown from the SCM dashboard endpoints.
 
@@ -302,7 +302,7 @@ Get per-app token consumption + violation breakdown from the SCM dashboard endpo
 
 > **getProfile**(`profileId`): `Promise`\<[`SecurityProfileInfo`](SecurityProfileInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1275
+Defined in: src/airs/types.ts:1275
 
 Get a single security profile by UUID.
 
@@ -322,7 +322,7 @@ Get a single security profile by UUID.
 
 > **getProfileByName**(`profileName`): `Promise`\<[`SecurityProfileInfo`](SecurityProfileInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1277
+Defined in: src/airs/types.ts:1277
 
 Get a single security profile by name (returns highest revision).
 
@@ -342,7 +342,7 @@ Get a single security profile by name (returns highest revision).
 
 > **getProfileTopics**(`profileName`): `Promise`\<[`ProfileTopic`](ProfileTopic.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1272
+Defined in: src/airs/types.ts:1272
 
 List all topics configured in a profile with full details.
 
@@ -362,7 +362,7 @@ List all topics configured in a profile with full details.
 
 > **getTopic**(`topicId`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1255
+Defined in: src/airs/types.ts:1255
 
 Get a single custom topic by ID.
 
@@ -382,7 +382,7 @@ Get a single custom topic by ID.
 
 > **getTopicByName**(`topicName`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1257
+Defined in: src/airs/types.ts:1257
 
 Get a single custom topic by name.
 
@@ -402,7 +402,7 @@ Get a single custom topic by name.
 
 > **listAllApiKeys**(`opts?`): `Promise`\<[`ApiKeyInfo`](ApiKeyInfo.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1298
+Defined in: src/airs/types.ts:1298
 
 #### Parameters
 
@@ -426,7 +426,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1298
 
 > **listAllCustomerApps**(`opts?`): `Promise`\<[`CustomerAppInfo`](CustomerAppInfo.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1305
+Defined in: src/airs/types.ts:1305
 
 #### Parameters
 
@@ -450,7 +450,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1305
 
 > **listAllProfiles**(`opts?`): `Promise`\<[`SecurityProfileInfo`](SecurityProfileInfo.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1281
+Defined in: src/airs/types.ts:1281
 
 Walk all security-profile pages.
 
@@ -470,7 +470,7 @@ Walk all security-profile pages.
 
 > **listApiKeys**(`opts?`): `Promise`\<[`ApiKeyListResult`](ApiKeyListResult.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1297
+Defined in: src/airs/types.ts:1297
 
 #### Parameters
 
@@ -488,7 +488,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1297
 
 > **listConsumptionApps**(`opts?`): `Promise`\<[`ConsumptionAppListEntry`](ConsumptionAppListEntry.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1322
+Defined in: src/airs/types.ts:1322
 
 List dashboard application buckets - the canonical apps source for consumption reporting.
 
@@ -519,7 +519,7 @@ per distinct scan-payload `metadata.app_name` per registered customer-app. Disti
 
 > **listCustomerApps**(`opts?`): `Promise`\<[`CustomerAppListResult`](CustomerAppListResult.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1304
+Defined in: src/airs/types.ts:1304
 
 #### Parameters
 
@@ -537,7 +537,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1304
 
 > **listDeploymentProfiles**(`opts?`): `Promise`\<[`DeploymentProfileInfo`](DeploymentProfileInfo.md)[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1328
+Defined in: src/airs/types.ts:1328
 
 #### Parameters
 
@@ -557,7 +557,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1328
 
 > **listLatestTopics**(`opts?`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1253
+Defined in: src/airs/types.ts:1253
 
 List latest topic revisions with client-side grouping in the SDK.
 
@@ -577,7 +577,7 @@ List latest topic revisions with client-side grouping in the SDK.
 
 > **listProfiles**(`opts?`): `Promise`\<[`SecurityProfileListResult`](SecurityProfileListResult.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1279
+Defined in: src/airs/types.ts:1279
 
 List security profiles.
 
@@ -597,7 +597,7 @@ List security profiles.
 
 > **listTopics**(): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>[]\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1251
+Defined in: src/airs/types.ts:1251
 
 List all custom topics.
 
@@ -611,7 +611,7 @@ List all custom topics.
 
 > **queryScanLogs**(`opts`): `Promise`\<[`ScanLogQueryResult`](ScanLogQueryResult.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1331
+Defined in: src/airs/types.ts:1331
 
 #### Parameters
 
@@ -629,7 +629,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1331
 
 > **regenerateApiKey**(`apiKeyId`, `request`): `Promise`\<[`ApiKeyInfo`](ApiKeyInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1300
+Defined in: src/airs/types.ts:1300
 
 #### Parameters
 
@@ -651,7 +651,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1300
 
 > **updateCustomerApp**(`appId`, `request`): `Promise`\<[`CustomerAppInfo`](CustomerAppInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1307
+Defined in: src/airs/types.ts:1307
 
 #### Parameters
 
@@ -673,7 +673,7 @@ Defined in: prisma-airs-cli/src/airs/types.ts:1307
 
 > **updateProfile**(`profileId`, `request`): `Promise`\<[`SecurityProfileInfo`](SecurityProfileInfo.md)\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1287
+Defined in: src/airs/types.ts:1287
 
 Update a security profile.
 
@@ -697,7 +697,7 @@ Update a security profile.
 
 > **updateTopic**(`topicId`, `request`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: prisma-airs-cli/src/airs/types.ts:1245
+Defined in: src/airs/types.ts:1245
 
 Update an existing custom topic by ID.
 

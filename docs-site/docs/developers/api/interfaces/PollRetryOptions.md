@@ -1,6 +1,6 @@
 # Interface: PollRetryOptions
 
-Defined in: prisma-airs-cli/src/airs/runtime.ts:55
+Defined in: src/airs/runtime.ts:55
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: prisma-airs-cli/src/airs/runtime.ts:55
 
 > `optional` **baseDelayMs?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/runtime.ts:59
+Defined in: src/airs/runtime.ts:59
 
 Base delay in ms for exponential backoff. Default: 10000.
 
@@ -18,7 +18,7 @@ Base delay in ms for exponential backoff. Default: 10000.
 
 > `optional` **maxNoProgressPolls?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/runtime.ts:61
+Defined in: src/airs/runtime.ts:61
 
 Stop after this many consecutive successful polls resolve no new prompts. Default: 120.
 
@@ -28,7 +28,7 @@ Stop after this many consecutive successful polls resolve no new prompts. Defaul
 
 > `optional` **maxRetries?**: `number`
 
-Defined in: prisma-airs-cli/src/airs/runtime.ts:57
+Defined in: src/airs/runtime.ts:57
 
 Max retries per rate-limit error before giving up. Default: 5.
 
@@ -38,7 +38,7 @@ Max retries per rate-limit error before giving up. Default: 5.
 
 > `optional` **onProgress?**: (`results`) => `void` \| `Promise`\<`void`\>
 
-Defined in: prisma-airs-cli/src/airs/runtime.ts:65
+Defined in: src/airs/runtime.ts:65
 
 Called whenever newly terminal prompt results are resolved.
 
@@ -58,7 +58,7 @@ Called whenever newly terminal prompt results are resolved.
 
 > `optional` **onRetry?**: (`attempt`, `delayMs`) => `void`
 
-Defined in: prisma-airs-cli/src/airs/runtime.ts:63
+Defined in: src/airs/runtime.ts:63
 
 Called on each retry with (attempt, delayMs).
 
