@@ -12,6 +12,15 @@ See the [daily report guide and downloadable examples](../runtime/daily-report.m
 read-only live capture, source limitations, and human review workflow. Samples published with
 the documentation are synthetic; live deliverables remain private.
 
+The [published package](https://github.com/cdot65/prisma-airs-cli/releases/tag/v4.5.0) and the
+upgraded user installation each pass all seven live report/debug workflows at 15:19 UTC with
+unchanged credentials. Both match all seven package files and 23 exports from the verified
+build. [CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137084360),
+[npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137254995),
+[docs deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137084383), and
+[container publication with both native architecture checks](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137086577)
+pass. Public browser/download verification passes 9/9.
+
 ## v4.4.0 (2026-09-07)
 
 - Pin published SDK 0.25.0. Extend the nine verified analytics filters to `group-by ai_service|model|api_key|provider|status_code|users`.

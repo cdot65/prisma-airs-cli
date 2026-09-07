@@ -97,3 +97,27 @@ scan-log gap. A credential scan checked 13,460 files with zero leaks and unchang
 Self-assessment for the **new first-product reporting scope: 9/10**. The remaining point is reserved
 for upstream scan-log visibility and richer verified daily telemetry, not hidden or fabricated.
 Release publication and installed-user verification will be recorded separately when confirmed.
+
+## Final delivery — verified 15:19 UTC
+
+CLI [v4.5.0](https://github.com/cdot65/prisma-airs-cli/releases/tag/v4.5.0) is published from
+`3752a9b490b01765dd0bc93ece3c06252d4497a7`. Both Git remotes have the release commits and tag.
+Registry metadata reports 4.5.0 as latest; an independent registry installation at 15:17:51 UTC
+matches the npm-packed source build across all seven payload files and 23 exports. The user's
+installed `/home/cdot/.local/share/npm-global/bin/airs` reports 4.5.0 and matches the same payload.
+SDK 0.25.0 is unchanged.
+
+- [CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137084360): pass.
+- [npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137254995): pass.
+- [Documentation deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137084383): pass.
+- [Container publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34137086577): pass,
+  including native amd64/arm64 checks and guarded alias promotion.
+- Public documentation and both example-download bytes: 9/9 browser checks at 15:15:07 UTC.
+- User-installed CLI: 7/7 live workflows at 15:19:15 UTC, without the DNS bootstrap.
+- Registry-installed CLI: 7/7 live workflows at 15:19:23 UTC, without the DNS bootstrap.
+- Both final captures retain 705 sessions / 91 violating sessions across 7 buckets, 19 profiles,
+  17 registered apps, and the explicitly unavailable scan-log source. Config is unchanged.
+- The exact 128-hour debug request still returns HTTP 400, while its CWD log creation passes.
+
+The scoped delivery is complete at **9/10**. This does not reclassify missing upstream telemetry
+as working, nor claim that the earlier multi-product OpenAPI target was completed.

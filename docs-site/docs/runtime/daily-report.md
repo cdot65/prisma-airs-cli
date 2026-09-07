@@ -115,7 +115,9 @@ command-local `--output` wins.
 
 ## Validated live output
 
-Read-only validation on **2026-09-07 at 15:00 UTC** used the existing config without changing it.
+Read-only validation on **2026-09-07 at 15:19 UTC** used the existing config without changing it,
+through both the published-registry installation and the user's installed CLI **4.5.0**. Neither
+final run needed the host DNS bootstrap used during earlier investigations.
 The SDK collection returned **7 daily application buckets, 19 profiles, and 17 registered
 applications**. Across the collected daily buckets it reported **705 sessions and 91 violating
 sessions**. These are a point-in-time observation, not expected constants for a future run.
