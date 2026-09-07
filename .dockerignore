@@ -1,0 +1,11 @@
+# Allow only inputs used by docker/Dockerfile. Local credentials, corpora,
+# node_modules, Git history and documentation builds never enter the context.
+**
+!package.json
+!pnpm-lock.yaml
+!tsconfig.json
+!tsup.config.ts
+!src/
+!src/**
+!docker/
+!docker/Dockerfile

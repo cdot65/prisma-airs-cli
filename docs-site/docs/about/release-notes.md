@@ -1,5 +1,14 @@
 # Release Notes
 
+## v4.3.1 (2026-09-07)
+
+- Fix `runtime dlp generate --output json`, including global, config-file and environment selection. Unsupported formats and malformed or unsafe integer counts/seeds now exit 2 before generating files. Quiet pretty output preserves per-format counts.
+- Upgrade production `js-yaml` to 4.3.2, `nanoid` to 5.1.16 (including the DOCX dependency), and optional `sharp` to 0.35.4. The frozen production audit reports zero known advisories; CI, npm publication and container publication now enforce that audit instead of treating functional tests as security verification.
+- Correct Node engine metadata and `airs doctor` to the actual existing dependency intersection: `^20.17.0 || ^22.13.0 || >=23.5.0`. Add native CLI smoke checks at Node 20.17, 22.13 and 24; SDK Node 18 support is unchanged.
+- Publish exact container version tags first, verify the digest on amd64 and arm64 without runtime network access, then serialize and guard minor/`latest` promotion against the current stable tag list. Older tagged builds cannot advance aliases owned by newer versions. Branch/prerelease dispatches are rejected; do not rerun legacy workflows from tags predating this safeguard.
+- Include fontconfig/DejaVu in the minimal Alpine runtime and allow only required build inputs into the Docker context. The native smoke verifies all five DLP formats, 26 file signatures, manifest counts and structured-output/validation behavior. Local validation uses an existing process-only font configuration because this host has no system fonts.
+- Keep SDK 0.24.0 pinned. The full-spec assessment remains 5/10: direct AI Gateway coverage is still 138/242 (57.02%), and the documented upstream service/model limitations are not fixed by this patch.
+
 ## v4.3.0 (2026-09-07)
 
 - Add verified trace, string-metadata, status-code, API-key-ID, provider/model, total-token and cost-range filters to `aigateway telemetry requests`, `cost`, `tokens` and `latency`. Lists use OR; different filters use AND; numeric bounds are inclusive. Cost bounds are in cents, including fractional cents.

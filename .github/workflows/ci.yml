@@ -56,6 +56,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:coverage
+      - run: pnpm test:release
+      - run: pnpm audit:prod
 
   docs-build:
     runs-on: ubuntu-latest
@@ -72,3 +74,21 @@ jobs:
       - run: pnpm -C docs-site install --frozen-lockfile
       # onBrokenLinks/onBrokenAnchors: 'throw' make this the strict build gate.
       - run: pnpm -C docs-site build
+
+  consumer-runtime:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20.17.0', '22.13.0', '24']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - name: Verify native DLP through built public CLI
+        run: node .github/scripts/verify-dlp-consumer.mjs "$PWD/dist/cli/index.js"

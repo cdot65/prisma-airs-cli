@@ -5,7 +5,7 @@
 [![CI](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@cdot65/prisma-airs-cli)](https://www.npmjs.com/package/@cdot65/prisma-airs-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
+[![Node 20.17+ / 22.13+ / 24+](https://img.shields.io/badge/node-20.17%2B%20%7C%2022.13%2B%20%7C%2024%2B-brightgreen.svg)](https://nodejs.org/)
 
 **Full operational coverage over Palo Alto Prisma AIRS AI security — guardrail refinement, runtime scanning, AI red teaming, AI Gateway, and model security.**
 
@@ -30,7 +30,7 @@ npm install -g @cdot65/prisma-airs-cli
 airs --version
 ```
 
-Requires **Node.js >= 20**. Also available via `pnpm add -g`, `npx`, or as a [Docker image](https://github.com/cdot65/prisma-airs-cli/pkgs/container/prisma-airs-cli). See the [installation guide](https://cdot65.github.io/prisma-airs-cli/getting-started/installation/) for details.
+Requires **Node.js 20.17+, 22.13+, or 24+** (exact engine range: `^20.17.0 || ^22.13.0 || >=23.5.0`). Also available via `pnpm add -g`, `npx`, or as a [Docker image](https://github.com/cdot65/prisma-airs-cli/pkgs/container/prisma-airs-cli). See the [installation guide](https://cdot65.github.io/prisma-airs-cli/getting-started/installation/) for details.
 
 ## Quick Start
 

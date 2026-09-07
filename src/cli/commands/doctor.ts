@@ -26,23 +26,34 @@ export interface DoctorCheck {
 /** Time box for each network check. */
 export const DOCTOR_TIMEOUT_MS = 5000;
 
-const MIN_NODE_MAJOR = 20;
+export const SUPPORTED_NODE_VERSIONS = '^20.17.0 || ^22.13.0 || >=23.5.0';
 
 // ---------------------------------------------------------------------------
 // Pure checks
 // ---------------------------------------------------------------------------
 
-/** Check 1: Node.js runtime version >= 20. */
+/** Check 1: the runtime satisfies the production dependency engine intersection. */
 export function checkNodeVersion(version: string = process.version): DoctorCheck {
-  const major = Number.parseInt(version.replace(/^v/, ''), 10);
-  if (Number.isFinite(major) && major >= MIN_NODE_MAJOR) {
-    return { name: 'Node.js version', status: 'pass', detail: `${version} (>= 20 required)` };
+  const match = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
+  const [major, minor, patch] = match ? match.slice(1).map(Number) : [];
+  const supported =
+    [major, minor, patch].every(Number.isSafeInteger) &&
+    ((major === 20 && minor >= 17) ||
+      (major === 22 && minor >= 13) ||
+      (major === 23 && minor >= 5) ||
+      major >= 24);
+  if (supported) {
+    return {
+      name: 'Node.js version',
+      status: 'pass',
+      detail: `${version} (${SUPPORTED_NODE_VERSIONS} required)`,
+    };
   }
   return {
     name: 'Node.js version',
     status: 'fail',
-    detail: `${version} is below the required Node ${MIN_NODE_MAJOR}`,
-    hint: `Upgrade to Node ${MIN_NODE_MAJOR}+ (e.g. via nvm or your package manager)`,
+    detail: `${version} does not satisfy ${SUPPORTED_NODE_VERSIONS}`,
+    hint: 'Use a supported Node runtime: 20.17+, 22.13+, or 24+ (e.g. via nvm or your package manager)',
   };
 }
 

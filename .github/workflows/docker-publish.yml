@@ -18,10 +18,25 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Validate release tag
+        id: release
+        run: node .github/scripts/container-release.mjs
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit:prod
+      - run: pnpm test:release
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -41,12 +56,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.release.outputs.version }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -57,3 +72,75 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  verify-container:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify exact published container without network or credentials
+        env:
+          IMAGE_DIGEST: ${{ needs.build-and-push.outputs.digest }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          docker run --rm --network none --platform "$PLATFORM" --entrypoint node \
+            --mount "type=bind,source=$PWD/.github/scripts,target=/verification,readonly" \
+            "$REGISTRY/$IMAGE_NAME@$IMAGE_DIGEST" \
+            /verification/verify-dlp-consumer.mjs /app/dist/cli/index.js
+
+  # Builds may finish in any order. Only this short, serialized job can write
+  # shared aliases, and it queries the current tag list after obtaining its slot.
+  promote-aliases:
+    needs: [build-and-push, verify-container]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: prisma-airs-cli-container-alias-promotion
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote eligible aliases
+        uses: actions/github-script@v8
+        env:
+          RELEASE_VERSION: ${{ needs.build-and-push.outputs.version }}
+          IMAGE_DIGEST: ${{ needs.build-and-push.outputs.digest }}
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            const { pathToFileURL } = require('node:url');
+            const { promotionAliases } = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/.github/scripts/container-release.mjs`).href);
+            const tags = await github.paginate(github.rest.git.listMatchingRefs, { ...context.repo, ref: 'tags/v', per_page: 100 });
+            const aliases = promotionAliases(process.env.RELEASE_VERSION, tags.map(tag => tag.ref));
+            if (!/^sha256:[a-f0-9]{64}$/.test(process.env.IMAGE_DIGEST)) throw new Error('Missing or invalid published image digest.');
+            const image = `${process.env.REGISTRY}/${process.env.IMAGE_NAME}`;
+            if (aliases.length === 0) {
+              core.info('A newer release owns both aliases; exact-version image remains available.');
+              return;
+            }
+            execFileSync('docker', ['buildx', 'imagetools', 'create', ...aliases.flatMap(alias => ['--tag', `${image}:${alias}`]), `${image}@${process.env.IMAGE_DIGEST}`], { stdio: 'inherit', timeout: 120000 });
+            for (const alias of aliases) {
+              const digest = execFileSync('docker', ['buildx', 'imagetools', 'inspect', `${image}:${alias}`, '--format', '{{.Manifest.Digest}}'], { encoding: 'utf8', timeout: 30000 }).trim();
+              if (digest !== process.env.IMAGE_DIGEST) throw new Error(`Alias ${alias} failed digest verification.`);
+              core.info(`Verified ${image}:${alias} at ${digest}`);
+            }

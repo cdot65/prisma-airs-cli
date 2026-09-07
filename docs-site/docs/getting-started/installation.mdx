@@ -13,7 +13,7 @@ Get Prisma AIRS CLI running in under 5 minutes. Choose between npm (recommended)
 
 Before you begin, make sure you have:
 
-- **Node.js 20+** (LTS recommended) — check with `node -v`
+- **Node.js 20.17+, 22.13+, or 24+** — check with `node -v`. The exact package engine range is `^20.17.0 || ^22.13.0 || >=23.5.0`; Node 21 and older 20/22 minors do not satisfy the CLI's existing prompt dependencies. This corrects the earlier broad "20+" claim. The SDK's separate Node 18+ support is unchanged.
 - **Prisma AIRS access** — scan API key + management API OAuth2 credentials
 
 ## Install from npm

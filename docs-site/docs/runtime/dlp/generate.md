@@ -1,8 +1,10 @@
 # DLP Test-File Generation
 
-:::warning CLI 4.3.0 verified limitation
+:::info CLI 4.3.1 validation
 
-The installed CLI generated five valid PNG and five valid JPEG files in the September 7, 2026 smoke check (one clean and four dirty files per format; seed `430`). File signatures were checked at `09:24:03 UTC`. However, the same command's explicit `--output json` still emitted a human-readable summary. Do not pipe that summary into a JSON parser; `manifest.json` remains the generated corpus manifest. This output-format defect and the optional sharp dependency advisory remain open follow-ups, not passing JSON/security checks.
+The 4.3.1 release candidate passes 11/11 native public-CLI checks at `2026-09-07T10:07:03.221Z`: all five formats, 26 file signatures, manifest counts, JSON stdout, output precedence and rejection of invalid input before file creation. It uses sharp 0.35.4 / libvips 8.18.6; the frozen production dependency audit is clean. This host uses its existing process-only font configuration, not a changed credential file.
+
+Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files, but emitted a human-readable summary instead of JSON. That failure is retained in the release assessment; it is fixed in 4.3.1.
 
 :::
 
@@ -25,11 +27,11 @@ airs runtime dlp generate [options]
 | Option | Default | Meaning |
 |--------|---------|---------|
 | `--types <list>` | `all` | Comma list of `pdf,png,jpeg,svg,docx` (or `all`) |
-| `--count <n>` | `1` | Clean files per type |
+| `--count <n>` | `1` | Positive safe integer: clean files per type |
 | `--out <dir>` | `./temp` | Output base directory |
 | `--techniques <list>` | `all` | `all` or comma list of technique ids |
-| `--seed <n>` | random | Seed for reproducible payloads |
-| `--output <fmt>` | `pretty` | `pretty` or `json` summary |
+| `--seed <n>` | random | Safe integer seed for reproducible payloads |
+| `--output <fmt>` | configured, otherwise `pretty` | `pretty` or `json` summary; explicit flag overrides `PANW_CLI_OUTPUT`, config and default |
 
 **Auth:** none — purely local file generation.
 
@@ -41,6 +43,8 @@ skipped optional deps (`--no-optional`), this command exits with an install hint
 ```bash
 pnpm add sharp pdf-lib docx piexifjs
 ```
+
+Visible raster text also needs system fontconfig and fonts. Minimal Alpine installs can use `apk add --no-cache fontconfig ttf-dejavu`; the official container includes these. An existing `FONTCONFIG_FILE` can select a font configuration for a single process. No credential configuration is needed.
 :::
 
 ## Output

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -13,6 +13,7 @@ import {
   type DoctorCheck,
   hasFailure,
   runDoctor,
+  SUPPORTED_NODE_VERSIONS,
 } from '../../../src/cli/commands/doctor.js';
 import type { ConfigEntry } from '../../../src/config/loader.js';
 
@@ -34,21 +35,52 @@ const never = () => new Promise<never>(() => {});
 
 describe('doctor command', () => {
   describe('checkNodeVersion', () => {
+    it('uses the same engine requirement as the published package', async () => {
+      const pkg = JSON.parse(
+        await readFile(new URL('../../../package.json', import.meta.url), 'utf8'),
+      );
+      expect(pkg.engines.node).toBe(SUPPORTED_NODE_VERSIONS);
+    });
     it('passes on node 20', () => {
-      const check = checkNodeVersion('v20.11.0');
+      const check = checkNodeVersion('v20.17.0');
       expect(check.status).toBe('pass');
       expect(check.name).toBe('Node.js version');
-      expect(check.detail).toContain('v20.11.0');
+      expect(check.detail).toContain('v20.17.0');
     });
 
     it('passes on node 22', () => {
-      expect(checkNodeVersion('v22.1.0').status).toBe('pass');
+      expect(checkNodeVersion('v22.13.0').status).toBe('pass');
     });
 
     it('fails on node 18 with an upgrade hint', () => {
       const check = checkNodeVersion('v18.19.0');
       expect(check.status).toBe('fail');
       expect(check.hint).toMatch(/20/);
+    });
+
+    it.each([
+      'v20.0.0',
+      'v20.16.99',
+      'v21.7.0',
+      'v22.12.99',
+      'v23.4.99',
+      'v24.0.0-rc.1',
+      '20junk',
+      'v24',
+      'v024.0.0',
+    ])('rejects unsupported or malformed runtime %s', (version) => {
+      expect(checkNodeVersion(version).status).toBe('fail');
+    });
+
+    it.each([
+      'v20.17.0',
+      'v20.19.0',
+      'v22.13.0',
+      'v23.5.0',
+      'v24.0.0',
+      'v26.0.0',
+    ])('accepts supported runtime %s', (version) => {
+      expect(checkNodeVersion(version).status).toBe('pass');
     });
   });
 
@@ -318,7 +350,7 @@ describe('doctor command', () => {
       const p = join(tempDir, 'config.json');
       await writeFile(p, '{}\n');
       const checks = await runDoctor({
-        nodeVersion: 'v22.0.0',
+        nodeVersion: 'v22.13.0',
         configFilePath: p,
         inspect: async () =>
           inspected({
