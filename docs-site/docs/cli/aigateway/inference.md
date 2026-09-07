@@ -44,7 +44,7 @@ redacted headers but omit request/response bodies and never consume a stream ahe
 
 ## Latest verified example output
 
-Captured **2026-09-07T09:05:56.688Z** from actual CLI execution against AI Gateway.
+Captured **2026-09-07T09:19:53.288Z** from actual CLI execution against AI Gateway.
 Actual built CLI JSON stdout from the passing live suite; response identifiers are redacted. No runtime key or configuration value is retained.
 
 The chat command above returned:
@@ -64,7 +64,7 @@ The chat command above returned:
       }
     }
   ],
-  "created": 1788771948,
+  "created": 1788772785,
   "model": "gpt-5.6-terra",
   "system_fingerprint": null,
   "object": "chat.completion",
@@ -98,13 +98,17 @@ On September 6, 2026 the built CLI passed 8/8 live inference checks using a temp
 SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
 The key was removed afterward and the user's config remained unchanged.
 
-The latest capture above comes from an independently installed CLI 4.3.0 package candidate with
-published SDK 0.24.0, not a development link. The manifest and frozen lockfile pin the SDK exactly;
-SDK publication preceded the CLI dependency update. All 1,127 CLI tests and coverage gates pass.
-The candidate also passes 54/54 [chart-filter checks](./telemetry.md#verified-chart-filter-output)
+The latest capture above comes from independently registry-installed CLI 4.3.0 with published SDK
+0.24.0, not a development link. All seven package files match the tested release payload. The manifest
+and frozen lockfile pin the SDK exactly; SDK publication preceded the CLI dependency update.
+All 1,127 CLI tests and coverage gates pass. The registry executable passes 54/54 [chart-filter checks](./telemetry.md#verified-chart-filter-output)
 and 3/3 [empty latency JSON/YAML checks](./telemetry.md#verified-empty-window-output).
-Configuration remains unchanged; no runtime key is persisted. Registry and user-install verification
-will replace this candidate checkpoint only after publication and independent validation.
+The user-prefix `airs` installation is upgraded and payload-verified, and passes 12/12 cross-service
+reads/benign scan at 09:21:00 UTC. Independent retirement confirms all 28 historical release-inference
+keys absent at 09:20:51 UTC. Configuration remains unchanged; no runtime key is persisted.
+The initial npm metadata lag and a missing-executable attempt remain in private test history; a new
+installation preflight now runs before temporary-key creation. Passing registry results replace that
+attempt, without hiding it or treating a publication job alone as proof of installation.
 The earlier CLI 4.2.x registry verification remains historical evidence in the SDK's published-package guide.
 No realtime CLI command is added; the SDK's experimental realtime transport reaches HTTP 101
 but the prescribed model rejects provider-session creation with `invalid_model`.

@@ -6,6 +6,7 @@
 - Pin published SDK `0.24.0` and use its exported filter schema before creating a CLI client or resolving a cost workspace. Malformed input exits 2 without authenticated requests or input values in diagnostics.
 - Reject partially parsed day counts such as `7junk`; resolve cost workspace UUIDs to telemetry slugs. Existing pretty-dollar and explicit JSON/YAML cents/USD fields remain compatible. The cost command retains its rolling-day window.
 - These verified query options do not establish full upstream analytics equivalence. Direct gateway coverage remains 138/242 (57.02%); provider/service limitations remain in the [SDK assessment](https://cdot65.github.io/prisma-airs-sdk/developer/openapi-conformance/).
+- Registry-installed checks pass 54/54 chart contracts, 8/8 inference and 3/3 empty-window checks; upgraded user-install checks pass 12/12. The separate production lockfile audit still flags `js-yaml`, `nanoid` and optional `sharp`; fresh npm resolution leaves the `sharp` advisory and its package-level propagation. This is not a clean security sign-off; dependency remediation remains a focused follow-up.
 
 ## v4.2.2 (2026-09-07)
 
