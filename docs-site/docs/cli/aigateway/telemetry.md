@@ -129,7 +129,7 @@ These syntax examples are not fabricated response captures. The read-only instal
 
 ## Verified grouped-filter output
 
-The independently installed CLI **4.4.0**, with SDK **0.25.0**, passes **103/103** read-only checks at **2026-09-07T12:07:30.217Z**: executable-version verification, an owned positive control and all 101 positive/absent filter pairs across six groups. Each pair executes the public CLI twice; five non-user checks also verify exact cost/token columns. JSON/YAML envelope preservation additionally has 95 public-command regression tests.
+The independently installed CLI **4.4.0**, with SDK **0.25.0**, passes **103/103** read-only checks at **2026-09-07T12:32:16.444Z**: executable-version verification, an owned positive control and all 101 positive/absent filter pairs across six groups. Each pair executes the public CLI twice; five non-user checks also verify exact cost/token columns. JSON/YAML envelope preservation additionally has 95 public-command regression tests.
 
 Read-only discovery on existing owned traffic. Every filter requires both a known positive and an empty absent cohort. No tenant identifiers, trace IDs, key IDs, metadata values or tenant counts are published. This is not full upstream analytics equivalence.
 
@@ -856,7 +856,7 @@ The earlier candidate run passed 102/103, with a provider/status-code query fail
 
 ## Verified chart-filter output
 
-The independently installed CLI **4.4.0**, with SDK **0.25.0**, passed **54/54** read-only checks at **2026-09-07T12:12:02.321Z**: installed-version verification, an owned positive control and 13 positive/empty-cohort pairs for each of four charts. Every pair runs the public CLI executable.
+The independently installed CLI **4.4.0**, with SDK **0.25.0**, passed **54/54** read-only checks at **2026-09-07T12:35:21.598Z**: installed-version verification, an owned positive control and 13 positive/empty-cohort pairs for each of four charts. Every pair runs the public CLI executable.
 
 Existing owned positive traffic only. Inclusive bounds, singleton/CSV-OR alternatives and combined filters are checked on each chart with an empty negative cohort. No trace IDs, keys, metadata values or tenant counts are published. This does not establish full upstream analytics equivalence.
 
@@ -1294,7 +1294,7 @@ This certifies the listed filters on these four Prisma SCM chart adapters, not e
 
 ## Verified empty-window output
 
-The separately installed CLI 4.4.0 passed **3/3** read-only checks at **2026-09-07T12:10:39.564Z**, including actual JSON and YAML commands with SDK 0.25.0. No traffic or key was created to populate the empty window.
+The separately installed CLI 4.4.0 passed **3/3** read-only checks at **2026-09-07T12:29:09.610Z**, including actual JSON and YAML commands with SDK 0.25.0. No traffic or key was created to populate the empty window.
 
 Actual installed CLI JSON/YAML output projected to exit status, period aggregate values and a zero-bucket check. No tenant identifiers, count aggregates or credentials are published. This historical empty-window check does not test new CLI filter flags.
 

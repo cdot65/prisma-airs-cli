@@ -1,8 +1,8 @@
 # DLP Test-File Generation
 
-:::info CLI 4.3.1 validation
+:::info CLI 4.4.0 validation
 
-The independently registry-installed CLI **4.3.1** passes **11/11** native public-CLI checks at **2026-09-07T10:29:23.947Z**: all five formats, 26 file signatures, manifest counts, JSON stdout, output precedence and rejection of invalid input before file creation. It uses sharp **0.35.4** / libvips **8.18.6**. Both the frozen production tree and fresh registry install report zero known advisories. This host uses its existing process-only font configuration; credential settings are unchanged, and temporary corpora are cleaned up before success is recorded.
+The independently registry-installed CLI **4.4.0** passes **11/11** native public-CLI checks at **2026-09-07T12:26:53.881Z**: all five formats, 26 file signatures, manifest counts, JSON stdout, output precedence and rejection of invalid input before file creation. It uses sharp **0.35.4** / libvips **8.18.6**. Both the frozen production tree and fresh registry install report zero known advisories. This host uses its existing process-only font configuration; credential settings are unchanged, and temporary corpora are cleaned up before success is recorded.
 
 Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files at **2026-09-07T09:24:03.285Z**, but emitted a human-readable summary instead of JSON. That failure is retained in the release assessment; 4.3.1 fixes it.
 

@@ -44,7 +44,7 @@ redacted headers but omit request/response bodies and never consume a stream ahe
 
 ## Latest verified example output
 
-Captured **2026-09-07T12:10:57.358Z** from actual CLI **4.4.0** execution with SDK **0.25.0** against AI Gateway.
+Captured **2026-09-07T12:29:23.185Z** from actual CLI **4.4.0** execution with SDK **0.25.0** against AI Gateway.
 Actual built CLI JSON stdout from the passing live suite; response identifiers are redacted. No runtime key or configuration value is retained.
 
 The chat command above returned:
@@ -64,7 +64,7 @@ The chat command above returned:
       }
     }
   ],
-  "created": 1788783044,
+  "created": 1788784154,
   "model": "gpt-5.6-terra",
   "system_fingerprint": null,
   "object": "chat.completion",
@@ -94,30 +94,18 @@ This run used an opt-in, process-only DNS accommodation in the test workspace: f
 
 ## Validation and release dependency {#validated-candidate-and-release-ordering}
 
-On September 6, 2026 the built CLI passed 8/8 live inference checks using a temporary
-SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
-The key was removed afterward and the user's config remained unchanged.
+CLI **4.4.0** is published, independently installed from npm and upgraded in the user prefix. It pins the already-published SDK **0.25.0** exactly; all seven payload files and 19 exports match the tested npm archive. Registry integrity agrees at **2026-09-07T12:28:22.542Z**: **123,664 bytes**, SHA-256 **`f53c31400945a4004d15c5a7368f97dae6101c8ccbb97d71f5821dbf86dcb7c1`**.
 
-The latest capture above comes from independently installed **CLI 4.4.0 candidate** with published
-SDK **0.25.0**, not a development link. All seven payload files and 19 library exports match the
-npm-built archive. The manifest and frozen lockfile pin the SDK exactly; SDK publication preceded
-the CLI dependency update. CLI registry publication and a user-prefix upgrade remain pending.
+- Registry grouped filters: **103/103**, **2026-09-07T12:32:16.444Z**.
+- Registry chart contracts: **54/54**, **2026-09-07T12:35:21.598Z**.
+- Registry inference: **8/8**, **2026-09-07T12:29:23.185Z**.
+- Registry empty-window JSON/YAML: **3/3**, **2026-09-07T12:29:09.610Z**.
+- User-installed cross-service reads/benign scan: **12/12**, **2026-09-07T12:29:31.518Z**.
+- Independent historical release-key retirement: **36/36**, **2026-09-07T12:30:44.576Z**.
+- Native DLP: **11/11 registry** at **2026-09-07T12:26:53.881Z**, **11/11 user-installed** at **2026-09-07T12:29:11.324Z**.
 
-All **1,268 CLI tests** and **14 release-policy/diagnostic checks** pass. The installed candidate passes
-**103/103** [grouped-filter checks](./telemetry.md#verified-grouped-filter-output), **54/54**
-[chart-filter checks](./telemetry.md#verified-chart-filter-output), **3/3**
-[empty latency JSON/YAML checks](./telemetry.md#verified-empty-window-output), and **11/11** native
-DLP checks across all five formats. Cross-service reads and the benign scan pass **12/12** at
-**2026-09-07T12:12:38.879Z**. Independent retirement confirms **35/35** historical release keys absent
-at **2026-09-07T12:13:37.774Z**. No runtime key is persisted and configuration remains unchanged.
+All 1,268 CLI tests and 14 release-policy/diagnostic tests pass; the existing library-only coverage scope reports 95.97% lines/statements, 95.48% functions and 87.34% branches. Frozen and fresh registry production audits are clean. The [container workflow](https://github.com/cdot65/prisma-airs-cli/actions/runs/34121350201) passes 11/11 native checks on each actual architecture without runtime network or credentials, then verifies minor/latest aliases at **`sha256:6134107b600e76491a70bcbdc261337abe9d53673082c1cc1a058676c87e6b52`**. Temporary native corpora are cleaned up before success is recorded. Host checks use the disclosed process-only font configuration; container checks use packaged fonts.
 
-Earlier 4.3.0/4.3.1 installation failures and registry processing delays remain in private history;
-those releases retain their own timestamps in the SDK's published-package guide. The first 4.4.0
-grouped candidate run passed 102/103; the complete subsequent run passes 103/103 without changing
-validation, retries or infrastructure. Full Gateway coverage remains 138/242 (57.02%), not 99%.
-The earlier CLI 4.2.x registry verification remains historical evidence in the SDK's published-package guide.
-No realtime CLI command is added; the SDK's experimental realtime transport reaches HTTP 101
-but the prescribed model rejects provider-session creation with `invalid_model`.
-Known AI Gateway gaps remain explicit in the [release notes](../../about/release-notes.md).
-The SDK's `scripts/e2e-cli-inference.ts --writes` reproduces the live check from read-only
-SCM credentials without persisting a runtime key.
+Failed attempts remain in history: the first grouped candidate run passed 102/103, the first registry chart run 53/54, and the first public browser run 10/11 with a DNS-resolution failure. The complete subsequent suites pass without changing validation, SDK retries, models, credentials or infrastructure. The chart rerun is serialized after the grouped suite; the masked initial subprocess failure does not establish a root cause. Registry metadata visibility lagged successful publication; no duplicate publication was attempted.
+
+The credential file remains unchanged and no runtime key is persisted. All 101 grouped-filter pairs and all 52 chart-filter pairs are reproduced on the CLI telemetry page. Direct Gateway coverage remains **138/242 (57.02%)**, all 22 analytics adaptations remain partial, and the full-project assessment remains **5/10**. Existing service/provider/entitlement failures, SDK documentation dependency advisories, public WAN and anonymous container-pull limits remain open. No realtime CLI command or successful provider realtime session is claimed.
