@@ -1,5 +1,11 @@
 # Release Notes
 
+## v4.2.1 (2026-09-07)
+
+- Pin SDK `0.22.0`, including its experimental caller-owned realtime transport. The CLI's supported inference commands remain `chat`, `responses` and `embeddings`; this release adds no realtime CLI command and does not promise realtime support for the prescribed model.
+- Run the full lint, format, typecheck, coverage and documentation CI gates on main pushes. Publication now enforces formatting and coverage as well.
+- Keep actual version-specific inference captures on the [examples page](../cli/aigateway/inference.md). SDK direct gateway coverage is 138/242 (57.02%); its realtime live test reaches HTTP 101 but fails with `invalid_model`. Existing service failures and the incomplete full OpenAPI target remain explicit in the [SDK assessment](https://cdot65.github.io/prisma-airs-sdk/developer/openapi-conformance/).
+
 ## v4.2.0 (2026-09-07)
 
 ### New

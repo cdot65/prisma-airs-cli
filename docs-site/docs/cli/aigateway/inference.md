@@ -44,7 +44,7 @@ redacted headers but omit request/response bodies and never consume a stream ahe
 
 ## Latest verified example output
 
-Captured **2026-09-07T02:52:01.411Z** from actual CLI execution against AI Gateway.
+Captured **2026-09-07T06:31:05.867Z** from actual CLI execution against AI Gateway.
 Actual built CLI JSON stdout from the passing live suite; response identifiers are redacted. No runtime key or configuration value is retained.
 
 The chat command above returned:
@@ -64,7 +64,7 @@ The chat command above returned:
       }
     }
   ],
-  "created": 1788749512,
+  "created": 1788762658,
   "model": "gpt-5.6-terra",
   "system_fingerprint": null,
   "object": "chat.completion",
@@ -98,9 +98,12 @@ On September 6, 2026 the built CLI passed 8/8 live inference checks using a temp
 SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
 The key was removed afterward and the user's config remained unchanged.
 
-The latest capture above comes from a fresh npm installation of CLI 4.2.0 and SDK 0.21.0,
-not the earlier development link. Both packages are published, with an exact SDK dependency pin.
-SDK publication preceded CLI publication; an independent inventory check confirmed the temporary key absent.
+The latest capture above comes from the built CLI 4.2.1 candidate with the published SDK 0.22.0
+pinned exactly in its manifest and frozen lockfile, not a development link. SDK publication
+precedes the CLI release. The candidate passes all 1,033 tests and its coverage gates.
+The earlier CLI 4.2.0 registry verification remains historical evidence in the SDK's published-package guide.
+No realtime CLI command is added; the SDK's experimental realtime transport reaches HTTP 101
+but the prescribed model rejects provider-session creation with `invalid_model`.
 Known AI Gateway gaps remain explicit in the [release notes](../../about/release-notes.md).
 The SDK's `scripts/e2e-cli-inference.ts --writes` reproduces the live check from read-only
 SCM credentials without persisting a runtime key.

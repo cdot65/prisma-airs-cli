@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@cdot65/prisma-airs-sdk':
-        specifier: 0.21.0
-        version: 0.21.0
+        specifier: 0.22.0
+        version: 0.22.0
       '@inquirer/prompts':
         specifier: ^8.3.0
         version: 8.3.0(@types/node@22.19.13)
@@ -167,8 +167,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cdot65/prisma-airs-sdk@0.21.0':
-    resolution: {integrity: sha512-Y3j0tpCZWrUHbdfomnj/aBrSfOQW0H13oDq/xQKTXTDvyz2ukusM+7KWRweDYFNl6C0BGNIHMjHyjt9RHYPKSQ==}
+  '@cdot65/prisma-airs-sdk@0.22.0':
+    resolution: {integrity: sha512-T0mcSkfK88D47fljWZG222KHauVNgio9N2GZLYge1MRgm3UgsqJN5xyyyarfgXV9Q3m72YNEDsXwM9jMw6mqTw==}
     engines: {node: '>=18'}
 
   '@changesets/apply-release-plan@7.1.1':
@@ -2099,7 +2099,7 @@ snapshots:
   '@biomejs/cli-win32-x64@2.4.5':
     optional: true
 
-  '@cdot65/prisma-airs-sdk@0.21.0':
+  '@cdot65/prisma-airs-sdk@0.22.0':
     dependencies:
       zod: 3.25.76
 
