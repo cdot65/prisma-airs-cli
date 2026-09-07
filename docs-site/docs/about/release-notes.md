@@ -1,5 +1,15 @@
 # Release Notes
 
+## v4.4.0 (2026-09-07)
+
+- Pin published SDK 0.25.0. Extend the nine verified analytics filters to `group-by ai_service|model|api_key|provider|status_code|users`.
+- Use the SDK's dimension/column lists and semantic filter schema. Invalid dimensions, unsupported user columns, malformed CSV/JSON and unsafe or reversed numeric bounds exit 2 before client creation.
+- Preserve all existing chart behavior, units and group JSON/YAML envelopes. Non-user columns remain supported; user grouping does not gain unverified column options.
+- Add 95 failing-first public CLI/registry-SDK transport regressions. All 1,268 tests pass; native, installed-package and live candidate workflows are verified separately before publication.
+- Keep the full-scope assessment at 5/10: direct Gateway coverage remains 138/242 (57.02%). Existing service/model/entitlement failures are not resolved by this release.
+
+The independently installed npm-built candidate passes 103/103 grouped-filter checks, 54/54 chart contracts, 8/8 inference checks, 3/3 empty-window checks, 12/12 cross-service reads/benign scan and 11/11 native DLP checks. All 35 historical release keys are independently confirmed retired. The earlier 102/103 group attempt remains disclosed; no validation or retry policy changed to obtain the subsequent complete pass. Registry publication and container/user-install verification remain separate gates. See [actual grouped output](../cli/aigateway/telemetry.md#verified-grouped-filter-output) and [current inference capture](../cli/aigateway/inference.md#latest-verified-example-output).
+
 ## v4.3.1 (2026-09-07)
 
 - Fix `runtime dlp generate --output json`, including global, config-file and environment selection. Unsupported formats and malformed or unsafe integer counts/seeds now exit 2 before generating files. Quiet pretty output preserves per-format counts.

@@ -44,7 +44,7 @@ redacted headers but omit request/response bodies and never consume a stream ahe
 
 ## Latest verified example output
 
-Captured **2026-09-07T10:30:56.976Z** from actual CLI execution against AI Gateway.
+Captured **2026-09-07T12:10:57.358Z** from actual CLI **4.4.0** execution with SDK **0.25.0** against AI Gateway.
 Actual built CLI JSON stdout from the passing live suite; response identifiers are redacted. No runtime key or configuration value is retained.
 
 The chat command above returned:
@@ -64,7 +64,7 @@ The chat command above returned:
       }
     }
   ],
-  "created": 1788777046,
+  "created": 1788783044,
   "model": "gpt-5.6-terra",
   "system_fingerprint": null,
   "object": "chat.completion",
@@ -98,17 +98,23 @@ On September 6, 2026 the built CLI passed 8/8 live inference checks using a temp
 SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
 The key was removed afterward and the user's config remained unchanged.
 
-The latest capture above comes from independently registry-installed CLI 4.3.1 with published SDK
-0.24.0, not a development link. All seven package files match the tested release payload. The manifest
-and frozen lockfile pin the SDK exactly; SDK publication preceded the CLI dependency update.
-All 1,173 CLI tests, 14 release-policy/diagnostic checks and coverage gates pass. The registry executable passes 54/54 [chart-filter checks](./telemetry.md#verified-chart-filter-output)
-and 3/3 [empty latency JSON/YAML checks](./telemetry.md#verified-empty-window-output).
-The user-prefix `airs` installation is upgraded and payload-verified, and passes 12/12 cross-service
-reads/benign scan at 10:32:01 UTC. Independent retirement confirms all 30 historical release-inference
-keys absent at 10:32:02 UTC. Configuration remains unchanged; no runtime key is persisted.
-The earlier 4.3.0 missing-executable attempt remains in private test history. For 4.3.1, npm processing
-delayed metadata and then tarball availability; failed installations did not launch inference or create
-keys. Installation and payload verification completed before the passing registry runs above.
+The latest capture above comes from independently installed **CLI 4.4.0 candidate** with published
+SDK **0.25.0**, not a development link. All seven payload files and 19 library exports match the
+npm-built archive. The manifest and frozen lockfile pin the SDK exactly; SDK publication preceded
+the CLI dependency update. CLI registry publication and a user-prefix upgrade remain pending.
+
+All **1,268 CLI tests** and **14 release-policy/diagnostic checks** pass. The installed candidate passes
+**103/103** [grouped-filter checks](./telemetry.md#verified-grouped-filter-output), **54/54**
+[chart-filter checks](./telemetry.md#verified-chart-filter-output), **3/3**
+[empty latency JSON/YAML checks](./telemetry.md#verified-empty-window-output), and **11/11** native
+DLP checks across all five formats. Cross-service reads and the benign scan pass **12/12** at
+**2026-09-07T12:12:38.879Z**. Independent retirement confirms **35/35** historical release keys absent
+at **2026-09-07T12:13:37.774Z**. No runtime key is persisted and configuration remains unchanged.
+
+Earlier 4.3.0/4.3.1 installation failures and registry processing delays remain in private history;
+those releases retain their own timestamps in the SDK's published-package guide. The first 4.4.0
+grouped candidate run passed 102/103; the complete subsequent run passes 103/103 without changing
+validation, retries or infrastructure. Full Gateway coverage remains 138/242 (57.02%), not 99%.
 The earlier CLI 4.2.x registry verification remains historical evidence in the SDK's published-package guide.
 No realtime CLI command is added; the SDK's experimental realtime transport reaches HTTP 101
 but the prescribed model rejects provider-session creation with `invalid_model`.

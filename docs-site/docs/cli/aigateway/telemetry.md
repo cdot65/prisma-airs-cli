@@ -73,7 +73,31 @@ measured zero latency; time buckets remain numeric. Earlier SDK 0.22.0 and older
 this response. Do not manufacture traffic merely to make an empty-window response validate.
 
 CLI 4.3.0 pins SDK 0.24.0 and adds the following filters to `requests`, `cost`, `tokens` and `latency`.
-Other charts and groups do not accept these flags. `logs list` retains its separate singular `--status-code` option.
+CLI 4.4.0 pins SDK 0.25.0 and also exposes these filters on all six `group-by` dimensions. Other charts do not accept these flags. `logs list` retains its separate singular `--status-code` option.
+
+## Grouped analytics
+
+`group-by` accepts `ai_service`, `model`, `api_key`, `provider`, `status_code` and `users`.
+All six accept the filters below, explicit start/end timestamps and structured output. Dimensions,
+columns and filters are validated before client creation. The SDK remains the source of supported
+column names and filter semantics; malformed arguments exit 2 without authentication or a request.
+
+```bash
+airs aigateway telemetry group-by model --workspace ws-develo-71f8d8 --days 7 \
+  --status-codes 200,446 --cost-max 0.125 --columns cost,total_tokens --output json
+airs aigateway telemetry group-by status_code --workspace ws-develo-71f8d8 --days 7 \
+  --ai-org-models openai__gpt-5.6-terra --output yaml
+airs aigateway telemetry group-by users --workspace ws-develo-71f8d8 --days 7 \
+  --metadata '{"environment":"dev"}' --output json
+```
+
+Non-user dimensions support `--columns cost,avg_latency,avg_tokens,total_tokens,success_rate,last_seen`.
+User grouping does **not** support columns and keeps the SDK's `{success,data:{records,...}}` envelope;
+other groups keep `{object,data:[...],...}`. JSON/YAML preserve those envelopes, numeric values and
+costs in cents. `group-by users` is distinct from the existing unique-user count command `users`.
+
+These are observed SCM adapters, not full equivalence to all supplied upstream analytics operations.
+Provider `traceId` is a verified SCM extension omitted from the pinned upstream provider schema.
 
 ## Chart filters
 
@@ -103,9 +127,736 @@ airs aigateway telemetry tokens --workspace ws-develo-71f8d8 --days 7 \
 
 These syntax examples are not fabricated response captures. The read-only installed-CLI verification output below is recorded separately.
 
+## Verified grouped-filter output
+
+The independently installed CLI **4.4.0**, with SDK **0.25.0**, passes **103/103** read-only checks at **2026-09-07T12:07:30.217Z**: executable-version verification, an owned positive control and all 101 positive/absent filter pairs across six groups. Each pair executes the public CLI twice; five non-user checks also verify exact cost/token columns. JSON/YAML envelope preservation additionally has 95 public-command regression tests.
+
+Read-only discovery on existing owned traffic. Every filter requires both a known positive and an empty absent cohort. No tenant identifiers, trace IDs, key IDs, metadata values or tenant counts are published. This is not full upstream analytics equivalence.
+
+Actual captured results (all 101 pairs, no tenant counts or identifiers):
+
+<details>
+<summary>All 101 grouped-filter pairs</summary>
+
+```json
+[
+  {
+    "dimension": "ai_service",
+    "filter": "traceId",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "metadata",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "trace-and-metadata.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "statusCode.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "statusCode.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "apiKeyIds.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "apiKeyIds.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "aiOrgModel.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "aiOrgModel.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "totalUnitsMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "totalUnitsMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "costMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "costMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "totalUnits.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "cost.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "all.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "ai_service",
+    "filter": "all.with-columns",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "traceId",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "metadata",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "trace-and-metadata.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "statusCode.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "statusCode.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "apiKeyIds.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "apiKeyIds.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "aiOrgModel.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "aiOrgModel.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "totalUnitsMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "totalUnitsMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "costMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "costMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "totalUnits.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "cost.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "all.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "model",
+    "filter": "all.with-columns",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "traceId",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "metadata",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "trace-and-metadata.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "statusCode.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "statusCode.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "apiKeyIds.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "apiKeyIds.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "aiOrgModel.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "aiOrgModel.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "totalUnitsMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "totalUnitsMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "costMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "costMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "totalUnits.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "cost.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "all.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "api_key",
+    "filter": "all.with-columns",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "traceId",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "metadata",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "trace-and-metadata.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "statusCode.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "statusCode.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "apiKeyIds.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "apiKeyIds.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "aiOrgModel.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "aiOrgModel.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "totalUnitsMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "totalUnitsMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "costMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "costMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "totalUnits.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "cost.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "all.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "provider",
+    "filter": "all.with-columns",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "traceId",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "metadata",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "trace-and-metadata.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "statusCode.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "statusCode.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "apiKeyIds.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "apiKeyIds.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "aiOrgModel.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "aiOrgModel.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "totalUnitsMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "totalUnitsMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "costMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "costMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "totalUnits.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "cost.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "all.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "status_code",
+    "filter": "all.with-columns",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "traceId",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "metadata",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "trace-and-metadata.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "statusCode.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "statusCode.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "apiKeyIds.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "apiKeyIds.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "aiOrgModel.single",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "aiOrgModel.csv-or",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "totalUnitsMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "totalUnitsMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "costMin.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "costMax.inclusive",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "totalUnits.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "cost.exact-range",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  },
+  {
+    "dimension": "users",
+    "filter": "all.intersection",
+    "knownPositive": true,
+    "absentEmpty": true,
+    "respected": true
+  }
+]
+```
+
+</details>
+
+The earlier candidate run passed 102/103, with a provider/status-code query failure; it remains in the private history. This complete subsequent run passes without changing retries, validation, filters, credentials or infrastructure. It is not a claim of uninterrupted service availability. Direct Gateway coverage remains **138/242 (57.02%)**, and all 22 upstream analytics adaptations remain partial.
+
 ## Verified chart-filter output
 
-The independently installed CLI **4.3.1**, with SDK **0.24.0**, passed **54/54** read-only checks at **2026-09-07T10:32:02.882Z**: installed-version verification, an owned positive control and 13 positive/empty-cohort pairs for each of four charts. Every pair runs the public CLI executable.
+The independently installed CLI **4.4.0**, with SDK **0.25.0**, passed **54/54** read-only checks at **2026-09-07T12:12:02.321Z**: installed-version verification, an owned positive control and 13 positive/empty-cohort pairs for each of four charts. Every pair runs the public CLI executable.
 
 Existing owned positive traffic only. Inclusive bounds, singleton/CSV-OR alternatives and combined filters are checked on each chart with an empty negative cohort. No trace IDs, keys, metadata values or tenant counts are published. This does not establish full upstream analytics equivalence.
 
@@ -543,14 +1294,14 @@ This certifies the listed filters on these four Prisma SCM chart adapters, not e
 
 ## Verified empty-window output
 
-The separately installed CLI 4.3.1 passed **3/3** read-only checks at **2026-09-07T10:31:01.470Z**, including actual JSON and YAML commands with SDK 0.24.0. No traffic or key was created to populate the empty window.
+The separately installed CLI 4.4.0 passed **3/3** read-only checks at **2026-09-07T12:10:39.564Z**, including actual JSON and YAML commands with SDK 0.25.0. No traffic or key was created to populate the empty window.
 
 Actual installed CLI JSON/YAML output projected to exit status, period aggregate values and a zero-bucket check. No tenant identifiers, count aggregates or credentials are published. This historical empty-window check does not test new CLI filter flags.
 
 ```json
 {
-  "version": "4.3.1",
-  "sdkVersion": "0.24.0",
+  "version": "4.4.0",
+  "sdkVersion": "0.25.0",
   "json": {
     "exitCode": 0,
     "total": null,

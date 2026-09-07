@@ -1,4 +1,10 @@
-import type { AIGatewayChartOptions, AIGatewayWindowOptions } from '@cdot65/prisma-airs-sdk';
+import {
+  AI_GW_GROUP_COLUMNS,
+  AI_GW_GROUP_DIMENSIONS,
+  type AIGatewayChartOptions,
+  type AIGatewayGroupOptions,
+  type AIGatewayWindowOptions,
+} from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { CliUsageError } from '../../renderer/index.js';
 import { addReadOutput, failAiGateway, runDetail, showHelpOnEmpty } from './shared.js';
@@ -91,6 +97,35 @@ function registerFilteredMetric(
   });
 }
 
+const groupDimensions = [...AI_GW_GROUP_DIMENSIONS, 'status_code', 'users'] as const;
+type GroupDimension = (typeof groupDimensions)[number];
+type GroupColumn = (typeof AI_GW_GROUP_COLUMNS)[number];
+
+function isGroupDimension(value: string): value is GroupDimension {
+  return groupDimensions.some((dimension) => dimension === value);
+}
+
+function isGroupColumn(value: string): value is GroupColumn {
+  return AI_GW_GROUP_COLUMNS.some((column) => column === value);
+}
+
+/** CLI syntax only: retain the SDK's dimension/column lists and filter schema as authority. */
+function groupOptionsFrom(
+  dimension: GroupDimension,
+  opts: WindowFlags & ChartFilterFlags,
+): AIGatewayGroupOptions {
+  const options: AIGatewayGroupOptions = { ...windowFrom(opts), ...chartFiltersFrom(opts) };
+  if (opts.columns !== undefined) {
+    if (dimension === 'users') throw new CliUsageError('User grouping does not support --columns');
+    const columns = opts.columns.split(',').map((column) => column.trim());
+    if (!columns.every(isGroupColumn)) {
+      throw new CliUsageError(`Invalid --columns: choose from ${AI_GW_GROUP_COLUMNS.join(', ')}`);
+    }
+    options.columns = columns;
+  }
+  return options;
+}
+
 /** Register all SDK telemetry reads except the legacy cost renderer. */
 export function registerAiGatewayTelemetryReads(telemetry: Command): void {
   const cache = showHelpOnEmpty(telemetry.command('cache').description('Inspect cache telemetry'));
@@ -122,22 +157,34 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
     );
   }
 
-  const groupBy = addWindowOptions(
-    telemetry
-      .command('group-by <dimension>')
-      .description('Aggregate telemetry by provider, model, status, or another SDK dimension')
-      .option('--columns <names>', 'Comma-separated aggregate columns'),
-  );
-  groupBy.action((dimension: string, opts: WindowFlags) =>
-    runDetail(groupBy, opts, (client) =>
-      client.telemetry.groupBy(dimension as never, {
-        ...windowFrom(opts),
-        ...(opts.columns
-          ? { columns: opts.columns.split(',').map((value) => value.trim()) as never }
-          : {}),
-      }),
+  const groupBy = addChartFilterOptions(
+    addWindowOptions(
+      telemetry
+        .command('group-by <dimension>')
+        .description(`Aggregate telemetry by ${groupDimensions.join(', ')}`)
+        .option('--columns <names>', 'Comma-separated aggregate columns (not supported for users)'),
     ),
   );
+  groupBy.action(async (dimension: string, opts: WindowFlags & ChartFilterFlags) => {
+    let options: AIGatewayGroupOptions;
+    try {
+      if (!isGroupDimension(dimension)) {
+        throw new CliUsageError(
+          `Invalid grouping dimension: choose from ${groupDimensions.join(', ')}`,
+        );
+      }
+      options = groupOptionsFrom(dimension, opts);
+    } catch (error) {
+      failAiGateway(error);
+    }
+    await runDetail(groupBy, opts, (client) => {
+      if (dimension === 'users') return client.telemetry.byUser(options);
+      if (dimension === 'status_code') return client.telemetry.byStatusCode(options);
+      // Narrow without an unchecked cast after the pre-client validation above.
+      if (isGroupDimension(dimension)) return client.telemetry.groupBy(dimension, options);
+      throw new CliUsageError('Invalid grouping dimension');
+    });
+  });
 
   registerFilteredMetric(telemetry, 'latency', 'Get latency telemetry');
 

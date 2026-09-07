@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { nativeDiagnostics } from './native-diagnostics.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const [installed, archive] = process.argv.slice(2);
@@ -15,6 +17,8 @@ assert.equal(new Set(files).size, files.length);
 assert.ok(files.includes('package/dist/cli/index.js'));
 assert.ok(files.includes('package/dist/index.js'));
 assert.ok(files.includes('package/dist/index.d.ts'));
+assert.ok(files.includes('package/package.json'));
+assert.ok(files.includes('package/README.md'));
 for (const packed of files) {
   assert.match(
     packed,
@@ -41,14 +45,27 @@ assert.equal(
 const sdk = createRequire(resolve(installed, 'package.json'))('@cdot65/prisma-airs-sdk');
 assert.equal(sdk.SDK_VERSION, expected.dependencies['@cdot65/prisma-airs-sdk']);
 const entry = resolve(installed, 'dist/cli/index.js');
-const command = (...args) =>
-  execFileSync(process.execPath, [entry, ...args], { encoding: 'utf8', timeout: 30000 });
+const diagnostics = new Set();
+const command = (...args) => {
+  const result = spawnSync(process.execPath, [entry, ...args], {
+    encoding: 'utf8',
+    timeout: 30000,
+    maxBuffer: 1048576,
+    env: { PATH: process.env.PATH, NO_COLOR: '1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  assert.ifError(result.error);
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 0);
+  for (const warning of nativeDiagnostics(result.stderr, process.version)) diagnostics.add(warning);
+  return result.stdout;
+};
 assert.equal(command('--version').trim(), expected.version);
 const help = command('aigateway', 'inference', '--help');
 for (const name of ['chat', 'responses', 'embeddings']) assert.ok(help.includes(name));
 const library = await import(pathToFileURL(resolve(installed, 'dist/index.js')).href);
 assert.equal(Object.keys(library).length, 19);
-for (const metric of ['requests', 'cost', 'tokens', 'latency']) {
+for (const metric of ['requests', 'cost', 'tokens', 'latency', 'group-by']) {
   const flags = command('aigateway', 'telemetry', metric, '--help');
   for (const flag of [
     '--trace-id',
@@ -62,11 +79,21 @@ for (const metric of ['requests', 'cost', 'tokens', 'latency']) {
     '--cost-max',
   ])
     assert.ok(flags.includes(flag));
+  if (metric === 'group-by') {
+    for (const dimension of ['ai_service', 'model', 'api_key', 'provider', 'status_code', 'users'])
+      assert.ok(flags.includes(dimension));
+    assert.ok(flags.includes('--columns'));
+  }
 }
+const bytes = readFileSync(archive);
 console.log(
   JSON.stringify(
     {
       checkedAt: new Date().toISOString(),
+      installed,
+      archive,
+      bytes: bytes.byteLength,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
       version: pkg.version,
       sdkVersion: sdk.SDK_VERSION,
       verifiedPayloadFiles: files.length,
@@ -74,6 +101,8 @@ console.log(
       libraryExports: Object.keys(library).length,
       packedAndInstalledPayloadsIdentical: true,
       versionAndInferenceHelpPassed: true,
+      groupFilterHelpPassed: true,
+      runtimeWarnings: [...diagnostics],
       passed: true,
     },
     null,
