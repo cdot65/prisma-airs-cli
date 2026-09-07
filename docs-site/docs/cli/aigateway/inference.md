@@ -44,7 +44,7 @@ redacted headers but omit request/response bodies and never consume a stream ahe
 
 ## Latest verified example output
 
-Captured **2026-09-07T06:38:15.012Z** from actual CLI execution against AI Gateway.
+Captured **2026-09-07T07:39:58.210Z** from actual CLI execution against AI Gateway.
 Actual built CLI JSON stdout from the passing live suite; response identifiers are redacted. No runtime key or configuration value is retained.
 
 The chat command above returned:
@@ -64,7 +64,7 @@ The chat command above returned:
       }
     }
   ],
-  "created": 1788763087,
+  "created": 1788766790,
   "model": "gpt-5.6-terra",
   "system_fingerprint": null,
   "object": "chat.completion",
@@ -98,13 +98,14 @@ On September 6, 2026 the built CLI passed 8/8 live inference checks using a temp
 SCM-created key, the designated dev workspace, native fetch, and the requested OpenAI models.
 The key was removed afterward and the user's config remained unchanged.
 
-The latest capture above comes from the registry-installed CLI 4.2.1 with published SDK 0.22.0,
+The latest capture above comes from the registry-installed CLI 4.2.2 with published SDK 0.23.0,
 not a development link. Both packages are published; the manifest and frozen lockfile pin the SDK
-exactly, and SDK publication preceded CLI publication. All 1,033 CLI tests and coverage gates pass.
-The local user-prefix installation also passes 12 cross-service/scan checks at 06:38:12 UTC;
+exactly, and SDK publication preceded CLI publication. All 1,035 CLI tests and coverage gates pass.
+The local user-prefix installation also passes 12 cross-service/scan checks at 07:40:08 UTC;
 its distribution files match the registry payload. An independent read-only audit verifies all
 journaled release-inference keys absent. Configuration remains unchanged; no runtime key is persisted.
-The earlier CLI 4.2.0 registry verification remains historical evidence in the SDK's published-package guide.
+The registry CLI also passes 3/3 [empty latency JSON/YAML checks](./telemetry.md#verified-empty-window-output) at 07:39:51 UTC. The independent audit passes 24/24 at 07:40:49 UTC.
+The earlier CLI 4.2.0 and 4.2.1 registry verification remains historical evidence in the SDK's published-package guide.
 No realtime CLI command is added; the SDK's experimental realtime transport reaches HTTP 101
 but the prescribed model rejects provider-session creation with `invalid_model`.
 Known AI Gateway gaps remain explicit in the [release notes](../../about/release-notes.md).

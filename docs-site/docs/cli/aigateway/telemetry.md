@@ -77,7 +77,7 @@ add chart filter flags. `--trace-id` remains a `logs list` option, not a chart o
 
 ## Verified empty-window output
 
-The separately installed CLI 4.2.2 passed **3/3** read-only checks at **2026-09-07T07:31:01.814Z**, including actual JSON and YAML commands with SDK 0.23.0. No traffic or key was created to populate the empty window.
+The separately installed CLI 4.2.2 passed **3/3** read-only checks at **2026-09-07T07:39:51.294Z**, including actual JSON and YAML commands with SDK 0.23.0. No traffic or key was created to populate the empty window.
 
 Actual installed CLI JSON/YAML output projected to exit status, period aggregate values and a zero-bucket check. No tenant identifiers, count aggregates or credentials are published. This historical empty-window check does not test new CLI filter flags.
 
