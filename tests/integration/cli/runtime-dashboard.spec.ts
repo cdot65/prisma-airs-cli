@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
+import { load } from 'js-yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const factory = vi.hoisted(() => ({ getOrCreateManagementClient: vi.fn() }));
@@ -36,10 +37,12 @@ describe('runtime dashboard/session commands', () => {
     items,
     pagination: { total_items: total, skip, limit: 25 },
   });
-  const run = (args: string[]) => {
+  const beforeAction = vi.fn();
+  const run = (args: string[], format = 'json') => {
     const program = new Command();
+    program.hook('preAction', beforeAction);
     registerRuntimeDashboardCommands(program.command('runtime'));
-    return program.parseAsync(['node', 'airs', 'runtime', ...args, '--output', 'json']);
+    return program.parseAsync(['node', 'airs', 'runtime', ...args, '--output', format]);
   };
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -101,6 +104,88 @@ describe('runtime dashboard/session commands', () => {
     expect(JSON.parse(String(output.mock.calls.at(-1)?.[0]))).toEqual([entry]);
   });
   const identityArgs = ['--session-id', 'pan_session', '--app-id', 'app', '--app-name', 'A & B'];
+  it.each([
+    'json',
+    'yaml',
+  ])('rejects week before configuration/authentication (%s)', async (format) => {
+    // Invalid config would fail if option validation did not happen first.
+    await writeFile(join(directory, 'config.json'), JSON.stringify({ scanConcurrency: 'invalid' }));
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('exit');
+    });
+    await expect(
+      run(['sessions', 'list', '--interval', '1', '--unit', 'week'], format),
+    ).rejects.toThrow('exit');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(beforeAction).not.toHaveBeenCalled();
+    expect(factory.getOrCreateManagementClient).not.toHaveBeenCalled();
+    expect(methods.sessionsOverview).not.toHaveBeenCalled();
+    expect(output).not.toHaveBeenCalled();
+    const stderr = JSON.stringify(vi.mocked(console.error).mock.calls);
+    expect(stderr).toContain('Supported units: hour, hours, day, days');
+    expect(stderr).toContain('--interval 7 --unit days');
+    expect(stderr).not.toContain('Dashboard operation failed');
+  });
+  it.each([
+    'weeks',
+    'month',
+    'months',
+    'year',
+    'years',
+    'fortnight',
+    'DAY',
+    ' day ',
+  ])('rejects unsupported unit %s before authentication', async (unit) => {
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('exit');
+    });
+    await expect(run(['sessions', 'list', '--unit', unit])).rejects.toThrow('exit');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(factory.getOrCreateManagementClient).not.toHaveBeenCalled();
+    expect(output).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['sessions', 'chart'],
+    ['sessions', 'get', ...identityArgs],
+    ['sessions', 'transaction', ...identityArgs, '--scan-id', 'scan', '--scan-sub-req-id', '0'],
+    ['dashboard', 'top-applications'],
+    ['dashboard', 'violations-trend'],
+    ['dashboard', 'apps-list'],
+  ])('rejects unsupported units consistently for %j', async (...args) => {
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('exit');
+    });
+    await expect(run([...args, '--unit', 'week'])).rejects.toThrow('exit');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(factory.getOrCreateManagementClient).not.toHaveBeenCalled();
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain(
+      '--interval 7 --unit days',
+    );
+  });
+  it.each([
+    ['1', 'hour'],
+    ['24', 'hours'],
+    ['1', 'day'],
+    ['7', 'days'],
+  ])('preserves the supported %s %s query and YAML output', async (interval, unit) => {
+    await run(['sessions', 'list', '--interval', interval, '--unit', unit], 'yaml');
+    expect(methods.sessionsOverview).toHaveBeenCalledWith({
+      timeInterval: Number(interval),
+      timeUnit: unit,
+      limit: 25,
+      offset: 0,
+    });
+    expect(load(String(output.mock.calls[0][0]))).toEqual([entry]);
+    expect(process.exitCode).toBeUndefined();
+  });
+  it('advertises the supported units in session help', () => {
+    const runtime = new Command('runtime');
+    registerRuntimeDashboardCommands(runtime);
+    const list = runtime.commands
+      .find((command) => command.name() === 'sessions')
+      ?.commands.find((command) => command.name() === 'list');
+    expect(list?.helpInformation()).toContain('Time unit: hour, hours, day, days');
+  });
   it('maps detail and transaction, retaining sub-request zero and default 30-day window', async () => {
     await run(['sessions', 'get', ...identityArgs]);
     expect(methods.session).toHaveBeenCalledWith({

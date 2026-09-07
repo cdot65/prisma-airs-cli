@@ -1,5 +1,19 @@
 # Release Notes
 
+## v5.0.1 (2026-09-07)
+
+Runtime dashboard/session commands reject unsupported time units before config loading,
+debug-file creation, authentication, or API requests. `--unit week` now exits **2** with a
+clear hint to use `--interval 7 --unit days`, instead of a generic HTTP 400 error. Session
+queries retain `hour`, `hours`, `day`, and `days`; application-specific commands retain
+their narrower existing constraints. Units are not silently converted.
+
+Command help and [session examples](../cli/runtime/sessions.md) describe the accepted units.
+Validation: **1,375** regression tests, **45** focused command tests, and **8/8** live E2E tests
+pass. The endpoint workflow includes 15 checks, including rejected week and successful
+seven-day YAML retrieval. An instrumented built-CLI rejection probe confirms **zero fetch
+calls**, even with invalid configuration and debug enabled. The SDK remains pinned to 0.26.0.
+
 ## v5.0.0 (2026-09-07)
 
 - Pin SDK 0.26.0. Add `runtime dashboard` application summaries and `runtime sessions` inventory, chart, session, transaction and explicit stored-content access across all eleven supplied SCM routes. Reuse Management OAuth with a separately configurable dashboard host; no browser token or Scanner key is required.

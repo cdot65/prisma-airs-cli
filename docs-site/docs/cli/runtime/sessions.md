@@ -11,6 +11,7 @@ Authentication and endpoint overrides are described under [dashboard](dashboard.
 ```bash
 airs runtime sessions chart --interval 1 --unit day --output json
 airs runtime sessions list --interval 1 --unit day --limit 25 --offset 0 --output json
+airs runtime sessions list --interval 7 --unit days --output yaml
 airs runtime sessions list --all --max 10000 --output json
 
 airs runtime sessions get --session-id SESSION_ID \
@@ -25,6 +26,12 @@ Chart/list default to **1 day**; get/transaction default to **30 days**. List/ge
 `--limit` (25) and `--offset` (0). All accept `--output pretty|json|yaml`; pretty is readable
 JSON. List JSON/YAML is a **bare array**; the other commands preserve their response envelopes.
 List without `--all` is one page, not a complete export. Get paginates session actions separately.
+
+Starting in CLI **5.0.1**, supported units are `hour`, `hours`, `day`, and `days`. For one week, use
+`--interval 7 --unit days`, not `--interval 1 --unit week`. Unsupported units are rejected
+with exit code **2** and a usage hint before configuration loading, authentication, or API
+requests. Units are not silently converted. These undocumented APIs may impose additional
+window limits; accepting a unit does not guarantee every interval is supported by the server.
 
 `--all` verifies offsets, page limits, stable totals and unique
 `(application ID, application name, session ID)` identities. It advances by actual returned
@@ -60,3 +67,10 @@ to fetch session actions, a transaction and stored content. It verifies all elev
 dashboard/report routes, without saving or printing customer text. See the dated
 [daily report evidence](../../runtime/daily-report.md#validated-live-output) for the separate
 human-deliverable E2E results. Counts vary as the relative window advances.
+
+The **5.0.1 unit-validation patch** passed the full eight-test live suite before release on
+2026-09-07 at 19:15 UTC. Its endpoint workflow completed 15 checks, including exit 2 and a
+seven-day hint for `week`, plus a successful `--interval 7 --unit days --output yaml` query.
+A separate built-CLI check verified zero network calls for the rejected unit. The daily
+inventory contained 775 sessions across 31 pages, with all seven report sources complete.
+Credential-file integrity checks passed; these results do not replace earlier failed captures.

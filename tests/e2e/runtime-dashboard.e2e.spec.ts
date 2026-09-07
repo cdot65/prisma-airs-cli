@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
+import { load } from 'js-yaml';
 import { describe, expect, it } from 'vitest';
 
 const execute = promisify(execFile);
@@ -41,21 +42,53 @@ describe.skipIf(process.env.RUN_RUNTIME_REPORT_E2E !== '1')('live built CLI SCM 
     await mkdir(directory, { recursive: true, mode: 0o700 });
     const checks: string[] = [];
     let sessions = 0;
-    async function read(args: string[]) {
+    async function read(args: string[], format = 'json') {
       let stdout = '';
       try {
         ({ stdout } = await execute(
           process.execPath,
-          [entry, '--quiet', 'runtime', ...args, '--output', 'json'],
+          [entry, '--quiet', 'runtime', ...args, '--output', format],
           { env, cwd: directory, timeout: 180000, maxBuffer: 30_000_000 },
         ));
       } catch {
         // Never attach raw stderr, arguments, output, or SDK errors to the test report.
         throw new Error(`CLI read failed: ${args[0]} ${args[1]}`);
       }
-      return JSON.parse(stdout);
+      return format === 'yaml' ? load(stdout) : JSON.parse(stdout);
     }
     try {
+      let invalidUnitCode = 0;
+      let invalidUnitHint = false;
+      let invalidUnitStdoutEmpty = false;
+      try {
+        await execute(
+          process.execPath,
+          [
+            entry,
+            'runtime',
+            'sessions',
+            'list',
+            '--interval',
+            '1',
+            '--unit',
+            'week',
+            '--output',
+            'yaml',
+          ],
+          { env, cwd: directory, timeout: 30000 },
+        );
+      } catch (error) {
+        const failed = error as { code?: number; stderr?: string; stdout?: string };
+        invalidUnitCode = Number(failed.code);
+        invalidUnitHint = (failed.stderr ?? '').includes('--interval 7 --unit days');
+        invalidUnitStdoutEmpty = failed.stdout === '';
+      }
+      expect(invalidUnitCode).toBe(2);
+      expect(invalidUnitHint && invalidUnitStdoutEmpty).toBe(true);
+      checks.push('unsupported week rejected with usage status and seven-day hint');
+      const week = await read(['sessions', 'list', '--interval', '7', '--unit', 'days'], 'yaml');
+      expect(Array.isArray(week) && week.length > 0).toBe(true);
+      checks.push('seven-day session inventory as parseable YAML');
       const apps = await read(['dashboard', 'applications']);
       expect(Array.isArray(apps.items)).toBe(true);
       expect(apps.items.length > 0).toBe(true);
@@ -159,8 +192,8 @@ describe.skipIf(process.env.RUN_RUNTIME_REPORT_E2E !== '1')('live built CLI SCM 
             capturedAt: new Date().toISOString(),
             checks,
             sessions,
-            expectedChecks: 13,
-            complete: checks.length === 13,
+            expectedChecks: 15,
+            complete: checks.length === 15,
             configUnchanged: unchanged,
             readOnly: true,
             contentPersisted: false,

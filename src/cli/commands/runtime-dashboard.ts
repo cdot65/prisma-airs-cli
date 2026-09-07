@@ -11,6 +11,8 @@ import { CliUsageError, resolveOutput, ui, usageError } from '../renderer/index.
 
 type Options = Record<string, string | boolean | undefined>;
 
+const TIME_UNITS = ['hour', 'hours', 'day', 'days'] as const;
+
 function integer(value: unknown, name: string, minimum = 0): number {
   const n = Number(value);
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(n) || n < minimum)
@@ -46,10 +48,25 @@ function scan(opts: Options) {
   };
 }
 
-function timeOptions(command: Command, interval = '1', unit = 'day'): Command {
-  return command
-    .option('--interval <n>', 'Look-back interval', interval)
-    .option('--unit <unit>', 'API time unit (windows are deployment-dependent)', unit);
+function timeOptions(
+  command: Command,
+  interval = '1',
+  unit = 'day',
+  allowedUnits: readonly string[] = TIME_UNITS,
+): Command {
+  return command.option('--interval <n>', 'Look-back interval', interval).option(
+    '--unit <unit>',
+    `Time unit: ${allowedUnits.join(', ')}`,
+    (value: string) => {
+      // Parse before root preAction hooks can load config or create a debug file.
+      if (!allowedUnits.includes(value))
+        usageError(
+          `Unsupported --unit. Supported units: ${allowedUnits.join(', ')}. For one week, use --interval 7 --unit days.`,
+        );
+      return value;
+    },
+    unit,
+  );
 }
 
 function pageOptions(command: Command): Command {
@@ -138,6 +155,9 @@ export function registerRuntimeDashboardCommands(runtime: Command): void {
     pageOptions(
       timeOptions(
         dashboard.command('applications').description('One page of application activity'),
+        '1',
+        'day',
+        ['day', 'days', 'hour'],
       ),
     ),
     (opts) => {
@@ -168,6 +188,7 @@ export function registerRuntimeDashboardCommands(runtime: Command): void {
           .requiredOption('--app-name <name>', 'Exact dashboard application name'),
         '30',
         'days',
+        ['days'],
       ),
       (opts) => {
         const interval = integer(opts.interval, '--interval', 1);

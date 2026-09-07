@@ -88,6 +88,26 @@ for (const name of [
 const sessionsHelp = command('runtime', 'sessions', '--help');
 for (const name of ['chart', 'list', 'get', 'transaction', 'scan-content'])
   assert.ok(sessionsHelp.includes(name));
+const sessionListHelp = command('runtime', 'sessions', 'list', '--help');
+assert.ok(sessionListHelp.includes('hour, hours, day, days'));
+const invalidUnit = spawnSync(
+  process.execPath,
+  [entry, 'runtime', 'sessions', 'list', '--interval', '1', '--unit', 'week', '--output', 'yaml'],
+  {
+    encoding: 'utf8',
+    timeout: 30000,
+    maxBuffer: 1048576,
+    env: { PATH: process.env.PATH, NO_COLOR: '1', SCAN_CONCURRENCY: 'invalid' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  },
+);
+assert.ifError(invalidUnit.error);
+assert.equal(invalidUnit.signal, null);
+assert.equal(invalidUnit.status, 2);
+assert.equal(invalidUnit.stdout, '');
+assert.match(invalidUnit.stderr, /Supported units: hour, hours, day, days/);
+assert.match(invalidUnit.stderr, /--interval 7 --unit days/);
+assert.ok(!invalidUnit.stderr.includes('Dashboard operation failed'));
 const contentHelp = command('runtime', 'sessions', 'scan-content', '--help');
 for (const flag of ['--scan-id', '--scan-sub-req-id', '--show-content', '--output-file'])
   assert.ok(contentHelp.includes(flag));
@@ -130,6 +150,7 @@ console.log(
       groupFilterHelpPassed: true,
       runtimeReportHelpPassed: true,
       runtimeDashboardAndSessionHelpPassed: true,
+      runtimeTimeUnitValidationPassed: true,
       runtimeWarnings: [...diagnostics],
       passed: true,
     },

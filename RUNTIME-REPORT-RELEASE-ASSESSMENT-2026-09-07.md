@@ -175,3 +175,52 @@ documentation gaps. The remaining item is restoration of OAuth connectivity from
 environment, followed by the same full installed E2E suite. Safe read-only diagnostics and
 the known process-only DNS alternative were exhausted; neither production configuration nor
 credentials were changed. No provider outage cause or unauthorized network workaround is invented.
+
+## Follow-up: unsupported time units (local, unreleased patch)
+
+The reported `--interval 1 --unit week --output yaml` failure reproduced as HTTP 400. A
+fresh comparison succeeded with `--interval 7 --unit days --output yaml`. Read-only SDK
+checks additionally confirmed that session inventory accepts `1 hour`, `24 hours`, and
+`1 day`; `1 months` returned HTTP 400. These are dated observations, not a claim that all
+interval/unit combinations are valid across every undocumented endpoint.
+
+The CLI now validates units while parsing arguments, before global pre-action hooks can
+load configuration, create a debug file, or authenticate. Sessions, rankings, trends and
+apps-list allow `hour`, `hours`, `day`, and `days`; the application-specific commands retain
+their narrower existing units. Unsupported units exit 2 with an explicit supported-unit
+list and `--interval 7 --unit days` hint. There is no silent conversion. SDK raw-query
+flexibility is unchanged. Broader OAuth/transport/schema error classification is not part
+of this targeted correction and remains a separate diagnostic gap.
+
+Verification completed on 2026-09-07 at 19:15 UTC:
+
+- 1,375 regression tests pass, including 45 dashboard/session command tests. Rejection tests
+  cover JSON/YAML, unsupported units, empty stdout, no SDK construction, and no pre-action
+  hook execution. Supported singular/plural hour/day queries retain their exact SDK values.
+- A built-public-CLI probe with network calls forbidden, invalid configuration, and `--debug`
+  exits 2 with the expected hint and zero fetch calls. This checks actual command bootstrap,
+  not only the isolated command registration tests.
+- The complete eight-test built-CLI live suite passes. Its endpoint workflow now completes
+  15 checks, including rejected `week` and successful seven-day YAML retrieval. It enumerated
+  775 sessions across 31 pages; all seven report sources were complete. HTML/Markdown,
+  caller-CWD files, strict status, no-clobber and body-free debug checks pass.
+- Credential bytes are unchanged. Raw customer content was not printed or persisted.
+- Typecheck, build, formatting and Docusaurus build pass. Lint reports only the existing
+  seven non-null-assertion warnings in an unrelated test file. The regression suite also
+  prints the existing local Fontconfig warning while its DLP tests pass.
+
+Private evidence: `artifacts/runtime-dashboard/2026-09-07T19-13-43.462Z/validation.json` and
+`artifacts/runtime-report/2026-09-07T19-13-43.520Z/validation.json`.
+
+The source, built CLI, docs and patch changeset are local. Nothing from this follow-up has
+been committed, pushed, published, deployed, or installed globally. Published CLI 5.0.0 and
+SDK 0.26.0 remain unchanged. Earlier successful and failed release checks remain above.
+
+## Authorized CLI 5.0.1 publication
+
+The user subsequently authorized publishing and updating the installed CLI. The release
+version is 5.0.1; the SDK dependency stays at 0.26.0. The unit-validation changeset is consumed
+into the Docusaurus release notes. The release candidate again passes 1,375 regression tests,
+coverage gates, 14 release-policy tests, typecheck, build, lint/format and the docs build, with
+no known production dependency vulnerabilities. Exact-package, live candidate, CI, publication
+and installed verification are separate gates; results will be recorded after completion.

@@ -30,6 +30,9 @@ All support `--interval`, `--unit`, and `--output pretty|json|yaml`. Pretty outp
 JSON; JSON/YAML preserve the SDK response envelope. Application detail and breakdown require
 7, 30, or 60 `days`; their metrics must not be labeled daily. Overview accepts the SDK's
 1/7/30/60 and day/days/hour options; arbitrary combinations are not guaranteed by the service.
+Rankings, trends, and apps-list accept `hour`, `hours`, `day`, or `days` as units.
+In CLI **5.0.1**, unsupported units fail locally with exit code 2. Express one week as `--interval 7 --unit days`;
+`week` is not a supported unit, and units are not silently converted.
 
 Keep application ID **and exact name** together: IDs can repeat across names, and names
 across IDs. Preserve scaled token units. Detector violations may exceed violating sessions;
