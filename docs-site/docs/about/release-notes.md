@@ -1,5 +1,11 @@
 # Release Notes
 
+## v4.2.2 (2026-09-07)
+
+- Pin SDK `0.23.0`, correcting empty latency response validation. `aigateway telemetry latency` preserves null period mean/percentiles in JSON and YAML instead of failing on a valid empty cohort.
+- Add failing-first public-command integration checks against the actual installed SDK, with synthetic HTTP responses and no live credentials.
+- The SDK also adds verified trace/metadata filters to cost, token and latency methods. This CLI release adds no filter flags. Direct gateway coverage remains 138/242 (57.02%), and existing provider/service limitations remain explicit in the [SDK assessment](https://cdot65.github.io/prisma-airs-sdk/developer/openapi-conformance/).
+
 ## v4.2.1 (2026-09-07)
 
 - Pin SDK `0.22.0`, including its experimental caller-owned realtime transport. The CLI's supported inference commands remain `chat`, `responses` and `embeddings`; this release adds no realtime CLI command and does not promise realtime support for the prescribed model.
