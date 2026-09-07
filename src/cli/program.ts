@@ -1,5 +1,5 @@
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
@@ -11,7 +11,7 @@ import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
 import { installDebugLogger } from './debug-logger.js';
-import { fail, resolveOutput, setQuiet, ui } from './renderer/index.js';
+import { fail, resolveOutput, setQuiet, ui, usageError } from './renderer/index.js';
 
 const READ_COMMAND_NAMES = new Set([
   'categories',
@@ -90,7 +90,17 @@ export function buildProgram(): Command {
   program.hook('preAction', async (_thisCommand, actionCommand) => {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
+    const isRuntimeReport =
+      actionCommand.name() === 'report' && actionCommand.parent?.name() === 'runtime';
     if (
+      isRuntimeReport &&
+      (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))
+    )
+      usageError(
+        'Disable --debug and PANW_AI_SEC_DEBUG for environment reports to avoid persisting scan-log content',
+      );
+    if (
+      !isRuntimeReport &&
       READ_COMMAND_NAMES.has(actionCommand.name()) &&
       actionCommand.options.some((option) => option.long === '--output')
     ) {
@@ -102,8 +112,18 @@ export function buildProgram(): Command {
       }
     }
     if (root.debug) {
-      const logPath = join(homedir(), '.prisma-airs', `debug-api-${Date.now()}.jsonl`);
-      installDebugLogger(logPath);
+      const logPath = join(
+        process.cwd(),
+        `debug-api-${Date.now()}-${randomUUID().slice(0, 8)}.jsonl`,
+      );
+      try {
+        installDebugLogger(logPath);
+      } catch {
+        ui.error(
+          'Cannot create the debug log in the current working directory. Run from a writable directory or omit --debug.',
+        );
+        process.exit(1);
+      }
       ui.status(`Debug: API log → ${logPath}`);
     }
   });

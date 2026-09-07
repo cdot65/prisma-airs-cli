@@ -147,7 +147,14 @@ To capture the raw API traffic for troubleshooting, use the global `--debug` fla
 airs --debug runtime bulk-scan --profile my-profile --file prompts.txt
 ```
 
-This writes every request/response to `~/.prisma-airs/debug-api-<timestamp>.jsonl` — useful for sharing with Palo Alto Networks support. Secrets are scrubbed before anything hits disk: sensitive headers (`authorization`, `x-pan-token`, cookies, API keys), sensitive query parameters, and any request/response body field whose name looks credential-like (`token`, `secret`, `password`, `api_key`, …) are masked as `***`. Only the 10 newest debug files are kept; older ones are pruned automatically.
+This writes request/response diagnostics to `./debug-api-<timestamp>-<unique suffix>.jsonl` in the **current working directory**, with mode `0600`. It does not write beside your read-only credentials. Existing logs are never overwritten or automatically pruned. Choose a writable working directory; initialization failures produce a friendly error before any API request.
+
+Sensitive headers, query parameters, credential-like JSON fields, auth codes, and URL-encoded OAuth secrets are masked as `***`; non-JSON bodies and runtime inference bodies are omitted. Other scan/debug content may remain confidential, so inspect logs before sharing with support. `airs runtime report` refuses debug logging and instead produces an allowlisted human deliverable; see [Daily Environment Report](daily-report.md).
+
+On 2026-09-07, the reported `runtime scan-logs query --interval 128 --unit hours --debug`
+workflow successfully created its private CWD log and reached the service, which returned HTTP
+400 for that interval. Moving the log fixes the local `EROFS` failure; it does not make an
+unsupported API time window valid.
 
 If polling is interrupted or a definite submission rejection remains pending, resume with:
 

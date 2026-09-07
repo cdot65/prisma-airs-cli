@@ -29,7 +29,7 @@ const MASK = '***';
 
 /** Key names (headers, query params, JSON body fields) whose values are secrets. */
 const SENSITIVE_KEY_PATTERN =
-  /token|secret|password|passwd|credential|authorization|cookie|api[-_]?key|client[-_]?auth|^key$/i;
+  /token|secret|password|passwd|credential|authorization|cookie|api[-_]?key|client[-_]?auth|auth[-_]?code|^key$/i;
 
 function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERN.test(key);
@@ -126,8 +126,6 @@ function headersToRecord(
   return headers as Record<string, string>;
 }
 
-const KEEP_DEBUG_LOGS = 10;
-
 /**
  * Install a global fetch interceptor that logs all AIRS / SCM API
  * requests and responses to a JSONL file.
@@ -136,8 +134,8 @@ const KEEP_DEBUG_LOGS = 10;
  */
 export function installDebugLogger(logPath: string): { teardown: () => void } {
   mkdirSync(dirname(logPath), { recursive: true, mode: 0o700 });
-  writeFileSync(logPath, '', { encoding: 'utf8', mode: 0o600 }); // truncate / create
-  pruneDebugLogs(dirname(logPath), KEEP_DEBUG_LOGS);
+  writeFileSync(logPath, '', { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+  // CWD artifacts belong to the user: never truncate or automatically prune earlier logs.
 
   const originalFetch = globalThis.fetch;
 
@@ -172,7 +170,10 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
       try {
         reqBody = redactDeep(JSON.parse(String(init.body)));
       } catch {
-        reqBody = String(init.body);
+        const contentType = new Headers(rawHeaders).get('content-type') ?? '';
+        reqBody = contentType.includes('application/x-www-form-urlencoded')
+          ? redactDeep(Object.fromEntries(new URLSearchParams(String(init.body))))
+          : '[NON-JSON BODY OMITTED]';
       }
     }
 
@@ -186,11 +187,7 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     try {
       response = await originalFetch(input, init);
     } catch (err) {
-      error = inference
-        ? 'Runtime request failed'
-        : err instanceof Error
-          ? err.message
-          : String(err);
+      error = inference ? 'Runtime request failed' : 'Request failed';
       const entry = JSON.stringify({
         timestamp: ts,
         durationMs: Date.now() - startMs,
@@ -219,7 +216,7 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
         try {
           resBody = redactDeep(JSON.parse(text));
         } catch {
-          resBody = text;
+          resBody = '[NON-JSON BODY OMITTED]';
         }
       } catch {
         resBody = '<unreadable>';

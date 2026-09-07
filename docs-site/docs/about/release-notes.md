@@ -1,5 +1,17 @@
 # Release Notes
 
+## v4.5.0 (2026-09-07)
+
+- Add `airs runtime report`: read-only daily AI Runtime Security activity and current configuration, with evidence-backed attention/review findings and explicit complete/partial/unavailable sources. Self-contained HTML is the default; Markdown is also supported. No numeric health score or unsupported daily severity/token metrics are invented.
+- Deliver dashboards and `--debug` logs in the current working directory, not beside read-only credentials. Unique default names, private permissions, no overwriting, no automatic pruning. Reports support `--output-file -` for stdout and `--strict` for completeness-sensitive automation.
+- Add offline application search, priority filtering, mobile/print layouts, CSP-pinned inline assets and hostile-metadata escaping. Raw prompts, responses, credentials, tenant/user identifiers and upstream errors are excluded from report artifacts.
+- Handle debug-log initialization failures with a friendly error. Mask OAuth form secrets and auth codes; omit non-JSON debug bodies. A live 128-hour scan-log query now writes its log successfully, but the service still rejects that interval with HTTP 400.
+- Keep SDK 0.25.0 pinned; no SDK runtime changes are required. Scan-log detail remains explicitly unavailable when the service returns an empty object. The new command does not change the scope or state of AI Gateway.
+
+See the [daily report guide and downloadable examples](../runtime/daily-report.md) for the
+read-only live capture, source limitations, and human review workflow. Samples published with
+the documentation are synthetic; live deliverables remain private.
+
 ## v4.4.0 (2026-09-07)
 
 - Pin published SDK 0.25.0. Extend the nine verified analytics filters to `group-by ai_service|model|api_key|provider|status_code|users`.

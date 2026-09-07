@@ -1,4 +1,12 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -154,6 +162,52 @@ describe('installDebugLogger redaction integration', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+  });
+
+  it('never truncates an existing file or follows a destination symlink', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'airs-debug-existing-'));
+    try {
+      const target = join(dir, 'config.json');
+      const link = join(dir, 'debug-api-link.jsonl');
+      writeFileSync(target, 'KEEP');
+      symlinkSync(target, link);
+      expect(() => installDebugLogger(target)).toThrow();
+      expect(() => installDebugLogger(link)).toThrow();
+      expect(readFileSync(target, 'utf8')).toBe('KEEP');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('redacts URL-encoded OAuth credentials, auth codes, and non-JSON bodies', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'airs-debug-oauth-'));
+    const logPath = join(dir, 'debug-api-test.jsonl');
+    try {
+      globalThis.fetch = vi.fn(async () =>
+        Response.json({ auth_code: 'PRIVATE-AUTH', result: 'ok' }),
+      );
+      const { teardown } = installDebugLogger(logPath);
+      await fetch('https://auth.apps.paloaltonetworks.com/oauth2/access_token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_secret: 'PRIVATE-SECRET',
+          grant_type: 'client_credentials',
+        }),
+      });
+      await fetch('https://api.sase.paloaltonetworks.com/v1/example', {
+        method: 'POST',
+        body: 'PRIVATE-NON-JSON',
+      });
+      teardown();
+      const raw = readFileSync(logPath, 'utf8');
+      expect(raw).not.toContain('PRIVATE-');
+      const first = JSON.parse(raw.split('\n')[0]);
+      expect(first.request.body.client_secret).toBe('***');
+      expect(first.response.body.auth_code).toBe('***');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('logs a private gateway without consuming its stream or retaining prompts and credentials', async () => {

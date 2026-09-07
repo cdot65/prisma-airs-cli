@@ -60,6 +60,7 @@ import {
 } from '../renderer/views/runtime.js';
 import { registerDlpCommands } from './dlp/index.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
+import { registerRuntimeReportCommand } from './runtime-report.js';
 import { registerApplyCommand } from './topics-apply.js';
 import { registerCreateCommand } from './topics-create.js';
 import { registerEvalCommand } from './topics-eval.js';
@@ -188,6 +189,8 @@ export function registerRuntimeCommand(program: Command): void {
   const runtime = program
     .command('runtime')
     .description('Runtime prompt scanning against AIRS profiles');
+
+  registerRuntimeReportCommand(runtime);
 
   // -----------------------------------------------------------------------
   // runtime api-keys — API key management subcommands

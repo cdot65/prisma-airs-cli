@@ -97,8 +97,17 @@
 - [RedTeamTargetUpdateRequest](interfaces/RedTeamTargetUpdateRequest.md)
 - [RegistryCredentials](interfaces/RegistryCredentials.md)
 - [ReliableRuntimeService](interfaces/ReliableRuntimeService.md)
+- [ReportApplication](interfaces/ReportApplication.md)
+- [ReportFinding](interfaces/ReportFinding.md)
+- [ReportLogSummary](interfaces/ReportLogSummary.md)
+- [ReportProfile](interfaces/ReportProfile.md)
+- [ReportRegisteredApp](interfaces/ReportRegisteredApp.md)
+- [ReportSource](interfaces/ReportSource.md)
 - [RestoreResult](interfaces/RestoreResult.md)
 - [RunState](interfaces/RunState.md)
+- [RuntimeDailyReport](interfaces/RuntimeDailyReport.md)
+- [RuntimeReportClient](interfaces/RuntimeReportClient.md)
+- [RuntimeReportOptions](interfaces/RuntimeReportOptions.md)
 - [RuntimeScanResult](interfaces/RuntimeScanResult.md)
 - [RuntimeService](interfaces/RuntimeService.md)
 - [ScanLogQueryOptions](interfaces/ScanLogQueryOptions.md)
@@ -121,6 +130,9 @@
 - [BackupFormat](type-aliases/BackupFormat.md)
 - [BulkScanAction](type-aliases/BulkScanAction.md)
 - [ConsumptionTimeInterval](type-aliases/ConsumptionTimeInterval.md)
+- [ReportFormat](type-aliases/ReportFormat.md)
+- [ReportPriority](type-aliases/ReportPriority.md)
+- [ReportSourceStatus](type-aliases/ReportSourceStatus.md)
 - [ResourceType](type-aliases/ResourceType.md)
 
 ## Variables
@@ -129,11 +141,14 @@
 
 ## Functions
 
+- [collectRuntimeDailyReport](functions/collectRuntimeDailyReport.md)
 - [computeCategoryBreakdown](functions/computeCategoryBreakdown.md)
 - [computeMetrics](functions/computeMetrics.md)
 - [loadConfig](functions/loadConfig.md)
 - [readBackupDir](functions/readBackupDir.md)
 - [readBackupFile](functions/readBackupFile.md)
+- [renderRuntimeReportHtml](functions/renderRuntimeReportHtml.md)
+- [renderRuntimeReportMarkdown](functions/renderRuntimeReportMarkdown.md)
 - [resolveOutputDir](functions/resolveOutputDir.md)
 - [sanitizeFilename](functions/sanitizeFilename.md)
 - [validateDescription](functions/validateDescription.md)
@@ -141,3 +156,4 @@
 - [validateName](functions/validateName.md)
 - [validateTopic](functions/validateTopic.md)
 - [writeBackupFile](functions/writeBackupFile.md)
+- [writeReportFile](functions/writeReportFile.md)

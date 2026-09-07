@@ -42,3 +42,9 @@ docs-site/.docusaurus/
 
 # Runtime data
 ~/.prisma-airs/
+
+# Private environment report validation artifacts
+/artifacts/runtime-report/
+debug-api-*.jsonl
+airs-runtime-report-*.html
+airs-runtime-report-*.md

@@ -27,6 +27,7 @@ const sidebars: SidebarsConfig = {
         'runtime/overview',
         'runtime/scanning',
         'runtime/config-management',
+        'runtime/daily-report',
         {
           type: 'category',
           label: 'Guardrail Optimization',

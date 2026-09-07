@@ -109,7 +109,7 @@ The pretty renderer prints both the display name and the ID inline — the paren
     …
 ```
 
-Top-level groups: `SECURITY`, `SAFETY`, `BRAND_REPUTATION`, `COMPLIANCE`. The `id` strings you see in parens are exactly what you put into `--categories`, e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`. For the raw `/v1/categories` JSON (preselect flags etc.) use `airs --debug redteam categories` and read `~/.prisma-airs/debug-api-*.jsonl`.
+Top-level groups: `SECURITY`, `SAFETY`, `BRAND_REPUTATION`, `COMPLIANCE`. The `id` strings you see in parens are exactly what you put into `--categories`, e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`. For the raw `/v1/categories` JSON (preselect flags etc.) use `airs --debug redteam categories` and read `./debug-api-*.jsonl` in the current working directory.
 
 ---
 
@@ -299,7 +299,7 @@ The reconstructed `curl` template proves the server stored the request shape cor
 `targets get` preserves nested connection fields. Use `--output json` or
 `--output yaml` for the complete normalized object, or a tabular format for a
 two-column Key/Value view. `airs --debug` remains useful for inspecting the
-secret-redacted wire response in `~/.prisma-airs/debug-api-*.jsonl`.
+secret-redacted wire response in `./debug-api-*.jsonl` in the current working directory.
 :::
 
 ---

@@ -155,3 +155,20 @@ export type {
   TestResult,
   UserInput,
 } from './core/types.js';
+export { writeReportFile } from './reports/io.js';
+export { renderRuntimeReportHtml, renderRuntimeReportMarkdown } from './reports/render.js';
+export { collectRuntimeDailyReport } from './reports/runtime.js';
+export type {
+  ReportApplication,
+  ReportFinding,
+  ReportFormat,
+  ReportLogSummary,
+  ReportPriority,
+  ReportProfile,
+  ReportRegisteredApp,
+  ReportSource,
+  ReportSourceStatus,
+  RuntimeDailyReport,
+  RuntimeReportClient,
+  RuntimeReportOptions,
+} from './reports/types.js';

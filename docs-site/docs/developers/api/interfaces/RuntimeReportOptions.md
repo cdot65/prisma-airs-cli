@@ -1,0 +1,35 @@
+# Interface: RuntimeReportOptions
+
+Defined in: src/reports/types.ts:89
+
+## Properties
+
+### maxPages?
+
+> `optional` **maxPages?**: `number`
+
+Defined in: src/reports/types.ts:92
+
+Per-source page budget (1–100); partial results are explicitly marked. Default 10.
+
+***
+
+### now?
+
+> `optional` **now?**: () => `Date`
+
+Defined in: src/reports/types.ts:94
+
+Inject a clock for deterministic tests.
+
+#### Returns
+
+`Date`
+
+***
+
+### title?
+
+> `optional` **title?**: `string`
+
+Defined in: src/reports/types.ts:90

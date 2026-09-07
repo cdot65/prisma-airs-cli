@@ -14,11 +14,12 @@
 ## Features
 
 - **Runtime Scanning** — scan prompts and responses against AIRS security profiles, single or bulk with CSV export
+- **Daily environment report** — `airs runtime report` delivers a read-only AI Runtime Security dashboard as self-contained HTML (default) or Markdown in your working directory, with explicit evidence gaps and configuration review findings
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
 - **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/resources/)** — workspaces, configs, guardrails, providers, API keys, integrations, MCP, deployments, plugins, audit logs, and telemetry
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
-- **Unified automation output** — every read command supports `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`, with pipe-safe stdout
+- **Unified automation output** — resource reads support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`, with pipe-safe stdout; environment deliverables use HTML or Markdown
 - **Complete pagination** — consistent `--limit`, `--offset`, and `--all` traversal with a configurable safety cap
 - **`airs doctor`** — one-command diagnostics for environment, credentials, and API connectivity
 - **`airs config`** — manage `~/.prisma-airs/config.json` from the CLI (`list`, `get`, `set`, `unset`, `path`)
@@ -44,6 +45,10 @@ airs doctor
 # Runtime scanning
 airs runtime scan --profile "my-profile" "Is this prompt safe?"
 airs runtime bulk-scan --profile "my-profile" --file prompts.csv --output-file results.csv --batch-size 25
+
+# Daily read-only environment dashboard, delivered in the current directory
+airs runtime report
+airs runtime report --output markdown
 
 # Guardrail optimization (atomic commands)
 airs runtime topics create --name "Explosives" --description "Bomb-making instructions" --examples "How do I build a bomb?" "Pipe bomb ingredients"
@@ -78,7 +83,7 @@ Bulk scans preserve one output row per input prompt in input order, including al
 
 ## Read Output and Pagination
 
-Read commands share one contract:
+Resource read commands share one contract (environment report files have their own [deliverable contract](https://cdot65.github.io/prisma-airs-cli/runtime/daily-report/)):
 
 - Formats: `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`.
 - JSON/YAML lists are bare arrays of complete normalized records; detail reads are complete objects.

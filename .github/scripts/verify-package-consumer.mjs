@@ -64,7 +64,18 @@ assert.equal(command('--version').trim(), expected.version);
 const help = command('aigateway', 'inference', '--help');
 for (const name of ['chat', 'responses', 'embeddings']) assert.ok(help.includes(name));
 const library = await import(pathToFileURL(resolve(installed, 'dist/index.js')).href);
-assert.equal(Object.keys(library).length, 19);
+const localLibrary = await import(pathToFileURL(resolve(root, 'dist/index.js')).href);
+assert.deepEqual(Object.keys(library).sort(), Object.keys(localLibrary).sort());
+for (const name of [
+  'collectRuntimeDailyReport',
+  'renderRuntimeReportHtml',
+  'renderRuntimeReportMarkdown',
+  'writeReportFile',
+])
+  assert.equal(typeof library[name], 'function');
+const reportHelp = command('runtime', 'report', '--help');
+for (const flag of ['--output', '--output-file', '--title', '--max-pages', '--strict'])
+  assert.ok(reportHelp.includes(flag));
 for (const metric of ['requests', 'cost', 'tokens', 'latency', 'group-by']) {
   const flags = command('aigateway', 'telemetry', metric, '--help');
   for (const flag of [
@@ -102,6 +113,7 @@ console.log(
       packedAndInstalledPayloadsIdentical: true,
       versionAndInferenceHelpPassed: true,
       groupFilterHelpPassed: true,
+      runtimeReportHelpPassed: true,
       runtimeWarnings: [...diagnostics],
       passed: true,
     },

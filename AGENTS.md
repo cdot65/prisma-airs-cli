@@ -15,7 +15,7 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 5. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 6. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files (subcommands under `redteam targets`)
 
-The binary is `airs`. Four top-level command groups: `runtime`, `redteam`, `aigateway`, `model-security` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl` (secrets redacted); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
+The binary is `airs`. Four top-level command groups: `runtime`, `redteam`, `aigateway`, `model-security` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` writes a new private `./debug-api-<timestamp>-<unique suffix>.jsonl` in the current working directory (secrets redacted; no automatic pruning); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
 
 ---
 
@@ -94,6 +94,23 @@ airs model-security groups list --output json
 ## Command Reference
 
 ### Runtime — Scanning
+
+#### Daily environment report (read-only)
+
+```bash
+airs runtime report [--output html|markdown] [--output-file <new-path|->] [--title <text>] [--max-pages <1-100>] [--strict]
+```
+
+Uses Management API OAuth through SDK reads only. Defaults to a unique timestamped HTML file
+in CWD; Markdown also defaults to CWD. `--output-file -` explicitly streams the artifact.
+Files are private (0600), atomic and no-clobber; credentials remain read-only. Report artifact
+formats are independent of terminal output preferences. `--debug` / enabled SDK debug are
+refused for report privacy. Partial sources remain visible; `--strict` returns 1 after writing
+when any source is incomplete. All sources unavailable also returns 1. No numeric health score,
+historical snapshot, availability SLA, or daily detector/token rollup is fabricated.
+
+Library: `src/reports/` separates SDK collection/evidence analysis, HTML/Markdown rendering,
+and private file publication. Real examples and limitations: `docs-site/docs/runtime/daily-report.md`.
 
 #### Scan a single prompt
 

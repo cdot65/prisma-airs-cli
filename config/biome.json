@@ -1,7 +1,18 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
   "files": {
-    "includes": ["**", "!dist", "!coverage", "!site", "!docs-site", "!config"]
+    "includes": [
+      "**",
+      "!dist",
+      "!coverage",
+      "!site",
+      "!docs-site",
+      "!config",
+      "!artifacts/runtime-report",
+      "!**/debug-api-*.jsonl",
+      "!**/airs-runtime-report-*.html",
+      "!**/airs-runtime-report-*.md"
+    ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
