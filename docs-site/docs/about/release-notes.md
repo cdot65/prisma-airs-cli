@@ -16,6 +16,16 @@ payload checks and eleven native checks. Earlier live workflows pass; a later fr
 run encounters an independently reproduced OAuth connection timeout. See the dated availability
 warning in the guide; this is not an all-green current service-availability claim.
 
+The [npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150548244),
+[CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150439098),
+[docs deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150439168), and
+[container publication/amd64+arm64 checks](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150548389)
+pass. Registry and user-prefix CLI 5.0.0 match the verified seven-file payload and 23 exports,
+with eleven native checks each and an unchanged credential file. Public browser/download
+checks pass 9/9. The full installed live suite at 18:15 UTC reports **2 passed / 6 failed**,
+blocked by OAuth connectivity and its missing-artifact consequence; it is not counted as
+a passing latest E2E run.
+
 ## v4.5.0 (2026-09-07)
 
 - Add `airs runtime report`: read-only daily AI Runtime Security activity and current configuration, with evidence-backed attention/review findings and explicit complete/partial/unavailable sources. Self-contained HTML is the default; Markdown is also supported. No numeric health score or unsupported daily severity/token metrics are invented.

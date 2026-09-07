@@ -127,3 +127,47 @@ installed-package checks and fresh live verification are resolved. Implementatio
 E2E are strong; assigning a higher operational score would hide the current authentication
 availability problem. The remaining iteration is explicit: publish verified packages, verify
 exact installed payloads, repeat live checks, deploy docs and record actual final results here.
+
+## Final publication evidence — 18:16 UTC
+
+All authorized release actions are delivered:
+
+- SDK **0.26.0** is on npm and GitHub, with public Docusaurus docs and independent fresh registry
+  consumer verification. Its runtime release commit is `5a59d523ff206e17b8f3fda7b441dba26ec36a69`.
+- CLI **5.0.0** is on npm and GitHub; commit `ac6d785b232019900be48df2231ff23a5c884596` and tag
+  `v5.0.0` are on both configured CLI remotes. The user's existing `airs` is upgraded to 5.0.0.
+- [CLI CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150439098) passes every job,
+  including native consumers on Node 20.17, 22.13 and 24. [npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150548244)
+  and [Docusaurus deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150439168) pass.
+- Fresh registry and user-prefix installations independently match all **7 payload files / 23
+  runtime exports** and each passes **11/11 native checks**. Production registry audit reports
+  zero vulnerabilities. The installed CLI tarball SHA-256 is
+  `8974fc8681bccfd8501b99910d1453ad51cb92cdbcc38545ddd08367adf10b2c`.
+- [Container publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34150548389)
+  passes both amd64/arm64 native verification jobs and guarded alias promotion. `5.0` and
+  `latest` resolve to `sha256:bff6093d8cd99d4d372fe1029e0c335ba559388c3dbe6a37d2a86e2dca4ceebc`.
+- Both documentation sites are live. The public CLI guide and exact downloadable examples
+  pass **9/9** real-browser checks, with no external report requests or browser errors.
+  ScanLogsClient/legacy command warnings and schema-2 migration instructions are explicit.
+
+### Final full installed live suite — 18:15 UTC
+
+The complete eight-test suite ran against the user's **published** CLI 5.0.0 / SDK 0.26.0:
+**2 passed / 6 failed**. Diagnostic strict-mode delivery and no-clobber protection passed.
+Fresh SDK collection, positive HTML/Markdown delivery, positive default CWD delivery, session
+debug retrieval and all-route drill-down failed because authentication timed out before HTTP.
+The content-exclusion test could not finish because the earlier positive-generation test did
+not produce its Markdown input; it is not falsely counted as a passing privacy E2E. Separate
+credential scans remain successful, and credential-file integrity is unchanged.
+
+Evidence is retained privately in `artifacts/runtime-report/2026-09-07T18-14-31.778Z/` and
+`artifacts/runtime-dashboard/2026-09-07T18-14-31.710Z/`. Earlier successful 17:39/17:47 workflows
+remain documented separately; their counts are not substituted for this latest result.
+
+**Final operational assessment: 8/10.** The code, release, installed consumers and documentation
+are delivered and verified, but current live readiness is **not** certified. Iteration fixed
+the version mismatch, schema footer, discovery-window assumption, debug privacy gap and
+documentation gaps. The remaining item is restoration of OAuth connectivity from this
+environment, followed by the same full installed E2E suite. Safe read-only diagnostics and
+the known process-only DNS alternative were exhausted; neither production configuration nor
+credentials were changed. No provider outage cause or unauthorized network workaround is invented.

@@ -154,11 +154,19 @@ file's hash is unchanged. Private live artifacts are not included in these downl
 
 :::warning Later authentication availability check
 
-At **18:06 UTC**, the installed CLI 5.0.0 candidate using registry SDK 0.26.0 could not start
-a new live dashboard workflow: the OAuth host timed out before returning HTTP. Curl and
+At **18:15 UTC**, the complete eight-test live suite was rerun through the user's installed,
+published CLI **5.0.0** with registry SDK **0.26.0**: **2 passed / 6 failed**. OAuth timed out
+before returning HTTP, so no fresh positive downstream read was certified. The protected
+content check also could not run to completion because the earlier generation test did not
+produce its Markdown input. Independent credential scans still pass. Curl and
 published SDK 0.25.0 reproduced the same failure, while the dashboard API remained reachable
 with unauthenticated HTTP 401. The earlier successful tests are retained as dated evidence,
 not relabeled as a passing latest run. No credentials, DNS or tenant configuration were changed.
+
+Publication itself is verified: registry and installed payloads match all seven package files
+and 23 exports; both pass eleven native checks. All remote CI jobs pass. The published site
+and both linked downloads pass nine browser checks. A separate unavailable-source check
+confirms a diagnostic report is written and strict mode exits 1; unknown activity is not zero.
 
 :::
 
