@@ -14,6 +14,16 @@ pass. The endpoint workflow includes 15 checks, including rejected week and succ
 seven-day YAML retrieval. An instrumented built-CLI rejection probe confirms **zero fetch
 calls**, even with invalid configuration and debug enabled. The SDK remains pinned to 0.26.0.
 
+The [npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155639222),
+[release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155384917),
+[docs deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155384857), and
+[container publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155638754)
+pass, including both native architectures and guarded container aliases. Fresh registry
+and global CLI installations match the tested payload and each pass eleven native checks.
+The installed published CLI passes the full live suite **8/8** at 19:32 UTC, including both
+the rejected week and working seven-day YAML commands. An earlier candidate pagination
+failure and subsequent passing reruns are retained in the [dated evidence](../runtime/daily-report.md#validated-live-output).
+
 ## v5.0.0 (2026-09-07)
 
 - Pin SDK 0.26.0. Add `runtime dashboard` application summaries and `runtime sessions` inventory, chart, session, transaction and explicit stored-content access across all eleven supplied SCM routes. Reuse Management OAuth with a separately configurable dashboard host; no browser token or Scanner key is required.

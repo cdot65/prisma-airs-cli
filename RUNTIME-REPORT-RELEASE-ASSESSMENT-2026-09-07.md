@@ -224,3 +224,56 @@ into the Docusaurus release notes. The release candidate again passes 1,375 regr
 coverage gates, 14 release-policy tests, typecheck, build, lint/format and the docs build, with
 no known production dependency vulnerabilities. Exact-package, live candidate, CI, publication
 and installed verification are separate gates; results will be recorded after completion.
+
+### CLI 5.0.1 final publication and installed evidence
+
+- Release commit `bb3f06ce914a42b6f9d99208de78f20b3ce1ec9d` and annotated tag `v5.0.1`
+  are pushed to both existing remotes. [GitHub release](https://github.com/cdot65/prisma-airs-cli/releases/tag/v5.0.1)
+  is public. [Release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155384917)
+  passes all seven jobs, including native consumers on Node 20.17, 22.13 and 24.
+- [npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155639222)
+  succeeds. Registry availability required a short propagation wait; the exact version
+  was verified before installation. The user-prefix `airs` now reports **5.0.1**.
+  SDK dependency remains **0.26.0**; no SDK package was republished.
+- Independently packed, fresh-registry and globally installed packages match all seven
+  payload files and 23 library exports. Package SHA-1 is
+  `01350cb785ec903ef502c26ebf67a6e1888da9c3`; the independently packed archive SHA-256 is
+  `3fc0d025eda830674d03b22b6b7e458ca90a91c64c485cd06daff486205b23b7`.
+  Each installation passes the new invalid-unit/help checks and eleven native DLP checks.
+  Fresh registry production audit reports zero known vulnerabilities.
+- First packed-candidate full live attempt: **7 passed / 1 failed**, at 19:24 UTC. All
+  seven report tests passed; the endpoint workflow failed after ten completed checks,
+  during full session pagination. Its cause is unknown, not asserted to be OAuth or data
+  drift. A metadata-only traced rerun returned HTTP 200 for OAuth and all 33 session pages,
+  with 822 unique records, stable totals and no duplicate entries. No customer records
+  were printed. The unchanged complete candidate suite then passed **8/8**, at 19:26 UTC.
+- Final **published, globally installed** full live suite: **8/8 passed**, at 19:32 UTC.
+  Endpoint workflow: 15/15 checks. Report workflow: 7/7 checks. All seven sources complete;
+  daily inventory contains 822 sessions across 33 pages. Activity reports 822 sessions and
+  79 violating sessions. Stored content remains explicitly fetched and is not persisted.
+- From the user's actual vault working directory, the global CLI returns exit **2**,
+  empty stdout and the seven-day hint for `--interval 1 --unit week --output yaml`.
+  The exact `--interval 7 --unit days --output yaml` replacement returns exit **0** and
+  25 parseable entries. An initial ad-hoc check did not run because its YAML parser was
+  resolved from the vault; resolving that parser from the installed CLI corrected the
+  harness, without application changes. That harness attempt is not counted as a CLI pass.
+- Credential-file bytes are unchanged from before installation. The prepublication
+  secret scan covers 13,076 files with zero configured-secret matches. No tenant,
+  gateway, profile, credential, DNS or network configuration was modified.
+- The final secret scan covers 13,098 files with zero configured-secret matches and
+  unchanged credentials. The installed live HTML and public Docusaurus examples pass
+  all nine real-browser checks, with no external report requests or browser errors.
+- [Container publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155638754)
+  passes amd64 and arm64 native checks and guarded `5.0`/`latest` alias promotion.
+  Both aliases resolve to `sha256:b10a0bf0d0c83ca663430efddc8bf041ed8226ef5282c9d91d938ef545ebb99c`.
+  [Docusaurus deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34155384857)
+  is live with the new unit rules; follow-up docs include these final installed results.
+
+Private final evidence is under `artifacts/runtime-dashboard/2026-09-07T19-31-34.249Z/`
+and `artifacts/runtime-report/2026-09-07T19-31-34.304Z/`. The failed candidate is preserved
+under the `19-23-06.014Z` dashboard and `19-23-06.073Z` report directories; the complete
+candidate rerun is under `19-25-13.369Z` and `19-25-13.426Z`, respectively.
+
+This completes the unit-validation patch release and installation. Earlier failed captures
+remain historical evidence; this patch does not claim to repair broader generic error
+classification or guarantee continuously available upstream APIs.

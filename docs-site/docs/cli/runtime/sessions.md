@@ -74,3 +74,11 @@ seven-day hint for `week`, plus a successful `--interval 7 --unit days --output 
 A separate built-CLI check verified zero network calls for the rejected unit. The daily
 inventory contained 775 sessions across 31 pages, with all seven report sources complete.
 Credential-file integrity checks passed; these results do not replace earlier failed captures.
+
+**Published CLI 5.0.1, installed verification at 19:32 UTC:** the full suite passed **8/8**,
+with all 15 endpoint-workflow checks complete and 822 daily sessions enumerated across
+33 pages. From the user's working directory, `1 week` exits 2 with the hint and no data,
+while `7 days` returns 25 YAML entries with exit 0 (the default first page). The globally
+installed package matches the independently verified candidate byte-for-byte. See the
+[latest report evidence](../../runtime/daily-report.md#validated-live-output) for the retained
+earlier pagination failure and subsequent successful full runs.

@@ -140,6 +140,22 @@ command-local `--output` wins.
 
 ## Validated live output
 
+**Latest installed verification — CLI 5.0.1 / SDK 0.26.0, 2026-09-07 at 19:32 UTC:**
+the complete live suite passed **8/8** against the published package installed as `airs`.
+All seven sources were complete: **6 application buckets, 19 profiles, 17 registered
+applications, 822 sessions across 33 pages, 10 chart buckets, 3 ranked applications, and
+10 severity-trend buckets**. Application activity reported **822 sessions / 79 violating**.
+The endpoint workflow completed 15 checks, including rejected `week` and successful
+seven-day YAML retrieval. HTML/Markdown, default CWD delivery, strict completeness status,
+no-clobber protection, and private body-free session debug checks passed. Credential bytes
+were unchanged. These figures are dated observations, not fixed expected totals.
+
+One earlier 5.0.1 packed-candidate attempt passed 7/8 and failed during full session
+pagination; the failure's cause was not established. A traced rerun returned 822 unique
+sessions across 33 stable HTTP-200 pages, and the unchanged full candidate suite then passed
+8/8 before publication. The failed capture remains in the release assessment; it is not
+relabeled as successful. Broader generic-error diagnostics remain a separate known issue.
+
 **CLI 5.0.0 / SDK 0.26.0 candidate, 2026-09-07 at 17:39 UTC:** all seven read-only report
 workflow tests pass. Every source is complete: **6 daily application buckets, 19 profiles,
 17 registered applications, 677 session entries across 28 pages, 10 session-chart buckets,
@@ -152,7 +168,7 @@ atomic no-clobber files; default CWD deliverables; the replacement session debug
 (HTTP 200, body-free private log in CWD); and credential/raw-field exclusion. The credential
 file's hash is unchanged. Private live artifacts are not included in these downloads.
 
-:::warning Later authentication availability check
+:::warning Earlier CLI 5.0.0 authentication failures
 
 At **18:15 UTC**, the complete eight-test live suite was rerun through the user's installed,
 published CLI **5.0.0** with registry SDK **0.26.0**: **2 passed / 6 failed**. Most fresh OAuth
