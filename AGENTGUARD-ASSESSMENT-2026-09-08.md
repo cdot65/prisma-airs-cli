@@ -1,6 +1,6 @@
 # AI Supply Chain / AgentGuard implementation assessment
 
-Date: September 8, 2026 (UTC). Status: SDK 0.29.0 published; CLI 5.4.1 release validation in progress following the withheld 5.4.0 attempt. Publication results are recorded separately below once verified.
+Date: September 8, 2026 (UTC). Status: **SDK 0.29.0 and CLI 5.4.1 published and verified**, following the withheld 5.4.0 attempt. See final publication evidence below.
 
 ## Delivered scope
 
@@ -92,3 +92,14 @@ Unverified/out of scope: scan submission/uploads, policy mutation, additional st
 The remote package-test job passed 1,518 tests but could not load the four-test sidebar suite: its direct sidebar import pulled in the separately installed Docusaurus tsconfig, absent from package-test environments. This was masked locally by the installed docs dependencies. npm publication was blocked by the gate. The container workflow was cancelled before promotion, and the GitHub release was marked withdrawn/prerelease without rewriting its tag. The correction uses TypeScript syntax-tree inspection without importing the docs toolchain and is released as 5.4.1. This does not change the runtime bundle's feature logic.
 
 The corrected suite passes all 1,522 tests in a fresh checkout with only root package dependencies installed (no docs-site dependencies). CLI 5.4.1's fresh-OAuth workflow passes 26/26 at 18:44 UTC; artifacts are in `artifacts/agentguard-e2e-magOfj/`. Its HTML report passes browser checks for mobile layout, functional priority filtering, printing all findings, no-JavaScript rendering and zero external requests/page errors. Both documentation builds remain passing.
+
+### Final publication evidence
+
+- SDK 0.29.0: release/source `cb6badbb2d7313fa139ce52d03e901d354748ed9`; npm publication workflow `34263787527`, CI/runtime tests and Pages deployment passed.
+- CLI 5.4.1: release/source `76f4c08114c0923e98a6631e139832372abfa195`; pushed to GitHub and the origin mirror, including tag. CI `34264918472`, Pages `34264918554`, trusted npm publication `34265117623`, and container build/amd64+arm64 verification/promotion `34265118046` all passed.
+- Public registry metadata temporarily lagged publication; installation was not considered verified until the version became publicly retrievable. The global CLI was then updated from npm to 5.4.1 with SDK 0.29.0.
+- At 18:57 UTC, the installed executable passed **26/26 live checks**, including unchanged credential-file hashes. Evidence artifacts are under `/var/tmp/prisma-airs-cli-release-xJD4Fi/artifacts/agentguard-e2e-OgCbjP/`.
+- All **7 package files** match the independent release tarball and source build; tarball SHA-256 `97d0cd2b09d400884ab425a211782f7045368112902a83293586efb19be770a6`. All **11 native DLP consumer checks** passed without runtime warnings.
+- Production browser checks pass for Gateway category expansion/collapse in both navigation contexts, unchanged URL/top-level items, and AgentGuard 5.4.1 docs with live evidence; zero page errors.
+
+Final self-assessment: **9/10 for this bounded release**. The documented experimental API limitations remain; no full-product 99% OpenAPI coverage or additional unimplemented operations are claimed.

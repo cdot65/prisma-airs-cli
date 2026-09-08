@@ -49,6 +49,8 @@ The report combines a bounded 30-day scan inventory, server rolling `30_DAYS` sk
 
 These results came from CLI 5.4.1's release build with registry-installed SDK 0.29.0 and fresh OAuth authentication, not from replayed browser responses. The release acceptance rerun at 18:44 UTC passed all **26 checks**, with no local SDK link and no credential-file changes.
 
+The **npm-installed CLI 5.4.1** repeated all **26/26** checks at 18:57 UTC with the same aggregate results. Its seven packaged files match the independently packed release build byte-for-byte, and all 11 native DLP consumer checks passed. Both container architectures and the deployed AI Gateway sidebar expansion were verified.
+
 ```bash
 airs agentguard stats --output json
 ```
