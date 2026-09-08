@@ -38,6 +38,25 @@ manual investigation, and edits require writable files/directories. These constr
 are documented. Broader keychain integration or automatic stale-lock recovery is not
 part of this request.
 
-The user has now authorized publication. CLI 5.6.0 is the additive release for this
-feature; release verification is in progress. CLI 5.5.0 does not contain guided setup.
-No SDK change was required; the SDK dependency remains 0.29.0.
+## Published release verification
+
+- CLI **5.6.0** is published as npm `latest`, with GitHub provenance, and installed
+  globally. `airs --version` returns `5.6.0`. SDK dependency remains **0.29.0**.
+- Release source: `42f70e085e46c872902605e703c3f7f1b16038b9`, pushed to GitHub and
+  the origin mirror along with annotated tag `v5.6.0`.
+- All seven installed package files exactly match the independently packed and tested
+  candidate. Tarball SHA-256:
+  `958a7df53f7ef2a0470d03de483e2c8140948f1436b08c273b8dd7ef44dff720`.
+- npm-installed acceptance at 2026-09-08T21:47Z: six tenant setup/OAuth/migration
+  workflows and eleven native consumer checks passed; native fixture cleanup completed.
+- Coverage: 97.27% lines/statements, 89.91% branches, 96.47% functions under the
+  repository coverage configuration (which excludes CLI rendering/command files).
+  Tenant settings storage achieved 100% lines/functions and 93.93% branches.
+- Production tenant documentation returned HTTP 200 and contained guided setup,
+  stdin instructions, and captured terminal output.
+
+Release evidence: [v5.6.0](https://github.com/cdot65/prisma-airs-cli/releases/tag/v5.6.0),
+[CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34282028905),
+[npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34282152684),
+[docs deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34282028896),
+[container workflow](https://github.com/cdot65/prisma-airs-cli/actions/runs/34282150621).

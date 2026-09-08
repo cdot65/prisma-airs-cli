@@ -5,6 +5,8 @@ sidebar_label: tenant
 
 # Tenant selection
 
+Guided creation and individual setting updates are available in CLI **5.6.0**.
+
 Create a tenant configuration through guided prompts, or register an existing Prisma
 AIRS JSON file. You can then update individual settings and switch between tenants.
 Existing files can be read-only: registering, switching, reading, and deleting
@@ -167,3 +169,9 @@ returned `defaultOutput: yaml` and `[REDACTED]` for `mgmtClientSecret`. Separate
 built-CLI integration tests verified stdin setup, secret rotation, individual endpoint
 updates, and OAuth/profile retrieval against a local HTTP test API. The existing
 two-tenant profile backup/restore integration workflows also passed.
+
+After npm publication, the installed CLI **5.6.0** passed all six setup/OAuth/migration
+workflows again on 2026-09-08 at 21:47 UTC, plus eleven native consumer checks. Its seven
+packaged files exactly matched the pre-release candidate. `airs --version` returned
+`5.6.0`. These tests use synthetic tenants and a local HTTP API; they do not alter
+your live tenant credentials or the default config file.
