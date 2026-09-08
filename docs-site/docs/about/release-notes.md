@@ -1,6 +1,10 @@
 # Release Notes
 
-## v5.4.0 (2026-09-08) — AgentGuard reports and navigation repair
+## v5.4.1 (2026-09-08) — AgentGuard reports and navigation repair
+
+Version 5.4.0 was withheld from npm after the release gate found a test-only dependency
+on the separately installed Docusaurus toolchain. Version 5.4.1 isolates that sidebar
+regression test; no release tag was rewritten.
 
 - Add `airs agentguard scans list`, `scans vulnerabilities`, `stats`, `rules list`
   and `report`, backed by SDK 0.29.0 and the existing Management OAuth credentials.

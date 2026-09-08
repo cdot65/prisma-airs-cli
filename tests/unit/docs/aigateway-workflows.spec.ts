@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import sidebars from '../../../docs-site/sidebars';
+import ts from 'typescript';
 
 const docsRoot = new URL('../../../docs-site/', import.meta.url);
 
@@ -8,14 +8,35 @@ async function read(relativePath: string): Promise<string> {
 }
 
 describe('AI Gateway workflow documentation', () => {
-  it('expands the AI Gateway category without navigating to another sidebar', () => {
-    const gateway = (
-      sidebars.docs as Array<{ label?: string; link?: unknown; items?: unknown[] }>
-    ).find((item) => item.label === 'AI Gateway');
+  it('expands the AI Gateway category without navigating to another sidebar', async () => {
+    // Inspect the config without loading the separately installed docs-site toolchain.
+    const source = ts.createSourceFile(
+      'sidebars.ts',
+      await read('sidebars.ts'),
+      ts.ScriptTarget.Latest,
+    );
+    const categories: ts.ObjectLiteralExpression[] = [];
+    const visit = (node: ts.Node) => {
+      if (ts.isObjectLiteralExpression(node)) categories.push(node);
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+    const property = (node: ts.ObjectLiteralExpression, name: string) =>
+      node.properties.find(
+        (p): p is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(p) && p.name.getText(source) === name,
+      )?.initializer;
+    const gateway = categories.find((node) => {
+      const label = property(node, 'label');
+      return label && ts.isStringLiteral(label) && label.text === 'AI Gateway';
+    });
     expect(gateway).toBeDefined();
-    expect(gateway?.link).toBeUndefined();
-    expect(gateway?.items?.[0]).toBe('cli/aigateway/workflows');
-    expect(gateway?.items).toHaveLength(5);
+    if (!gateway) throw new Error('Missing AI Gateway category');
+    expect(property(gateway, 'link')).toBeUndefined();
+    const items = property(gateway, 'items');
+    if (!items || !ts.isArrayLiteralExpression(items)) throw new Error('Missing Gateway children');
+    expect(items.elements[0]?.getText(source)).toBe("'cli/aigateway/workflows'");
+    expect(items.elements).toHaveLength(5);
   });
 
   it('documents the complete workspace and integration binding workflow', async () => {

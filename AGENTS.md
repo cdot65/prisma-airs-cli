@@ -6,9 +6,9 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 
 ## Quick Context
 
-### AgentGuard browser API additions (CLI 5.4.0 / SDK 0.29.0)
+### AgentGuard browser API additions (CLI 5.4.1 / SDK 0.29.0)
 
-`airs agentguard scans list`, `scans vulnerabilities <scanUuid>`, `stats`, `rules list`, and `report` provide read-only AI Supply Chain agent/skill telemetry using Management OAuth. Reports are HTML by default or Markdown, use private no-clobber CWD files, and contain aggregates only. Finding content requires `--include-content`; debug bodies are omitted. Only `30_DAYS` statistics are verified. Rules pagination reports page length, so `--all` must continue until a short/empty page. Failed scans may contain null summaries/durations; null metrics are unknown, never zero. Use `scripts/e2e-agentguard.mjs` for read-only live acceptance. CLI 5.4.0 requires registry-published SDK 0.29.0; never publish with a local link override.
+`airs agentguard scans list`, `scans vulnerabilities <scanUuid>`, `stats`, `rules list`, and `report` provide read-only AI Supply Chain agent/skill telemetry using Management OAuth. Reports are HTML by default or Markdown, use private no-clobber CWD files, and contain aggregates only. Finding content requires `--include-content`; debug bodies are omitted. Only `30_DAYS` statistics are verified. Rules pagination reports page length, so `--all` must continue until a short/empty page. Failed scans may contain null summaries/durations; null metrics are unknown, never zero. Use `scripts/e2e-agentguard.mjs` for read-only live acceptance. CLI 5.4.1 requires registry-published SDK 0.29.0; never publish with a local link override.
 
 `airs` is a CLI for Palo Alto Prisma AIRS AI security platform. It covers:
 

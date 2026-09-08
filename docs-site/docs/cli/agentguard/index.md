@@ -5,8 +5,8 @@ sidebar_label: Overview and examples
 
 # airs agentguard
 
-:::warning Experimental browser APIs — CLI 5.4.0 / SDK 0.29.0
-AgentGuard reads undocumented browser APIs for agent and skill scanning. These commands are introduced in CLI 5.4.0 with an exact dependency on SDK 0.29.0. These commands do not create scans, upload skills or modify policies.
+:::warning Experimental browser APIs — CLI 5.4.1 / SDK 0.29.0
+AgentGuard reads undocumented browser APIs for agent and skill scanning. These commands are introduced in CLI 5.4.1 with an exact dependency on SDK 0.29.0. These commands do not create scans, upload skills or modify policies.
 :::
 
 Uses existing Management credentials from the read-only `~/.prisma-airs/config.json` or `PANW_MGMT_*` environment. No pasted browser bearer token or runtime scan API key is required. Optional configuration keys: `agentGuardDataEndpoint`, `agentGuardMgmtEndpoint`, `agentGuardTokenEndpoint`; environment equivalents are `PANW_AGENT_GUARD_DATA_ENDPOINT`, `PANW_AGENT_GUARD_MGMT_ENDPOINT`, and `PANW_AGENT_GUARD_TOKEN_ENDPOINT`.

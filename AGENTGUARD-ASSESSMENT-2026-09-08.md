@@ -1,6 +1,6 @@
 # AI Supply Chain / AgentGuard implementation assessment
 
-Date: September 8, 2026 (UTC). Status: implementation and local verification complete; SDK 0.29.0 / CLI 5.4.0 release validation in progress. Publication results are recorded separately below once verified.
+Date: September 8, 2026 (UTC). Status: SDK 0.29.0 published; CLI 5.4.1 release validation in progress following the withheld 5.4.0 attempt. Publication results are recorded separately below once verified.
 
 ## Delivered scope
 
@@ -86,3 +86,7 @@ The navigation fix passed a browser check on both the Docs landing page and the 
 - CLI release build and typecheck pass with the registry dependency. Publication and installed-CLI verification follow this gate.
 
 Unverified/out of scope: scan submission/uploads, policy mutation, additional statistics periods, vulnerability request pagination, and a separate Model Security report. None was inferred from GET captures or presented as implemented.
+
+### Withheld CLI 5.4.0 attempt
+
+The remote package-test job passed 1,518 tests but could not load the four-test sidebar suite: its direct sidebar import pulled in the separately installed Docusaurus tsconfig, absent from package-test environments. This was masked locally by the installed docs dependencies. npm publication was blocked by the gate. The container workflow was cancelled before promotion, and the GitHub release was marked withdrawn/prerelease without rewriting its tag. The correction uses TypeScript syntax-tree inspection without importing the docs toolchain and is released as 5.4.1. This does not change the runtime bundle's feature logic.
