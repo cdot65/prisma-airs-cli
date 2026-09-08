@@ -11,7 +11,7 @@ compatibility alias. CLI 5.2.0 uses the older spelling. This documentation URL r
 The built `report` command passed all five live E2E workflows on September 8, 2026
 (15:07–15:09 UTC): 25 complete sources, HTML/Markdown file and stdout delivery,
 strict truncation, overwrite/debug protection, and atomic telemetry reads. The credential
-file remained unchanged. The existing verified-output page retains its historical capture.
+file remained unchanged. The verified-output page records actual npm-installed CLI 5.3.0 stdout.
 
 Added in CLI **5.2.0**, with the published SDK **0.28.0** pinned exactly.
 Generate a read-only daily environment deliverable from all 25 supplied SCM Gateway feeds:

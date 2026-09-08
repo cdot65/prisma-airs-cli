@@ -11,7 +11,7 @@ this deliverable. This documentation URL remains stable.
 The built `report` command passed all four live E2E workflows on September 8, 2026
 (15:07 UTC): seven complete sources, HTML/Markdown file and stdout delivery, strict
 truncation and overwrite/debug protection. The credential file remained unchanged.
-The historical captured output below is preserved as recorded.
+The actual npm-installed CLI 5.3.0 output is captured below.
 
 :::note[Added in CLI 5.1.0]
 The original command required SDK 0.27.0, including its GET quota method. CLI 5.3.0 pins
@@ -56,12 +56,12 @@ Exit 0 means collection/delivery succeeded, not that the environment has no risk
 operational failure, all sources unavailable, or strict incomplete evidence. Invalid options exit 2.
 No scans, adapter executions, configuration changes, or quota-consuming jobs are submitted.
 
-## Actual CLI output — September 7, 2026
+## Actual CLI output — September 8, 2026
 
-The following is the exact stdout captured from the built command, not a synthesized sample:
+The following is the exact stdout captured from globally npm-installed CLI 5.3.0 with SDK 0.28.0, not a synthesized sample:
 
 ```bash
-node dist/cli/index.js --quiet redteam dashboard --strict --output markdown --output-file -
+airs --quiet redteam report --strict --output markdown --output-file -
 ```
 
 The live workflow passed 4/4 E2E tests: default HTML, Markdown file/stdout, strict partial-page
@@ -78,9 +78,9 @@ which does not mean no attacks, completions or other activity occurred during th
 
 Assessment: **Attention required**
 
-Collection: 2026-09-07T23:13:18.182Z → 2026-09-07T23:13:20.352Z
+Collection: 2026-09-08T15:34:43.690Z → 2026-09-08T15:34:45.853Z
 
-Scan creation window (UTC): 2026-09-06T23:13:18.182Z → 2026-09-07T23:13:18.182Z
+Scan creation window &#40;UTC&#41;: 2026-09-07T15:34:43.690Z → 2026-09-08T15:34:43.690Z
 
 ## What needs attention
 

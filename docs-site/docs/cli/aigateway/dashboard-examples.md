@@ -5,10 +5,7 @@ sidebar_position: 3
 
 # AI Gateway report — verified CLI output
 
-Since CLI 5.3.0, the command is `airs aigateway report`. The historical invocation below uses
-`dashboard`, retained as a compatibility alias; its captured output is unchanged.
-
-Captured from the globally npm-installed **CLI 5.2.0**, using published **SDK 0.28.0**, on
+Captured from the globally npm-installed **CLI 5.3.0**, using published **SDK 0.28.0**, on
 **2026-09-08**. All **5/5 live E2E workflows passed**, including all five new atomic reads,
 redaction, distinct transaction pages, HTML/Markdown delivery, strict truncation and no-clobber/debug guards.
 The credential file was unchanged. No inference or configuration changes were made.
@@ -19,7 +16,7 @@ All 25 sources completed; 1,431 unique transactions were collected over 29 pages
 Current configurations are labeled separately from daily telemetry.
 
 ```bash
-airs --quiet aigateway dashboard --workspace ws-develo-71f8d8 \
+airs --quiet aigateway report --workspace ws-develo-71f8d8 \
   --start 2026-09-07T00:00:00Z --end 2026-09-08T00:00:00Z \
   --strict --output markdown --output-file -
 ```
@@ -34,7 +31,7 @@ airs --quiet aigateway dashboard --workspace ws-develo-71f8d8 \
 
 Assessment: **Attention required**
 
-Collection: 2026-09-08T01:34:26.207Z → 2026-09-08T01:34:34.189Z
+Collection: 2026-09-08T15:34:49.954Z → 2026-09-08T15:34:57.652Z
 
 Telemetry window &#40;UTC&#41;: 2026-09-07T00:00:00.000Z → 2026-09-08T00:00:00.000Z
 
@@ -147,7 +144,7 @@ Aggregate counts only. Active tenant workspaces are tenant-wide; keys and config
 | workspaces.list | Active workspaces returned | 8 |
 | configs.list | Rows returned | 3 |
 | apiKeys.listService | Rows returned | 5 |
-| apiKeys.listUser | Rows returned | 1 |
+| apiKeys.listUser | Rows returned | 0 |
 | organisations.getInfo | Configured limit categories | 8 |
 | guardrails.getCatalog | Available evaluators | 83 |
 
@@ -194,7 +191,7 @@ Complete means the source was collected within its budget, not that the environm
 | telemetry.logs | telemetry.logs | Displayed telemetry window | complete | 1431 | 29 | Collection completed. |
 | configs.list | configs.list | Current selected workspace configuration | complete | 3 | 1 | Collection completed. |
 | apiKeys.listService | apiKeys.listService | Current selected workspace configuration | complete | 5 | 1 | Collection completed. |
-| apiKeys.listUser | apiKeys.listUser | Current selected workspace configuration | complete | 1 | 1 | Collection completed. |
+| apiKeys.listUser | apiKeys.listUser | Current selected workspace configuration | complete | 0 | 1 | Collection completed. |
 | organisations.getInfo | organisations.getInfo | Current tenant configuration | complete | 1 | 1 | Collection completed. |
 | guardrails.getCatalog | guardrails.getCatalog | Current tenant capability catalog &#40;not enabled guardrails&#41; | complete | 83 | 1 | Collection completed. |
 
@@ -215,7 +212,7 @@ Prisma AIRS CLI · AI Gateway report schema 1
 
 ## Reproduce and interpret
 
-Install with `npm install --global @cdot65/prisma-airs-cli@5.2.0` to run these commands.
+Install with `npm install --global @cdot65/prisma-airs-cli@5.3.0` to run these commands.
 Omit `--output` and `--output-file` to generate a new private HTML file in your current directory.
 The HTML and Markdown formats use the same allowlisted report projection.
 

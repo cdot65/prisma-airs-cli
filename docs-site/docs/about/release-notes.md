@@ -9,6 +9,13 @@
 - Preserve `airs redteam report <jobId>` for individual scan results. Scan-only and
   environment-only options cannot be mixed.
 
+Verified against the npm-installed CLI: **16/16 live E2E tests** across Runtime, Red Team
+and AI Gateway; **11/11 native DLP checks**; exact seven-file package payload match. The full
+unit/integration suite passes **1,479 tests**. Credentials remain unchanged. Updated
+[Gateway examples](../cli/aigateway/dashboard-examples.md) and
+[Red Team examples](../cli/redteam/dashboard.md) contain actual 5.3.0 stdout.
+SDK remains the published **0.28.0**; no SDK change was required.
+
 ## v5.1.0 (2026-09-07) — Red Team environment dashboard
 
 - Add `airs redteam dashboard` with HTML (default) and Markdown deliverables. Preserve
