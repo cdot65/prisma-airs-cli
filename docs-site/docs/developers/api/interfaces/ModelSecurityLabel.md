@@ -1,6 +1,6 @@
 # Interface: ModelSecurityLabel
 
-Defined in: src/airs/types.ts:902
+Defined in: src/airs/types.ts:905
 
 Label key-value pair.
 
@@ -10,7 +10,7 @@ Label key-value pair.
 
 > **key**: `string`
 
-Defined in: src/airs/types.ts:903
+Defined in: src/airs/types.ts:906
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:903
 
 > **value**: `string`
 
-Defined in: src/airs/types.ts:904
+Defined in: src/airs/types.ts:907

@@ -68,8 +68,8 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'AI Gateway',
-      link: { type: 'doc', id: 'cli/aigateway/workflows' },
       items: [
+        'cli/aigateway/workflows',
         'cli/aigateway/resources',
         'cli/aigateway/inference',
         'cli/aigateway/workspaces',
@@ -86,6 +86,11 @@ const sidebars: SidebarsConfig = {
         'model-security/scans',
         'model-security/labels',
       ],
+    },
+    {
+      type: 'category',
+      label: 'AgentGuard',
+      items: ['cli/agentguard/index'],
     },
     {
       type: 'category',

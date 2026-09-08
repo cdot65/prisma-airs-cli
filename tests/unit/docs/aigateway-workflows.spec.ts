@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import sidebars from '../../../docs-site/sidebars';
 
 const docsRoot = new URL('../../../docs-site/', import.meta.url);
 
@@ -7,6 +8,16 @@ async function read(relativePath: string): Promise<string> {
 }
 
 describe('AI Gateway workflow documentation', () => {
+  it('expands the AI Gateway category without navigating to another sidebar', () => {
+    const gateway = (
+      sidebars.docs as Array<{ label?: string; link?: unknown; items?: unknown[] }>
+    ).find((item) => item.label === 'AI Gateway');
+    expect(gateway).toBeDefined();
+    expect(gateway?.link).toBeUndefined();
+    expect(gateway?.items?.[0]).toBe('cli/aigateway/workflows');
+    expect(gateway?.items).toHaveLength(5);
+  });
+
   it('documents the complete workspace and integration binding workflow', async () => {
     const page = await read('docs/cli/aigateway/workflows.md');
 

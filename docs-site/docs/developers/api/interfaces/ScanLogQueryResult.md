@@ -1,6 +1,6 @@
 # Interface: ScanLogQueryResult
 
-Defined in: src/airs/types.ts:1231
+Defined in: src/airs/types.ts:1236
 
 Scan log query result.
 
@@ -10,7 +10,7 @@ Scan log query result.
 
 > `optional` **pageToken?**: `string`
 
-Defined in: src/airs/types.ts:1233
+Defined in: src/airs/types.ts:1238
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1233
 
 > **raw**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:1234
+Defined in: src/airs/types.ts:1239
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:1234
 
 > **results**: `Record`\<`string`, `unknown`\>[]
 
-Defined in: src/airs/types.ts:1232
+Defined in: src/airs/types.ts:1237

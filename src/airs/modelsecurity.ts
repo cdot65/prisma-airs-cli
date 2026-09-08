@@ -400,8 +400,11 @@ export class SdkModelSecurityService implements ModelSecurityService {
     opts?: ModelSecurityScanListOptions,
   ): Promise<{ totalItems: number; scans: ModelSecurityScan[] }> {
     const sdkOpts: Record<string, unknown> = {};
-    if (opts?.evalOutcome) sdkOpts.eval_outcome = opts.evalOutcome;
-    if (opts?.sourceType) sdkOpts.source_type = opts.sourceType;
+    if (opts?.evalOutcome) sdkOpts.eval_outcomes = [opts.evalOutcome];
+    if (opts?.sourceType) sdkOpts.source_types = [opts.sourceType];
+    if (opts?.modelVersionUuid) sdkOpts.model_version_uuid = opts.modelVersionUuid;
+    if (opts?.startTime) sdkOpts.start_time = opts.startTime;
+    if (opts?.endTime) sdkOpts.end_time = opts.endTime;
     if (opts?.scanOrigin) sdkOpts.scan_origin = opts.scanOrigin;
     if (opts?.search) sdkOpts.search = opts.search;
     if (opts?.skip !== undefined) sdkOpts.skip = opts.skip;
@@ -422,6 +425,9 @@ export class SdkModelSecurityService implements ModelSecurityService {
     opts: ModelSecurityScanListOptions & { max?: number } = {},
   ): Promise<ModelSecurityScan[]> {
     const rows = await this.client.scans.listAll({
+      model_version_uuid: opts.modelVersionUuid,
+      start_time: opts.startTime,
+      end_time: opts.endTime,
       eval_outcomes: opts.evalOutcome === undefined ? undefined : [opts.evalOutcome],
       source_types: opts.sourceType === undefined ? undefined : [opts.sourceType],
       search_query: opts.search,
@@ -572,6 +578,8 @@ export class SdkModelSecurityService implements ModelSecurityService {
     const sdkOpts: Record<string, unknown> = {};
     if (opts?.search) sdkOpts.search = opts.search;
     if (opts?.searchQuery) sdkOpts.search_query = opts.searchQuery;
+    if (opts?.startTime) sdkOpts.start_time = opts.startTime;
+    if (opts?.endTime) sdkOpts.end_time = opts.endTime;
     if (opts?.sortField) sdkOpts.sort_field = opts.sortField;
     if (opts?.sortOrder) sdkOpts.sort_order = opts.sortOrder;
     if (opts?.skip !== undefined) sdkOpts.skip = opts.skip;
@@ -592,6 +600,8 @@ export class SdkModelSecurityService implements ModelSecurityService {
     opts: ModelSecurityModelListOptions & { max?: number } = {},
   ): Promise<ModelSecurityModel[]> {
     const rows = await this.client.models.listAllModels({
+      start_time: opts.startTime,
+      end_time: opts.endTime,
       search: opts.search,
       search_query: opts.searchQuery,
       sort_field: opts.sortField,

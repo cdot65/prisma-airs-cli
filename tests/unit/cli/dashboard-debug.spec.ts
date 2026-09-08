@@ -5,6 +5,7 @@ import { expect, it, vi } from 'vitest';
 import { installDebugLogger } from '../../../src/cli/debug-logger.js';
 
 it.each([
+  '../../../aiag/data/v1/scans',
   'dashboard/v2/sessions/sessiontransaction',
   'reports/scancontent',
   'dashboard/v2/apps/appslist',
@@ -25,6 +26,25 @@ it.each([
     expect(output).toContain('BODY OMITTED');
     expect(clone).not.toHaveBeenCalled();
     expect(JSON.parse(output).response.status).toBe(200);
+  } finally {
+    logger.teardown();
+    globalThis.fetch = original;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+it('can omit all bodies for AgentGuard endpoint overrides, including OAuth', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'airs-agentguard-debug-'));
+  const original = globalThis.fetch;
+  globalThis.fetch = vi.fn().mockResolvedValue(Response.json({ original_code: 'PRIVATE-CODE' }));
+  const log = join(directory, 'debug.jsonl');
+  const logger = installDebugLogger(log, { omitBodies: true });
+  try {
+    await fetch('https://api.apps.paloaltonetworks.com/custom/v1/scans', {
+      headers: { authorization: 'PRIVATE-TOKEN' },
+    });
+    expect(readFileSync(log, 'utf8')).not.toContain('PRIVATE-');
+    expect(readFileSync(log, 'utf8')).toContain('BODY OMITTED');
   } finally {
     logger.teardown();
     globalThis.fetch = original;

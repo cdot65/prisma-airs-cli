@@ -133,7 +133,10 @@ function headersToRecord(
  *
  * Returns the log file path and a teardown function.
  */
-export function installDebugLogger(logPath: string): { teardown: () => void } {
+export function installDebugLogger(
+  logPath: string,
+  options: { omitBodies?: boolean } = {},
+): { teardown: () => void } {
   mkdirSync(dirname(logPath), { recursive: true, mode: 0o700 });
   writeFileSync(logPath, '', { encoding: 'utf8', mode: 0o600, flag: 'wx' });
   // CWD artifacts belong to the user: never truncate or automatically prune earlier logs.
@@ -160,7 +163,10 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     if (!isAirsUrl(url) && !inference) {
       return originalFetch(input, init);
     }
-    const dashboard = /\/v1\/mgmt\/(dashboard\/|reports\/scancontent(?:\?|$))/.test(url);
+    const dashboard =
+      options.omitBodies ||
+      /\/v1\/mgmt\/(dashboard\/|reports\/scancontent(?:\?|$))/.test(url) ||
+      /\/aiag\//.test(new URL(url).pathname);
 
     const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
     const reqHeaders = redactHeaders(rawHeaders);

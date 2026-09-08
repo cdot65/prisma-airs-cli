@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterDetail
 
-Defined in: src/airs/types.ts:1480
+Defined in: src/airs/types.ts:1485
 
 Full adapter record.
 
@@ -10,7 +10,7 @@ Full adapter record.
 
 > `optional` **createdAt?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1490
+Defined in: src/airs/types.ts:1495
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1490
 
 > `optional` **createdByUserId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1492
+Defined in: src/airs/types.ts:1497
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1492
 
 > `optional` **description?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1486
+Defined in: src/airs/types.ts:1491
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1486
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1483
+Defined in: src/airs/types.ts:1488
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:1483
 
 > `optional` **networkBrokerChannelUuid?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1487
+Defined in: src/airs/types.ts:1492
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:1487
 
 > **scriptB64**: `string`
 
-Defined in: src/airs/types.ts:1484
+Defined in: src/airs/types.ts:1489
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:1484
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:1485
+Defined in: src/airs/types.ts:1490
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:1485
 
 > `optional` **targetCount?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:1489
+Defined in: src/airs/types.ts:1494
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/airs/types.ts:1489
 
 > `optional` **tsgId?**: `string`
 
-Defined in: src/airs/types.ts:1482
+Defined in: src/airs/types.ts:1487
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/airs/types.ts:1482
 
 > `optional` **updatedAt?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1491
+Defined in: src/airs/types.ts:1496
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/airs/types.ts:1491
 
 > `optional` **updatedByUserId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1493
+Defined in: src/airs/types.ts:1498
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/airs/types.ts:1493
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:1481
+Defined in: src/airs/types.ts:1486
 
 ***
 
@@ -106,4 +106,4 @@ Defined in: src/airs/types.ts:1481
 
 > **variables**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: src/airs/types.ts:1488
+Defined in: src/airs/types.ts:1493

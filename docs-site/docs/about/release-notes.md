@@ -1,5 +1,20 @@
 # Release Notes
 
+## v5.4.0 (2026-09-08) — AgentGuard reports and navigation repair
+
+- Add `airs agentguard scans list`, `scans vulnerabilities`, `stats`, `rules list`
+  and `report`, backed by SDK 0.29.0 and the existing Management OAuth credentials.
+- Deliver private, no-clobber HTML or Markdown reports in the current directory. Reports
+  contain aggregates only; raw finding content requires explicit opt-in.
+- Handle nullable scan outcomes and page-count rule metadata without reporting false
+  zero activity or silently truncating the rule catalog.
+- Expose captured Model Security time-window and model-version filters.
+- Make the AI Gateway sidebar category expand its nested pages instead of navigating
+  to the workflow page and switching sidebars. The workflow remains its first child.
+
+The [AgentGuard command guide](../cli/agentguard/index.md) includes actual live output
+from the 26-check read-only acceptance workflow and documents data limitations.
+
 ## v5.3.0 (2026-09-08) — consistent report commands
 
 - Use `airs runtime report`, `airs redteam report`, and `airs aigateway report --workspace dev`

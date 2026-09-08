@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
+import { registerAgentGuardCommand } from './commands/agentguard.js';
 import { registerAiGatewayCommand } from './commands/aigateway.js';
 import { registerCompletionCommand } from './commands/completion.js';
 import { registerConfigCommand } from './commands/config.js';
@@ -33,6 +34,7 @@ const READ_COMMAND_NAMES = new Set([
   'versions',
   'violation',
   'violations',
+  'vulnerabilities',
 ]);
 
 /** Give every `list` subcommand an `ls` alias and every `delete` an `rm` alias. */
@@ -92,7 +94,9 @@ export function buildProgram(): Command {
     setQuiet(Boolean(root.quiet));
     const isEnvironmentReport =
       actionCommand.name() === 'report' &&
-      ['runtime', 'redteam', 'aigateway'].includes(actionCommand.parent?.name() ?? '') &&
+      ['runtime', 'redteam', 'aigateway', 'agentguard'].includes(
+        actionCommand.parent?.name() ?? '',
+      ) &&
       !(actionCommand.parent?.name() === 'redteam' && actionCommand.args.length > 0);
     if (
       isEnvironmentReport &&
@@ -120,7 +124,13 @@ export function buildProgram(): Command {
         `debug-api-${Date.now()}-${randomUUID().slice(0, 8)}.jsonl`,
       );
       try {
-        installDebugLogger(logPath);
+        let ancestor: Command | null = actionCommand;
+        let agentGuard = false;
+        while (ancestor) {
+          if (ancestor.name() === 'agentguard') agentGuard = true;
+          ancestor = ancestor.parent;
+        }
+        installDebugLogger(logPath, { omitBodies: agentGuard });
       } catch {
         ui.error(
           'Cannot create the debug log in the current working directory. Run from a writable directory or omit --debug.',
@@ -134,6 +144,7 @@ export function buildProgram(): Command {
   registerRuntimeCommand(program);
   registerRedteamCommand(program);
   registerModelSecurityCommand(program);
+  registerAgentGuardCommand(program);
   registerAiGatewayCommand(program);
   registerConfigCommand(program);
   registerDoctorCommand(program);

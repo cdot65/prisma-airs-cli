@@ -1,6 +1,6 @@
 # Interface: ConsumptionAppListEntry
 
-Defined in: src/airs/types.ts:1196
+Defined in: src/airs/types.ts:1201
 
 One entry from the dashboard's apps-overview enumeration.
 
@@ -15,7 +15,7 @@ UUID; the `name` field is the literal scan-payload value.
 
 > **appId**: `string`
 
-Defined in: src/airs/types.ts:1198
+Defined in: src/airs/types.ts:1203
 
 Registered customer_appId UUID.
 
@@ -25,7 +25,7 @@ Registered customer_appId UUID.
 
 > **appName**: `string`
 
-Defined in: src/airs/types.ts:1200
+Defined in: src/airs/types.ts:1205
 
 Dashboard bucket name (literal scan-payload `metadata.app_name`).
 
@@ -35,7 +35,7 @@ Dashboard bucket name (literal scan-payload `metadata.app_name`).
 
 > `optional` **cloud?**: `string`
 
-Defined in: src/airs/types.ts:1202
+Defined in: src/airs/types.ts:1207
 
 Cloud provider tag, if reported by the dashboard.
 
@@ -45,6 +45,6 @@ Cloud provider tag, if reported by the dashboard.
 
 > `optional` **source?**: `string`
 
-Defined in: src/airs/types.ts:1204
+Defined in: src/airs/types.ts:1209
 
 Origin of the bucket, e.g. 'api'.

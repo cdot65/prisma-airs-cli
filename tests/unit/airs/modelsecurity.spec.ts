@@ -527,14 +527,20 @@ describe('SdkModelSecurityService', () => {
 
       await service.listScans({
         evalOutcome: 'BLOCKED',
+        modelVersionUuid: '550e8400-e29b-41d4-a716-446655440000',
+        startTime: '2026-08-09T00:00:00Z',
+        endTime: '2026-09-08T00:00:00Z',
         sourceType: 'HUGGING_FACE',
         scanOrigin: 'MODEL_SECURITY_SDK',
         limit: 10,
       });
 
       expect(mockScansList).toHaveBeenCalledWith({
-        eval_outcome: 'BLOCKED',
-        source_type: 'HUGGING_FACE',
+        eval_outcomes: ['BLOCKED'],
+        model_version_uuid: '550e8400-e29b-41d4-a716-446655440000',
+        start_time: '2026-08-09T00:00:00Z',
+        end_time: '2026-09-08T00:00:00Z',
+        source_types: ['HUGGING_FACE'],
         scan_origin: 'MODEL_SECURITY_SDK',
         limit: 10,
       });

@@ -1,6 +1,6 @@
 # Interface: ConsumptionQueryOptions
 
-Defined in: src/airs/types.ts:1184
+Defined in: src/airs/types.ts:1189
 
 Options for [ManagementService.getCustomerAppConsumption](ManagementService.md#getcustomerappconsumption).
 
@@ -10,4 +10,4 @@ Options for [ManagementService.getCustomerAppConsumption](ManagementService.md#g
 
 > `optional` **timeInterval?**: [`ConsumptionTimeInterval`](../type-aliases/ConsumptionTimeInterval.md)
 
-Defined in: src/airs/types.ts:1185
+Defined in: src/airs/types.ts:1190

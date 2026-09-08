@@ -17,6 +17,9 @@ airs model-security scans list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--eval-outcome <outcome>` | No | — | Filter by eval outcome |
+| `--model-version <uuid>` | No | — | Filter scans by model version UUID |
+| `--start <iso>` | No | — | Creation window start, ISO timestamp |
+| `--end <iso>` | No | — | Creation window end; must not precede start |
 | `--source-type <type>` | No | — | Filter by source type |
 | `--scan-origin <origin>` | No | — | Filter by scan origin |
 | `--search <query>` | No | — | Search scans |

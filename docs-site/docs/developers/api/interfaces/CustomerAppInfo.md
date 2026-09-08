@@ -1,6 +1,6 @@
 # Interface: CustomerAppInfo
 
-Defined in: src/airs/types.ts:1129
+Defined in: src/airs/types.ts:1134
 
 Normalized customer app.
 
@@ -10,7 +10,7 @@ Normalized customer app.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:1132
+Defined in: src/airs/types.ts:1137
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1132
 
 > `optional` **id?**: `string`
 
-Defined in: src/airs/types.ts:1130
+Defined in: src/airs/types.ts:1135
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1130
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1131
+Defined in: src/airs/types.ts:1136
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:1131
 
 > **raw**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:1133
+Defined in: src/airs/types.ts:1138

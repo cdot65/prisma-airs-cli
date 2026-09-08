@@ -1,6 +1,6 @@
 # Interface: ApiKeyInfo
 
-Defined in: src/airs/types.ts:1109
+Defined in: src/airs/types.ts:1114
 
 Normalized API key.
 
@@ -10,7 +10,7 @@ Normalized API key.
 
 > `optional` **apiKey?**: `string`
 
-Defined in: src/airs/types.ts:1112
+Defined in: src/airs/types.ts:1117
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1112
 
 > `optional` **createdAt?**: `string`
 
-Defined in: src/airs/types.ts:1114
+Defined in: src/airs/types.ts:1119
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1114
 
 > `optional` **expiresAt?**: `string`
 
-Defined in: src/airs/types.ts:1115
+Defined in: src/airs/types.ts:1120
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1115
 
 > **id**: `string`
 
-Defined in: src/airs/types.ts:1110
+Defined in: src/airs/types.ts:1115
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:1110
 
 > `optional` **last8?**: `string`
 
-Defined in: src/airs/types.ts:1113
+Defined in: src/airs/types.ts:1118
 
 ***
 
@@ -50,4 +50,4 @@ Defined in: src/airs/types.ts:1113
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1111
+Defined in: src/airs/types.ts:1116

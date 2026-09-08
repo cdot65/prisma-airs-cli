@@ -1,6 +1,6 @@
 # Interface: ModelSecurityService
 
-Defined in: src/airs/types.ts:981
+Defined in: src/airs/types.ts:986
 
 Contract for Model Security operations.
 
@@ -10,7 +10,7 @@ Contract for Model Security operations.
 
 > **addLabels**(`scanUuid`, `labels`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:1038
+Defined in: src/airs/types.ts:1043
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: src/airs/types.ts:1038
 
 > **createGroup**(`request`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)\>
 
-Defined in: src/airs/types.ts:989
+Defined in: src/airs/types.ts:994
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:989
 
 > **createScan**(`request`): `Promise`\<[`ModelSecurityScan`](ModelSecurityScan.md)\>
 
-Defined in: src/airs/types.ts:1012
+Defined in: src/airs/types.ts:1017
 
 #### Parameters
 
@@ -68,7 +68,7 @@ Defined in: src/airs/types.ts:1012
 
 > **deleteGroup**(`uuid`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:991
+Defined in: src/airs/types.ts:996
 
 #### Parameters
 
@@ -86,7 +86,7 @@ Defined in: src/airs/types.ts:991
 
 > **deleteLabels**(`scanUuid`, `keys`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:1040
+Defined in: src/airs/types.ts:1045
 
 #### Parameters
 
@@ -108,7 +108,7 @@ Defined in: src/airs/types.ts:1040
 
 > **getEvaluation**(`uuid`): `Promise`\<[`ModelSecurityEvaluation`](ModelSecurityEvaluation.md)\>
 
-Defined in: src/airs/types.ts:1025
+Defined in: src/airs/types.ts:1030
 
 #### Parameters
 
@@ -126,7 +126,7 @@ Defined in: src/airs/types.ts:1025
 
 > **getEvaluations**(`scanUuid`, `opts?`): `Promise`\<\{ `evaluations`: [`ModelSecurityEvaluation`](ModelSecurityEvaluation.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1021
+Defined in: src/airs/types.ts:1026
 
 #### Parameters
 
@@ -154,7 +154,7 @@ Defined in: src/airs/types.ts:1021
 
 > **getFiles**(`scanUuid`, `opts?`): `Promise`\<\{ `files`: [`ModelSecurityFile`](ModelSecurityFile.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1033
+Defined in: src/airs/types.ts:1038
 
 #### Parameters
 
@@ -176,7 +176,7 @@ Defined in: src/airs/types.ts:1033
 
 > **getGroup**(`uuid`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)\>
 
-Defined in: src/airs/types.ts:988
+Defined in: src/airs/types.ts:993
 
 #### Parameters
 
@@ -194,7 +194,7 @@ Defined in: src/airs/types.ts:988
 
 > **getLabelKeys**(`opts?`): `Promise`\<\{ `keys`: `string`[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1041
+Defined in: src/airs/types.ts:1046
 
 #### Parameters
 
@@ -218,7 +218,7 @@ Defined in: src/airs/types.ts:1041
 
 > **getLabelValues**(`key`, `opts?`): `Promise`\<\{ `totalItems`: `number`; `values`: `string`[]; \}\>
 
-Defined in: src/airs/types.ts:1045
+Defined in: src/airs/types.ts:1050
 
 #### Parameters
 
@@ -246,7 +246,7 @@ Defined in: src/airs/types.ts:1045
 
 > **getModel**(`uuid`): `Promise`\<[`ModelSecurityModel`](ModelSecurityModel.md)\>
 
-Defined in: src/airs/types.ts:1058
+Defined in: src/airs/types.ts:1063
 
 #### Parameters
 
@@ -264,7 +264,7 @@ Defined in: src/airs/types.ts:1058
 
 > **getModelVersion**(`uuid`): `Promise`\<[`ModelSecurityModelVersion`](ModelSecurityModelVersion.md)\>
 
-Defined in: src/airs/types.ts:1063
+Defined in: src/airs/types.ts:1068
 
 #### Parameters
 
@@ -282,7 +282,7 @@ Defined in: src/airs/types.ts:1063
 
 > **getPyPIAuth**(): `Promise`\<[`ModelSecurityPyPIAuth`](ModelSecurityPyPIAuth.md)\>
 
-Defined in: src/airs/types.ts:1050
+Defined in: src/airs/types.ts:1055
 
 #### Returns
 
@@ -294,7 +294,7 @@ Defined in: src/airs/types.ts:1050
 
 > **getRule**(`uuid`): `Promise`\<[`ModelSecurityRule`](ModelSecurityRule.md)\>
 
-Defined in: src/airs/types.ts:1010
+Defined in: src/airs/types.ts:1015
 
 #### Parameters
 
@@ -312,7 +312,7 @@ Defined in: src/airs/types.ts:1010
 
 > **getRuleInstance**(`groupUuid`, `instanceUuid`): `Promise`\<[`ModelSecurityRuleInstance`](ModelSecurityRuleInstance.md)\>
 
-Defined in: src/airs/types.ts:997
+Defined in: src/airs/types.ts:1002
 
 #### Parameters
 
@@ -334,7 +334,7 @@ Defined in: src/airs/types.ts:997
 
 > **getScan**(`uuid`): `Promise`\<[`ModelSecurityScan`](ModelSecurityScan.md)\>
 
-Defined in: src/airs/types.ts:1019
+Defined in: src/airs/types.ts:1024
 
 #### Parameters
 
@@ -352,7 +352,7 @@ Defined in: src/airs/types.ts:1019
 
 > **getViolation**(`uuid`): `Promise`\<[`ModelSecurityViolation`](ModelSecurityViolation.md)\>
 
-Defined in: src/airs/types.ts:1031
+Defined in: src/airs/types.ts:1036
 
 #### Parameters
 
@@ -370,7 +370,7 @@ Defined in: src/airs/types.ts:1031
 
 > **getViolations**(`scanUuid`, `opts?`): `Promise`\<\{ `totalItems`: `number`; `violations`: [`ModelSecurityViolation`](ModelSecurityViolation.md)[]; \}\>
 
-Defined in: src/airs/types.ts:1027
+Defined in: src/airs/types.ts:1032
 
 #### Parameters
 
@@ -398,7 +398,7 @@ Defined in: src/airs/types.ts:1027
 
 > **listAllGroups**(`opts?`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)[]\>
 
-Defined in: src/airs/types.ts:985
+Defined in: src/airs/types.ts:990
 
 #### Parameters
 
@@ -416,7 +416,7 @@ Defined in: src/airs/types.ts:985
 
 > **listAllModels**(`opts?`): `Promise`\<[`ModelSecurityModel`](ModelSecurityModel.md)[]\>
 
-Defined in: src/airs/types.ts:1055
+Defined in: src/airs/types.ts:1060
 
 #### Parameters
 
@@ -434,7 +434,7 @@ Defined in: src/airs/types.ts:1055
 
 > **listAllRules**(`opts?`): `Promise`\<[`ModelSecurityRule`](ModelSecurityRule.md)[]\>
 
-Defined in: src/airs/types.ts:1007
+Defined in: src/airs/types.ts:1012
 
 #### Parameters
 
@@ -452,7 +452,7 @@ Defined in: src/airs/types.ts:1007
 
 > **listAllScans**(`opts?`): `Promise`\<[`ModelSecurityScan`](ModelSecurityScan.md)[]\>
 
-Defined in: src/airs/types.ts:1016
+Defined in: src/airs/types.ts:1021
 
 #### Parameters
 
@@ -470,7 +470,7 @@ Defined in: src/airs/types.ts:1016
 
 > **listGroups**(`opts?`): `Promise`\<\{ `groups`: [`ModelSecurityGroup`](ModelSecurityGroup.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:982
+Defined in: src/airs/types.ts:987
 
 #### Parameters
 
@@ -488,7 +488,7 @@ Defined in: src/airs/types.ts:982
 
 > **listModels**(`opts?`): `Promise`\<\{ `models`: [`ModelSecurityModel`](ModelSecurityModel.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1052
+Defined in: src/airs/types.ts:1057
 
 #### Parameters
 
@@ -506,7 +506,7 @@ Defined in: src/airs/types.ts:1052
 
 > **listModelVersionFiles**(`modelVersionUuid`, `opts?`): `Promise`\<\{ `files`: [`ModelSecurityFile`](ModelSecurityFile.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1064
+Defined in: src/airs/types.ts:1069
 
 #### Parameters
 
@@ -534,7 +534,7 @@ Defined in: src/airs/types.ts:1064
 
 > **listModelVersions**(`modelUuid`, `opts?`): `Promise`\<\{ `totalItems`: `number`; `versions`: [`ModelSecurityModelVersion`](ModelSecurityModelVersion.md)[]; \}\>
 
-Defined in: src/airs/types.ts:1059
+Defined in: src/airs/types.ts:1064
 
 #### Parameters
 
@@ -556,7 +556,7 @@ Defined in: src/airs/types.ts:1059
 
 > **listRuleInstances**(`groupUuid`, `opts?`): `Promise`\<\{ `ruleInstances`: [`ModelSecurityRuleInstance`](ModelSecurityRuleInstance.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:993
+Defined in: src/airs/types.ts:998
 
 #### Parameters
 
@@ -578,7 +578,7 @@ Defined in: src/airs/types.ts:993
 
 > **listRules**(`opts?`): `Promise`\<\{ `rules`: [`ModelSecurityRule`](ModelSecurityRule.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1004
+Defined in: src/airs/types.ts:1009
 
 #### Parameters
 
@@ -596,7 +596,7 @@ Defined in: src/airs/types.ts:1004
 
 > **listScans**(`opts?`): `Promise`\<\{ `scans`: [`ModelSecurityScan`](ModelSecurityScan.md)[]; `totalItems`: `number`; \}\>
 
-Defined in: src/airs/types.ts:1013
+Defined in: src/airs/types.ts:1018
 
 #### Parameters
 
@@ -614,7 +614,7 @@ Defined in: src/airs/types.ts:1013
 
 > **setLabels**(`scanUuid`, `labels`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:1039
+Defined in: src/airs/types.ts:1044
 
 #### Parameters
 
@@ -636,7 +636,7 @@ Defined in: src/airs/types.ts:1039
 
 > **updateGroup**(`uuid`, `request`): `Promise`\<[`ModelSecurityGroup`](ModelSecurityGroup.md)\>
 
-Defined in: src/airs/types.ts:990
+Defined in: src/airs/types.ts:995
 
 #### Parameters
 
@@ -658,7 +658,7 @@ Defined in: src/airs/types.ts:990
 
 > **updateRuleInstance**(`groupUuid`, `instanceUuid`, `request`): `Promise`\<[`ModelSecurityRuleInstance`](ModelSecurityRuleInstance.md)\>
 
-Defined in: src/airs/types.ts:998
+Defined in: src/airs/types.ts:1003
 
 #### Parameters
 

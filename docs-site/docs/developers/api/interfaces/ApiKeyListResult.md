@@ -1,6 +1,6 @@
 # Interface: ApiKeyListResult
 
-Defined in: src/airs/types.ts:1119
+Defined in: src/airs/types.ts:1124
 
 Paginated API key list.
 
@@ -10,7 +10,7 @@ Paginated API key list.
 
 > **apiKeys**: [`ApiKeyInfo`](ApiKeyInfo.md)[]
 
-Defined in: src/airs/types.ts:1120
+Defined in: src/airs/types.ts:1125
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:1120
 
 > `optional` **nextOffset?**: `number`
 
-Defined in: src/airs/types.ts:1121
+Defined in: src/airs/types.ts:1126

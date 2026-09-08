@@ -61,6 +61,26 @@ const command = (...args) => {
   return result.stdout;
 };
 assert.equal(command('--version').trim(), expected.version);
+assert.equal(typeof sdk.AgentGuardClient, 'function');
+for (const [args, flags] of [
+  [
+    ['agentguard', 'scans', 'list'],
+    ['--all', '--limit', '--start', '--end'],
+  ],
+  [['agentguard', 'scans', 'vulnerabilities'], ['--include-content']],
+  [
+    ['agentguard', 'rules', 'list'],
+    ['--all', '--limit'],
+  ],
+  [['agentguard', 'stats'], ['--time-period']],
+  [
+    ['agentguard', 'report'],
+    ['--strict', '--output-file', '--max-pages'],
+  ],
+]) {
+  const help = command(...args, '--help');
+  for (const flag of flags) assert.ok(help.includes(flag), `${args.join(' ')} lacks ${flag}`);
+}
 const gatewayDashboardHelp = command('aigateway', 'report', '--help');
 assert.equal(command('aigateway', 'dashboard', '--help'), gatewayDashboardHelp);
 for (const flag of ['--workspace', '--output-file', '--start', '--end', '--strict'])

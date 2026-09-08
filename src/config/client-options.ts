@@ -1,4 +1,5 @@
 import type {
+  AgentGuardClientOptions,
   AIGatewayClientOptions,
   InitOptions,
   ManagementClientOptions,
@@ -6,6 +7,18 @@ import type {
   RedTeamClientOptions,
 } from '@cdot65/prisma-airs-sdk';
 import type { Config } from './schema.js';
+
+/** AgentGuard shares Management credentials; endpoint overrides remain product-specific. */
+export function agentGuardClientOptions(config: Config): AgentGuardClientOptions {
+  return {
+    clientId: config.mgmtClientId,
+    clientSecret: config.mgmtClientSecret,
+    tsgId: config.mgmtTsgId,
+    dataEndpoint: config.agentGuardDataEndpoint,
+    mgmtEndpoint: config.agentGuardMgmtEndpoint,
+    tokenEndpoint: config.agentGuardTokenEndpoint ?? config.mgmtTokenEndpoint,
+  };
+}
 
 /** SCM dashboard host is scoped separately; other management resources keep their endpoint. */
 export function managementClientOptions(config: Config): ManagementClientOptions {

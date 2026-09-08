@@ -850,6 +850,9 @@ export interface ModelSecurityScan {
 
 /** Filter options for listing scans. */
 export interface ModelSecurityScanListOptions {
+  modelVersionUuid?: string;
+  startTime?: string;
+  endTime?: string;
   evalOutcome?: string;
   sourceType?: string;
   scanOrigin?: string;
@@ -933,6 +936,8 @@ export interface ModelSecurityModel {
 
 /** Filter options for listing models. */
 export interface ModelSecurityModelListOptions {
+  startTime?: string;
+  endTime?: string;
   search?: string;
   searchQuery?: string;
   sortField?: string;

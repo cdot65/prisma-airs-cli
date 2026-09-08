@@ -26,6 +26,9 @@ export const ConfigSchema = z.object({
   modelSecDataEndpoint: z.string().optional(),
   modelSecMgmtEndpoint: z.string().optional(),
   modelSecTokenEndpoint: z.string().optional(),
+  agentGuardDataEndpoint: z.string().url().optional(),
+  agentGuardMgmtEndpoint: z.string().url().optional(),
+  agentGuardTokenEndpoint: z.string().url().optional(),
 
   // AI Gateway (endpoints only; creds shared with mgmt*)
   aiGwDataEndpoint: z.string().optional(),

@@ -21,6 +21,8 @@ airs model-security models list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--search <text>` | No | — | Filter by search text |
+| `--start <iso>` | No | — | Creation window start, ISO timestamp |
+| `--end <iso>` | No | — | Creation window end; must not precede start |
 | `--search-query <text>` | No | — | Filter by model UUID or name |
 | `--sort-field <field>` | No | — | Sort field: `created_at`, `updated_at` |
 | `--sort-order <order>` | No | — | Sort order: `asc`, `desc` |
@@ -34,6 +36,7 @@ airs model-security models list [options]
 
 ```bash
 airs model-security models list
+airs model-security models list --start 2026-08-09T00:00:00Z --end 2026-09-08T00:00:00Z --output json
 airs model-security models list --search-query llama --sort-field updated_at --sort-order desc
 ```
 

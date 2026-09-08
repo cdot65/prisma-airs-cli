@@ -1,6 +1,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import type { Command } from 'commander';
+import { z } from 'zod';
 import { SdkModelSecurityService } from '../../airs/modelsecurity.js';
 import { modelSecurityClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
@@ -33,6 +34,24 @@ import {
   ui,
   usageError,
 } from '../renderer/index.js';
+
+function supplyChainWindow(opts: { start?: string; end?: string; modelVersion?: string }) {
+  const parsed = z
+    .object({
+      start: z.string().datetime({ offset: true }).optional(),
+      end: z.string().datetime({ offset: true }).optional(),
+      modelVersion: z.string().uuid().optional(),
+    })
+    .refine((v) => !v.start || !v.end || Date.parse(v.start) <= Date.parse(v.end))
+    .safeParse(opts);
+  if (!parsed.success)
+    usageError('Use valid ISO timestamps with start <= end and a valid model-version UUID.');
+  return {
+    startTime: parsed.data.start,
+    endTime: parsed.data.end,
+    modelVersionUuid: parsed.data.modelVersion,
+  };
+}
 
 const VALID_EXTRAS = ['all', 'aws', 'gcp', 'azure', 'artifactory', 'gitlab'] as const;
 
@@ -497,6 +516,9 @@ export function registerModelSecurityCommand(program: Command): void {
   const scansList = scans
     .command('list')
     .description('List model security scans')
+    .option('--model-version <uuid>', 'Filter scans by model version UUID')
+    .option('--start <iso>', 'Creation time start (ISO timestamp)')
+    .option('--end <iso>', 'Creation time end (ISO timestamp)')
     .option('--eval-outcome <outcome>', 'Filter by eval outcome')
     .option('--source-type <type>', 'Filter by source type')
     .option('--scan-origin <origin>', 'Filter by scan origin')
@@ -518,6 +540,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const service = await createService();
         const listOptions = {
           evalOutcome: opts.evalOutcome,
+          ...supplyChainWindow(opts),
           sourceType: opts.sourceType,
           scanOrigin: opts.scanOrigin,
           search: opts.search,
@@ -656,6 +679,8 @@ export function registerModelSecurityCommand(program: Command): void {
   const modelsList = models
     .command('list')
     .description('List models in the catalog')
+    .option('--start <iso>', 'Creation time start (ISO timestamp)')
+    .option('--end <iso>', 'Creation time end (ISO timestamp)')
     .option('--search <text>', 'Filter by search text')
     .option('--search-query <text>', 'Filter by model UUID or name')
     .option('--sort-field <field>', 'Sort field: created_at, updated_at')
@@ -672,6 +697,7 @@ export function registerModelSecurityCommand(program: Command): void {
         const listOptions = {
           search: opts.search,
           searchQuery: opts.searchQuery,
+          ...supplyChainWindow(opts),
           sortField: opts.sortField,
           sortOrder: opts.sortOrder,
           limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,

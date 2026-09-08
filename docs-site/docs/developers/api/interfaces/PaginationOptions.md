@@ -1,6 +1,6 @@
 # Interface: PaginationOptions
 
-Defined in: src/airs/types.ts:1098
+Defined in: src/airs/types.ts:1103
 
 Pagination options for list operations.
 
@@ -10,7 +10,7 @@ Pagination options for list operations.
 
 > `optional` **latest?**: `boolean`
 
-Defined in: src/airs/types.ts:1101
+Defined in: src/airs/types.ts:1106
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1101
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:1100
+Defined in: src/airs/types.ts:1105
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:1100
 
 > `optional` **offset?**: `number`
 
-Defined in: src/airs/types.ts:1099
+Defined in: src/airs/types.ts:1104
