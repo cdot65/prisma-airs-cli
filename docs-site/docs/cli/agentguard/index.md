@@ -47,7 +47,7 @@ The report combines a bounded 30-day scan inventory, server rolling `30_DAYS` sk
 
 ## Actual live CLI output — September 8, 2026
 
-These results came from CLI 5.4.0's release build with registry-installed SDK 0.29.0 and fresh OAuth authentication, not from replayed browser responses. The release acceptance rerun at 18:39 UTC passed all **26 checks**, with no local SDK link and no credential-file changes.
+These results came from CLI 5.4.1's release build with registry-installed SDK 0.29.0 and fresh OAuth authentication, not from replayed browser responses. The release acceptance rerun at 18:44 UTC passed all **26 checks**, with no local SDK link and no credential-file changes.
 
 ```bash
 airs agentguard stats --output json
