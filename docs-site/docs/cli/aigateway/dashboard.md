@@ -80,5 +80,5 @@ publishes only safe aggregate counts.
 
 ## Live examples
 
-The companion [verified CLI output](./dashboard-examples.md) records actual built-package E2E
+The companion [verified CLI output](./dashboard-examples.md) records actual npm-installed package E2E
 output and checks. It is not SDK output presented as a CLI transcript.

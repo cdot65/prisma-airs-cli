@@ -45,10 +45,10 @@ delivery, no-clobber behavior, pre-I/O debug refusal, all five new atomic reads 
 transaction pages. The full collector independently retrieves every transaction page. No inference,
 key rotation or configuration changes were performed; config hashes were checked unchanged.
 
-The original CLI stdout is retained privately at
-`artifacts/aigateway-dashboard/2026-09-08T01-21-20.084Z/actual-stdout.md` and reproduced exactly in
+The final npm-installed CLI stdout is retained privately at
+`artifacts/aigateway-dashboard/2026-09-08T01-34-17.967Z/actual-stdout.md` and reproduced exactly in
 `docs-site/docs/cli/aigateway/dashboard-examples.md`. SHA-256:
-`f877c475469130052a061718fbcfd0a79a7f11a3b874288201f56a369fa194e7`.
+`a2cbfdfc6ad9b62f24e2868677a65f23b296fecdf4197f33876d0a38c4104f4d`.
 A regression test protects that exact capture; these are not reconstructed SDK examples.
 
 ## Review, corrections and limitations
@@ -67,9 +67,8 @@ Remaining limitations: undocumented endpoints can change; inventory continuation
 catalog availability is not enabled protection; independent reads are not atomic; no invented
 numerical environment health score or full upstream API-equivalence claim is made.
 
-Self-assessment: **9/10 for this bounded feature**, conditional on completed CLI npm publication
-and installed-release verification. The implementation and local/consumer evidence satisfy the
-feature scope; final publication status and independent review are recorded below when verified.
+Self-assessment: **9/10 for this bounded feature**. The implementation and local, consumer and
+published-release evidence satisfy the feature scope. Publication and independent review are below.
 
 ## Final publication and independent review
 
@@ -78,5 +77,17 @@ ran 91 targeted tests, checked both live workflow logs, SDK contracts, privacy/p
 and the diff. One P3 copy/paste issue (doubled shell continuation backslashes in the reproduction
 command) was fixed and regression-tested. The review explicitly excludes publication status.
 
-CLI publication is pending final verification. Do not interpret the release-candidate assessment
-as proof that npm latest or the production CLI has already changed.
+SDK **0.28.0** and CLI **5.2.0** are published with npm `latest` tags. CLI release commit
+`1648cee3a9bb329bb4cb1600e804a1c0d67c2789` and tag `v5.2.0` are pushed to GitHub and the
+configured origin mirror. The global `airs` command resolves to the npm installation and reports
+5.2.0. Its payload is byte-identical to the verified local tarball/build (all seven files).
+
+The actual npm-installed CLI passed **5/5 live workflows** on September 8 at 01:34 UTC,
+again collecting all 25 feeds and all 1,431 transactions with the read-only credential file
+unchanged. Native DLP compatibility again passed 11/11 cases. The latest npm-installed stdout
+replaces the earlier build capture in the Docusaurus examples page and its checksum regression.
+
+GitHub CI, npm publication and docs deployment succeeded. CI includes consumer runtime checks
+on Node 20.17.0, 22.13.0 and 24. The public Docusaurus page was verified in Chromium with exact
+CLI stdout and no page errors. Both linux/amd64 and linux/arm64 container verification jobs pass;
+the final shared-alias promotion is checked before handoff.

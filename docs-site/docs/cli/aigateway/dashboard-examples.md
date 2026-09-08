@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # AI Gateway dashboard — verified CLI output
 
-Captured from the built **CLI 5.2.0**, using registry-installed **SDK 0.28.0**, on
+Captured from the globally npm-installed **CLI 5.2.0**, using published **SDK 0.28.0**, on
 **2026-09-08**. All **5/5 live E2E workflows passed**, including all five new atomic reads,
 redaction, distinct transaction pages, HTML/Markdown delivery, strict truncation and no-clobber/debug guards.
 The credential file was unchanged. No inference or configuration changes were made.
@@ -16,7 +16,7 @@ All 25 sources completed; 1,431 unique transactions were collected over 29 pages
 Current configurations are labeled separately from daily telemetry.
 
 ```bash
-node dist/cli/index.js --quiet aigateway dashboard --workspace ws-develo-71f8d8 \
+airs --quiet aigateway dashboard --workspace ws-develo-71f8d8 \
   --start 2026-09-07T00:00:00Z --end 2026-09-08T00:00:00Z \
   --strict --output markdown --output-file -
 ```
@@ -31,7 +31,7 @@ node dist/cli/index.js --quiet aigateway dashboard --workspace ws-develo-71f8d8 
 
 Assessment: **Attention required**
 
-Collection: 2026-09-08T01:21:28.177Z → 2026-09-08T01:21:37.822Z
+Collection: 2026-09-08T01:34:26.207Z → 2026-09-08T01:34:34.189Z
 
 Telemetry window &#40;UTC&#41;: 2026-09-07T00:00:00.000Z → 2026-09-08T00:00:00.000Z
 
@@ -212,7 +212,7 @@ Prisma AIRS CLI · AI Gateway report schema 1
 
 ## Reproduce and interpret
 
-Use `airs` instead of `node dist/cli/index.js` after installing CLI 5.2.0 from npm.
+Install with `npm install --global @cdot65/prisma-airs-cli@5.2.0` to run these commands.
 Omit `--output` and `--output-file` to generate a new private HTML file in your current directory.
 The HTML and Markdown formats use the same allowlisted report projection.
 

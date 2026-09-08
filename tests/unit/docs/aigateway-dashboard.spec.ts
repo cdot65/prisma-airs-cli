@@ -7,7 +7,7 @@ describe('Gateway dashboard documented live evidence', () => {
   const stdout = `${page.split('```markdown\n')[1].split('\n```\n')[0]}\n`;
   it('preserves the byte-exact captured CLI stdout', () => {
     expect(createHash('sha256').update(stdout).digest('hex')).toBe(
-      'f877c475469130052a061718fbcfd0a79a7f11a3b874288201f56a369fa194e7',
+      'a2cbfdfc6ad9b62f24e2868677a65f23b296fecdf4197f33876d0a38c4104f4d',
     );
     expect(stdout).toContain('| Server total | 1431 |');
     expect(stdout).toContain('| Unique collected | 1431 |');
