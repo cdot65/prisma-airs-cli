@@ -90,4 +90,4 @@ replaces the earlier build capture in the Docusaurus examples page and its check
 GitHub CI, npm publication and docs deployment succeeded. CI includes consumer runtime checks
 on Node 20.17.0, 22.13.0 and 24. The public Docusaurus page was verified in Chromium with exact
 CLI stdout and no page errors. Both linux/amd64 and linux/arm64 container verification jobs pass;
-the final shared-alias promotion is checked before handoff.
+shared-alias promotion also completed successfully for this verified image.
