@@ -48,7 +48,7 @@ clients already provide the required operations. No browser bearer tokens are us
   backed up in both formats and restored under distinct names with verified identities
   and policy. All four synthetic resources were deleted and absence verified afterward.
   The read-only credentials file hash remained unchanged; normal tenant selection was not touched.
-- Private live evidence: `artifacts/tenant-profiles-e2e-emIEBd/results.json` and
+- Private npm-installed live evidence: `artifacts/tenant-profiles-e2e-kAIFHo/results.json` and
   `cli-transcript.json`, with raw backups in the same ignored, private directory.
 - Docusaurus migration/tenant/reference/release pages updated with actual backup and restore
   output. Strict production docs build passes.
@@ -68,5 +68,25 @@ destination state before retrying. These boundaries are documented in the comman
 
 Self-assessment: **9/10 for this bounded CLI feature scope**, not a claim of comprehensive
 SDK/OpenAPI coverage or two-live-tenant certification. Regression tests caught and fixed
-blank default-format output and an uncaught option-parser error before release. Release
-and registry verification are recorded below once complete.
+blank default-format output and an uncaught option-parser error before release. Verified
+release and registry evidence follows.
+
+## Published package verification
+
+- CLI **5.5.0** published to npm from tag `v5.5.0`, commit
+  `80fb6e19e4b15907c50ee7e3e08285d438fe1a46`. Main and tag pushed to both GitHub and
+  the `git-ssh.cdot.io` mirror. SDK remains the published **0.29.0**.
+- CI `34269867056` passed all seven jobs, including native consumer checks on Node
+  20.17.0, 22.13.0, and 24. npm publication `34270116978` succeeded.
+- Independent clean checkout (no Docusaurus dependencies) passed feature and sidebar
+  tests, typecheck, build, npm pack, and actual installed-package subprocess workflows.
+  Use `npm pack`, matching the publisher; `pnpm pack` rewrites package.json metadata and
+  therefore intentionally fails the byte-for-byte verifier used here.
+- Globally installed `airs --version` reports **5.5.0**. All seven installed files match
+  the independent npm tarball; 29 library exports and public command helps verified.
+  Archive SHA-256: `f9a24465319f23fd61b42716171690d0500d48bc4c226a9fe2ee441e9f58f20f`.
+- The npm-installed CLI passed both isolated two-tenant workflows, all 11 native DLP
+  consumer checks, and **7/7 live checks at 19:42 UTC**. No credentials or ordinary
+  tenant-selection state were changed. Synthetic resource cleanup was verified.
+- Production tenant and migration documentation returned HTTP 200 and passed browser
+  content checks. Actual npm-installed restore output is recorded in the migration guide.

@@ -67,6 +67,12 @@ different tenants, use separate registries or explicit `PRISMA_AIRS_CONFIG_PATH`
 `airs config path` shows the file that API commands will use; explicit `config set/unset`
 operations target that file and still require it to be writable.
 
+For disposable Docker containers, persist the registry separately from the read-only
+config mount (for the published root-based image, mount a volume at
+`/root/.local/state/prisma-airs`). Otherwise a selection disappears when the container
+is removed. Backups likewise need an explicit path on a writable bind mount to survive
+container removal. Config paths are interpreted inside the container.
+
 ## Cross-tenant profile migration
 
 ```bash

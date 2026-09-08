@@ -111,6 +111,9 @@ errors do not echo file contents. JSON/YAML output is a single-element summary a
 
 ## Validated CLI output — 2026-09-08
 
+Verified again at **19:42 UTC using the npm-installed CLI 5.5.0**, with SDK 0.29.0.
+The installed package's seven files match the independent release build byte-for-byte.
+
 Actual live backup summary (private artifact directory and TSG replaced with placeholders):
 
 ```bash
@@ -145,16 +148,16 @@ Actual synthetic restore stdout (TSG redacted; these test resources were subsequ
     "complete": true,
     "topics": [
       {
-        "name": "copy-b0070cb2-cli-transfer-e2e-b0070cb2",
-        "id": "916c6877-dbb7-47cf-8fe1-8ac61bdad42f",
+        "name": "copy-6aba28f4-cli-transfer-e2e-6aba28f4",
+        "id": "0567af6e-5327-46ca-a40d-5589a33b599c",
         "action": "created"
       }
     ],
     "profiles": [
       {
-        "name": "copy-b0070cb2-cli-transfer-e2e-b0070cb2",
+        "name": "copy-6aba28f4-cli-transfer-e2e-6aba28f4",
         "action": "created",
-        "id": "6c3a0d03-b18c-4fd0-9a2c-cabc9bfe6b5d"
+        "id": "08b36bc7-ca94-491c-884b-400117087f81"
       }
     ]
   }
