@@ -45,8 +45,10 @@ and the configured origin). GitHub release:
 
 - [CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34244979541): passed,
   including native consumers on Node 20.17, 22.13 and 24.
-- [Docs deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34244979531):
-  passed; public report reference returned HTTP 200 with canonical naming and 5.3.0.
+- [Docs deployment](https://github.com/cdot65/prisma-airs-cli/actions/runs/34245957414):
+  passed with the refreshed npm-installed examples; Chromium verified HTTP 200, exact
+  captured stdout on both example pages, and zero page errors. The corresponding
+  [documentation CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34245957412) passed.
 - [npm publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34245011557):
   passed, including signed provenance. Registry propagation completed: `latest` is 5.3.0.
 - [Container publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34245008946):
@@ -64,8 +66,8 @@ confirmed HTTP 200 for the replacement session query and body-free private debug
 Strict evidence gaps remain visible, and existing output files cannot be overwritten.
 
 Private npm acceptance evidence: `artifacts/aigateway-dashboard/2026-09-08T15-34-40.849Z/`,
-`artifacts/redteam-dashboard/2026-09-08T15-34-40.850Z/`, and the corresponding 15:34 Runtime
-report directory. Docusaurus Gateway and Red Team example pages contain the actual captured
+`artifacts/redteam-dashboard/2026-09-08T15-34-40.850Z/`, and
+`artifacts/runtime-report/2026-09-08T15-34-40.914Z/`. Docusaurus Gateway and Red Team example pages contain the actual captured
 Markdown stdout, not synthesized SDK output. Gateway capture is protected by a byte-exact
 SHA-256 regression assertion.
 
