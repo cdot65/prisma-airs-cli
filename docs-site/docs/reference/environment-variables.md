@@ -2,6 +2,17 @@
 
 All environment variables Prisma AIRS CLI recognizes, grouped by category. Copy `.env.example` as a starting template.
 
+## Tenant selection
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PRISMA_AIRS_CONFIG_PATH` | selected tenant, otherwise `~/.prisma-airs/config.json` | Explicit config file; overrides persisted tenant selection |
+| `PRISMA_AIRS_TENANTS_PATH` | `$XDG_STATE_HOME/prisma-airs/tenants.json` | Separate registry override; stores paths/TSG IDs, never credentials |
+| `XDG_STATE_HOME` | `~/.local/state` | Absolute state directory used when no registry override is set |
+
+Named tenants reject credential/endpoint environment overrides. See
+[tenant selection](../cli/tenant.md) for precedence and automation isolation.
+
 ---
 
 ## AIRS Scan API

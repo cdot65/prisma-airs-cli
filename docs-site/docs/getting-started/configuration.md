@@ -11,10 +11,13 @@ Prisma AIRS CLI is designed to work with minimal setup. All settings have sensib
 Settings are resolved in priority order (highest wins):
 
 ```
-CLI flags  >  Environment variables  >  ~/.prisma-airs/config.json  >  Zod defaults
+CLI flags  >  Environment variables  >  Selected config file  >  Zod defaults
 ```
 
-This means a CLI flag always beats an env var, which always beats the config file.
+The selected file is `PRISMA_AIRS_CONFIG_PATH`, then the active named tenant's file,
+then `~/.prisma-airs/config.json`. Named tenants reject credential/endpoint environment
+overrides to prevent mixed-tenant authentication. With `default`, legacy environment
+precedence remains. See [tenant selection](../cli/tenant.md).
 
 ## Config File
 
@@ -29,7 +32,7 @@ For settings you use across every run, create `~/.prisma-airs/config.json`:
 
 ## Managing config from the CLI
 
-The `airs config` command group manages `~/.prisma-airs/config.json` without hand-editing:
+The `airs config` command group manages the selected config file without hand-editing:
 
 ```bash
 airs config list                     # Effective config: every key, value, and source (env/file/default)

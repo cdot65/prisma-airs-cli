@@ -63,6 +63,16 @@ const command = (...args) => {
 assert.equal(command('--version').trim(), expected.version);
 assert.equal(typeof sdk.AgentGuardClient, 'function');
 for (const [args, flags] of [
+  [['tenant', 'create'], ['--config']],
+  [['tenant', 'delete'], ['--force']],
+  [
+    ['runtime', 'profiles', 'backup'],
+    ['--file-format', '--output-file', '--max-pages'],
+  ],
+  [
+    ['runtime', 'profiles', 'restore'],
+    ['--dry-run', '--dlp-map', '--expect-tsg', '--on-conflict'],
+  ],
   [
     ['agentguard', 'scans', 'list'],
     ['--all', '--limit', '--start', '--end'],

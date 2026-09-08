@@ -11,6 +11,7 @@ import { registerDoctorCommand } from './commands/doctor.js';
 import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
+import { registerTenantCommand } from './commands/tenant.js';
 import { installDebugLogger } from './debug-logger.js';
 import { fail, resolveOutput, setQuiet, ui, usageError } from './renderer/index.js';
 
@@ -92,6 +93,17 @@ export function buildProgram(): Command {
   program.hook('preAction', async (_thisCommand, actionCommand) => {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
+    const profileTransfer =
+      actionCommand.parent?.name() === 'profiles' &&
+      actionCommand.parent.parent?.name() === 'runtime' &&
+      ['backup', 'restore'].includes(actionCommand.name());
+    if (
+      profileTransfer &&
+      (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))
+    )
+      usageError(
+        'Disable --debug and PANW_AI_SEC_DEBUG for profile transfer; backups can contain sensitive policy configuration',
+      );
     const isEnvironmentReport =
       actionCommand.name() === 'report' &&
       ['runtime', 'redteam', 'aigateway', 'agentguard'].includes(
@@ -107,6 +119,7 @@ export function buildProgram(): Command {
       );
     if (
       !isEnvironmentReport &&
+      actionCommand.parent?.name() !== 'tenant' &&
       !(actionCommand.name() === 'report' && actionCommand.parent?.name() === 'redteam') &&
       READ_COMMAND_NAMES.has(actionCommand.name()) &&
       actionCommand.options.some((option) => option.long === '--output')
@@ -147,6 +160,7 @@ export function buildProgram(): Command {
   registerAgentGuardCommand(program);
   registerAiGatewayCommand(program);
   registerConfigCommand(program);
+  registerTenantCommand(program);
   registerDoctorCommand(program);
   registerCompletionCommand(program);
 

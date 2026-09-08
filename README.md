@@ -25,7 +25,9 @@
 - **Unified automation output** — resource reads support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`, with pipe-safe stdout; environment deliverables use HTML or Markdown
 - **Complete pagination** — consistent `--limit`, `--offset`, and `--all` traversal with a configurable safety cap
 - **`airs doctor`** — one-command diagnostics for environment, credentials, and API connectivity
-- **`airs config`** — manage `~/.prisma-airs/config.json` from the CLI (`list`, `get`, `set`, `unset`, `path`)
+- **Tenant selection** — `airs tenant create|switch|list|read|delete` selects existing config files without copying secrets or changing read-only mounts
+- **Profile migration** — `airs runtime profiles backup|restore` exports private JSON/YAML, previews cross-tenant restores, remaps topics and explicit DLP dependencies, and verifies restored policies ([guide](https://cdot65.github.io/prisma-airs-cli/runtime/profile-transfer/))
+- **`airs config`** — manage the selected config file from the CLI (`list`, `get`, `set`, `unset`, `path`)
 
 ## Install
 

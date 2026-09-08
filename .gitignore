@@ -44,6 +44,9 @@ docs-site/.docusaurus/
 ~/.prisma-airs/
 
 # Private environment report validation artifacts
+/artifacts/tenant-profiles-e2e-*/
+airs-runtime-profiles-backup-*.json
+airs-runtime-profiles-backup-*.yaml
 /artifacts/agentguard-e2e-*/
 airs-agentguard-report-*.html
 airs-agentguard-report-*.md

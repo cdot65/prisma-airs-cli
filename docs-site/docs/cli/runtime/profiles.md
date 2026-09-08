@@ -4,6 +4,39 @@ sidebar_label: profiles
 
 # runtime profiles
 
+### runtime profiles backup and restore
+
+```bash
+airs runtime profiles backup --all --output-file ./profiles.json
+airs runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml
+airs runtime profiles restore ./profiles.json --dry-run --output json
+airs runtime profiles restore ./profiles.json --expect-tsg 200 --force
+```
+
+Backup exports latest policies and exact referenced topic definitions into a private,
+no-overwrite file in the current directory. Restore targets the selected tenant and
+rewrites topic identities. Use `airs tenant switch <name>` to change tenants first.
+Replace `200` with your destination TSG.
+
+| Flag | Command | Meaning |
+| --- | --- | --- |
+| `[profile]` / `--all` | backup | Exact name/ID, or all latest profiles (default) |
+| `--file-format json\|yaml` | backup | File encoding; default JSON |
+| `--output-file <path>` | backup | New file; unique CWD filename by default |
+| `--dry-run` | restore | Validate and read destination without mutations |
+| `--name-prefix <prefix>` | restore | Prefix both profile and topic names |
+| `--on-conflict error\|skip\|update` | restore | Default error; updates require explicit choice |
+| `--dlp-map <source=destination>` | restore | Repeatable cross-tenant DLP binding to an existing target profile |
+| `--expect-tsg <id>` | restore | Assert destination; mandatory with `--force` |
+| `--force` | restore | Skip confirmation, not conflict/validation checks |
+| `--max-pages <n>` | both | 1–1000; default 100; incomplete inventories fail |
+| `--output <format>` | both | Summary: pretty, table, markdown, csv, json, yaml |
+
+See [profile migration and live E2E evidence](../../runtime/profile-transfer.md) for
+the full workflow, DLP limitations, partial-failure handling, and actual backup output.
+
+---
+
 ### runtime profiles list
 
 List security profiles

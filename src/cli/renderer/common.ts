@@ -41,6 +41,8 @@ export const OUTPUT_FORMATS: readonly OutputFormat[] = [
 
 export interface ResolveOutputOptions {
   allowed?: readonly OutputFormat[];
+  /** Configuration recovery commands must work even when the active config is unreadable. */
+  ignoreConfig?: boolean;
 }
 
 export async function resolveOutput(
@@ -55,7 +57,9 @@ export async function resolveOutput(
   const globalOutput = globalIsExplicit ? rootCommand.opts().output : undefined;
   let configured: string | undefined;
   try {
-    configured = (await loadConfig()).defaultOutput;
+    configured = resolution.ignoreConfig
+      ? process.env.PANW_CLI_OUTPUT
+      : (await loadConfig()).defaultOutput;
   } catch (error) {
     if (process.env.PANW_CLI_OUTPUT !== undefined) configured = process.env.PANW_CLI_OUTPUT;
     else throw error;

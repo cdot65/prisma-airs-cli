@@ -4,7 +4,12 @@ title: Backup & Restore
 
 # Backup & Restore
 
-Export and import AIRS configuration to local JSON or YAML files. Currently supports red team targets, with future support planned for profiles, topics, and prompt sets.
+Export and import AIRS configuration to local JSON or YAML files. Runtime security
+profiles (including their referenced custom topics) and Red Team targets are supported.
+
+For `airs runtime profiles backup` / `restore`, including cross-tenant migration, use the
+[Runtime profile migration guide](../runtime/profile-transfer.md). The target commands
+below retain their existing behavior and file format.
 
 ## Prerequisites
 

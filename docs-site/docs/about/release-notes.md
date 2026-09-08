@@ -1,5 +1,23 @@
 # Release Notes
 
+## v5.5.0 (2026-09-08) — tenant selection and Runtime profile migration
+
+- Add `airs tenant create`, `switch`, `list`, `read`, and `delete`, registering existing
+  read-only config files by path. Store the selection separately without copying secrets.
+- Pin each registration's TSG identity, redact credential values fully, reject mixed
+  tenant/environment authentication, and retain legacy `default` behavior.
+- Add `airs runtime profiles backup` and `restore`: private JSON/YAML files, exact topic
+  dependencies, dry-run plans, destination assertions, explicit conflict handling,
+  destination ID rewriting, and read-back verification.
+- Require explicit mapping to existing destination DLP data profiles for cross-tenant
+  migration; never silently reuse source IDs or update shared topic definitions.
+- Preserve existing files and report partial restore failures without automatic rollback.
+
+The [migration guide](../runtime/profile-transfer.md) contains live backup output and
+the verified synthetic restore workflow. Two isolated OAuth tenants exercise the actual
+CLI's cross-tenant path; live cloud verification uses the single configured tenant.
+SDK remains **0.29.0**; its existing Management APIs provide the required operations.
+
 ## v5.4.1 (2026-09-08) — AgentGuard reports and navigation repair
 
 Version 5.4.0 was withheld from npm after the release gate found a test-only dependency

@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'getting-started/installation',
         'getting-started/configuration',
+        'cli/tenant',
         'getting-started/quick-start',
         'getting-started/exit-codes-and-output',
       ],
@@ -27,6 +28,7 @@ const sidebars: SidebarsConfig = {
         'runtime/overview',
         'runtime/scanning',
         'runtime/config-management',
+        'runtime/profile-transfer',
         'runtime/daily-report',
         {
           type: 'category',

@@ -53,6 +53,7 @@ import {
   topicsView,
 } from '../renderer/views/runtime.js';
 import { registerDlpCommands } from './dlp/index.js';
+import { registerProfileTransferCommands } from './profile-transfer.js';
 import { registerCleanupCommand } from './profiles-cleanup.js';
 import { registerRuntimeDashboardCommands } from './runtime-dashboard.js';
 import { registerRuntimeReportCommand } from './runtime-report.js';
@@ -606,6 +607,7 @@ export function registerRuntimeCommand(program: Command): void {
   // runtime profiles — security profile CRUD subcommands
   // -----------------------------------------------------------------------
   const profiles = runtime.command('profiles').description('Manage AIRS security profiles');
+  registerProfileTransferCommands(profiles);
 
   const profilesList = registerListFlags(profiles.command('list'), { dialect: 'offset' })
     .description('List security profiles')

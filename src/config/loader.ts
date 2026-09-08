@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { type Config, ConfigSchema } from './schema.js';
+import { assertTenantEnvironment, readTenantConfigFile, selectedTenant } from './tenants.js';
 
 function expandHome(p: string): string {
   return p.startsWith('~') ? join(homedir(), p.slice(1)) : p;
@@ -59,21 +60,32 @@ function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
 
 /**
  * Resolve the config file path: explicit param > PRISMA_AIRS_CONFIG_PATH env
- * var > ~/.prisma-airs/config.json.
+ * var > active named tenant > ~/.prisma-airs/config.json.
  */
 export function resolveConfigFilePath(configFilePath?: string): string {
-  if (configFilePath) return configFilePath;
+  return resolveConfigSource(configFilePath).path;
+}
+
+function resolveConfigSource(configFilePath?: string) {
+  if (configFilePath) return { path: expandHome(configFilePath) };
   const envPath = process.env.PRISMA_AIRS_CONFIG_PATH;
-  if (envPath) return expandHome(envPath);
-  return join(homedir(), '.prisma-airs', 'config.json');
+  if (envPath) return { path: expandHome(envPath) };
+  const tenant = selectedTenant();
+  return { path: tenant?.configPath ?? join(homedir(), '.prisma-airs', 'config.json'), tenant };
+}
+
+async function readConfigSource(configFilePath?: string) {
+  const { path, tenant } = resolveConfigSource(configFilePath);
+  if (!tenant) return fromFile(path);
+  assertTenantEnvironment();
+  return readTenantConfigFile(path, tenant.tsgId);
 }
 
 export async function loadConfig(
   cliOverrides: Record<string, unknown> = {},
   configFilePath?: string,
 ): Promise<Config> {
-  const filePath = resolveConfigFilePath(configFilePath);
-  const fileConfig = await fromFile(filePath);
+  const fileConfig = await readConfigSource(configFilePath);
   const envConfig = fromEnv();
 
   // Priority: CLI > env > file > defaults
@@ -103,8 +115,7 @@ export interface ConfigEntry {
  * with per-key source tracking. Keys are exactly the ConfigSchema keys.
  */
 export async function inspectConfig(configFilePath?: string): Promise<Record<string, ConfigEntry>> {
-  const filePath = resolveConfigFilePath(configFilePath);
-  const fileConfig = stripUndefined(await fromFile(filePath));
+  const fileConfig = stripUndefined(await readConfigSource(configFilePath));
   const envConfig = stripUndefined(fromEnv());
 
   const merged = { ...fileConfig, ...envConfig };
