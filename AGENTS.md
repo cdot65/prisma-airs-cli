@@ -27,6 +27,15 @@ The binary is `airs`. Five product command groups: `runtime`, `redteam`, `aigate
 
 Different commands require different credentials. Set these as environment variables or in `~/.prisma-airs/config.json`.
 
+For named tenants, `airs tenant create <name>` guides the user through TSG ID, OAuth
+client ID, and a hidden client secret. `--config <path>` still registers an existing
+file without modifying it. Automated creation uses `--tsg-id`, `--client-id`, and
+`--client-secret-stdin`; never put secrets in arguments. Use
+`airs tenant set <name> <key> [value]` to edit one setting. Omit secret values for hidden
+prompts or pipe them with `--stdin`. Named tenant edits do not switch selection, cannot
+change the pinned TSG ID, and require writable configs. Run `airs tenant switch <name>`
+to activate; `read` redacts credentials and `delete` retains the config file.
+
 ### Credential Sets
 
 | Credential Set | Environment Variables | Used By |

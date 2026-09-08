@@ -1,5 +1,18 @@
 # Release Notes
 
+## v5.6.0 (2026-09-08) — guided tenant configuration
+
+- `airs tenant create <name>` now prompts for TSG ID, OAuth client ID, and a hidden
+  client secret, one field at a time. Existing `--config <path>` registration remains supported.
+- `airs tenant set <name> <key> [value]` changes individual settings without switching
+  tenants. Omit the value to prompt; credentials require hidden input or `--stdin`.
+- Automation can create a config using `--tsg-id`, `--client-id`, and
+  `--client-secret-stdin`. No secret argument is needed.
+- Private configs, atomic updates, per-config locks, read-only checks, pinned TSG
+  identity, and cancellation without partial registrations protect tenant configuration.
+- The [tenant guide](../cli/tenant.md) includes actual terminal output. Validation
+  includes 1,619 regression tests, built-CLI local OAuth, and cross-tenant migration tests.
+
 ## v5.5.0 (2026-09-08) — tenant selection and Runtime profile migration
 
 - Add `airs tenant create`, `switch`, `list`, `read`, and `delete`, registering existing

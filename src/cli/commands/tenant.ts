@@ -1,5 +1,11 @@
 import type { Command } from 'commander';
 import {
+  createManagedTenant,
+  isTenantSecret,
+  setTenantSetting,
+  validateTenantSettingKey,
+} from '../../config/tenant-settings.js';
+import {
   createTenant,
   defaultTenantConfigPath,
   deleteTenant,
@@ -7,10 +13,21 @@ import {
   readTenantConfig,
   readTenantStore,
   switchTenant,
+  validateTenantName,
 } from '../../config/tenants.js';
 import { confirmOrAbort } from '../confirm.js';
 import { examples } from '../examples.js';
 import { fail, formatOutput, resolveOutput, ui } from '../renderer/index.js';
+import { promptTenantValue, readTenantStdin } from '../tenant-input.js';
+
+function tenantInputFailure(error: unknown): void {
+  if (error instanceof Error && error.name === 'ExitPromptError') {
+    ui.status('Cancelled; no configuration saved.');
+    process.exitCode = 130;
+    return;
+  }
+  fail(error);
+}
 
 const COLUMNS = [
   { key: 'name', label: 'Tenant' },
@@ -22,10 +39,12 @@ const COLUMNS = [
 export function registerTenantCommand(program: Command): void {
   const tenant = program
     .command('tenant')
-    .description('Select named tenant config files without changing their contents')
+    .description('Create, configure and select named tenants')
     .addHelpText(
       'after',
       examples(
+        'airs tenant create development',
+        'airs tenant set development defaultOutput yaml',
         'airs tenant create production --config /secure/production.json',
         'airs tenant switch production',
         'airs tenant read',
@@ -35,18 +54,73 @@ export function registerTenantCommand(program: Command): void {
 
   tenant
     .command('create <name>')
-    .description('Register an existing JSON config file by reference; does not activate it')
-    .requiredOption('--config <path>', 'Existing Prisma AIRS JSON config file')
-    .action(async (name: string, opts: { config: string }) => {
-      try {
-        const entry = await createTenant(name, opts.config);
-        ui.success(
-          `Registered ${entry.name} (TSG ${entry.tsgId}); config file unchanged. Use airs tenant switch ${entry.name}.`,
-        );
-      } catch (error) {
-        fail(error);
-      }
-    });
+    .description(
+      'Create a config with guided prompts, or register an existing JSON file; does not activate it',
+    )
+    .option('--config <path>', 'Existing Prisma AIRS JSON config file (no copying or editing)')
+    .option('--tsg-id <id>', 'Tenant service group ID for a new config')
+    .option('--client-id <id>', 'OAuth client ID for a new config')
+    .option('--client-secret-stdin', 'Read the new config OAuth secret from piped stdin')
+    .action(
+      async (
+        name: string,
+        opts: { config?: string; tsgId?: string; clientId?: string; clientSecretStdin?: boolean },
+      ) => {
+        try {
+          validateTenantName(name);
+          if (
+            opts.config &&
+            (opts.tsgId !== undefined || opts.clientId !== undefined || opts.clientSecretStdin)
+          )
+            throw new Error('--config cannot be combined with new-config options');
+          if (!opts.config && readTenantStore().tenants.some((entry) => entry.name === name))
+            throw new Error('Tenant name already exists');
+          const entry = opts.config
+            ? await createTenant(name, opts.config)
+            : await createManagedTenant(name, {
+                mgmtTsgId:
+                  opts.tsgId ?? (await promptTenantValue('Tenant service group ID (mgmtTsgId):')),
+                mgmtClientId:
+                  opts.clientId ?? (await promptTenantValue('OAuth client ID (mgmtClientId):')),
+                mgmtClientSecret: opts.clientSecretStdin
+                  ? await readTenantStdin()
+                  : await promptTenantValue('OAuth client secret (mgmtClientSecret):', true),
+              });
+          ui.success(
+            `Registered ${entry.name} (TSG ${entry.tsgId}); ${opts.config ? 'config file unchanged' : 'private config created'}. Use airs tenant switch ${entry.name}.`,
+          );
+        } catch (error) {
+          tenantInputFailure(error);
+        }
+      },
+    );
+
+  tenant
+    .command('set <name> <key> [value]')
+    .description('Update one named tenant setting; prompt when omitted, hide secrets')
+    .option('--stdin', 'Read one value from piped stdin (recommended for automated secret updates)')
+    .action(
+      async (name: string, key: string, value: string | undefined, opts: { stdin?: boolean }) => {
+        try {
+          validateTenantSettingKey(key);
+          if (!readTenantStore().tenants.some((entry) => entry.name === name))
+            throw new Error('Tenant not found; register a named tenant first');
+          if (opts.stdin && value !== undefined)
+            throw new Error('Use a value or --stdin, not both');
+          if (isTenantSecret(key) && value !== undefined)
+            throw new Error(
+              'Do not pass credentials as arguments. Omit the value for a hidden prompt, or use --stdin.',
+            );
+          const setting = opts.stdin
+            ? await readTenantStdin()
+            : (value ?? (await promptTenantValue(`${key}:`, isTenantSecret(key))));
+          await setTenantSetting(name, key, setting);
+          ui.success(`Updated ${key} for tenant ${name}; selection unchanged.`);
+        } catch (error) {
+          tenantInputFailure(error);
+        }
+      },
+    );
 
   tenant
     .command('switch <name>')

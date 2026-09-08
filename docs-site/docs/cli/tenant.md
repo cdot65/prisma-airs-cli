@@ -5,9 +5,57 @@ sidebar_label: tenant
 
 # Tenant selection
 
-Register existing Prisma AIRS JSON configuration files and switch the CLI between them.
-The files can be read-only: registering, switching, reading, and deleting registrations
-never modify the source configuration or copy its credentials.
+Create a tenant configuration through guided prompts, or register an existing Prisma
+AIRS JSON file. You can then update individual settings and switch between tenants.
+Existing files can be read-only: registering, switching, reading, and deleting
+registrations never modify the source configuration or copy its credentials.
+
+## Set up without a JSON file
+
+```bash
+airs tenant create development
+# Prompts, one at a time: TSG ID, OAuth client ID, and a hidden OAuth client secret.
+airs tenant set development defaultOutput yaml
+airs tenant set development scanConcurrency 3
+airs tenant set development airsApiKey
+# Hidden prompt for the runtime scanning key.
+airs tenant switch development
+airs tenant read
+```
+
+`create` waits for all three required values before saving anything. Ctrl+C cancels
+setup without registering a partial tenant (exit 130). This configures access to an
+existing cloud tenant; it does not provision a tenant or service account.
+
+`set <name> <key> [value]` changes just one setting in that named tenant's file,
+without changing the active selection. Omit the value to be prompted. Credentials
+use hidden prompts and cannot be passed as command-line arguments. Keys use the
+same camelCase names as `airs config`, such as `mgmtClientSecret`,
+`mgmtDashboardEndpoint`, and `aiGwInferenceApiKey`. Values are schema-validated;
+unrelated fields are preserved. Credential fields cannot be cleared. The registered
+`mgmtTsgId` is pinned: create another tenant to use a different TSG.
+
+For automation, pipe a secret from your secret manager or private file:
+
+```bash
+airs tenant create development --tsg-id 100 --client-id client-100 \
+  --client-secret-stdin < /secure/oauth-secret.txt
+airs tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
+```
+
+Stdin accepts one nonempty value, up to 64 KiB, with an optional final newline.
+Without a terminal, supply the creation IDs and `--client-secret-stdin`, or use
+`--config`. Do not combine `--config` with new-config options. Neither creation nor
+editing tests OAuth access; a successful save confirms local configuration only.
+
+New configs are stored under `configs/` alongside the tenant registry, with a unique
+filename, directory mode `0700`, and file mode `0600` on POSIX. Secrets are stored in
+that private JSON file, **not encrypted**, and never in the registry. Back up and
+protect these files. `tenant set` requires a writable regular file and parent directory;
+it does not bypass read-only permissions. Updates use a per-config lock and atomic
+replacement with mode `0600`. Deleting a registration retains even CLI-created configs.
+
+## Use an existing JSON file
 
 ```bash
 airs tenant create development --config /secure/development.json
@@ -20,7 +68,7 @@ airs tenant switch default
 airs tenant delete production --force
 ```
 
-`create` registers an **existing file**, not a new cloud tenant or service account. Each
+`create --config` registers an **existing file**, not a new cloud tenant or service account. Each
 file must contain `mgmtClientId`, `mgmtClientSecret`, and `mgmtTsgId`. Add product-specific
 keys/endpoints to that same file as needed. A registration does not become active until
 you run `switch`. Names are 1–64 letters, digits, hyphens, or underscores, beginning with
@@ -28,7 +76,9 @@ a letter or digit. `default` is reserved.
 
 | Command | Behavior |
 | --- | --- |
+| `create <name>` | Prompt for TSG ID, client ID and hidden secret; create a private config |
 | `create <name> --config <path>` | Validate and register an existing config; resolve its real absolute path |
+| `set <name> <key> [value] [--stdin]` | Update one setting; prompt if omitted, hide credentials, preserve selection |
 | `switch <name>` | Validate its pinned TSG identity and persist the selection for subsequent CLI processes |
 | `switch default` | Return to legacy config/environment resolution |
 | `list --output <format>` | Show names, selected status, TSG IDs, and file paths; no credential reads |
@@ -87,3 +137,33 @@ airs runtime profiles restore ./profiles.json --expect-tsg 200 --force
 Replace `200` with the actual destination TSG. See the
 [profile migration guide](../runtime/profile-transfer.md) for DLP mappings, conflicts,
 limitations, and live acceptance evidence.
+
+## Guided setup acceptance output
+
+Captured on 2026-09-08 with synthetic credentials and an isolated local registry;
+this is a terminal interaction test, not a cloud authentication claim. Terminal
+control sequences have been removed; no credential value is included below.
+
+```text
+$ airs tenant create guided-demo
+✔ Tenant service group ID (mgmtTsgId): 100
+✔ OAuth client ID (mgmtClientId): client-100
+✔ OAuth client secret (mgmtClientSecret):
+  ✓ Registered guided-demo (TSG 100); private config created. Use airs tenant switch guided-demo.
+
+$ airs tenant set guided-demo defaultOutput
+✔ defaultOutput: yaml
+  ✓ Updated defaultOutput for tenant guided-demo; selection unchanged.
+
+$ airs tenant create cancelled-demo --tsg-id 100 --client-id client-100
+? OAuth client secret (mgmtClientSecret): [input is masked]
+# Ctrl+C
+  Cancelled; no configuration saved.
+```
+
+Cancellation exited 130 and left only the completed `guided-demo` registration and
+its config; selection remained unchanged. `tenant read guided-demo --output json`
+returned `defaultOutput: yaml` and `[REDACTED]` for `mgmtClientSecret`. Separate
+built-CLI integration tests verified stdin setup, secret rotation, individual endpoint
+updates, and OAuth/profile retrieval against a local HTTP test API. The existing
+two-tenant profile backup/restore integration workflows also passed.

@@ -32,6 +32,14 @@ For settings you use across every run, create `~/.prisma-airs/config.json`:
 
 ## Managing config from the CLI
 
+To set up tenant credentials without preparing JSON, run `airs tenant create <name>`.
+It prompts for TSG ID, client ID, and a hidden client secret, one at a time. Then use
+`airs tenant set <name> <key> [value]` for individual settings and
+`airs tenant switch <name>` to activate it. Omit secret values for hidden prompts or
+use `--stdin`; do not put credentials in shell arguments. Existing-file registration
+with `airs tenant create <name> --config <path>` remains supported.
+See [tenant selection](../cli/tenant.md) for automation and private-file storage.
+
 The `airs config` command group manages the selected config file without hand-editing:
 
 ```bash

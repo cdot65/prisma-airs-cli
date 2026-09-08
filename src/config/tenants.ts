@@ -150,12 +150,17 @@ async function changeStore(change: (store: TenantStore) => void): Promise<Tenant
   }
 }
 
-/** Register an existing config by reference. The source file is never copied or changed. */
-export async function createTenant(name: string, configPath: string): Promise<TenantEntry> {
+/** Validate names before prompting or creating local files. */
+export function validateTenantName(name: string): void {
   if (!NameSchema.safeParse(name).success)
     throw new Error(
       'Tenant name must be 1–64 letters, digits, hyphens or underscores, start with a letter/digit, and not be default',
     );
+}
+
+/** Register an existing config by reference. The source file is never copied or changed. */
+export async function createTenant(name: string, configPath: string): Promise<TenantEntry> {
+  validateTenantName(name);
   let path: string;
   try {
     path = realpathSync(resolve(expandConfigPath(configPath)));
