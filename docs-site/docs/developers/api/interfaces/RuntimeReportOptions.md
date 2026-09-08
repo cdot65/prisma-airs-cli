@@ -1,6 +1,6 @@
 # Interface: RuntimeReportOptions
 
-Defined in: src/reports/types.ts:122
+Defined in: src/reports/types.ts:146
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:122
 
 > `optional` **maxPages?**: `number`
 
-Defined in: src/reports/types.ts:125
+Defined in: src/reports/types.ts:149
 
 Per-source page budget (1–100); partial results are explicitly marked. Default 40.
 
@@ -18,7 +18,7 @@ Per-source page budget (1–100); partial results are explicitly marked. Default
 
 > `optional` **now?**: () => `Date`
 
-Defined in: src/reports/types.ts:127
+Defined in: src/reports/types.ts:151
 
 Inject a clock for deterministic tests.
 
@@ -32,4 +32,4 @@ Inject a clock for deterministic tests.
 
 > `optional` **title?**: `string`
 
-Defined in: src/reports/types.ts:123
+Defined in: src/reports/types.ts:147

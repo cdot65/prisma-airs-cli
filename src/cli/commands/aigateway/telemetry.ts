@@ -4,6 +4,7 @@ import {
   type AIGatewayChartOptions,
   type AIGatewayGroupOptions,
   type AIGatewayWindowOptions,
+  redactAIGatewaySecrets,
 } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { CliUsageError } from '../../renderer/index.js';
@@ -70,11 +71,24 @@ function registerMetric(
   telemetry: Command,
   name: string,
   description: string,
-  method: 'errorTrends' | 'errors' | 'rescuedRetries' | 'userTrends' | 'users',
+  method:
+    | 'errorTrends'
+    | 'errors'
+    | 'rescuedRetries'
+    | 'userTrends'
+    | 'users'
+    | 'errorCategoryTrends'
+    | 'groupedErrors'
+    | 'filterBoundaries',
 ): void {
   const command = addWindowOptions(telemetry.command(name).description(description));
   command.action((opts: WindowFlags) =>
-    runDetail(command, opts, (client) => client.telemetry[method](windowFrom(opts))),
+    runDetail(command, opts, async (client) => {
+      const result = await client.telemetry[method](windowFrom(opts));
+      return method === 'filterBoundaries'
+        ? redactAIGatewaySecrets('telemetry.filterBoundaries', result, 'response')
+        : result;
+    }),
   );
 }
 
@@ -140,6 +154,24 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
 
   registerMetric(telemetry, 'error-trends', 'Get error trends', 'errorTrends');
   registerMetric(telemetry, 'errors', 'Get error count', 'errors');
+  registerMetric(
+    telemetry,
+    'error-category-trends',
+    'Get errors by HTTP status',
+    'errorCategoryTrends',
+  );
+  registerMetric(
+    telemetry,
+    'grouped-errors',
+    'Get HTTP error counts by time bucket',
+    'groupedErrors',
+  );
+  registerMetric(
+    telemetry,
+    'filter-boundaries',
+    'Get available analytics filters and bounds',
+    'filterBoundaries',
+  );
 
   const feedback = showHelpOnEmpty(
     telemetry.command('feedback').description('Inspect model feedback telemetry'),
@@ -194,14 +226,16 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
       .command('list')
       .description('List request logs')
       .option('--page-size <n>', 'Rows per response', '50')
+      .option('--current-page <n>', 'Zero-based transaction page', '0')
       .option('--status-code <code>', 'Filter by HTTP status')
       .option('--trace-id <id>', 'Return one trace id'),
   );
-  logsList.action((opts: WindowFlags & { pageSize?: string }) =>
+  logsList.action((opts: WindowFlags & { pageSize?: string; currentPage?: string }) =>
     runDetail(logsList, opts, (client) =>
       client.telemetry.logs({
         ...windowFrom(opts),
         pageSize: parsePositiveInteger(opts.pageSize ?? '50', '--page-size'),
+        currentPage: parseNonnegativePage(opts.currentPage ?? '0'),
         ...(opts.statusCode
           ? { statusCode: parsePositiveInteger(opts.statusCode, '--status-code') }
           : {}),
@@ -215,4 +249,10 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
   registerFilteredMetric(telemetry, 'tokens', 'Get token usage');
   registerMetric(telemetry, 'user-trends', 'Get user trends', 'userTrends');
   registerMetric(telemetry, 'users', 'Get unique-user count', 'users');
+}
+
+function parseNonnegativePage(value: string): number {
+  if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
+    throw new CliUsageError('--current-page must be a nonnegative safe integer');
+  return Number(value);
 }

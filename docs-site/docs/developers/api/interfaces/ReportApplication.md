@@ -1,6 +1,6 @@
 # Interface: ReportApplication
 
-Defined in: src/reports/types.ts:39
+Defined in: src/reports/types.ts:63
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:39
 
 > **name**: `string`
 
-Defined in: src/reports/types.ts:40
+Defined in: src/reports/types.ts:64
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:40
 
 > **registered**: `boolean` \| `null`
 
-Defined in: src/reports/types.ts:43
+Defined in: src/reports/types.ts:67
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:43
 
 > **sessions**: `number` \| `null`
 
-Defined in: src/reports/types.ts:41
+Defined in: src/reports/types.ts:65
 
 ***
 
@@ -32,4 +32,4 @@ Defined in: src/reports/types.ts:41
 
 > **violatingSessions**: `number` \| `null`
 
-Defined in: src/reports/types.ts:42
+Defined in: src/reports/types.ts:66

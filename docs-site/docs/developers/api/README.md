@@ -28,8 +28,11 @@
 - [DeleteResponse](interfaces/DeleteResponse.md)
 - [DeploymentProfileInfo](interfaces/DeploymentProfileInfo.md)
 - [EfficacyMetrics](interfaces/EfficacyMetrics.md)
+- [EnvironmentReport](interfaces/EnvironmentReport.md)
+- [EnvironmentReportTable](interfaces/EnvironmentReportTable.md)
 - [EulaContent](interfaces/EulaContent.md)
 - [EulaStatus](interfaces/EulaStatus.md)
+- [GatewayReportOptions](interfaces/GatewayReportOptions.md)
 - [IndexedPrompt](interfaces/IndexedPrompt.md)
 - [InstanceDetail](interfaces/InstanceDetail.md)
 - [InstanceRequest](interfaces/InstanceRequest.md)
@@ -134,6 +137,7 @@
 - [BackupFormat](type-aliases/BackupFormat.md)
 - [BulkScanAction](type-aliases/BulkScanAction.md)
 - [ConsumptionTimeInterval](type-aliases/ConsumptionTimeInterval.md)
+- [GatewayReportClient](type-aliases/GatewayReportClient.md)
 - [RedTeamReportClient](type-aliases/RedTeamReportClient.md)
 - [ReportFormat](type-aliases/ReportFormat.md)
 - [ReportPriority](type-aliases/ReportPriority.md)
@@ -146,6 +150,7 @@
 
 ## Functions
 
+- [collectGatewayEnvironmentReport](functions/collectGatewayEnvironmentReport.md)
 - [collectRedTeamEnvironmentReport](functions/collectRedTeamEnvironmentReport.md)
 - [collectRuntimeDailyReport](functions/collectRuntimeDailyReport.md)
 - [computeCategoryBreakdown](functions/computeCategoryBreakdown.md)
@@ -153,6 +158,8 @@
 - [loadConfig](functions/loadConfig.md)
 - [readBackupDir](functions/readBackupDir.md)
 - [readBackupFile](functions/readBackupFile.md)
+- [renderEnvironmentReportHtml](functions/renderEnvironmentReportHtml.md)
+- [renderEnvironmentReportMarkdown](functions/renderEnvironmentReportMarkdown.md)
 - [renderRedTeamReportHtml](functions/renderRedTeamReportHtml.md)
 - [renderRedTeamReportMarkdown](functions/renderRedTeamReportMarkdown.md)
 - [renderRuntimeReportHtml](functions/renderRuntimeReportHtml.md)

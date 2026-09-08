@@ -92,7 +92,8 @@ export function buildProgram(): Command {
     setQuiet(Boolean(root.quiet));
     const isEnvironmentReport =
       (actionCommand.name() === 'report' && actionCommand.parent?.name() === 'runtime') ||
-      (actionCommand.name() === 'dashboard' && actionCommand.parent?.name() === 'redteam');
+      (actionCommand.name() === 'dashboard' &&
+        ['redteam', 'aigateway'].includes(actionCommand.parent?.name() ?? ''));
     if (
       isEnvironmentReport &&
       (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))

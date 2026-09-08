@@ -1,6 +1,6 @@
 # Interface: RuntimeDailyReport
 
-Defined in: src/reports/types.ts:99
+Defined in: src/reports/types.ts:123
 
 Allowlisted, credential-free projection; never contains raw responses or scan content.
 
@@ -10,7 +10,7 @@ Allowlisted, credential-free projection; never contains raw responses or scan co
 
 > **activity**: `object`
 
-Defined in: src/reports/types.ts:109
+Defined in: src/reports/types.ts:133
 
 #### applications
 
@@ -34,7 +34,7 @@ Defined in: src/reports/types.ts:109
 
 > **collectionStartedAt**: `string`
 
-Defined in: src/reports/types.ts:104
+Defined in: src/reports/types.ts:128
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/reports/types.ts:104
 
 > **dailyTelemetry**: [`ReportDailyTelemetry`](ReportDailyTelemetry.md)
 
-Defined in: src/reports/types.ts:118
+Defined in: src/reports/types.ts:142
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/reports/types.ts:118
 
 > **findings**: [`ReportFinding`](ReportFinding.md)[]
 
-Defined in: src/reports/types.ts:108
+Defined in: src/reports/types.ts:132
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/reports/types.ts:108
 
 > **generatedAt**: `string`
 
-Defined in: src/reports/types.ts:103
+Defined in: src/reports/types.ts:127
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/reports/types.ts:103
 
 > **health**: `"unknown"` \| `"attention"` \| `"review"` \| `"no-findings"`
 
-Defined in: src/reports/types.ts:106
+Defined in: src/reports/types.ts:130
 
 ***
 
@@ -74,7 +74,7 @@ Defined in: src/reports/types.ts:106
 
 > **limitations**: `string`[]
 
-Defined in: src/reports/types.ts:119
+Defined in: src/reports/types.ts:143
 
 ***
 
@@ -82,7 +82,7 @@ Defined in: src/reports/types.ts:119
 
 > **product**: `"Prisma AIRS AI Runtime Security"`
 
-Defined in: src/reports/types.ts:101
+Defined in: src/reports/types.ts:125
 
 ***
 
@@ -90,7 +90,7 @@ Defined in: src/reports/types.ts:101
 
 > **profiles**: [`ReportProfile`](ReportProfile.md)[]
 
-Defined in: src/reports/types.ts:115
+Defined in: src/reports/types.ts:139
 
 ***
 
@@ -98,7 +98,7 @@ Defined in: src/reports/types.ts:115
 
 > **registeredApps**: [`ReportRegisteredApp`](ReportRegisteredApp.md)[]
 
-Defined in: src/reports/types.ts:116
+Defined in: src/reports/types.ts:140
 
 ***
 
@@ -106,7 +106,7 @@ Defined in: src/reports/types.ts:116
 
 > **schemaVersion**: `2`
 
-Defined in: src/reports/types.ts:100
+Defined in: src/reports/types.ts:124
 
 ***
 
@@ -114,7 +114,7 @@ Defined in: src/reports/types.ts:100
 
 > **sessions**: [`ReportSessionSummary`](ReportSessionSummary.md)
 
-Defined in: src/reports/types.ts:117
+Defined in: src/reports/types.ts:141
 
 ***
 
@@ -122,7 +122,7 @@ Defined in: src/reports/types.ts:117
 
 > **sources**: [`ReportSource`](ReportSource.md)[]
 
-Defined in: src/reports/types.ts:107
+Defined in: src/reports/types.ts:131
 
 ***
 
@@ -130,7 +130,7 @@ Defined in: src/reports/types.ts:107
 
 > **title**: `string`
 
-Defined in: src/reports/types.ts:102
+Defined in: src/reports/types.ts:126
 
 ***
 
@@ -138,7 +138,7 @@ Defined in: src/reports/types.ts:102
 
 > **window**: `object`
 
-Defined in: src/reports/types.ts:105
+Defined in: src/reports/types.ts:129
 
 #### description
 

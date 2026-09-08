@@ -1,14 +1,14 @@
 # Function: renderRedTeamReportHtml()
 
-> **renderRedTeamReportHtml**(`r`): `string`
+> **renderRedTeamReportHtml**(`report`): `string`
 
-Defined in: src/reports/redteam-render.ts:96
+Defined in: src/reports/redteam-render.ts:13
 
-Self-contained HTML with hash-based CSP, static inline JS/CSS and no remote resources.
+Self-contained HTML with hash-based CSP and no remote resources.
 
 ## Parameters
 
-### r
+### report
 
 [`RedTeamEnvironmentReport`](../interfaces/RedTeamEnvironmentReport.md)
 

@@ -17,16 +17,21 @@ the legacy `cost` command currently accepts only a rolling-day window, as listed
 | `cache summary` / `cache trend` | Cache totals and hit-rate series |
 | `cost` | Spend totals and daily records |
 | `errors` / `error-trends` | Error count and trends |
+| `error-category-trends` / `grouped-errors` | HTTP error categories and time buckets (CLI 5.2.0+) |
+| `filter-boundaries` | Analytics filter response; sensitive data subtree redacted (CLI 5.2.0+) |
 | `feedback distribution` / `models` / `trend` / `weighted` | Feedback analytics |
 | `group-by <dimension>` | Aggregation by an SDK-supported dimension; `--columns` adds aggregates |
 | `latency` | Total and percentile latency series |
-| `logs list` | Request logs; supports `--page-size`, `--status-code`, and `--trace-id` |
+| `logs list` | Request logs; supports `--page-size`, zero-based `--current-page` (5.2.0+), `--status-code`, and `--trace-id` |
 | `requests` | Request count series |
 | `rescued-retries` | Requests recovered by retry behavior |
 | `tokens` | Token usage series |
 | `users` / `user-trends` | Unique-user count and trends |
 
 ### aigateway telemetry cost
+
+For a private, self-contained HTML or Markdown deliverable spanning these feeds, use
+[`airs aigateway dashboard`](./dashboard.md). It paginates transactions and reports completeness.
 
 Total and per-day spend for a workspace.
 

@@ -1,6 +1,6 @@
 # Interface: ReportSessionSummary
 
-Defined in: src/reports/types.ts:63
+Defined in: src/reports/types.ts:87
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:63
 
 > **entries**: `number` \| `null`
 
-Defined in: src/reports/types.ts:64
+Defined in: src/reports/types.ts:88
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:64
 
 > **missingTimestamps**: `number`
 
-Defined in: src/reports/types.ts:67
+Defined in: src/reports/types.ts:91
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:67
 
 > **outsideWindow**: `number`
 
-Defined in: src/reports/types.ts:68
+Defined in: src/reports/types.ts:92
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/reports/types.ts:68
 
 > **statuses**: `object`[]
 
-Defined in: src/reports/types.ts:65
+Defined in: src/reports/types.ts:89
 
 #### count
 
@@ -48,4 +48,4 @@ Defined in: src/reports/types.ts:65
 
 > **violatingSessions**: `number` \| `null`
 
-Defined in: src/reports/types.ts:66
+Defined in: src/reports/types.ts:90

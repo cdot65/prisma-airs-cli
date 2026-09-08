@@ -1,14 +1,14 @@
 # Function: renderRedTeamReportMarkdown()
 
-> **renderRedTeamReportMarkdown**(`r`): `string`
+> **renderRedTeamReportMarkdown**(`report`): `string`
 
-Defined in: src/reports/redteam-render.ts:37
+Defined in: src/reports/redteam-render.ts:8
 
 Portable Markdown using the same allowlisted evidence as the HTML dashboard.
 
 ## Parameters
 
-### r
+### report
 
 [`RedTeamEnvironmentReport`](../interfaces/RedTeamEnvironmentReport.md)
 

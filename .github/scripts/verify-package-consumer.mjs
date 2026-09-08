@@ -61,6 +61,10 @@ const command = (...args) => {
   return result.stdout;
 };
 assert.equal(command('--version').trim(), expected.version);
+const gatewayDashboardHelp = command('aigateway', 'dashboard', '--help');
+for (const flag of ['--workspace', '--output-file', '--start', '--end', '--strict'])
+  assert.ok(gatewayDashboardHelp.includes(flag));
+assert.ok(command('aigateway', 'telemetry', 'logs', 'list', '--help').includes('--current-page'));
 const help = command('aigateway', 'inference', '--help');
 for (const name of ['chat', 'responses', 'embeddings']) assert.ok(help.includes(name));
 const library = await import(pathToFileURL(resolve(installed, 'dist/index.js')).href);
@@ -74,6 +78,9 @@ for (const name of [
   'renderRedTeamReportHtml',
   'renderRedTeamReportMarkdown',
   'writeReportFile',
+  'collectGatewayEnvironmentReport',
+  'renderEnvironmentReportHtml',
+  'renderEnvironmentReportMarkdown',
 ])
   assert.equal(typeof library[name], 'function');
 const reportHelp = command('runtime', 'report', '--help');
@@ -155,6 +162,7 @@ console.log(
       packedAndInstalledPayloadsIdentical: true,
       versionAndInferenceHelpPassed: true,
       groupFilterHelpPassed: true,
+      gatewayDashboardAndTransactionPaginationHelpPassed: true,
       runtimeReportHelpPassed: true,
       redTeamDashboardHelpAndQuotaMethodPassed: true,
       runtimeDashboardAndSessionHelpPassed: true,

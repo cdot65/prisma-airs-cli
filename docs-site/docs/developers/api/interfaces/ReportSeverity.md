@@ -1,6 +1,6 @@
 # Interface: ReportSeverity
 
-Defined in: src/reports/types.ts:71
+Defined in: src/reports/types.ts:95
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:71
 
 > **critical**: `number` \| `null`
 
-Defined in: src/reports/types.ts:72
+Defined in: src/reports/types.ts:96
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/reports/types.ts:72
 
 > **high**: `number` \| `null`
 
-Defined in: src/reports/types.ts:73
+Defined in: src/reports/types.ts:97
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/reports/types.ts:73
 
 > **low**: `number` \| `null`
 
-Defined in: src/reports/types.ts:75
+Defined in: src/reports/types.ts:99
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: src/reports/types.ts:75
 
 > **medium**: `number` \| `null`
 
-Defined in: src/reports/types.ts:74
+Defined in: src/reports/types.ts:98
 
 ***
 
@@ -40,4 +40,4 @@ Defined in: src/reports/types.ts:74
 
 > **total**: `number` \| `null`
 
-Defined in: src/reports/types.ts:76
+Defined in: src/reports/types.ts:100

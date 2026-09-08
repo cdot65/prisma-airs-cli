@@ -1,6 +1,6 @@
 # Interface: ReportDailyTelemetry
 
-Defined in: src/reports/types.ts:79
+Defined in: src/reports/types.ts:103
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/reports/types.ts:79
 
 > **chart**: `object`
 
-Defined in: src/reports/types.ts:80
+Defined in: src/reports/types.ts:104
 
 #### buckets
 
@@ -28,7 +28,7 @@ Defined in: src/reports/types.ts:80
 
 > **topApplications**: `object`[]
 
-Defined in: src/reports/types.ts:90
+Defined in: src/reports/types.ts:114
 
 #### detectors
 
@@ -48,7 +48,7 @@ Defined in: src/reports/types.ts:90
 
 > **violationTrend**: `object`[]
 
-Defined in: src/reports/types.ts:95
+Defined in: src/reports/types.ts:119
 
 #### time
 

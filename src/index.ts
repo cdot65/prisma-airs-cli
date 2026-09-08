@@ -155,6 +155,12 @@ export type {
   TestResult,
   UserInput,
 } from './core/types.js';
+export type { GatewayReportClient, GatewayReportOptions } from './reports/aigateway.js';
+export { collectGatewayEnvironmentReport } from './reports/aigateway.js';
+export {
+  renderEnvironmentReportHtml,
+  renderEnvironmentReportMarkdown,
+} from './reports/environment-render.js';
 export { writeReportFile } from './reports/io.js';
 export type {
   RedTeamEnvironmentReport,
@@ -166,6 +172,8 @@ export { renderRedTeamReportHtml, renderRedTeamReportMarkdown } from './reports/
 export { renderRuntimeReportHtml, renderRuntimeReportMarkdown } from './reports/render.js';
 export { collectRuntimeDailyReport } from './reports/runtime.js';
 export type {
+  EnvironmentReport,
+  EnvironmentReportTable,
   ReportApplication,
   ReportDailyTelemetry,
   ReportFinding,

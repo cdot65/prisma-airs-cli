@@ -18,6 +18,30 @@ export type ReportSourceStatus = 'complete' | 'partial' | 'unavailable';
 export type ReportPriority = 'attention' | 'review' | 'info';
 export type ReportFormat = 'html' | 'markdown';
 
+export interface EnvironmentReportTable {
+  title: string;
+  note: string;
+  headers: string[];
+  rows: Array<Array<string | number | null>>;
+}
+
+/** Aggregate-only view shared by portable product dashboards. */
+export interface EnvironmentReport {
+  schemaVersion: 1;
+  product: string;
+  title: string;
+  collectionStartedAt: string;
+  generatedAt: string;
+  window: { start: string; end: string };
+  windowLabel?: string;
+  schemaLabel?: string;
+  health: 'attention' | 'review' | 'no-findings' | 'unknown';
+  sources: ReportSource[];
+  findings: ReportFinding[];
+  tables: EnvironmentReportTable[];
+  limitations: string[];
+}
+
 export interface ReportSource {
   name: string;
   method: string;

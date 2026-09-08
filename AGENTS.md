@@ -360,6 +360,17 @@ Removes the topic from the profile and deletes the topic definition.
 
 ### AI Gateway
 
+CLI 5.2.0 pins published SDK 0.28.0. `airs aigateway dashboard --workspace <slug|uuid|name>`
+collects 25 read-only feeds into offline HTML (default) or Markdown (`--output markdown`).
+Files default to CWD, private 0600, never overwrite; `--output-file -` streams the deliverable.
+Use `--days 1` or paired `--start`/`--end`, `--max-pages 40` (50 transactions/page), and
+`--strict` to exit 1 after delivering incomplete evidence. Debug is refused before I/O.
+Only aggregates are retained, not keys, raw logs, request content or identities.
+Atomic additions: `telemetry error-category-trends`, `telemetry grouped-errors`,
+`telemetry filter-boundaries` (sensitive data redacted), `organisations info --tsg-id <id>`
+(settings redacted), `guardrails catalog`, and `telemetry logs list --current-page <0-based>`.
+See `docs-site/docs/cli/aigateway/dashboard.md` and `dashboard-examples.md` for verified output.
+
 AI Gateway management commands use Management API OAuth2 credentials. Runtime `aigateway inference`
 commands instead require `PANW_AI_GW_INFERENCE_ENDPOINT` and `PANW_AI_GW_INFERENCE_API_KEY`, or
 their `aiGwInferenceEndpoint` / `aiGwInferenceApiKey` config counterparts. No runtime key flag is

@@ -47,6 +47,10 @@ docs-site/.docusaurus/
 /artifacts/runtime-report/
 /artifacts/runtime-dashboard/
 /artifacts/redteam-dashboard/
+/artifacts/aigateway-dashboard/
+/artifacts/aigateway-dashboard-tests.json
+airs-aigateway-report-*.html
+airs-aigateway-report-*.md
 /artifacts/redteam-dashboard-tests.json
 /artifacts/redteam-dashboard-release-tests.json
 airs-redteam-report-*.html

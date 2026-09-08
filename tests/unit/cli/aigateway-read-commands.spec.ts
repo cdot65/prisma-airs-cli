@@ -26,6 +26,12 @@ const methods = {
   providersGet: vi.fn(),
   providersList: vi.fn(),
   telemetryRequests: vi.fn(),
+  errorCategories: vi.fn(),
+  groupedErrors: vi.fn(),
+  filterBoundaries: vi.fn(),
+  logs: vi.fn(),
+  organisationInfo: vi.fn(),
+  catalog: vi.fn(),
 };
 
 function fakeClient(): AIGatewayClient {
@@ -47,7 +53,7 @@ function fakeClient(): AIGatewayClient {
       list: methods.deploymentsList,
       ping: methods.deploymentsPing,
     },
-    guardrails: { list: methods.guardrailsList },
+    guardrails: { list: methods.guardrailsList, getCatalog: methods.catalog },
     integrations: {
       getModels: methods.integrationsModels,
       getWorkspaces: methods.integrationsWorkspaces,
@@ -59,10 +65,17 @@ function fakeClient(): AIGatewayClient {
     organisations: {
       getAuthSettings: methods.organisationsAuth,
       getSelf: methods.organisationsSelf,
+      getInfo: methods.organisationInfo,
     },
     plugins: { list: methods.pluginsList },
     providers: { get: methods.providersGet, list: methods.providersList },
-    telemetry: { requests: methods.telemetryRequests },
+    telemetry: {
+      requests: methods.telemetryRequests,
+      errorCategoryTrends: methods.errorCategories,
+      groupedErrors: methods.groupedErrors,
+      filterBoundaries: methods.filterBoundaries,
+      logs: methods.logs,
+    },
   } as unknown as AIGatewayClient;
 }
 
@@ -99,6 +112,36 @@ async function run(...args: string[]): Promise<void> {
 }
 
 describe('AI Gateway read command SDK mappings', () => {
+  it('maps the five new dashboard reads and redacts sensitive subtrees', async () => {
+    await run('telemetry', 'error-category-trends', '--workspace', 'dev');
+    expect(methods.errorCategories).toHaveBeenCalledWith({ workspaceSlug: 'dev', days: 7 });
+    await run('telemetry', 'grouped-errors', '--workspace', 'dev');
+    expect(methods.groupedErrors).toHaveBeenCalledWith({ workspaceSlug: 'dev', days: 7 });
+    methods.filterBoundaries.mockResolvedValue({
+      success: true,
+      data: { unique_api_keys: ['PRIVATE'] },
+    });
+    await run('telemetry', 'filter-boundaries', '--workspace', 'dev');
+    methods.organisationInfo.mockResolvedValue({
+      id: 'org',
+      settings: { dashboard_gateway_url: 'PRIVATE' },
+    });
+    await run('organisations', 'info', '--tsg-id', '123');
+    expect(methods.organisationInfo).toHaveBeenCalledWith('123');
+    await run('guardrails', 'catalog');
+    expect(methods.catalog).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain('PRIVATE');
+  });
+
+  it.each(['0', '1', '12'])('preserves zero-based current page %s', async (page) => {
+    await run('telemetry', 'logs', 'list', '--workspace', 'dev', '--current-page', page);
+    expect(methods.logs).toHaveBeenCalledWith({
+      workspaceSlug: 'dev',
+      days: 7,
+      pageSize: 50,
+      currentPage: Number(page),
+    });
+  });
   it('maps workspace-scoped collection reads to workspace UUID options', async () => {
     await run('configs', 'list', '--workspace', 'workspace-1');
     expect(methods.configsList).toHaveBeenCalledWith({ workspaceId: 'workspace-1' });

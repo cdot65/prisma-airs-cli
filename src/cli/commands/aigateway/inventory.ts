@@ -908,6 +908,21 @@ function registerOrganisations(root: Command): void {
   const self = showHelpOnEmpty(
     group.command('self').description('Manage the current organisation'),
   );
+  const info = addReadOutput(
+    group
+      .command('info')
+      .description('Get organisation dashboard info (settings redacted)')
+      .requiredOption('--tsg-id <id>', 'Tenant service group ID'),
+  );
+  info.action((opts) =>
+    runDetail(info, opts, async (client) =>
+      redactAIGatewaySecrets(
+        'organisations.getInfo',
+        await client.organisations.getInfo(opts.tsgId),
+        'response',
+      ),
+    ),
+  );
   const selfGet = addReadOutput(self.command('get').description('Get the current organisation'));
   selfGet.action((opts) => runDetail(selfGet, opts, (client) => client.organisations.getSelf()));
   const selfUpdate = addWriteOutput(
@@ -1024,6 +1039,12 @@ export function registerAiGatewayInventory(root: Command): void {
     { option: 'name', path: 'name' },
     { option: 'workspace', path: 'workspace_id' },
   ];
+  const catalog = addReadOutput(
+    guardrails
+      .command('catalog')
+      .description('Get available guardrail evaluator schemas (not enabled policies)'),
+  );
+  catalog.action((opts) => runDetail(catalog, opts, (client) => client.guardrails.getCatalog()));
   const addGuardrailFields = (command: Command) =>
     command
       .option('--actions <json>', 'Guardrail actions object')

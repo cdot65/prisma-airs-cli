@@ -16,6 +16,7 @@
 - **Runtime Scanning** — scan prompts and responses against AIRS security profiles, single or bulk with CSV export
 - **Daily environment report** — `airs runtime report` delivers a read-only AI Runtime Security dashboard as self-contained HTML (default) or Markdown in your working directory, with explicit evidence gaps and configuration review findings
 - **Red Team environment dashboard** — `airs redteam dashboard` collects seven read-only SDK feeds into private HTML/Markdown deliverables, with source completeness, quota and risk review findings, and independently scoped scan-creation activity
+- **AI Gateway daily dashboard** — `airs aigateway dashboard --workspace dev` collects 25 read-only SDK feeds into private offline HTML/Markdown, with a fixed telemetry window, transaction pagination, error review findings and explicit source completeness
 - **SCM dashboard and sessions** — `runtime dashboard` and `runtime sessions` expose application activity, daily trends, checked pagination and explicit session-to-content drill-down. Legacy `scan-logs query` is **broken/under refactor** and exits with migration guidance; see the [session reference](https://cdot65.github.io/prisma-airs-cli/cli/runtime/sessions/)
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
