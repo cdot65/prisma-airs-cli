@@ -15,10 +15,11 @@ import { examples } from '../examples.js';
 import { ui, usageError } from '../renderer/index.js';
 
 /** Register a read-only report with artifact formats independent of terminal output settings. */
-export function registerAiGatewayDashboardCommand(aigateway: Command): void {
+export function registerAiGatewayReportCommand(aigateway: Command): void {
   const command = aigateway
-    .command('dashboard')
-    .description('Generate an AI Gateway environment dashboard (read-only)')
+    .command('report')
+    .alias('dashboard')
+    .description('Generate an AI Gateway environment report (read-only)')
     .requiredOption('--workspace <ref>', 'Workspace slug, UUID, or unique display name')
     .option('--days <n>', 'Rolling window in days (default: 1)', '1')
     .option('--start <iso>', 'Explicit ISO-8601 start; requires --end')
@@ -34,10 +35,10 @@ export function registerAiGatewayDashboardCommand(aigateway: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway dashboard --workspace ws-develo-71f8d8 --output-file ./airs-daily.html',
-        'airs aigateway dashboard --workspace ws-develo-71f8d8 --output markdown --output-file ./airs-daily.md',
-        'airs aigateway dashboard --workspace ws-develo-71f8d8',
-        'airs aigateway dashboard --workspace ws-develo-71f8d8 --strict --max-pages 20 --output-file - > daily.html',
+        'airs aigateway report --workspace ws-develo-71f8d8 --output-file ./airs-daily.html',
+        'airs aigateway report --workspace ws-develo-71f8d8 --output markdown --output-file ./airs-daily.md',
+        'airs aigateway report --workspace ws-develo-71f8d8',
+        'airs aigateway report --workspace ws-develo-71f8d8 --strict --max-pages 20 --output-file - > daily.html',
       ),
     )
     .action(async (opts) => {

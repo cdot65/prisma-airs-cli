@@ -57,7 +57,7 @@ import {
   usageError,
 } from '../renderer/index.js';
 import { backupTargets } from './backup.js';
-import { registerRedTeamDashboardCommand } from './redteam-dashboard.js';
+import { registerRedTeamReportCommand } from './redteam-report.js';
 import { restoreTargets } from './restore.js';
 
 /** Create an SdkRedTeamService from config. */
@@ -258,7 +258,6 @@ export function parseAdapterVariables(
 /** Register the `redteam` command group. */
 export function registerRedteamCommand(program: Command): void {
   const redteam = program.command('redteam').description('AI Red Team scan operations');
-  registerRedTeamDashboardCommand(redteam);
 
   // -----------------------------------------------------------------------
   // redteam abort — abort a running scan
@@ -845,51 +844,45 @@ export function registerRedteamCommand(program: Command): void {
   // -----------------------------------------------------------------------
   // redteam report — view scan report
   // -----------------------------------------------------------------------
-  redteam
-    .command('report <jobId>')
-    .description('View scan report')
-    .option('--attacks', 'Include attack list', false)
-    .option('--severity <level>', 'Filter attacks by severity')
-    .option('--limit <n>', 'Max attacks to show', '20')
-    .action(async (jobId: string, opts) => {
-      try {
-        renderRedteamHeader();
-        const service = await createService();
-        const job = await service.getScan(jobId);
-        renderScanStatus(job);
+  registerRedTeamReportCommand(redteam, async (jobId, opts) => {
+    try {
+      renderRedteamHeader();
+      const service = await createService();
+      const job = await service.getScan(jobId);
+      renderScanStatus(job);
 
-        if (job.jobType === 'CUSTOM') {
-          const report = await service.getCustomReport(jobId);
-          renderCustomReport(report);
-          if (opts.attacks) {
-            const attacks = await service.listCustomAttacks(jobId, {
-              limit: Number.parseInt(opts.limit, 10),
-            });
-            renderCustomAttackList(attacks);
-          }
-        } else if (job.jobType === 'DYNAMIC') {
-          const report = await service.getDynamicReport(jobId);
-          renderDynamicReport(report);
-        } else {
-          const report = await service.getStaticReport(jobId);
-          renderStaticReport(report);
-          if (opts.attacks) {
-            const { attacks, totalItems } = await service.listAttacks(jobId, {
-              severity: opts.severity,
-              limit: Number.parseInt(opts.limit, 10),
-            });
-            const footnote = buildAttackListFootnote({
-              severity: opts.severity,
-              totalItems,
-              severityBreakdown: report.severityBreakdown,
-            });
-            renderAttackList(attacks, { footnote });
-          }
+      if (job.jobType === 'CUSTOM') {
+        const report = await service.getCustomReport(jobId);
+        renderCustomReport(report);
+        if (opts.attacks) {
+          const attacks = await service.listCustomAttacks(jobId, {
+            limit: Number.parseInt(opts.limit, 10),
+          });
+          renderCustomAttackList(attacks);
         }
-      } catch (err) {
-        fail(err);
+      } else if (job.jobType === 'DYNAMIC') {
+        const report = await service.getDynamicReport(jobId);
+        renderDynamicReport(report);
+      } else {
+        const report = await service.getStaticReport(jobId);
+        renderStaticReport(report);
+        if (opts.attacks) {
+          const { attacks, totalItems } = await service.listAttacks(jobId, {
+            severity: opts.severity,
+            limit: Number.parseInt(opts.limit, 10),
+          });
+          const footnote = buildAttackListFootnote({
+            severity: opts.severity,
+            totalItems,
+            severityBreakdown: report.severityBreakdown,
+          });
+          renderAttackList(attacks, { footnote });
+        }
       }
-    });
+    } catch (err) {
+      fail(err);
+    }
+  });
 
   // -----------------------------------------------------------------------
   // redteam scan — execute a red team scan

@@ -24,7 +24,7 @@ describe.skipIf(process.env.RUN_REDTEAM_DASHBOARD_E2E !== '1')(
     const digest = (b: Buffer) => createHash('sha256').update(b).digest('hex');
     async function command(args: string[]) {
       try {
-        const r = await run(process.execPath, [entry, '--quiet', 'redteam', 'dashboard', ...args], {
+        const r = await run(process.execPath, [entry, '--quiet', 'redteam', 'report', ...args], {
           env,
           cwd: directory,
           timeout: 180_000,

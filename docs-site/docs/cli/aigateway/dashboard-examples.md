@@ -1,9 +1,12 @@
 ---
-sidebar_label: Verified dashboard examples
+sidebar_label: Verified report examples
 sidebar_position: 3
 ---
 
-# AI Gateway dashboard — verified CLI output
+# AI Gateway report — verified CLI output
+
+Since CLI 5.3.0, the command is `airs aigateway report`. The historical invocation below uses
+`dashboard`, retained as a compatibility alias; its captured output is unchanged.
 
 Captured from the globally npm-installed **CLI 5.2.0**, using published **SDK 0.28.0**, on
 **2026-09-08**. All **5/5 live E2E workflows passed**, including all five new atomic reads,

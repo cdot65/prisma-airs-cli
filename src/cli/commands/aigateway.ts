@@ -25,7 +25,7 @@ import { registerAiGatewayInference } from './aigateway/inference.js';
 import { registerAiGatewayInventory } from './aigateway/inventory.js';
 import { parsePositiveInteger, registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
 import { addChartFilterOptions, chartFiltersFrom } from './aigateway/telemetry-filters.js';
-import { registerAiGatewayDashboardCommand } from './aigateway-dashboard.js';
+import { registerAiGatewayReportCommand } from './aigateway-report.js';
 
 /** Create an SdkAiGatewayService from config. */
 async function createService() {
@@ -129,7 +129,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .action(() => aigateway.outputHelp());
 
   registerAiGatewayInventory(aigateway);
-  registerAiGatewayDashboardCommand(aigateway);
+  registerAiGatewayReportCommand(aigateway);
   registerAiGatewayInference(aigateway);
 
   const workspace = aigateway

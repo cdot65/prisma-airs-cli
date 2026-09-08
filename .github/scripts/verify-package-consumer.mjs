@@ -61,7 +61,8 @@ const command = (...args) => {
   return result.stdout;
 };
 assert.equal(command('--version').trim(), expected.version);
-const gatewayDashboardHelp = command('aigateway', 'dashboard', '--help');
+const gatewayDashboardHelp = command('aigateway', 'report', '--help');
+assert.equal(command('aigateway', 'dashboard', '--help'), gatewayDashboardHelp);
 for (const flag of ['--workspace', '--output-file', '--start', '--end', '--strict'])
   assert.ok(gatewayDashboardHelp.includes(flag));
 assert.ok(command('aigateway', 'telemetry', 'logs', 'list', '--help').includes('--current-page'));
@@ -84,7 +85,8 @@ for (const name of [
 ])
   assert.equal(typeof library[name], 'function');
 const reportHelp = command('runtime', 'report', '--help');
-const redTeamDashboardHelp = command('redteam', 'dashboard', '--help');
+const redTeamDashboardHelp = command('redteam', 'report', '--help');
+assert.equal(command('redteam', 'dashboard', '--help'), redTeamDashboardHelp);
 for (const flag of ['--output', '--output-file', '--title', '--max-pages', '--strict'])
   assert.ok(redTeamDashboardHelp.includes(flag));
 assert.equal(typeof sdk.RedTeamClient.prototype.getQuotaSummary, 'function');

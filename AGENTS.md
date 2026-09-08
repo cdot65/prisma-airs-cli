@@ -360,7 +360,8 @@ Removes the topic from the profile and deletes the topic definition.
 
 ### AI Gateway
 
-CLI 5.2.0 pins published SDK 0.28.0. `airs aigateway dashboard --workspace <slug|uuid|name>`
+CLI 5.3.0 pins published SDK 0.28.0. Since CLI 5.3.0,
+`airs aigateway report --workspace <slug|uuid|name>` (previously `dashboard`, still an alias)
 collects 25 read-only feeds into offline HTML (default) or Markdown (`--output markdown`).
 Files default to CWD, private 0600, never overwrite; `--output-file -` streams the deliverable.
 Use `--days 1` or paired `--start`/`--end`, `--max-pages 40` (50 transactions/page), and
@@ -442,9 +443,12 @@ slug.
 
 All red team commands require Management API credentials.
 
-#### Environment dashboard (CLI 5.1.0 / SDK 0.27.0)
+#### Environment report (originally CLI 5.1.0 / SDK 0.27.0)
 
-`airs redteam dashboard [--output html|markdown] [--output-file <new-path|->]
+CLI 5.3.0 uses `report`; CLI 5.2.0 and earlier use `dashboard`,
+retained as a compatibility alias. No job ID means an environment report.
+
+`airs redteam report [--output html|markdown] [--output-file <new-path|->]
 [--max-pages <1-100>] [--title <text>] [--strict]` collects seven read-only SDK feeds.
 Default artifacts are private (0600), no-clobber files in CWD. Debug logging is refused.
 The existing `redteam report <jobId>` remains the individual scan report. Dashboard statistics

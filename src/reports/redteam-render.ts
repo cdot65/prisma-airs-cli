@@ -4,7 +4,7 @@ import {
 } from './environment-render.js';
 import type { RedTeamEnvironmentReport } from './redteam.js';
 
-/** Portable Markdown using the same allowlisted evidence as the HTML dashboard. */
+/** Portable Markdown using the same allowlisted evidence as the HTML report. */
 export function renderRedTeamReportMarkdown(report: RedTeamEnvironmentReport): string {
   return renderEnvironmentReportMarkdown(report);
 }

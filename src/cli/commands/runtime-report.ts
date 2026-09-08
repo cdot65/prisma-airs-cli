@@ -14,7 +14,7 @@ import { ui, usageError } from '../renderer/index.js';
 export function registerRuntimeReportCommand(runtime: Command): void {
   const command = runtime
     .command('report')
-    .description('Generate a daily AI Runtime Security environment dashboard (read-only)')
+    .description('Generate a daily AI Runtime Security environment report (read-only)')
     .option('--output <format>', 'Deliverable format: html or markdown (default: html)')
     .option(
       '--output-file <path>',

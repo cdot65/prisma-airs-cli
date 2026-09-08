@@ -30,7 +30,7 @@ describe.skipIf(process.env.RUN_AIGATEWAY_DASHBOARD_E2E !== '1')(
             entry,
             '--quiet',
             'aigateway',
-            'dashboard',
+            'report',
             '--workspace',
             'ws-develo-71f8d8',
             '--start',

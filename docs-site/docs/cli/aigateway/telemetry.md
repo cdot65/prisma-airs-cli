@@ -31,7 +31,7 @@ the legacy `cost` command currently accepts only a rolling-day window, as listed
 ### aigateway telemetry cost
 
 For a private, self-contained HTML or Markdown deliverable spanning these feeds, use
-[`airs aigateway dashboard`](./dashboard.md). It paginates transactions and reports completeness.
+[`airs aigateway report`](./dashboard.md). It paginates transactions and reports completeness.
 
 Total and per-day spend for a workspace.
 

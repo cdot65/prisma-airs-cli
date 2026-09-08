@@ -24,7 +24,7 @@ remain recognizable, but changing a Scanner API key or time unit is not a verifi
 airs runtime sessions list --interval 1 --unit day --output json
 airs runtime sessions list --interval 1 --unit day --all --output json
 
-# Human-readable daily dashboard in your current directory
+# Human-readable daily report in your current directory
 airs runtime report
 ```
 

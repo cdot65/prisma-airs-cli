@@ -91,9 +91,9 @@ export function buildProgram(): Command {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
     const isEnvironmentReport =
-      (actionCommand.name() === 'report' && actionCommand.parent?.name() === 'runtime') ||
-      (actionCommand.name() === 'dashboard' &&
-        ['redteam', 'aigateway'].includes(actionCommand.parent?.name() ?? ''));
+      actionCommand.name() === 'report' &&
+      ['runtime', 'redteam', 'aigateway'].includes(actionCommand.parent?.name() ?? '') &&
+      !(actionCommand.parent?.name() === 'redteam' && actionCommand.args.length > 0);
     if (
       isEnvironmentReport &&
       (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))
@@ -103,6 +103,7 @@ export function buildProgram(): Command {
       );
     if (
       !isEnvironmentReport &&
+      !(actionCommand.name() === 'report' && actionCommand.parent?.name() === 'redteam') &&
       READ_COMMAND_NAMES.has(actionCommand.name()) &&
       actionCommand.options.some((option) => option.long === '--output')
     ) {

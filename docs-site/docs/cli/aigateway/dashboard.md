@@ -1,9 +1,17 @@
 ---
-sidebar_label: dashboard
+sidebar_label: report
 sidebar_position: 2
 ---
 
-# aigateway dashboard
+# aigateway report
+
+`report` is the canonical name starting in CLI **5.3.0**. `dashboard` remains a
+compatibility alias. CLI 5.2.0 uses the older spelling. This documentation URL remains stable.
+
+The built `report` command passed all five live E2E workflows on September 8, 2026
+(15:07–15:09 UTC): 25 complete sources, HTML/Markdown file and stdout delivery,
+strict truncation, overwrite/debug protection, and atomic telemetry reads. The credential
+file remained unchanged. The existing verified-output page retains its historical capture.
 
 Added in CLI **5.2.0**, with the published SDK **0.28.0** pinned exactly.
 Generate a read-only daily environment deliverable from all 25 supplied SCM Gateway feeds:
@@ -12,11 +20,11 @@ workspaces, selected-workspace configs and service/user key inventories, organis
 and the guardrail evaluator catalog.
 
 ```bash
-npm install --global @cdot65/prisma-airs-cli@5.2.0
-airs aigateway dashboard --workspace ws-develo-71f8d8
-airs aigateway dashboard --workspace dev --output markdown
-airs aigateway dashboard --workspace dev --strict --output-file ./gateway-health.html
-airs aigateway dashboard --workspace dev --start 2026-09-07T00:00:00Z \
+npm install --global @cdot65/prisma-airs-cli@5.3.0
+airs aigateway report --workspace ws-develo-71f8d8
+airs aigateway report --workspace dev --output markdown
+airs aigateway report --workspace dev --strict --output-file ./gateway-health.html
+airs aigateway report --workspace dev --start 2026-09-07T00:00:00Z \
   --end 2026-09-08T00:00:00Z --output markdown --output-file -
 ```
 
@@ -42,7 +50,7 @@ Exit **0** means delivery succeeded, not that the environment is risk-free. Exit
 operational failure, no complete telemetry sources, or strict incomplete evidence; the diagnostic
 report is still delivered when possible. Invalid options exit **2** before authentication.
 
-## Interpreting the dashboard
+## Interpreting the report
 
 The report separates telemetry-window activity from current configuration and tenant capabilities.
 It displays request/error/token/cost/latency/cache/feedback/retry metrics, error status categories,
@@ -75,7 +83,7 @@ airs aigateway telemetry logs list --workspace ws-develo-71f8d8 --current-page 1
 are not aliases for the verified SCM query. Keep the same explicit start/end window across pages.
 Atomic log reads deliberately return transaction data: redirect only to a private destination.
 `filter-boundaries` redacts the entire data subtree (it can contain key IDs and metadata), and
-`organisations info` redacts settings. The dashboard consumes those SDK responses in memory and
+`organisations info` redacts settings. The report consumes those SDK responses in memory and
 publishes only safe aggregate counts.
 
 ## Live examples

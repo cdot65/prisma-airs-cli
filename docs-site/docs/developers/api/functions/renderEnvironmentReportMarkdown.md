@@ -4,7 +4,7 @@
 
 Defined in: src/reports/environment-render.ts:37
 
-Portable Markdown using the same allowlisted evidence as the HTML dashboard.
+Portable Markdown using the same allowlisted evidence as the HTML report.
 
 ## Parameters
 

@@ -13,7 +13,7 @@ vi.mock('@cdot65/prisma-airs-sdk', async (original) => ({
 import { buildProgram } from '../../../src/cli/program.js';
 import { setQuiet } from '../../../src/cli/renderer/ui.js';
 
-describe('airs redteam dashboard command', () => {
+describe('airs redteam report command', () => {
   let directory: string;
   let client: ReturnType<typeof redTeamReportClient>;
   beforeEach(async () => {
@@ -34,7 +34,34 @@ describe('airs redteam dashboard command', () => {
     await rm(directory, { recursive: true, force: true });
   });
   const run = (args: string[] = []) =>
-    buildProgram().parseAsync(['node', 'airs', '--quiet', 'redteam', 'dashboard', ...args]);
+    buildProgram().parseAsync(['node', 'airs', '--quiet', 'redteam', 'report', ...args]);
+
+  it('retains dashboard as an alias for the same report command', async () => {
+    const destination = join(directory, 'alias.html');
+    await buildProgram().parseAsync([
+      'node',
+      'airs',
+      '--quiet',
+      'redteam',
+      'dashboard',
+      '--output-file',
+      destination,
+    ]);
+    expect(await readFile(destination, 'utf8')).toMatch(/^<!doctype html>/);
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it.each(['report', 'dashboard'])('refuses environment debug through %s', async (name) => {
+    vi.stubEnv('PANW_AI_SEC_DEBUG', 'true');
+    const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('exit');
+    });
+    await expect(buildProgram().parseAsync(['node', 'airs', 'redteam', name])).rejects.toThrow(
+      'exit',
+    );
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(factory.RedTeamClient).not.toHaveBeenCalled();
+  });
 
   it('writes HTML by default despite a general JSON output preference', async () => {
     const destination = join(directory, 'daily.html');
@@ -52,7 +79,7 @@ describe('airs redteam dashboard command', () => {
       '--output',
       'markdown',
       'redteam',
-      'dashboard',
+      'report',
       '--output-file',
       first,
     ]);
@@ -64,7 +91,7 @@ describe('airs redteam dashboard command', () => {
       '--output',
       'markdown',
       'redteam',
-      'dashboard',
+      'report',
       '--output',
       'html',
       '--output-file',
@@ -153,6 +180,12 @@ describe('airs redteam dashboard command', () => {
   });
 
   it.each([
+    ['--attacks'],
+    ['--severity', 'HIGH'],
+    ['--limit', '10'],
+    ['job-id', '--output', 'html'],
+    ['job-id', '--strict'],
+    ['job-id', '--output-file', 'unexpected.html'],
     ['--output', 'json'],
     ['--max-pages', '0'],
     ['--max-pages', '1.5'],

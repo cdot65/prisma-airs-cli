@@ -33,7 +33,7 @@ function tables(r: EnvironmentReport): EnvironmentReportTable[] {
   ];
 }
 
-/** Portable Markdown using the same allowlisted evidence as the HTML dashboard. */
+/** Portable Markdown using the same allowlisted evidence as the HTML report. */
 export function renderEnvironmentReportMarkdown(r: EnvironmentReport): string {
   const lines = [
     `# ${md(r.title)}`,

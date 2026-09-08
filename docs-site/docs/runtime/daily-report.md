@@ -52,7 +52,7 @@ hidden by filters. The full report remains readable with JavaScript disabled.
 
 These download samples are **synthetic fixtures**, not customer data:
 
-- [Download the example HTML dashboard](@site/static/examples/runtime-daily-report.htm)
+- [Download the example HTML report](@site/static/examples/runtime-daily-report.htm)
 - [Download the example Markdown report](pathname:///examples/runtime-daily-report.md)
 
 The sample has 1,300 application-bucket sessions and 51 violating sessions, plus an explicit
@@ -216,6 +216,6 @@ checks passed for offline rendering, filtering, printing, mobile layout, JavaScr
 reading, hostile metadata, live HTML opening, and zero external requests/browser errors. A ninth
 check verified the documentation guide and exact bytes of both linked example downloads. The HTML
 download uses `.htm` (standard HTML) to avoid the preview server's `.html` clean-URL redirect bug;
-CLI-generated dashboard files still use `.html`.
+CLI-generated report files still use `.html`.
 
 The public samples above remain synthetic; the live environment artifacts stay private.

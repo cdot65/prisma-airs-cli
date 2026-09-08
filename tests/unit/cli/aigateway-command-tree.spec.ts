@@ -19,7 +19,6 @@ describe('AI Gateway command tree', () => {
       'api-keys',
       'audit-logs',
       'configs',
-      'dashboard',
       'deployments',
       'guardrails',
       'inference',
@@ -28,6 +27,7 @@ describe('AI Gateway command tree', () => {
       'organisations',
       'plugins',
       'providers',
+      'report',
       'telemetry',
       'workspaces',
     ]);

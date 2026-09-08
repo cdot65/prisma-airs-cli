@@ -1,7 +1,7 @@
 import { lstat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { RedTeamClient } from '@cdot65/prisma-airs-sdk';
-import type { Command } from 'commander';
+import type { Command, OptionValues } from 'commander';
 import { redTeamClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import { writeReportFile } from '../../reports/io.js';
@@ -14,10 +14,17 @@ import { examples } from '../examples.js';
 import { ui, usageError } from '../renderer/index.js';
 
 /** Register a read-only report with artifact formats independent of terminal output settings. */
-export function registerRedTeamDashboardCommand(redteam: Command): void {
+export function registerRedTeamReportCommand(
+  redteam: Command,
+  scanReport: (jobId: string, opts: OptionValues) => Promise<void>,
+): void {
   const command = redteam
-    .command('dashboard')
-    .description('Generate a Red Team environment dashboard (read-only)')
+    .command('report [jobId]')
+    .alias('dashboard')
+    .description('Generate an environment report, or view an individual scan report by job ID')
+    .option('--attacks', 'Individual scan only: include attack list', false)
+    .option('--severity <level>', 'Individual scan only: filter attacks by severity')
+    .option('--limit <n>', 'Individual scan only: max attacks to show', '20')
     .option('--output <format>', 'Deliverable format: html or markdown (default: html)')
     .option(
       '--output-file <path>',
@@ -29,13 +36,25 @@ export function registerRedTeamDashboardCommand(redteam: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs redteam dashboard --output-file ./airs-daily.html',
-        'airs redteam dashboard --output markdown --output-file ./airs-daily.md',
-        'airs redteam dashboard',
-        'airs redteam dashboard --strict --max-pages 20 --output-file - > daily.html',
+        'airs redteam report --output-file ./airs-daily.html',
+        'airs redteam report --output markdown --output-file ./airs-daily.md',
+        'airs redteam report',
+        'airs redteam report --strict --max-pages 20 --output-file - > daily.html',
       ),
     )
-    .action(async (opts) => {
+    .action(async (jobId: string | undefined, opts) => {
+      const explicit = (name: string) => command.getOptionValueSource(name) === 'cli';
+      if (jobId !== undefined) {
+        if (
+          ['output', 'outputFile', 'title', 'maxPages', 'strict'].some(explicit) ||
+          ['html', 'markdown'].includes(command.parent?.parent?.opts().output)
+        )
+          usageError('Environment report options cannot be combined with a scan job ID');
+        await scanReport(jobId, opts);
+        return;
+      }
+      if (['attacks', 'severity', 'limit'].some(explicit))
+        usageError('--attacks, --severity and --limit require a scan job ID');
       const format = opts.output ?? command.parent?.parent?.opts().output ?? 'html';
       if (format !== 'html' && format !== 'markdown')
         usageError('Report output must be html or markdown');

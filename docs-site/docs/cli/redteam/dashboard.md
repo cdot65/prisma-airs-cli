@@ -1,30 +1,41 @@
 ---
-sidebar_label: dashboard
+sidebar_label: report
 ---
 
-# redteam dashboard
+# redteam report
+
+`report` without a job ID generates the environment deliverable starting in CLI **5.3.0**.
+`dashboard` remains a compatibility alias. CLI 5.2.0 and earlier use `dashboard` for
+this deliverable. This documentation URL remains stable.
+
+The built `report` command passed all four live E2E workflows on September 8, 2026
+(15:07 UTC): seven complete sources, HTML/Markdown file and stdout delivery, strict
+truncation and overwrite/debug protection. The credential file remained unchanged.
+The historical captured output below is preserved as recorded.
 
 :::note[Added in CLI 5.1.0]
-This command uses SDK 0.27.0, including its GET quota method. Upgrade the CLI to 5.1.0 or newer
-to use it. Earlier SDK 0.26.0 installations cannot supply GET quota; there is no POST fallback.
+The original command required SDK 0.27.0, including its GET quota method. CLI 5.3.0 pins
+SDK 0.28.0. Earlier SDK 0.26.0 installations cannot supply GET quota; there is no POST fallback.
 :::
 
 Generate a read-only environment deliverable from seven SDK feeds: dashboard overview,
 scan statistics, targets, GET quota, scans, network-broker statistics and adapters.
-This does not replace `airs redteam report <jobId>`, which reports on an individual scan.
+`airs redteam report <jobId>` still displays an individual scan using the existing terminal
+renderer. Its `--attacks`, `--severity` and `--limit` options require a job ID;
+environment-deliverable options cannot be combined with a job ID.
 
 ## Usage
 
 ```bash
-airs redteam dashboard
-airs redteam dashboard --output markdown
-airs redteam dashboard --strict --output-file ./redteam-health.html
-airs redteam dashboard --output markdown --output-file -
+airs redteam report
+airs redteam report --output markdown
+airs redteam report --strict --output-file ./redteam-health.html
+airs redteam report --output markdown --output-file -
 ```
 
-Install or update using `npm install --global @cdot65/prisma-airs-cli@5.1.0`.
+Install or update using `npm install --global @cdot65/prisma-airs-cli@5.3.0`.
 When working from source, build the checkout and use `node dist/cli/index.js` in place of `airs`.
-The package pins SDK 0.27.0; no local SDK link is needed.
+The package pins SDK 0.28.0; no local SDK link is needed.
 
 | Option | Default | Behavior |
 | --- | --- | --- |

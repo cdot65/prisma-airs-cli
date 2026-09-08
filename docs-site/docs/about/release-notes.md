@@ -1,5 +1,14 @@
 # Release Notes
 
+## v5.3.0 (2026-09-08) — consistent report commands
+
+- Use `airs runtime report`, `airs redteam report`, and `airs aigateway report --workspace dev`
+  for HTML (default) or Markdown environment deliverables.
+- Keep `dashboard` as a compatibility alias for Red Team and AI Gateway. Runtime's
+  `dashboard` API-query group is unchanged.
+- Preserve `airs redteam report <jobId>` for individual scan results. Scan-only and
+  environment-only options cannot be mixed.
+
 ## v5.1.0 (2026-09-07) — Red Team environment dashboard
 
 - Add `airs redteam dashboard` with HTML (default) and Markdown deliverables. Preserve
