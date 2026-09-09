@@ -8,6 +8,7 @@ import {
   SecurityProfileSchema,
 } from '@cdot65/prisma-airs-sdk';
 import { z } from 'zod';
+import { compareRuntimePolicies } from './runtime-policy.js';
 
 /** Only SDK operations required for portable Runtime profile configuration. */
 export interface ProfileTransferApi {
@@ -177,10 +178,12 @@ export async function backupRuntimeProfiles(
 
 export interface ProfileRestoreOptions {
   namePrefix?: string;
-  onConflict?: 'error' | 'skip' | 'update';
+  onConflict?: 'error' | 'skip' | 'update' | 'verify';
   maxPages?: number;
   /** Explicit source DLP name → already provisioned destination DLP name. */
   dlpMap?: Record<string, string>;
+  /** Explicitly accept Basic detection instead of unresolved custom dependencies. */
+  onMissingDlp?: 'error' | 'basic';
 }
 interface TopicPlan {
   key: string;
@@ -192,7 +195,16 @@ interface ProfilePlan {
   name: string;
   source: SecurityProfile;
   existing?: SecurityProfile;
-  action: 'create' | 'update' | 'skip';
+  action: 'create' | 'update' | 'skip' | 'verify';
+  /** Effective policy after an explicitly accepted DLP fallback; original source is retained. */
+  fallbackPolicy?: SecurityProfile['policy'];
+}
+export interface DlpFallback {
+  profile: string;
+  unresolved: string[];
+  replaced: string[];
+  reason: 'unmapped-or-missing';
+  protection: 'basic';
 }
 export interface ProfileRestorePlan {
   sourceTsgId: string;
@@ -200,6 +212,8 @@ export interface ProfileRestorePlan {
   profiles: ProfilePlan[];
   topics: TopicPlan[];
   dlpMappings: Array<{ source: string; destination: string; id: string; version?: number }>;
+  dlpFallbacks: DlpFallback[];
+  serverDefaults: Array<{ profile: string; fields: string[] }>;
   maxPages: number;
 }
 
@@ -233,10 +247,42 @@ function dlpReferences(
     if (!Array.isArray(members)) continue;
     for (const member of members) {
       if (!object(member) || typeof member.text !== 'string') throw new Error('Invalid DLP member');
+      // Runtime's built-in Basic service is not an Enterprise DLP catalog resource.
+      // Do not classify a real/custom ID or an embedded custom definition by name alone.
+      if (
+        member.text.toLowerCase() === 'sensitive content' &&
+        (member.id === '' || member.id === undefined) &&
+        (member.version === '2' || member.version === undefined) &&
+        !refs.some((ref) => ref.kind === 'embedded' && ref.name === member.text)
+      )
+        continue;
       refs.push({ value: member, name: member.text, kind: 'member' });
     }
   }
   return refs;
+}
+
+/** Convert the complete profile's custom DLP configuration, never a partial rule tree. */
+function basicFallback(policy: SecurityProfile['policy']): SecurityProfile['policy'] {
+  const result = structuredClone(policy);
+  const customNames = new Set(dlpReferences(result).map((ref) => ref.name));
+  let converted = false;
+  for (const entry of result?.['ai-security-profiles'] ?? []) {
+    const detection = entry['model-configuration']?.['data-protection']?.['data-leak-detection'];
+    if (!detection?.member?.some((member) => customNames.has(member.text))) continue;
+    if (!['block', 'allow', ''].includes(detection.action))
+      throw new Error('Cannot safely fall back to Basic: unsupported DLP action');
+    if (detection['mask-data-inline'] && detection.action !== 'block')
+      throw new Error('Cannot safely fall back to Basic: inline masking requires a block action');
+    detection.member =
+      detection.action === '' ? null : [{ text: 'sensitive content', id: '', version: '2' }];
+    converted = true;
+  }
+  if (!converted)
+    throw new Error('Cannot safely fall back to Basic: no matching DLP detection configuration');
+  if (result && 'dlp-data-profiles' in result) result['dlp-data-profiles'] = [];
+  PolicySchema.parse(result);
+  return result;
 }
 
 /** Refuse unrecognized tenant-bound references instead of silently transplanting IDs. */
@@ -308,7 +354,10 @@ export async function planRuntimeProfilesRestore(
   )
     throw new Error('Invalid --name-prefix');
   const conflict = options.onConflict ?? 'error';
-  if (!['error', 'skip', 'update'].includes(conflict)) throw new Error('Invalid conflict policy');
+  if (!['error', 'skip', 'update', 'verify'].includes(conflict))
+    throw new Error('Invalid conflict policy');
+  const missingDlp = options.onMissingDlp ?? 'error';
+  if (!['error', 'basic'].includes(missingDlp)) throw new Error('Invalid missing DLP policy');
   const selected = latestProfiles(backup.profiles);
   assertTenant(selected, backup.source.tsgId);
   if (selected.length !== backup.profiles.length)
@@ -330,14 +379,20 @@ export async function planRuntimeProfilesRestore(
     const match = existing.find((p) => p.profile_name === name);
     if (match && conflict === 'error')
       throw new Error(
-        `Destination profile already exists: ${name}; choose --on-conflict skip or update`,
+        `Destination profile already exists: ${name}; choose --on-conflict verify, skip or update`,
       );
     if (match && !match.profile_id) throw new Error('Destination profile has no identity');
     return {
       source: structuredClone(source),
       name,
       existing: match,
-      action: match ? (conflict === 'skip' ? 'skip' : 'update') : 'create',
+      action: match
+        ? conflict === 'skip'
+          ? 'skip'
+          : conflict === 'verify'
+            ? 'verify'
+            : 'update'
+        : 'create',
     };
   });
   const changing = profilePlans.filter((p) => p.action !== 'skip');
@@ -373,17 +428,40 @@ export async function planRuntimeProfilesRestore(
       );
     topicPlans.set(key, { key, name, source, existing: match });
   }
-  const dlpRefs = crossTenant ? changing.flatMap((p) => dlpReferences(p.source.policy)) : [];
+  // Same-tenant references retain their IDs unless Basic fallback was explicitly requested.
+  const dlpRefs =
+    crossTenant || missingDlp === 'basic'
+      ? changing.flatMap((p) => dlpReferences(p.source.policy))
+      : [];
   const names = [...new Set(dlpRefs.map((ref) => ref.name))];
-  for (const name of names)
-    if (!options.dlpMap?.[name])
+  const targetFor = (name: string) =>
+    Object.hasOwn(options.dlpMap ?? {}, name)
+      ? options.dlpMap?.[name]
+      : crossTenant
+        ? undefined
+        : name;
+  const unresolved = new Set<string>();
+  for (const name of names) {
+    if (!targetFor(name) && missingDlp === 'error')
       throw new Error(
-        `Cross-tenant DLP reference requires explicit --dlp-map ${name}=<destination-name>; DLP resources are not cloned`,
+        `Cross-tenant DLP reference requires explicit --dlp-map "${name}=<destination-name>"; DLP resources are not cloned. Inspect destination resources with airs runtime dlp profiles list --all --output json, or explicitly accept --on-missing-dlp basic.`,
       );
-  const catalog = names.length ? await dataProfiles(api, maxPages) : [];
-  const dlpMappings = names.map((name) => {
-    const target = options.dlpMap?.[name];
-    const matches = catalog.filter((p) => p.name === target && p.profile_status !== 'deleted');
+    if (!targetFor(name)) unresolved.add(name);
+  }
+  // Unmapped cross-tenant references are explicitly abandoned, not assumed absent.
+  // When a mapping is supplied, inventory/auth/pagination errors always propagate.
+  const catalog = names.some((name) => targetFor(name)) ? await dataProfiles(api, maxPages) : [];
+  const resolved: ProfileRestorePlan['dlpMappings'] = [];
+  for (const name of names) {
+    const target = targetFor(name);
+    if (!target) continue;
+    const matches = catalog.filter(
+      (p) => p.name === target && p.profile_status !== 'deleted' && p.profile_status !== 'disabled',
+    );
+    if (!matches.length && missingDlp === 'basic') {
+      unresolved.add(name);
+      continue;
+    }
     if (matches.length !== 1 || !matches[0].id)
       throw new Error(`Missing or ambiguous destination DLP profile: ${target}`);
     if (
@@ -391,29 +469,75 @@ export async function planRuntimeProfilesRestore(
       matches[0].version == null
     )
       throw new Error(`Destination DLP version is unknown: ${target}`);
-    return {
+    resolved.push({
       source: name,
       destination: String(target),
       id: matches[0].id,
       version: matches[0].version ?? undefined,
-    };
-  });
-  return {
+    });
+  }
+  const dlpFallbacks: DlpFallback[] = [];
+  for (const item of changing) {
+    const replaced = [...new Set(dlpReferences(item.source.policy).map((ref) => ref.name))];
+    const missing = replaced.filter((name) => unresolved.has(name));
+    if (!missing.length) continue;
+    item.fallbackPolicy = basicFallback(item.source.policy);
+    dlpFallbacks.push({
+      profile: item.name,
+      unresolved: missing,
+      replaced,
+      reason: 'unmapped-or-missing',
+      protection: 'basic',
+    });
+  }
+  const remaining = new Set(
+    changing.flatMap((p) =>
+      dlpReferences(p.fallbackPolicy ?? p.source.policy).map((ref) => ref.name),
+    ),
+  );
+  const dlpMappings = resolved.filter((mapping) => remaining.has(mapping.source));
+  const plan: ProfileRestorePlan = {
     sourceTsgId: backup.source.tsgId,
     destinationTsgId,
     profiles: profilePlans,
     topics: [...topicPlans.values()],
     dlpMappings,
+    dlpFallbacks,
+    serverDefaults: [],
     maxPages,
   };
+  // Resume is read-only for existing profiles, and must verify before ANY dependency writes.
+  const existingTopics = new Map(
+    plan.topics.filter((t) => t.existing).map((t) => [t.key, t.existing as Topic]),
+  );
+  for (const item of profilePlans.filter((p) => p.action === 'verify')) {
+    const expected = mappedPolicy(item, plan, existingTopics);
+    const comparison = compareRuntimePolicies(expected, item.existing?.policy);
+    if (
+      !comparison.matches ||
+      (item.source.active !== undefined && item.existing?.active !== item.source.active)
+    )
+      throw new Error(
+        `Destination profile does not match restore plan: ${item.name}; verification made no changes`,
+      );
+    if (comparison.serverDefaults.length)
+      plan.serverDefaults.push({ profile: item.name, fields: comparison.serverDefaults });
+  }
+  return plan;
 }
 
 export interface ProfileRestoreResult {
   sourceTsgId: string;
   destinationTsgId: string;
   complete: boolean;
+  dlpFallbacks: DlpFallback[];
+  serverDefaults: Array<{ profile: string; fields: string[] }>;
   topics: Array<{ name: string; action: 'created' | 'reused'; id: string }>;
-  profiles: Array<{ name: string; action: 'created' | 'updated' | 'skipped'; id?: string }>;
+  profiles: Array<{
+    name: string;
+    action: 'created' | 'updated' | 'skipped' | 'verified';
+    id?: string;
+  }>;
   error?: string;
 }
 
@@ -431,13 +555,25 @@ function canonical(value: unknown): string {
   return JSON.stringify(order(value));
 }
 
+/** Observed API normalization: absent database-security is returned as null (disabled).
+ * Only this known optional field is normalized; other policy differences still fail.
+ */
+function canonicalPolicy(policy: SecurityProfile['policy']): string {
+  const value = structuredClone(policy);
+  for (const entry of value?.['ai-security-profiles'] ?? []) {
+    const protection = entry['model-configuration']?.['data-protection'];
+    if (protection && !('database-security' in protection)) protection['database-security'] = null;
+  }
+  return canonical(value);
+}
+
 function unchanged(current: SecurityProfile | undefined, prior: SecurityProfile): boolean {
   return Boolean(
     current &&
       current.profile_id === prior.profile_id &&
       current.revision === prior.revision &&
       current.active === prior.active &&
-      canonical(current.policy) === canonical(prior.policy),
+      canonicalPolicy(current.policy) === canonicalPolicy(prior.policy),
   );
 }
 
@@ -450,6 +586,8 @@ export async function restoreRuntimeProfiles(
     sourceTsgId: plan.sourceTsgId,
     destinationTsgId: plan.destinationTsgId,
     complete: false,
+    dlpFallbacks: structuredClone(plan.dlpFallbacks ?? []),
+    serverDefaults: [],
     topics: [],
     profiles: [],
   };
@@ -461,7 +599,10 @@ export async function restoreRuntimeProfiles(
       const catalog = await dataProfiles(api, plan.maxPages);
       for (const mapping of plan.dlpMappings) {
         const matches = catalog.filter(
-          (p) => p.name === mapping.destination && p.profile_status !== 'deleted',
+          (p) =>
+            p.name === mapping.destination &&
+            p.profile_status !== 'deleted' &&
+            p.profile_status !== 'disabled',
         );
         if (
           matches.length !== 1 ||
@@ -516,27 +657,7 @@ export async function restoreRuntimeProfiles(
         result.profiles.push({ name: item.name, action: 'skipped', id: item.existing?.profile_id });
         continue;
       }
-      const policy = structuredClone(item.source.policy);
-      for (const ref of topicReferences(policy)) {
-        const topic = mappedTopics.get(topicKey(ref));
-        if (!topic?.topic_id) throw new Error('Missing planned topic mapping');
-        ref.topic_id = topic.topic_id;
-        ref.topic_name = topic.topic_name;
-        ref.revision = topic.revision;
-      }
-      for (const ref of dlpReferences(policy)) {
-        const mapping = plan.dlpMappings.find((m) => m.source === ref.name);
-        if (!mapping) continue;
-        if (ref.kind === 'embedded') {
-          ref.value.name = mapping.destination;
-          ref.value.uuid = mapping.id;
-        } else ref.value.text = mapping.destination;
-        if ('id' in ref.value) ref.value.id = mapping.id;
-        if ('version' in ref.value) {
-          if (mapping.version === undefined) throw new Error('Destination DLP version is unknown');
-          ref.value.version = String(mapping.version);
-        }
-      }
+      const policy = mappedPolicy(item, plan, mappedTopics);
       const body = CreateSecurityProfileRequestSchema.parse({
         profile_name: item.name,
         active: item.source.active,
@@ -547,6 +668,14 @@ export async function restoreRuntimeProfiles(
       const current = inventory.find((p) => p.profile_name === item.name);
       if (item.existing ? !unchanged(current, item.existing) : Boolean(current))
         throw new Error(`Destination profile changed after planning: ${item.name}`);
+      if (item.action === 'verify') {
+        const comparison = compareRuntimePolicies(policy, current?.policy);
+        if (!comparison.matches) throw new Error(`Restored profile did not verify: ${item.name}`);
+        result.profiles.push({ name: item.name, action: 'verified', id: current?.profile_id });
+        if (comparison.serverDefaults.length)
+          result.serverDefaults.push({ profile: item.name, fields: comparison.serverDefaults });
+        continue;
+      }
       const response =
         item.action === 'update' && item.existing?.profile_id
           ? await api.profiles.update(item.existing.profile_id, body)
@@ -560,13 +689,16 @@ export async function restoreRuntimeProfiles(
         (p) => p.profile_name === item.name,
       );
       if (verified) assertTenant([verified], plan.destinationTsgId);
+      const comparison = compareRuntimePolicies(policy, verified?.policy);
       if (
         !verified?.profile_id ||
         (response.profile_id && response.profile_id !== verified.profile_id) ||
         (item.source.active !== undefined && verified.active !== item.source.active) ||
-        canonical(verified.policy) !== canonical(policy)
+        !comparison.matches
       )
         throw new Error(`Restored profile did not verify: ${item.name}`);
+      if (comparison.serverDefaults.length)
+        result.serverDefaults.push({ profile: item.name, fields: comparison.serverDefaults });
     }
     result.complete = true;
   } catch (error) {
@@ -582,4 +714,36 @@ export async function restoreRuntimeProfiles(
         : 'Restore stopped; verify destination state before retrying';
   }
   return result;
+}
+
+function mappedPolicy(
+  item: ProfilePlan,
+  plan: ProfileRestorePlan,
+  mappedTopics: Map<string, Topic>,
+): SecurityProfile['policy'] {
+  const policy = structuredClone(item.fallbackPolicy ?? item.source.policy);
+  for (const ref of topicReferences(policy)) {
+    const topic = mappedTopics.get(topicKey(ref));
+    if (!topic?.topic_id)
+      throw new Error(
+        'Missing planned topic mapping; an existing profile cannot be verified without its destination dependencies',
+      );
+    ref.topic_id = topic.topic_id;
+    ref.topic_name = topic.topic_name;
+    ref.revision = topic.revision;
+  }
+  for (const ref of dlpReferences(policy)) {
+    const mapping = plan.dlpMappings.find((m) => m.source === ref.name);
+    if (!mapping) continue;
+    if (ref.kind === 'embedded') {
+      ref.value.name = mapping.destination;
+      ref.value.uuid = mapping.id;
+    } else ref.value.text = mapping.destination;
+    if ('id' in ref.value) ref.value.id = mapping.id;
+    if ('version' in ref.value) {
+      if (mapping.version === undefined) throw new Error('Destination DLP version is unknown');
+      ref.value.version = String(mapping.version);
+    }
+  }
+  return policy;
 }

@@ -297,7 +297,29 @@ airs runtime customer-apps consumption [appName] [--time-interval <7|30|60>] [--
 airs runtime deployment-profiles list [--unactivated] [--output <format>]
 ```
 
-(There is no standalone DLP-profile listing command — DLP profile names are supplied to a profile via the `--dlp-profiles` flag on `profiles create`/`update`.)
+Inspect Enterprise DLP dependencies with `airs runtime dlp profiles list --all --output json`
+and `profiles get <id> --output json` under that same `runtime dlp` group. Patterns and
+dictionaries have separate command groups. CRUD inspection is not a complete dependency backup.
+
+Runtime profile restore's `--on-missing-dlp basic` (CLI 5.7.0+) explicitly allows replacing
+unresolved custom DLP with Basic detection; default is `error`. Built-in Basic needs no map.
+Explicit `--dlp-map` bindings take priority. If any custom dependency in a profile remains
+unresolved, all custom DLP in that profile is replaced; inspect `dlpFallbacks.replaced`.
+Actions/masking are preserved, unsafe combinations fail, and API/inventory failures never
+trigger fallback. Never claim this MVP clones custom DLP resources or preserves their semantics.
+
+`--on-conflict verify` (CLI 5.7.0+) resolves destination dependencies and checks existing
+profiles without updating them, failing preflight on mismatches; only missing profiles are
+created. Use it to inspect recovery from a partial restore, not blind `skip` or `update`.
+Verification accepts only allowlisted server additions omitted from source policies,
+reports them in `serverDefaults`, and never ignores explicitly configured severity values.
+This includes observed per-category toxicity confidence, blocked-topic reference severity,
+topic-guardrails severity and blocked contextual-grounding severity. Full live acceptance:
+`scripts/e2e-full-runtime-migration.mjs --execute --source NAME --destination NAME
+--expect-source-tsg ID --expect-tsg ID`; requires empty destination profiles/topics unless
+explicit `--resume` is supplied. It retains restored resources and leaves destination selected.
+Copy-and-paste commands and receipts: `docs-site/docs/runtime/profile-migration-workflow.md`.
+Human restore output has one resource per row; JSON/YAML retain full identifiers and paths.
 
 #### SCM Dashboard and Sessions (CLI 5.0 / SDK 0.26)
 

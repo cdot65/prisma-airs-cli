@@ -205,6 +205,70 @@ afterEach(async () => {
 });
 
 describe('real CLI + SDK OAuth with isolated source and destination tenants', () => {
+  it('preserves Basic DLP and explicitly converts custom DLP through the actual CLI', async () => {
+    const policy = (custom: boolean) => ({
+      'ai-security-profiles': [
+        {
+          'model-type': 'default',
+          'model-configuration': {
+            'data-protection': {
+              'data-leak-detection': {
+                member: [
+                  {
+                    text: custom ? 'Custom confidential' : 'sensitive content',
+                    id: custom ? 'source-only-dlp' : '',
+                    version: '2',
+                  },
+                ],
+                action: 'block',
+                'mask-data-inline': true,
+              },
+            },
+          },
+        },
+      ],
+      'dlp-data-profiles': [],
+    });
+    inventories['100'].profiles = ['Basic', 'Custom'].map((name) => ({
+      profile_name: name,
+      profile_id: `source-${name}`,
+      tsg_id: '100',
+      revision: 1,
+      active: true,
+      policy: policy(name === 'Custom'),
+    }));
+    await cli(['tenant', 'create', 'source', '--config', './100.json']);
+    await cli(['tenant', 'create', 'destination', '--config', './200.json']);
+    await cli(['tenant', 'switch', 'source']);
+    const backup = JSON.parse(
+      (await cli(['runtime', 'profiles', 'backup', '--output', 'json'])).stdout,
+    )[0];
+    await cli(['tenant', 'switch', 'destination']);
+    const original = await readFile(backup.file);
+    expect(
+      (await cli(['runtime', 'profiles', 'restore', backup.file, '--dry-run'], {}, 1)).stderr,
+    ).toContain('--dlp-map');
+    const args = ['runtime', 'profiles', 'restore', backup.file, '--on-missing-dlp', 'basic'];
+    for (const format of ['pretty', 'table', 'markdown', 'csv', 'json', 'yaml']) {
+      const dry = await cli([...args, '--dry-run', '--output', format, '--quiet']);
+      expect(dry.stderr).toContain('Custom rules are not preserved');
+      expect(dry.stdout).toContain('Custom confidential');
+      if (format === 'json') expect(JSON.parse(dry.stdout)[0].dlpFallbacks).toHaveLength(1);
+    }
+    expect(inventories['200'].profiles).toHaveLength(0);
+    const restored = JSON.parse(
+      (await cli([...args, '--force', '--expect-tsg', '200', '--output', 'json'])).stdout,
+    )[0];
+    expect(restored.complete).toBe(true);
+    expect(restored.dlpFallbacks[0].profile).toBe('Custom');
+    expect(inventories['200'].profiles).toHaveLength(2);
+    for (const result of inventories['200'].profiles) expect(result.policy).toEqual(policy(false));
+    expect(await readFile(backup.file)).toEqual(original);
+    expect(requests.some((request) => request.path.includes('data-profiles'))).toBe(false);
+    expect(await readFile(join(directory, '100.json'))).toEqual(initialConfigs[0]);
+    expect(await readFile(join(directory, '200.json'))).toEqual(initialConfigs[1]);
+  }, 60000);
+
   it('registers, backs up JSON/YAML, switches, plans, restores fresh IDs and retains source configs', async () => {
     await cli(['tenant', 'create', 'source', '--config', './100.json']);
     await cli(['tenant', 'create', 'destination', '--config', './200.json']);
@@ -295,6 +359,44 @@ describe('real CLI + SDK OAuth with isolated source and destination tenants', ()
       'json',
     ]);
     expect(inventories['200'].profiles).toHaveLength(1);
+    const beforeVerify = requests.length;
+    const verified = JSON.parse(
+      (
+        await cli([
+          'runtime',
+          'profiles',
+          'restore',
+          exported.file,
+          '--on-conflict',
+          'verify',
+          '--output',
+          'json',
+        ])
+      ).stdout,
+    )[0];
+    expect(verified.complete).toBe(true);
+    expect(verified.profiles[0].action).toBe('verified');
+    expect(
+      requests.slice(beforeVerify).filter((r) => r.method !== 'GET' && r.path !== '/oauth/token'),
+    ).toEqual([]);
+    for (const format of ['pretty', 'table', 'markdown']) {
+      const rendered = (
+        await cli([
+          'runtime',
+          'profiles',
+          'restore',
+          exported.file,
+          '--on-conflict',
+          'verify',
+          '--dry-run',
+          '--output',
+          format,
+        ])
+      ).stdout;
+      expect(rendered).toContain('Profiles (1)');
+      expect(rendered).not.toContain('[{"name":');
+      expect(Math.max(...rendered.split('\n').map((line) => line.length))).toBeLessThan(160);
+    }
     expect(inventories['100'].profiles[0].profile_id).toBe(sourceProfileId);
     await cli(['tenant', 'delete', 'destination', '--force'], {}, 1);
     await cli(['tenant', 'switch', 'default']);

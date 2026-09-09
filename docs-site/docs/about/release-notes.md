@@ -1,5 +1,26 @@
 # Release Notes
 
+## v5.7.0 (2026-09-09) — verified Runtime migration and Basic DLP fallback
+
+- Recognize built-in Basic DLP as portable across tenants, without a custom DLP mapping.
+- Add explicit `--on-missing-dlp basic`, with mapping priority, per-profile protection-loss
+  warnings and structured fallback details. Default behavior remains fail-closed.
+- Preserve actions, masking and disabled detection; reject unsafe fallback configurations.
+- Accept the live API's absent-to-null normalization for the optional `database-security`
+  field during read-back verification; other policy changes still fail verification.
+- Verify observed server-added severity and empty default URL-category fields only when
+  absent from the source, and report accepted additions in `serverDefaults`.
+- Include category-level toxicity confidence defaults, requiring matching parent detector
+  and category identity; explicit severities and action changes still fail verification.
+- Cover observed topic-guardrails, blocked-topic and blocked contextual-grounding severity
+  defaults. Add a real full-tenant migration acceptance runner and
+  [copy-and-paste workflow](../runtime/profile-migration-workflow.md).
+- Add `--on-conflict verify` for partial-restore recovery: verify matching destination
+  profiles without writes, reject mismatches before mutation and create only missing profiles.
+- Render human restore summaries as one resource per row instead of oversized JSON cells.
+- Use SDK 0.30.0's typed Runtime policy extensions. See [live MVP acceptance](../runtime/dlp-fallback-validation.md);
+  recursive DLP profile/pattern/dictionary migration is not included.
+
 ## v5.6.0 (2026-09-08) — guided tenant configuration
 
 - `airs tenant create <name>` now prompts for TSG ID, OAuth client ID, and a hidden

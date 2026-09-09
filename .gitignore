@@ -45,6 +45,8 @@ docs-site/.docusaurus/
 
 # Private environment report validation artifacts
 /artifacts/tenant-profiles-e2e-*/
+/artifacts/full-runtime-migration-*/
+/airs-migration-*/
 airs-runtime-profiles-backup-*.json
 airs-runtime-profiles-backup-*.yaml
 /artifacts/agentguard-e2e-*/

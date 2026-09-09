@@ -94,6 +94,11 @@ export const ui = {
     console.log(`${INDENT}${COLORS.warn(`${GLYPHS.warn} ${msg}`)}`);
   },
 
+  /** Safety warnings remain visible in quiet mode without corrupting structured stdout. */
+  warning(msg: string): void {
+    console.error(`${INDENT}${COLORS.warn(`${GLYPHS.warn} ${msg}`)}`);
+  },
+
   /** Neutral informational callout. Quiet-suppressed. */
   info(msg: string): void {
     if (quietMode) return;

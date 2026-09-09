@@ -44,6 +44,11 @@ assert.equal(
 );
 const sdk = createRequire(resolve(installed, 'package.json'))('@cdot65/prisma-airs-sdk');
 assert.equal(sdk.SDK_VERSION, expected.dependencies['@cdot65/prisma-airs-sdk']);
+assert.equal(sdk.TopicObjectSchema.shape.severity.parse('medium'), 'medium');
+assert.equal(
+  sdk.ToxicCategorySchema.shape['severity-by-confidence'].parse({ high: 'medium' }).high,
+  'medium',
+);
 const entry = resolve(installed, 'dist/cli/index.js');
 const diagnostics = new Set();
 const command = (...args) => {
@@ -71,7 +76,14 @@ for (const [args, flags] of [
   ],
   [
     ['runtime', 'profiles', 'restore'],
-    ['--dry-run', '--dlp-map', '--expect-tsg', '--on-conflict'],
+    [
+      '--dry-run',
+      '--dlp-map',
+      '--expect-tsg',
+      '--on-conflict',
+      '--on-missing-dlp',
+      'verify (resume',
+    ],
   ],
   [
     ['agentguard', 'scans', 'list'],

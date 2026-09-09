@@ -133,6 +133,284 @@ function withDlp(): RuntimeProfilesBackup {
   return input;
 }
 
+describe('verified restore recovery', () => {
+  it('verifies existing policies with rewritten topic IDs and creates only missing profiles', async () => {
+    const { api, state } = memoryApi();
+    const input = archive();
+    expect(
+      (await restoreRuntimeProfiles(api, await planRuntimeProfilesRestore(api, input, '200')))
+        .complete,
+    ).toBe(true);
+    const existing = structuredClone(state.profiles[0]);
+    input.profiles.push(profile('Second'));
+    api.profiles.create.mockClear();
+    api.topics.create.mockClear();
+    const plan = await planRuntimeProfilesRestore(api, input, '200', { onConflict: 'verify' });
+    expect(plan.profiles.map((p) => p.action)).toEqual(['verify', 'create']);
+    const result = await restoreRuntimeProfiles(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.profiles.map((p) => p.action)).toEqual(['verified', 'created']);
+    expect(api.profiles.create).toHaveBeenCalledTimes(1);
+    expect(api.profiles.update).not.toHaveBeenCalled();
+    expect(api.topics.create).not.toHaveBeenCalled();
+    expect(state.profiles[0]).toEqual(existing);
+  });
+
+  it.each([
+    'policy',
+    'active',
+    'missing-topic',
+  ])('refuses %s mismatches in preflight before mutations', async (mismatch) => {
+    const { api, state } = memoryApi();
+    const input = archive();
+    await restoreRuntimeProfiles(api, await planRuntimeProfilesRestore(api, input, '200'));
+    if (mismatch === 'active') state.profiles[0].active = false;
+    if (mismatch === 'policy') state.profiles[0].policy = { unexpected: true };
+    if (mismatch === 'missing-topic') state.topics = [];
+    api.profiles.create.mockClear();
+    api.topics.create.mockClear();
+    await expect(
+      planRuntimeProfilesRestore(api, input, '200', { onConflict: 'verify' }),
+    ).rejects.toThrow();
+    expect(api.profiles.create).not.toHaveBeenCalled();
+    expect(api.profiles.update).not.toHaveBeenCalled();
+    expect(api.topics.create).not.toHaveBeenCalled();
+  });
+
+  it('rechecks existing profile state after planning without writing on a concurrent change', async () => {
+    const { api, state } = memoryApi();
+    const input = archive();
+    await restoreRuntimeProfiles(api, await planRuntimeProfilesRestore(api, input, '200'));
+    const plan = await planRuntimeProfilesRestore(api, input, '200', { onConflict: 'verify' });
+    api.profiles.create.mockClear();
+    api.topics.create.mockClear();
+    state.profiles[0].active = false;
+    const result = await restoreRuntimeProfiles(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toContain('changed after planning');
+    expect(api.profiles.create).not.toHaveBeenCalled();
+    expect(api.profiles.update).not.toHaveBeenCalled();
+    expect(api.topics.create).not.toHaveBeenCalled();
+  });
+
+  it('records omitted server-added severity in creation and subsequent verification', async () => {
+    const { api, state } = memoryApi();
+    const input = archive();
+    input.topics = [];
+    input.profiles[0].policy = {
+      'ai-security-profiles': [
+        {
+          'model-configuration': {
+            'model-protection': [{ name: 'prompt-injection', action: 'block' }],
+          },
+        },
+      ],
+    };
+    const create = api.profiles.create.getMockImplementation();
+    if (!create) throw new Error('Missing fixture');
+    api.profiles.create.mockImplementation(async (body) => {
+      const result = await create(body);
+      const detection =
+        state.profiles[0].policy?.['ai-security-profiles']?.[0]['model-configuration']?.[
+          'model-protection'
+        ]?.[0];
+      if (detection) detection.severity = 'medium';
+      return result;
+    });
+    const result = await restoreRuntimeProfiles(
+      api,
+      await planRuntimeProfilesRestore(api, input, '200'),
+    );
+    expect(result.complete).toBe(true);
+    expect(result.serverDefaults[0].fields).toHaveLength(1);
+    const plan = await planRuntimeProfilesRestore(api, input, '200', { onConflict: 'verify' });
+    expect(plan.serverDefaults).toEqual(result.serverDefaults);
+    expect((await restoreRuntimeProfiles(api, plan)).profiles[0].action).toBe('verified');
+  });
+});
+
+describe('Basic DLP preservation and explicit fallback', () => {
+  it('accepts only the observed absent-to-null database-security normalization', async () => {
+    const { api, state } = memoryApi();
+    const create = api.profiles.create.getMockImplementation();
+    if (!create) throw new Error('Missing mock');
+    api.profiles.create.mockImplementation(async (body) => {
+      const response = await create(body);
+      const protection =
+        state.profiles[0].policy?.['ai-security-profiles']?.[0]['model-configuration']?.[
+          'data-protection'
+        ];
+      if (protection) protection['database-security'] = null;
+      return response;
+    });
+    const plan = await planRuntimeProfilesRestore(api, withDlp(), '200', { onMissingDlp: 'basic' });
+    expect((await restoreRuntimeProfiles(api, plan)).complete).toBe(true);
+  });
+  const detection = (input: RuntimeProfilesBackup) => {
+    const value =
+      input.profiles[0].policy?.['ai-security-profiles']?.[0]['model-configuration']?.[
+        'data-protection'
+      ]?.['data-leak-detection'];
+    if (!value) throw new Error('Missing fixture detection');
+    return value;
+  };
+  it.each([
+    'sensitive content',
+    'Sensitive Content',
+  ])('preserves the built-in %s member without querying Enterprise DLP', async (name) => {
+    const { api, state } = memoryApi();
+    const input = withDlp();
+    if (!input.profiles[0].policy) throw new Error('Missing policy');
+    input.profiles[0].policy['dlp-data-profiles'] = [];
+    detection(input).member = [{ text: name, id: '', version: '2' }];
+    detection(input)['mask-data-inline'] = true;
+    const original = structuredClone(input);
+    const plan = await planRuntimeProfilesRestore(api, input, '200');
+    expect(plan.dlpMappings).toEqual([]);
+    expect(plan.dlpFallbacks).toEqual([]);
+    expect((await restoreRuntimeProfiles(api, plan)).complete).toBe(true);
+    expect(api.dataProfiles.list).not.toHaveBeenCalled();
+    expect(
+      state.profiles[0].policy?.['ai-security-profiles']?.[0]['model-configuration']?.[
+        'data-protection'
+      ]?.['data-leak-detection'],
+    ).toEqual(detection(input));
+    expect(input).toEqual(original);
+  });
+  it('does not exempt a custom profile just because it is named sensitive content', async () => {
+    const { api } = memoryApi();
+    const input = withDlp();
+    detection(input).member = [{ text: 'sensitive content', id: 'custom-id', version: '2' }];
+    await expect(planRuntimeProfilesRestore(api, input, '200')).rejects.toThrow('--dlp-map');
+  });
+  it.each([
+    'block',
+    'allow',
+    '',
+  ])('falls back explicitly while preserving action %j and unrelated protections', async (action) => {
+    const { api, state } = memoryApi();
+    const input = withDlp();
+    detection(input).action = action;
+    const original = structuredClone(input);
+    const plan = await planRuntimeProfilesRestore(api, input, '200', { onMissingDlp: 'basic' });
+    expect(plan.dlpFallbacks).toEqual([
+      {
+        profile: 'Production',
+        unresolved: ['Source DLP'],
+        replaced: ['Source DLP'],
+        reason: 'unmapped-or-missing',
+        protection: 'basic',
+      },
+    ]);
+    const result = await restoreRuntimeProfiles(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.dlpFallbacks).toEqual(plan.dlpFallbacks);
+    expect(state.profiles[0].policy?.['dlp-data-profiles']).toEqual([]);
+    expect(state.profiles[0].policy?.future_setting).toEqual({ enabled: true });
+    const actual =
+      state.profiles[0].policy?.['ai-security-profiles']?.[0]['model-configuration']?.[
+        'data-protection'
+      ]?.['data-leak-detection'];
+    expect(actual?.action).toBe(action);
+    expect(actual?.member).toEqual(
+      action ? [{ text: 'sensitive content', id: '', version: '2' }] : null,
+    );
+    expect(JSON.stringify(state.profiles[0].policy)).not.toContain('source-dlp');
+    expect(input).toEqual(original);
+    expect(plan.profiles[0].source.policy).toEqual(original.profiles[0].policy);
+  });
+  it('prefers explicit destination mappings over Basic fallback', async () => {
+    const { api } = memoryApi();
+    const plan = await planRuntimeProfilesRestore(api, withDlp(), '200', {
+      onMissingDlp: 'basic',
+      dlpMap: { 'Source DLP': 'Destination DLP' },
+    });
+    expect(plan.dlpFallbacks).toEqual([]);
+    expect(plan.dlpMappings).toHaveLength(1);
+  });
+  it('allows fallback for a mapped profile proven absent by a complete inventory', async () => {
+    const { api } = memoryApi();
+    api.dataProfiles.list.mockResolvedValue({ content: [], last: true });
+    const plan = await planRuntimeProfilesRestore(api, withDlp(), '200', {
+      onMissingDlp: 'basic',
+      dlpMap: { 'Source DLP': 'Missing' },
+    });
+    expect(plan.dlpFallbacks).toHaveLength(1);
+    expect(plan.dlpMappings).toEqual([]);
+  });
+  it('supports same-tenant missing custom dependencies when explicitly requested', async () => {
+    const { api } = memoryApi();
+    api.dataProfiles.list.mockResolvedValue({ content: [], last: true });
+    const plan = await planRuntimeProfilesRestore(api, withDlp(), '100', { onMissingDlp: 'basic' });
+    expect(api.dataProfiles.list).toHaveBeenCalled();
+    expect(plan.dlpFallbacks).toHaveLength(1);
+  });
+  it.each([
+    401, 403, 404, 500,
+  ])('never interprets inventory HTTP %i as a missing profile', async (statusCode) => {
+    const { api } = memoryApi();
+    api.dataProfiles.list.mockRejectedValue(
+      Object.assign(new Error('API failure'), { statusCode }),
+    );
+    await expect(
+      planRuntimeProfilesRestore(api, withDlp(), '200', {
+        onMissingDlp: 'basic',
+        dlpMap: { 'Source DLP': 'Destination DLP' },
+      }),
+    ).rejects.toMatchObject({ statusCode });
+    expect(api.profiles.create).not.toHaveBeenCalled();
+    expect(api.topics.create).not.toHaveBeenCalled();
+  });
+  it('fails closed on ambiguous destination identities even with Basic fallback enabled', async () => {
+    const { api } = memoryApi();
+    api.dataProfiles.list.mockResolvedValue({
+      content: [
+        { id: 'a', name: 'Destination DLP', version: 1 },
+        { id: 'b', name: 'Destination DLP', version: 1 },
+      ],
+      last: true,
+    });
+    await expect(
+      planRuntimeProfilesRestore(api, withDlp(), '200', {
+        onMissingDlp: 'basic',
+        dlpMap: { 'Source DLP': 'Destination DLP' },
+      }),
+    ).rejects.toThrow('ambiguous');
+  });
+  it('reports the loss of all custom dependencies when a partially mapped profile is converted', async () => {
+    const { api } = memoryApi();
+    const input = withDlp();
+    detection(input).member?.push({ text: 'Unmapped', id: 'unmapped-id', version: '1' });
+    const plan = await planRuntimeProfilesRestore(api, input, '200', {
+      onMissingDlp: 'basic',
+      dlpMap: { 'Source DLP': 'Destination DLP' },
+    });
+    expect(plan.dlpFallbacks[0].replaced).toEqual(['Source DLP', 'Unmapped']);
+    expect(plan.dlpMappings).toEqual([]);
+    expect(plan.dlpFallbacks[0].unresolved).toEqual(['Unmapped']);
+  });
+  it('refuses invalid masking/action combinations before writes', async () => {
+    const { api } = memoryApi();
+    const input = withDlp();
+    detection(input).action = 'allow';
+    detection(input)['mask-data-inline'] = true;
+    await expect(
+      planRuntimeProfilesRestore(api, input, '200', { onMissingDlp: 'basic' }),
+    ).rejects.toThrow('masking requires a block');
+    expect(api.topics.create).not.toHaveBeenCalled();
+  });
+  it('does not inspect or downgrade skipped profiles', async () => {
+    const { api, state } = memoryApi();
+    state.profiles = [{ ...profile(), tsg_id: '200', profile_id: 'destination-profile' }];
+    const plan = await planRuntimeProfilesRestore(api, withDlp(), '200', {
+      onMissingDlp: 'basic',
+      onConflict: 'skip',
+    });
+    expect(plan.dlpFallbacks).toEqual([]);
+    expect(api.dataProfiles.list).not.toHaveBeenCalled();
+  });
+});
+
 describe('Runtime profile backup', () => {
   it('exports latest policies and exact topic revisions, preserving unknown settings', async () => {
     const { api, state } = memoryApi();

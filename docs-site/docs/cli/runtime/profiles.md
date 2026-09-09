@@ -25,8 +25,9 @@ Replace `200` with your destination TSG.
 | `--output-file <path>` | backup | New file; unique CWD filename by default |
 | `--dry-run` | restore | Validate and read destination without mutations |
 | `--name-prefix <prefix>` | restore | Prefix both profile and topic names |
-| `--on-conflict error\|skip\|update` | restore | Default error; updates require explicit choice |
+| `--on-conflict error\|verify\|skip\|update` | restore | Default error; verify mode (5.7.0+) checks existing profiles without updating them, then creates missing profiles |
 | `--dlp-map <source=destination>` | restore | Repeatable cross-tenant DLP binding to an existing target profile |
+| `--on-missing-dlp error\|basic` | restore | MVP (5.7.0+): default error; explicitly accept Basic detection instead of unresolved custom DLP |
 | `--expect-tsg <id>` | restore | Assert destination; mandatory with `--force` |
 | `--force` | restore | Skip confirmation, not conflict/validation checks |
 | `--max-pages <n>` | both | 1–1000; default 100; incomplete inventories fail |

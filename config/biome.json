@@ -11,6 +11,8 @@
       "!artifacts/runtime-report",
       "!artifacts/agentguard-e2e-*",
       "!artifacts/tenant-profiles-e2e-*",
+      "!artifacts/full-runtime-migration-*",
+      "!airs-migration-*",
       "!**/airs-runtime-profiles-backup-*.json",
       "!**/airs-runtime-profiles-backup-*.yaml",
       "!**/airs-agentguard-report-*.html",

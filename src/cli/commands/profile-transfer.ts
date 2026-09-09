@@ -22,6 +22,75 @@ import { CliUsageError, formatOutput, resolveOutput, ui, usageError } from '../r
 const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
 const FORMATS = 'Output format: pretty, table, markdown, csv, json, yaml';
 
+/** Human formats get one resource per row, never giant JSON arrays inside table cells. */
+function renderRestore(
+  value: Record<string, unknown>,
+  columns: { key: string; label: string }[],
+  format: Parameters<typeof formatOutput>[2],
+): string {
+  if (format !== 'pretty' && format !== 'table' && format !== 'markdown')
+    return formatOutput([value], columns, format);
+  const markdown = format === 'markdown';
+  const rows = (key: string): Record<string, unknown>[] =>
+    Array.isArray(value[key]) ? (value[key] as Record<string, unknown>[]) : [];
+  const heading = (text: string) => (markdown ? `### ${text}\n` : text);
+  const blocks = [
+    heading(
+      value.dryRun
+        ? 'Restore preview — no changes made'
+        : value.complete
+          ? 'Restore complete'
+          : 'Restore incomplete — completed writes remain',
+    ),
+    `Source TSG: ${value.sourceTsgId}\n${markdown ? '\n' : ''}Destination TSG: ${value.destinationTsgId}`,
+  ];
+  for (const [key, title] of [
+    ['profiles', 'Profiles'],
+    ['topics', 'Topics'],
+  ] as const) {
+    blocks.push(heading(`${title} (${rows(key).length})`));
+    blocks.push(
+      formatOutput(
+        rows(key),
+        [
+          { key: 'action', label: 'Action' },
+          { key: 'name', label: 'Name' },
+        ],
+        markdown ? 'markdown' : 'table',
+      ) || '(none)',
+    );
+  }
+  if (rows('dlpMappings').length) {
+    blocks.push(heading('DLP mappings'));
+    blocks.push(
+      formatOutput(
+        rows('dlpMappings'),
+        [
+          { key: 'source', label: 'Source' },
+          { key: 'destination', label: 'Destination' },
+        ],
+        markdown ? 'markdown' : 'table',
+      ),
+    );
+  }
+  if (rows('dlpFallbacks').length) {
+    blocks.push(heading('Basic DLP fallbacks — custom protection lost'));
+    for (const fallback of rows('dlpFallbacks'))
+      blocks.push(
+        `${fallback.profile}: ${Array.isArray(fallback.replaced) ? fallback.replaced.join(', ') : ''}`,
+      );
+  }
+  if (rows('serverDefaults').length) {
+    blocks.push(heading('Verified server-added defaults (source omitted these fields)'));
+    for (const item of rows('serverDefaults'))
+      blocks.push(
+        `${item.profile}: ${Array.isArray(item.fields) ? item.fields.length : 0} fields; use --output json for paths`,
+      );
+  }
+  if (value.error) blocks.push(`Error: ${value.error}`);
+  return blocks.join('\n\n');
+}
+
 function maxPages(value: string): number {
   if (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 1000)
     usageError('--max-pages must be an integer from 1 to 1000');
@@ -158,7 +227,16 @@ export function registerProfileTransferCommands(profiles: Command): void {
     )
     .option('--dry-run', 'Read and validate a restore plan without changing destination resources')
     .option('--name-prefix <prefix>', 'Prefix restored profile and topic names to avoid collisions')
-    .option('--on-conflict <policy>', 'Existing profile names: error, skip or update', 'error')
+    .option(
+      '--on-conflict <policy>',
+      'Existing profile names: error, verify (resume without writes), skip or update',
+      'error',
+    )
+    .option(
+      '--on-missing-dlp <policy>',
+      'Unresolved custom DLP: error or basic (explicitly accepts loss of custom detection)',
+      'error',
+    )
     .option(
       '--dlp-map <source=destination>',
       'Explicit cross-tenant binding to an existing DLP data profile (repeatable)',
@@ -181,13 +259,16 @@ export function registerProfileTransferCommands(profiles: Command): void {
       'after',
       examples(
         'airs runtime profiles restore ./profiles.json --dry-run --output json',
+        'airs runtime profiles restore ./profiles.json --on-missing-dlp basic --dry-run --output json',
         'airs runtime profiles restore ./profiles.json --name-prefix migrated- --expect-tsg <destination-tsg> --force',
       ),
     )
     .action(async (file: string, opts) => {
       try {
-        if (!['error', 'skip', 'update'].includes(opts.onConflict))
-          throw new CliUsageError('--on-conflict must be error, skip or update');
+        if (!['error', 'skip', 'update', 'verify'].includes(opts.onConflict))
+          throw new CliUsageError('--on-conflict must be error, verify, skip or update');
+        if (!['error', 'basic'].includes(opts.onMissingDlp))
+          throw new CliUsageError('--on-missing-dlp must be error or basic');
         if (opts.force && !opts.expectTsg)
           throw new CliUsageError('--force requires --expect-tsg <destination-tsg>');
         const mappings = dlpMap(opts.dlpMap);
@@ -218,6 +299,7 @@ export function registerProfileTransferCommands(profiles: Command): void {
           onConflict: opts.onConflict,
           maxPages: opts.maxPages,
           dlpMap: mappings,
+          onMissingDlp: opts.onMissingDlp,
         });
         const summary = {
           sourceTsgId: plan.sourceTsgId,
@@ -232,6 +314,8 @@ export function registerProfileTransferCommands(profiles: Command): void {
             source: m.source,
             destination: m.destination,
           })),
+          dlpFallbacks: plan.dlpFallbacks,
+          serverDefaults: plan.serverDefaults,
         };
         const columns = [
           { key: 'sourceTsgId', label: 'Source TSG' },
@@ -239,22 +323,30 @@ export function registerProfileTransferCommands(profiles: Command): void {
           { key: 'profiles', label: 'Profiles' },
           { key: 'topics', label: 'Topics' },
           { key: 'dlpMappings', label: 'DLP mappings' },
+          { key: 'dlpFallbacks', label: 'Basic DLP fallbacks (custom protection lost)' },
+          { key: 'serverDefaults', label: 'Verified server-added defaults' },
           { key: 'dryRun', label: 'Dry run' },
           { key: 'complete', label: 'Complete' },
         ];
+        for (const fallback of plan.dlpFallbacks)
+          ui.warning(
+            `DLP protection change: ${fallback.profile} will use Basic detection instead of ${fallback.replaced.join(', ')}. Custom rules are not preserved.`,
+          );
         if (opts.dryRun) {
-          console.log(formatOutput([summary], columns, format === 'pretty' ? 'table' : format));
+          console.log(renderRestore(summary, columns, format));
           return;
         }
-        const changing = plan.profiles.filter((p) => p.action !== 'skip');
+        const changing = plan.profiles.filter(
+          (p) => p.action === 'create' || p.action === 'update',
+        );
         if (changing.length)
           await confirmOrAbort(
-            `Restore ${changing.length} profiles from TSG ${plan.sourceTsgId} to TSG ${tsgId} (${changing.filter((p) => p.action === 'update').length} updates)?`,
+            `Restore ${changing.length} profiles from TSG ${plan.sourceTsgId} to TSG ${tsgId} (${changing.filter((p) => p.action === 'update').length} updates, ${plan.dlpFallbacks.length} Basic DLP fallbacks losing custom detection)?`,
             Boolean(opts.force),
             { action: `restore profiles into TSG ${tsgId}` },
           );
         const result = await restoreRuntimeProfiles(api, plan);
-        console.log(formatOutput([{ ...result }], columns, format === 'pretty' ? 'table' : format));
+        console.log(renderRestore({ ...result }, columns, format));
         if (!result.complete) {
           ui.error(result.error ?? 'Restore incomplete');
           process.exitCode = 1;

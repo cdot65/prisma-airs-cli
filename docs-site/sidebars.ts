@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
         'runtime/scanning',
         'runtime/config-management',
         'runtime/profile-transfer',
+        'runtime/profile-migration-workflow',
         'runtime/daily-report',
         {
           type: 'category',
