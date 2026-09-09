@@ -216,8 +216,7 @@ describe('DLP commands use selected tenant config through real CLI and SDK OAuth
             'dlp',
             'profiles',
             'create',
-            '--body-file',
-            file,
+            ...(name === 'prod' ? ['--body-file', file] : ['--body', JSON.stringify(body)]),
             '--output',
             'json',
           ])

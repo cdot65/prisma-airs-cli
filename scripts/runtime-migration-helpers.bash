@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Internal acceptance-capture tooling, not part of the public CLI workflow.
 # Source this file in Bash. Defines helpers only: sourcing makes no API calls or writes.
 # Use set -euo pipefail in the calling workflow. Never suppress errors around create_test_dlp.
 capture() {
@@ -115,4 +116,3 @@ assert.equal(leaves[0].occurrenceOperatorType, 'any');
 console.log(`${prefix}: custom DLP rule and pattern verified`);
 NODE
 }
-

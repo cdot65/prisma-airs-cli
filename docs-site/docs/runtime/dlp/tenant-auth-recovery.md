@@ -8,84 +8,64 @@ CLI **5.7.1** fixes DLP commands bypassing selected-tenant JSON credentials and
 ignoring structured output on writes. SDK 0.30.0 remains unchanged; this was CLI wiring,
 not an API schema change.
 
-## Keep the existing evidence
+## Resume without starting over
 
-If `create_test_dlp prod` failed with `AISEC_MISSING_VARIABLE:clientId is required`,
-that invocation failed during local client construction, before OAuth or resource creation.
-It does not undo earlier steps. The draft's `set -e` exits Bash on failure, returning
-to the parent shell (often zsh). It does not remove tenant registrations or captured files.
-Shell functions and exported variables from that Bash session do need to be reloaded.
+The `AISEC_MISSING_VARIABLE:clientId is required` failure in CLI 5.7.0 occurred during
+local client construction, before OAuth or resource creation. It does not undo earlier
+successful steps. A terminal closing does not remove tenant registrations or backup files.
 
-1. Install the fix, then start Bash again:
+Use CLI 5.7.1 or newer, return to the existing backup directory, and inspect your tenant
+registrations. The [direct CLI migration guide](../prod-dev-migration.md) requires no
+shell functions or exported TSG variables.
 
-   ```bash
-   npm install --global @cdot65/prisma-airs-cli@5.7.1
-   airs --version
-   bash
-   ```
+```bash
+airs --version
+airs tenant list
+airs tenant read prod
+airs tenant read dev
+airs tenant switch prod
+airs tenant list
+airs runtime dlp patterns list --all --max 0 --output json
+airs runtime dlp profiles list --all --max 0 --output json
+```
 
-2. Change to the **existing** evidence directory printed by the original run. Do not
-   create a new workspace or repeat tenant onboarding. Inspect `tenants.json` and the
-   `prod-pattern-create.json.stderr` / `.exit-code.txt` files. Preserve the failed
-   attempt before retrying: the capture helper intentionally refuses overwrites.
+Confirm prod's selected TSG. Avoid conflicting `PANW_*`, explicit config-path, or
+`.env` credential overrides; do not export secrets as a workaround. If credentials need
+correction, update one setting at a time using hidden secret entry:
 
-   Run this from that evidence directory. The guard refuses recovery if later DLP files
-   already exist; inspect those resources instead of repeating creates.
+```bash
+airs tenant set prod mgmtClientId
+airs tenant set prod mgmtClientSecret
+```
 
-   ```bash
-   bash <<'BASH'
-   set -euo pipefail
-   umask 077
-   test -f tenants.json
-   test -f prod-pattern-create.json.exit-code.txt
-   test ! -s prod-pattern-create.json
-   test ! -e prod-pattern.json
-   test ! -e prod-dlp-test-request.json
-   test ! -e prod-dlp-create.json
-   test ! -e prod-dlp-test.json
-   node -e '
-     const fs = require("node:fs");
-     const error = fs.readFileSync("prod-pattern-create.json.stderr", "utf8");
-     const code = Number(fs.readFileSync("prod-pattern-create.json.exit-code.txt", "utf8"));
-     if (!code || !error.includes("AISEC_MISSING_VARIABLE:clientId is required"))
-       throw Error("Not the pre-request credential-loading failure; inspect before retrying");
-   '
-   failed_attempt=$(mktemp -d "$PWD/failed-dlp-auth-XXXXXX")
-   mv -- prod-pattern-create.json.command.txt prod-pattern-create.json \
-     prod-pattern-create.json.stderr prod-pattern-create.json.exit-code.txt "$failed_attempt/"
-   printf 'Original failure retained in %s\n' "$failed_attempt"
-   BASH
-   ```
+Only run those setters if the registered credentials are wrong. Do not change a correctly
+configured registration to fix an outdated CLI.
 
-3. In the interactive Bash session, restore environment isolation and the TSG variables
-   from the existing receipt:
+If `dlp-test-pattern` or `dlp-test` already exists, inspect it by its returned ID:
 
-   ```bash
-   for key in ${!PANW_@}; do unset "$key"; done
-   unset PRISMA_AIRS_CONFIG_PATH
-   export DOTENV_CONFIG_PATH=/dev/null
-   umask 077
-   set -o noclobber
-   export DEV_TSG=$(node -pe 'JSON.parse(require("node:fs").readFileSync("tenants.json","utf8")).find(t=>t.name==="dev").tsgId')
-   export PROD_TSG=$(node -pe 'JSON.parse(require("node:fs").readFileSync("tenants.json","utf8")).find(t=>t.name==="prod").tsgId')
-   airs tenant switch prod
-   airs tenant list
-   airs runtime dlp patterns list --all --output json
-   airs runtime dlp profiles list --all --output json
-   ```
+```bash
+airs runtime dlp patterns get "<PROD_PATTERN_ID>" --output json
+airs runtime dlp profiles get "<PROD_DLP_PROFILE_ID>" --output json
+```
 
-   Confirm prod is selected with the expected TSG and inspect both complete inventories
-   for `dlp-test-pattern` / `dlp-test`. If either already exists, stop and inspect its ID
-   and content before deciding to reuse it. Do not blindly rerun the create helper.
+Replace the placeholders with the IDs from the lists. Continue from the first missing
+resource in the [migration guide](../prod-dev-migration.md), not from tenant onboarding.
+An HTTP error or interrupted request is different from the pre-request missing-client-ID
+failure: inspect state before retrying any create.
 
-4. Re-paste **only the definitions** of `capture`, `json_id`, `assert_empty`, and
-   `create_test_dlp` from the draft. Restore `set -euo pipefail` before resuming its
-   fail-fast sequence. Run `create_test_dlp prod`, then continue with the two topic
-   guardrails. No tenant recreation or repeat backup is needed for this specific failure.
+If the Runtime restore was interrupted later, retain the source backup, select dev,
+and inspect a recovery plan before making more changes:
 
-Do not wrap the whole create helper in `if` or `|| true` to suppress shell exit: Bash
-can disable its internal fail-fast behavior in those contexts and continue after a failed write.
-The preserved failed attempt plus successful retry belong in the final acceptance evidence.
+```bash
+airs tenant switch dev
+airs tenant list
+airs runtime profiles restore ./prod-runtime-backup.json \
+  --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
+  --expect-tsg "<DEV_TSG>" --dry-run --output json
+```
+
+Use the actual dev TSG ID from the tenant list. Keep failed output and successful backup
+files private; do not overwrite them. Remove `--dry-run` only after reviewing the plan.
 
 ## Verification evidence — 2026-09-09
 
@@ -109,8 +89,9 @@ The preserved failed attempt plus successful retry belong in the final acceptanc
   These are JSONL test-summary records, not the raw CLI inventory response.
 - The available cdot65 config reached OAuth but received HTTP 401. This is distinct from
   the fixed local missing-credentials error. No configuration or cloud resource was changed.
-- The new dev/prod registrations were not present in the agent's available registry;
-  their live create/migrate acceptance remains to be captured by the operator.
+- At the time of the authentication fix, dev/prod were absent from the agent's registry.
+  The operator subsequently completed the migration; its separately reviewed results are
+  in the [prod-to-dev guide](../prod-dev-migration.md#validated-results--2026-09-09).
 
 Local-server contract tests are not a claim that the full cloud migration passed.
 

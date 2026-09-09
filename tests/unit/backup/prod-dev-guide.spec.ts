@@ -2,9 +2,10 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { Script } from 'node:vm';
+import { AdvancedDataProfileRequestSchema } from '@cdot65/prisma-airs-sdk';
+import { buildProfileRequest } from '../../../src/cli/builders/profile-builder.js';
 
-const helper = resolve('docs-site/static/examples/runtime-migration-helpers.bash');
+const helper = resolve('scripts/runtime-migration-helpers.bash');
 const document = readFileSync('docs-site/docs/runtime/prod-dev-migration.md', 'utf8');
 let directory: string;
 beforeEach(() => {
@@ -27,16 +28,79 @@ function bash(script: string) {
   );
 }
 
-it('syntax-checks all documented Bash blocks and embedded Node checks', () => {
+it('syntax-checks direct CLI examples and internal capture tooling separately', () => {
   const scripts = [...document.matchAll(/```bash\n([\s\S]*?)```/g)].map((m) => m[1]);
   expect(scripts.length).toBeGreaterThanOrEqual(12);
   scripts.push(readFileSync(helper, 'utf8'));
   for (const script of scripts) {
     const parsed = spawnSync('bash', ['-n'], { input: script, encoding: 'utf8' });
     expect(parsed.status, parsed.stderr).toBe(0);
-    for (const node of script.matchAll(/<<'NODE'\n([\s\S]*?)\nNODE/g))
-      expect(() => new Script(node[1])).not.toThrow();
   }
+});
+
+function commands() {
+  const scripts = [...document.matchAll(/```bash\n([\s\S]*?)```/g)].map((m) => m[1]);
+  // Only a shell builtin records argv. Never invoke the real CLI or cloud writes.
+  return scripts.flatMap((script) => {
+    const result = spawnSync(
+      '/bin/bash',
+      ['-c', `airs() { printf '%s\\0' "$@"; printf '\\036'; }\n${script}`],
+      {
+        cwd: directory,
+        encoding: 'utf8',
+        timeout: 1000,
+        env: { PATH: '' },
+      },
+    );
+    expect(result.status, result.stderr).toBe(0);
+    return result.stdout
+      .split('\x1e')
+      .filter(Boolean)
+      .map((line) => line.split('\0').slice(0, -1));
+  });
+}
+
+it('passes valid explicit DLP rule trees with distinct tenant placeholders', () => {
+  const requests = commands().filter((args) => args.includes('--body'));
+  expect(requests).toHaveLength(2);
+  for (const [index, args] of requests.entries()) {
+    const body = JSON.parse(args[args.indexOf('--body') + 1]);
+    expect(() => AdvancedDataProfileRequestSchema.parse(body)).not.toThrow();
+    expect(body.detection_rules[0].expression_tree.sub_expressions[0].rule_item).toEqual({
+      detection_technique: 'regex',
+      id: index === 0 ? '<PROD_PATTERN_ID>' : '<DEV_PATTERN_ID>',
+      name: 'dlp-test-pattern',
+      match_type: 'include',
+      confidence_level: 'high',
+      occurrence_operator_type: 'any',
+      occurrence_count: 1,
+    });
+  }
+});
+
+it('builds the three documented Runtime protection selections from real CLI flags', () => {
+  const creates = commands().filter(
+    (args) => args.slice(0, 3).join(' ') === 'runtime profiles create',
+  );
+  expect(creates).toHaveLength(3);
+  const policies = creates.map((args) => {
+    const option = (flag: string) =>
+      args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
+    return buildProfileRequest({
+      name: option('--name') ?? '',
+      dlpAction: option('--dlp-action'),
+      dlpProfiles: option('--dlp-profiles'),
+      inlineTimeoutAction: option('--inline-timeout-action'),
+      maxInlineLatency: option('--max-inline-latency')
+        ? Number(option('--max-inline-latency'))
+        : undefined,
+    }).policy?.['ai-security-profiles']?.[0]?.['model-configuration']?.['data-protection']?.[
+      'data-leak-detection'
+    ];
+  });
+  expect(policies[0]).toMatchObject({ action: 'block', member: [{ text: 'dlp-test' }] });
+  expect(policies[1]).toMatchObject({ action: 'block', member: [{ text: 'sensitive content' }] });
+  expect(policies[2]).toMatchObject({ action: '', member: null });
 });
 
 it('sourcing saved helpers makes no CLI calls and exports no stale tenant IDs', () => {

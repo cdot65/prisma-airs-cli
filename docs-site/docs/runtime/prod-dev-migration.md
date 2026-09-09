@@ -4,228 +4,208 @@ title: Prod to dev — preserve custom DLP
 
 # Prod to dev — preserve custom DLP
 
-Use CLI **5.7.1 or newer** (SDK 0.30.0 or newer). An operator completed this workflow
-on 2026-09-09; the submitted archive was independently validated offline. It contains
-**45 successful command receipts**, three migrated profiles and two topics, with **zero
-Basic fallbacks**. The CLI version was not captured in the archive; 5.7.1 is the minimum
-documented prerequisite because it fixes named-tenant DLP credentials and write output.
+Create a small Runtime configuration in `prod`, back it up, and restore it into `dev`
+using only `airs` commands. No capture helpers, shell variables, or scripts are needed.
+The example preserves custom DLP; see the separate
+[Basic-fallback migration](profile-migration-workflow.md) if you intentionally want
+to replace unavailable custom DLP with Basic protection.
 
-This page covers custom-DLP preservation, unlike the separate
-[Basic-fallback migration](profile-migration-workflow.md). The archive is private;
-only sanitized commands and aggregate results appear here.
+## Before you start
 
-For a **new acceptance run**, use each numbered section in order and inspect its output.
-Do not repeat this clean-start workflow against the already-migrated dev tenant. These
-commands create real resources. Use dedicated test tenants with empty Runtime profile
-and topic inventories; do not point this example at a business production tenant.
-No cleanup or release publication is performed by this workflow. The validation of the submitted archive made no cloud requests or changes.
+Use CLI **5.7.1 or newer** (SDK 0.30.0 or newer), which supports named-tenant DLP
+credentials. Both AIRS tenants must already exist and have Management OAuth credentials
+and Enterprise DLP provisioning/permissions. `tenant create` registers a tenant locally;
+it does not provision a cloud tenant.
 
-Important boundaries:
+Use dedicated test tenants with **empty Runtime profile and topic inventories** for
+this example. The label `prod` is an example name, not an instruction to modify a
+business production environment. These commands create real resources. Do not repeat
+the setup against a tenant where this migration has already completed.
 
-- `tenant create` registers credentials for an existing AIRS tenant; it does not provision one.
-- Both tenants need Management OAuth access and Enterprise DLP provisioning/permissions.
-- Runtime backup includes latest security profiles and referenced custom topics, not
-  credentials, API keys, applications, history, telemetry, or complete Enterprise DLP resources.
-- To preserve custom DLP, this workflow explicitly creates equivalent DLP dependencies
-  in dev and uses `--dlp-map`. This is not automatic DLP dependency migration.
-- Enterprise DLP profiles do not currently have a supported CLI DELETE operation;
-  do not assume the test DLP profile can be cleaned up like a Runtime security profile.
-- Stop on any error. Inspect inventories before retrying a create: an API error does
-  not prove that no resource was created. Do not use blind `skip` or `update` to pass validation.
-
-## 0. Prepare a private workspace
-
-Start Bash, even if your usual shell is zsh. Keep all sections in that same Bash session.
-Use a fresh workspace for each independent run. No secrets belong in command arguments
-or evidence files. Do not enable shell tracing (`set -x`) or `--debug` for this workflow.
+Run commands one at a time from a private working directory. Backup files contain
+configuration, are created privately, and are not overwritten. No Bash-specific setup
+is required. Avoid `--debug` when handling credentials or private configuration.
 
 ```bash
-bash
-```
-
-```bash
-set -euo pipefail
-set -o noclobber
-umask 077
-for key in ${!PANW_@}; do unset "$key"; done
-unset PRISMA_AIRS_CONFIG_PATH
-export DOTENV_CONFIG_PATH=/dev/null
-workflow_dir=$(mktemp -d "$PWD/airs-prod-dev-e2e-XXXXXX")
-cd "$workflow_dir"
-printf 'Private evidence directory: %s\n' "$PWD"
 airs --version
 airs runtime profiles restore --help
-
-# Capture arguments, stdout and stderr separately. Existing files are not overwritten.
-# Do not use this wrapper for credential-entry commands.
-# Saved helper definitions survive a shell exit; sourcing does not execute cloud operations.
-curl --fail --location --output migration-helpers.bash \
-  https://cdot65.github.io/prisma-airs-cli/examples/runtime-migration-helpers.bash
-source ./migration-helpers.bash
-capture cli-version.txt airs --version
 ```
 
-Verify the CLI is 5.7.1 or newer and help includes both `--on-conflict verify` and
-`--on-missing-dlp`. Install separately with
-`npm install -g @cdot65/prisma-airs-cli@5.7.1` if necessary.
+The restore help must include `--on-conflict` with `verify` and `--on-missing-dlp`.
+Ensure there are no conflicting `PANW_*`, `PRISMA_AIRS_CONFIG_PATH`, or `.env`
+credential overrides in your terminal; environment overrides take precedence over
+named-tenant JSON credentials. Do not export secrets to work around an authentication
+failure. See [tenant authentication recovery](dlp/tenant-auth-recovery.md).
 
-If Bash exits, your credentials and files persist. Return to this existing directory in a
-new Bash session, clear the overrides as above, then run `source ./migration-helpers.bash`
-and `load_tenant_ids`. Do not re-register tenants or rerun successful creates.
-Retain a failed capture under a new attempt name before retrying. See
-[authentication recovery](dlp/tenant-auth-recovery.md).
+Throughout this guide, replace quoted placeholders such as `"<DEV_TSG>"` with the
+actual value printed by an earlier `airs` command. They are **not environment variables**.
 
-## 1. Onboard dev and prod through the CLI
+## 1. Register and inspect dev and prod
 
-The guided commands ask for TSG ID, client ID, and a hidden client secret one at a time.
-If a name already exists, inspect it; do not replace an existing registration blindly.
+Enter each tenant's TSG ID, OAuth client ID, and hidden client secret when prompted.
+If already registered, skip creation and inspect the existing entries instead.
 
 ```bash
 airs tenant create dev
 airs tenant create prod
-capture tenants.json airs tenant list --output json
+airs tenant list
+airs tenant read dev
+airs tenant read prod
+```
 
-node -e '
-  const t = JSON.parse(require("node:fs").readFileSync("tenants.json", "utf8"));
-  const dev = t.find(x => x.name === "dev"), prod = t.find(x => x.name === "prod");
-  if (!dev?.tsgId || !prod?.tsgId || dev.tsgId === prod.tsgId)
-    throw Error("dev and prod must have different nonempty TSG IDs");
-  console.log({dev: dev.tsgId, prod: prod.tsgId});
-'
-load_tenant_ids
+Check that `dev` and `prod` have different TSG IDs and the intended credentials/config
+paths. Record the dev TSG ID for `--expect-tsg` later. Credential reads are redacted.
 
+Check both inventories before creating anything:
+
+```bash
 airs tenant switch dev
-capture dev-before-profiles.json airs runtime profiles list --all --max 0 --output json
-capture dev-before-topics.json airs runtime topics list --all --max 0 --output json
-assert_empty dev-before-profiles.json dev-before-topics.json
-
+airs tenant list
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
 airs tenant switch prod
-capture prod-before-profiles.json airs runtime profiles list --all --max 0 --output json
-capture prod-before-topics.json airs runtime topics list --all --max 0 --output json
-assert_empty prod-before-profiles.json prod-before-topics.json
+airs tenant list
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
 ```
 
-Review the printed TSG IDs against your intended cloud tenants before creating resources.
-Successful inventories also exercise fresh CLI/SDK authentication to both tenants.
+Each profile/topic inventory should be `[]`. Stop if it is not empty; this guide does
+not delete existing configuration. Successful lists also exercise authentication in
+each tenant. Leave `prod` selected for the next three sections.
 
-## 2. Create custom DLP profile dlp-test in prod
+## 2. Create the custom DLP dependency in prod
 
-Use a synthetic regex pattern (`AIRS-E2E-123456` is a matching example) to avoid relying
-on tenant-specific predefined pattern IDs. The helper creates one pattern and one profile
-through `airs`, retaining their actual IDs and read-back data.
-
-Use `--body-file` for the profile rule tree: the current `--pattern-id` shorthand emits
-`condition_pattern`, while the typed expression-tree contract uses `rule_item` leaves.
-Do not use that shorthand as proof of correct custom-rule attachment in this acceptance run.
-Also, DLP GET JSON is camel-cased for CLI output; it is not a directly replayable create body.
+Create a synthetic regex pattern. `AIRS-E2E-123456` is an example matching string.
 
 ```bash
-create_test_dlp prod
+airs runtime dlp patterns create \
+  --name dlp-test-pattern --type custom --technique regex \
+  --description 'Synthetic Runtime migration acceptance pattern' \
+  --confidence-levels high --regex 'AIRS-E2E-[0-9]{6}' --output json
 ```
 
-If the API rejects the body or returns a differently shaped read-back, stop and retain
-the response. Do not relax these checks or publish the run as successful until inspected.
-
-## 3. Create two custom topic guardrails in prod
-
-The captured run returned human-readable text for topic create/apply even with
-`--output json`. These four acknowledgements are saved as `.txt` below; the operator's
-original files had misleading `.json` extensions. Use topic list and profile GET JSON
-to verify the stored objects. Do not parse these acknowledgements as JSON.
+Copy the returned pattern `id` into the next command:
 
 ```bash
-capture prod-topic-financial.txt airs runtime topics create \
+airs runtime dlp patterns get "<PROD_PATTERN_ID>" --output json
+```
+
+Verify the name, regex, and detection technique. Substitute that same pattern ID in the
+inline request below. This is JSON passed directly to `airs`, not a shell script or a
+request file. The explicit `rule_item` tree avoids the legacy `--pattern-id` shorthand,
+which emits a different leaf shape.
+
+```bash
+airs runtime dlp profiles create --body '{
+  "name": "dlp-test",
+  "profile_type": "advanced",
+  "description": "Synthetic Runtime migration acceptance DLP profile",
+  "detection_rules": [{
+    "rule_type": "expression_tree",
+    "expression_tree": {
+      "operator_type": "or",
+      "sub_expressions": [{
+        "rule_item": {
+          "detection_technique": "regex",
+          "id": "<PROD_PATTERN_ID>",
+          "name": "dlp-test-pattern",
+          "match_type": "include",
+          "confidence_level": "high",
+          "occurrence_operator_type": "any",
+          "occurrence_count": 1
+        }
+      }]
+    }
+  }]
+}' --output json
+```
+
+Copy the DLP profile `id` from the response and read it back:
+
+```bash
+airs runtime dlp profiles get "<PROD_DLP_PROFILE_ID>" --output json
+```
+
+Confirm `dlp-test` is advanced and active. Its `detectionRules` must contain a `ruleItem`
+referencing the prod pattern, with regex/high/include/any matching. Note its `version`.
+GET output uses camelCase; create request fields use snake_case. Do not replay the GET
+response as a create body.
+
+## 3. Create two custom topics in prod
+
+```bash
+airs runtime topics create \
   --name migration-financial-advice \
   --description 'Requests for personalized financial investment advice' \
   --examples 'Which stocks should I buy with my retirement savings?' \
-             'Tell me how to invest my personal savings for maximum profit.' \
-  --output json
+             'Tell me how to invest my personal savings for maximum profit.'
 
-capture prod-topic-legal.txt airs runtime topics create \
+airs runtime topics create \
   --name migration-legal-advice \
   --description 'Requests for personalized legal advice or legal representation' \
   --examples 'Should I sue my landlord over my rental dispute?' \
-             'Tell me the legal strategy I should use in my court case.' \
-  --output json
+             'Tell me the legal strategy I should use in my court case.'
+
+airs runtime topics list --all --max 0 --output json
 ```
+
+Confirm both topic names, descriptions, and examples. Topic create/apply acknowledgements
+were human-readable in the acceptance run even when JSON was requested; use the list
+and GET commands for structured read-back.
 
 ## 4. Create three Runtime security profiles in prod
 
-Generate explicit request files so the custom DLP member includes the actual ID/version,
-Basic uses the built-in member, and the topic-only profile explicitly disables DLP.
-`--config` still requires `--name`. Profile create prints human output; use subsequent
-GET/list commands for authoritative structured policy evidence.
+Create a profile with custom DLP, a profile with Basic DLP, and a profile with DLP
+disabled. The third command explicitly configures latency so the CLI builds a policy
+with DLP disabled rather than leaving the entire policy to server defaults.
 
 ```bash
-node <<'NODE'
-const fs = require('node:fs');
-const d = JSON.parse(fs.readFileSync('prod-dlp-test.json', 'utf8'));
-if (!d.id || !Number.isInteger(d.version)) throw Error('Missing custom DLP identity/version');
-for (const [name, member] of [
-  ['migration-custom-dlp', [{text: 'dlp-test', id: String(d.id), version: String(d.version)}]],
-  ['migration-basic-dlp', [{text: 'sensitive content', id: '', version: '2'}]],
-  ['migration-topics-only', null],
-]) {
-  const request = {profile_name: name, active: true, policy: {
-    'ai-security-profiles': [{'model-type': 'default', 'model-configuration': {
-      'model-protection': [], 'agent-protection': [],
-      'app-protection': {'default-url-category': {member: null}, 'url-detected-action': ''},
-      'data-protection': {'database-security': null, 'data-leak-detection': {
-        action: member ? 'block' : '', member, 'mask-data-inline': false,
-      }},
-      latency: {'inline-timeout-action': 'block', 'max-inline-latency': 5},
-      'mask-data-in-storage': false,
-    }}],
-    'dlp-data-profiles': [],
-  }};
-  fs.writeFileSync(`${name}.request.json`, JSON.stringify(request, null, 2), {flag: 'wx', mode: 0o600});
-}
-NODE
+airs runtime profiles create --name migration-custom-dlp \
+  --dlp-action block --dlp-profiles dlp-test
 
-for name in migration-custom-dlp migration-basic-dlp migration-topics-only; do
-  capture "prod-$name-create.txt" airs runtime profiles create \
-    --name "$name" --config "$name.request.json"
-done
+airs runtime profiles create --name migration-basic-dlp \
+  --dlp-action block --dlp-profiles 'sensitive content'
 
-capture prod-apply-financial.txt airs runtime topics apply \
-  --profile migration-topics-only --name migration-financial-advice --intent block --output json
-capture prod-apply-legal.txt airs runtime topics apply \
-  --profile migration-topics-only --name migration-legal-advice --intent block --output json
+airs runtime profiles create --name migration-topics-only \
+  --inline-timeout-action block --max-inline-latency 5
 
-capture prod-profiles.json airs runtime profiles list --all --max 0 --output json
-capture prod-topics.json airs runtime topics list --all --max 0 --output json
-for name in migration-custom-dlp migration-basic-dlp migration-topics-only; do
-  capture "prod-$name.json" airs runtime profiles get "$name" --output json
-done
+airs runtime topics apply \
+  --profile migration-topics-only --name migration-financial-advice --intent block
+
+airs runtime topics apply \
+  --profile migration-topics-only --name migration-legal-advice --intent block
+
+airs runtime profiles get migration-custom-dlp --output json
+airs runtime profiles get migration-basic-dlp --output json
+airs runtime profiles get migration-topics-only --output json
+airs runtime profiles list --all --max 0 --output json
 ```
 
-In the topic-only policy, the guardrail-level action is `allow` (allow unrelated topics),
-while both topic references are inside a `block` group. That is the intended block-list
-configuration, not an accidentally allowed topic.
+Inspect the stored policies before backing up. The name-based DLP flags select members
+by name; they do not supply an explicit ID/version. Confirm the service stored the
+intended custom dependency and compare any returned ID/version with the DLP GET above.
+Stop if the reference is missing or points to a different dependency.
+
+| Profile | Required stored configuration |
+| --- | --- |
+| `migration-custom-dlp` | DLP action `block`, member `dlp-test` |
+| `migration-basic-dlp` | DLP action `block`, built-in member `sensitive content` |
+| `migration-topics-only` | DLP action empty, member null/empty; both custom topics in a `block` group |
+
+For the topic-only profile, guardrail-level `action: allow` permits unrelated topics;
+the nested topic group must say `block`. Also review other service/default protections:
+the profile flags do not reproduce every unrelated field from the historical fixture.
 
 ## 5. Back up prod Runtime configuration
 
-```bash
-capture prod-backup-summary.json airs runtime profiles backup --all \
-  --output-file "$PWD/prod-runtime-backup.json" --output json
+Confirm `prod` is still selected, then write a new backup in the current directory:
 
-node -e '
-  const fs = require("node:fs"), assert = require("node:assert/strict");
-  const r = JSON.parse(fs.readFileSync("prod-backup-summary.json", "utf8"))[0];
-  const tenants = JSON.parse(fs.readFileSync("tenants.json", "utf8"));
-  const expected = tenants.find(t => t.name === "prod")?.tsgId;
-  assert.ok(expected, "Missing prod registration receipt");
-  assert.equal(r.sourceTsgId, expected);
-  assert.equal(r.profiles, 3); assert.equal(r.topics, 2);
-  console.log("Expected source backup: 3 profiles, 2 referenced topics");
-'
+```bash
+airs tenant list
+airs runtime profiles backup --all --output-file ./prod-runtime-backup.json --output json
 ```
 
-The DLP pattern/profile requests and read-back files captured in section 2 are additional
-dependency evidence. They are **not** inside `prod-runtime-backup.json` as restorable
-Enterprise DLP resources.
-
-Captured backup response, with the private path normalized and tenant ID redacted:
+Captured backup response, with the path normalized and tenant ID redacted:
 
 ```json
 [
@@ -238,49 +218,79 @@ Captured backup response, with the private path normalized and tenant ID redacte
 ]
 ```
 
-If the backup succeeds but a shell assertion reports an undefined expected TSG, preserve
-the backup. The validation above reads the saved registration receipt instead of relying
-on an exported shell variable; do not rerun backup or overwrite its evidence.
+Check the source TSG and counts. An existing output file causes `EEXIST`; choose a new
+filename and use that filename in the restore commands. Do not discard a successful backup.
 
-## 6. Switch to dev, prepare its DLP dependency, and dry-run
+The backup contains latest Runtime profiles and referenced custom topics. It does
+**not** contain restorable Enterprise DLP patterns/profiles, credentials, API keys,
+applications, or telemetry. Prepare the custom DLP dependency separately in dev next.
 
-Re-create the same synthetic rule with dev's own pattern ID. Never copy prod's pattern
-or DLP IDs into the dev create request. The helper regenerates the request from dev's
-read-back. No Runtime security profiles or custom topics are created by this helper.
+## 6. Switch to dev and prepare its DLP dependency
 
 ```bash
-load_tenant_ids
 airs tenant switch dev
-capture dev-selected.json airs tenant list --output json
-create_test_dlp dev
-
-capture dev-pre-restore-profiles.json airs runtime profiles list --all --max 0 --output json
-capture dev-pre-restore-topics.json airs runtime topics list --all --max 0 --output json
-assert_empty dev-pre-restore-profiles.json dev-pre-restore-topics.json
-
-capture dev-preview.json airs runtime profiles restore ./prod-runtime-backup.json \
-  --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error \
-  --expect-tsg "${DEV_TSG:?Run load_tenant_ids first}" --dry-run --output json
-
-capture dev-after-preview-profiles.json airs runtime profiles list --all --max 0 --output json
-capture dev-after-preview-topics.json airs runtime topics list --all --max 0 --output json
-assert_empty dev-after-preview-profiles.json dev-after-preview-topics.json
-
-node -e '
-  const r = JSON.parse(require("node:fs").readFileSync("dev-preview.json", "utf8"))[0];
-  const assert = require("node:assert/strict");
-  assert.equal(r.destinationTsgId, process.env.DEV_TSG);
-  assert.equal(r.dryRun, true);
-  assert.equal(r.profiles.length, 3); assert.ok(r.profiles.every(p => p.action === "create"));
-  assert.equal(r.topics.length, 2); assert.ok(r.topics.every(t => t.action === "create"));
-  assert.equal(r.dlpMappings.length, 1); assert.equal(r.dlpFallbacks.length, 0);
-  console.log("Preview passed: 3 creates, 2 topic creates, 1 DLP mapping, no fallback");
-'
+airs tenant list
+airs runtime dlp patterns create \
+  --name dlp-test-pattern --type custom --technique regex \
+  --description 'Synthetic Runtime migration acceptance pattern' \
+  --confidence-levels high --regex 'AIRS-E2E-[0-9]{6}' --output json
+airs runtime dlp patterns get "<DEV_PATTERN_ID>" --output json
 ```
 
-Review this preview before executing the next section. Mapping by itself only selects
-an existing destination DLP profile; it does not prove rule equivalence. Section 2's
-read-back checks are required on both tenants.
+Copy the **dev** pattern ID from this create response. Do not use the prod pattern ID.
+
+```bash
+airs runtime dlp profiles create --body '{
+  "name": "dlp-test",
+  "profile_type": "advanced",
+  "description": "Synthetic Runtime migration acceptance DLP profile",
+  "detection_rules": [{
+    "rule_type": "expression_tree",
+    "expression_tree": {
+      "operator_type": "or",
+      "sub_expressions": [{
+        "rule_item": {
+          "detection_technique": "regex",
+          "id": "<DEV_PATTERN_ID>",
+          "name": "dlp-test-pattern",
+          "match_type": "include",
+          "confidence_level": "high",
+          "occurrence_operator_type": "any",
+          "occurrence_count": 1
+        }
+      }]
+    }
+  }]
+}' --output json
+airs runtime dlp profiles get "<DEV_DLP_PROFILE_ID>" --output json
+```
+
+Compare the dev read-back with prod: same synthetic regex and matching rules, advanced
+profile type, and a rule leaf using dev's pattern ID. DLP numeric profile IDs are
+tenant-scoped and can happen to be equal; a matching number alone proves nothing.
+
+This step creates equivalent dependencies explicitly; Runtime restore does not clone
+Enterprise DLP. If `dlp-test` already exists, inspect it rather than creating a duplicate.
+The CLI currently has no supported Enterprise DLP profile DELETE operation.
+
+## 7. Preview and restore into dev
+
+Replace `"<DEV_TSG>"` with dev's actual numeric TSG ID from `airs tenant list`.
+Check that the destination still has no Runtime profiles or topics:
+
+```bash
+airs tenant list
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
+airs runtime profiles restore ./prod-runtime-backup.json \
+  --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error \
+  --expect-tsg "<DEV_TSG>" --dry-run --output json
+```
+
+The preview must show the intended source/destination TSG IDs, three profile creates,
+two topic creates, one DLP mapping, and no Basic fallbacks. Mapping chooses a destination
+dependency; it does not check that the DLP rules are equivalent. That is why step 6
+includes a read-back comparison.
 
 Captured preview response (tenant IDs redacted):
 
@@ -306,226 +316,106 @@ Captured preview response (tenant IDs redacted):
 ]
 ```
 
-## 7. Execute the restore into dev
-
-`--force` skips the confirmation prompt so stdout can be captured reliably. It does not
-override conflicts, missing dependencies, verification failures, or the destination TSG check.
+Confirm the dry-run left the inventories empty, then execute and review the confirmation
+prompt. `--force` is unnecessary for this interactive workflow.
 
 ```bash
-load_tenant_ids
-capture dev-restore.json airs runtime profiles restore ./prod-runtime-backup.json \
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
+airs runtime profiles restore ./prod-runtime-backup.json \
   --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error \
-  --expect-tsg "${DEV_TSG:?Run load_tenant_ids first}" --force --output json
-
-node -e '
-  const r = JSON.parse(require("node:fs").readFileSync("dev-restore.json", "utf8"))[0];
-  const assert = require("node:assert/strict");
-  assert.equal(r.complete, true);
-  assert.equal(r.profiles.length, 3); assert.ok(r.profiles.every(p => p.action === "created"));
-  assert.equal(r.topics.length, 2); assert.ok(r.topics.every(t => t.action === "created"));
-  assert.equal(r.dlpFallbacks.length, 0);
-  console.log("Restore completed: 3 profiles, 2 topics, no Basic substitutions");
-'
+  --expect-tsg "<DEV_TSG>" --output json
 ```
 
-If interrupted, do not delete the evidence or rerun creation blindly. Use a new output
-filename and `--on-conflict verify --dry-run` with the same DLP mapping to inspect recovery.
+The completed result must have `complete: true`, three `created` profiles, two `created`
+topics, and `dlpFallbacks: []`. Stop on any error. Completed writes remain after a partial
+failure; use the verification preview below to inspect recovery instead of blindly
+recreating resources or choosing `skip`/`update`.
 
-## 8. Validate the migration and a write-free rerun
+## 8. Validate the migrated configuration
 
 ```bash
-capture dev-profiles.json airs runtime profiles list --all --max 0 --output json
-capture dev-topics.json airs runtime topics list --all --max 0 --output json
-for name in migration-custom-dlp migration-basic-dlp migration-topics-only; do
-  capture "dev-$name.json" airs runtime profiles get "$name" --output json
-done
-
-node <<'NODE'
-const fs = require('node:fs'), assert = require('node:assert/strict');
-const read = f => JSON.parse(fs.readFileSync(f, 'utf8'));
-function checkTenant(prefix) {
-  const profiles = read(`${prefix}-profiles.json`), topics = read(`${prefix}-topics.json`);
-  assert.equal(profiles.length, 3); assert.equal(topics.length, 2);
-  const config = name => {
-    const p = read(`${prefix}-${name}.json`);
-    assert.equal(p.active, true);
-    return p.policy['ai-security-profiles'][0]['model-configuration'];
-  };
-  const custom = config('migration-custom-dlp')['data-protection']['data-leak-detection'];
-  const dlp = read(`${prefix}-dlp-test.json`);
-  assert.equal(custom.action, 'block'); assert.equal(custom.member.length, 1);
-  assert.equal(custom.member[0].text, 'dlp-test');
-  assert.equal(String(custom.member[0].id), String(dlp.id));
-  assert.equal(String(custom.member[0].version), String(dlp.version));
-  const basic = config('migration-basic-dlp')['data-protection']['data-leak-detection'];
-  assert.equal(basic.action, 'block'); assert.equal(basic.member.length, 1);
-  assert.equal(basic.member[0].text, 'sensitive content');
-  assert.equal(basic.member[0].id ?? '', '');
-  assert.equal(basic.member[0].version ?? '2', '2');
-  const topicConfig = config('migration-topics-only');
-  const disabled = topicConfig['data-protection']['data-leak-detection'];
-  assert.equal(disabled.action, '');
-  assert.equal(disabled.member?.length ?? 0, 0);
-  const guard = topicConfig['model-protection'].find(x => x.name === 'topic-guardrails');
-  assert.equal(guard.action, 'allow');
-  const blocked = guard['topic-list'].filter(g => g.action === 'block').flatMap(g => g.topic);
-  assert.deepEqual(blocked.map(t => t.topic_name).sort(),
-    ['migration-financial-advice', 'migration-legal-advice']);
-  for (const ref of blocked) {
-    const topic = topics.find(t => t.topicName === ref.topic_name);
-    assert.equal(ref.topic_id, topic.topicId);
-    assert.equal(ref.revision, topic.revision);
-  }
-  return {profiles, topics};
-}
-const prod = checkTenant('prod'), dev = checkTenant('dev');
-for (const p of prod.profiles) {
-  const d = dev.profiles.find(x => x.profileName === p.profileName);
-  assert.notEqual(d.profileId, p.profileId);
-}
-for (const t of prod.topics) {
-  const d = dev.topics.find(x => x.topicName === t.topicName);
-  assert.notEqual(d.topicId, t.topicId);
-  assert.equal(d.description, t.description);
-  assert.deepEqual(d.examples, t.examples);
-}
-console.log('PASS: custom DLP bound to dev, Basic preserved, DLP disabled on topic-only profile, both topics blocked and rebound');
-NODE
-
-capture dev-verify.json airs runtime profiles restore ./prod-runtime-backup.json \
-  --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
-  --expect-tsg "${DEV_TSG:?Run load_tenant_ids first}" --force --output json
-capture dev-after-verify-profiles.json airs runtime profiles list --all --max 0 --output json
-capture dev-after-verify-topics.json airs runtime topics list --all --max 0 --output json
-
-node <<'NODE'
-const fs = require('node:fs'), assert = require('node:assert/strict');
-const read = f => JSON.parse(fs.readFileSync(f, 'utf8'));
-const r = read('dev-verify.json')[0];
-assert.equal(r.complete, true); assert.equal(r.profiles.length, 3);
-assert.ok(r.profiles.every(p => p.action === 'verified'));
-assert.equal(r.dlpFallbacks.length, 0);
-for (const kind of ['profiles', 'topics']) {
-  const key = kind === 'profiles' ? 'profileId' : 'topicId';
-  const sort = rows => [...rows].sort((a,b) => String(a[key]).localeCompare(String(b[key])));
-  assert.deepEqual(sort(read(`dev-${kind}.json`)), sort(read(`dev-after-verify-${kind}.json`)));
-}
-console.log('PASS: all three profiles verified; destination IDs, revisions and configurations unchanged');
-NODE
-
-capture dev-backup-summary.json airs runtime profiles backup --all \
-  --output-file "$PWD/dev-runtime-backup.json" --output json
-
-# Verify the source was not changed by migration, then return selection to dev.
-airs tenant switch prod
-capture prod-after-profiles.json airs runtime profiles list --all --max 0 --output json
-capture prod-after-topics.json airs runtime topics list --all --max 0 --output json
-airs tenant switch dev
-node <<'NODE'
-const fs = require('node:fs'), assert = require('node:assert/strict');
-const read = f => JSON.parse(fs.readFileSync(f, 'utf8'));
-for (const kind of ['profiles', 'topics']) {
-  const key = kind === 'profiles' ? 'profileId' : 'topicId';
-  const sort = rows => [...rows].sort((a,b) => String(a[key]).localeCompare(String(b[key])));
-  assert.deepEqual(sort(read(`prod-${kind}.json`)), sort(read(`prod-after-${kind}.json`)));
-}
-console.log('PASS: prod profiles and topics unchanged');
-NODE
-capture final-tenants.json airs tenant list --output json
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
+airs runtime profiles get migration-custom-dlp --output json
+airs runtime profiles get migration-basic-dlp --output json
+airs runtime profiles get migration-topics-only --output json
+airs runtime dlp profiles get "<DEV_DLP_PROFILE_ID>" --output json
+airs runtime dlp patterns get "<DEV_PATTERN_ID>" --output json
 ```
 
-Validated acceptance matrix (configuration read-back):
+Check the following before declaring the migration successful:
 
-| Runtime profile | Prod | Dev |
-| --- | --- | --- |
-| migration-custom-dlp | Custom dlp-test, block | Dev dlp-test ID/version, block |
-| migration-basic-dlp | Built-in Basic, block | Built-in Basic, block |
-| migration-topics-only | DLP disabled; two blocked topics | DLP disabled; both dev topics blocked |
+| Check | Expected in dev |
+| --- | --- |
+| Inventory | Three profiles and two topics |
+| Custom DLP | `dlp-test`, action `block`, binding to dev's DLP profile/version and rule tree |
+| Basic DLP | Built-in `sensitive content`, action `block` |
+| Topic-only profile | DLP disabled; both custom topics in the nested block group |
+| Topic references | Dev topic IDs/revisions; descriptions and examples preserved |
+| Protection changes | No Basic fallback; inspect any reported server-added defaults |
 
-This verifies configuration creation, storage, migration, mapping and idempotence. It
-does not prove scanner efficacy. Actual inference/scan tests would require separate
-Runtime scan keys, profile selection and test traffic, which are outside this run.
-
-## Optional: test Basic fallback instead of custom-DLP preservation
-
-Do not mix this branch into the primary preservation run. Use an empty destination
-or a separately named test run. Skip dev DLP dependency creation and omit `--dlp-map`:
+Ask restore to compare the existing profiles with the backup without changing resources:
 
 ```bash
 airs runtime profiles restore ./prod-runtime-backup.json \
-  --on-missing-dlp basic --expect-tsg "${DEV_TSG:?Run load_tenant_ids first}" --dry-run --output json
+  --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
+  --expect-tsg "<DEV_TSG>" --dry-run --output json
 ```
 
-After reviewing the warning, execute without `--dry-run` and with `--force`. Expected:
-one Basic fallback for migration-custom-dlp; the existing Basic case remains Basic and
-the topic-only case remains DLP-disabled. The custom-DLP assertions in the primary
-validation block intentionally do not pass in this lossy mode. Record it as a distinct
-fallback acceptance run, not as preservation of the custom rule.
+All three profile actions should be `verify`, and both topic actions should be `reuse`.
+There must be no creates or updates. A mismatch fails validation. If a resource is
+missing, investigate rather than assuming the earlier restore completed.
 
-## Validated operator evidence — 2026-09-09
-
-The review checked all 45 exit-code receipts and their command/output/diagnostic companions,
-both Runtime backup files, DLP pattern/profile read-backs and full profile/topic inventories.
-Four topic acknowledgements were text, not JSON; the required structured evidence parsed.
-This is validation of operator-supplied snapshots, not a fresh replay against the live API.
-
-Sanitized aggregate projection of the captured receipts (not verbatim CLI output):
-
-```json
-{
-  "source": "prod",
-  "destination": "dev",
-  "capturedCommands": 45,
-  "backup": {"profiles": 3, "topics": 2},
-  "dryRun": {"profileCreates": 3, "topicCreates": 2, "dlpMappings": 1},
-  "restore": {"complete": true, "profilesCreated": 3, "topicsCreated": 2, "basicFallbacks": 0},
-  "verify": {"complete": true, "profilesVerified": 3, "topicsReused": 2},
-  "destinationAfterDryRun": {"profiles": 0, "topics": 0},
-  "sourceSnapshotsUnchanged": true,
-  "destinationSnapshotsUnchangedAfterVerify": true,
-  "finalSelectedTenant": "dev"
-}
-```
-
-The independent review also verified:
-
-- Every stored policy value matches after rebinding only the custom DLP member and topic
-  references; no additional server-default differences were needed in this fixture.
-- Both topic descriptions/examples match, with new dev topic IDs and correct revisions.
-- All three dev profile IDs differ from prod; the verify rerun preserves dev IDs/revisions.
-- Both backups match their respective profile policies and topic definitions.
-- The synthetic regex, matching configuration and DLP rule tree are equivalent after
-  mapping the source pattern ID to the destination pattern ID.
-- The DLP profile numeric ID happened to be identical in both tenants. It is **tenant-scoped**:
-  DLP tenant identities and pattern IDs differ. A matching number alone does not prove
-  a valid binding, nor should acceptance require different DLP profile numbers.
-
-The archive does not include credential files, CLI version output, scanner test traffic,
-or a signed command log. It cannot prove credential-file byte preservation, scanning
-efficacy, or application cutover. The shell's earlier unset-TSG assertion failures were
-outside `capture`; they are described as troubleshooting history, not included in the
-45 successful CLI receipts.
-
-To independently recheck this exact three-profile fixture from the CLI repository:
+Once that preview is clean, run the same verification without `--dry-run`:
 
 ```bash
-node scripts/validate-prod-dev-evidence.mjs /path/to/logs.tar.gz
+airs runtime profiles restore ./prod-runtime-backup.json \
+  --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
+  --expect-tsg "<DEV_TSG>" --output json
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
 ```
 
-The validator reads archive members without extracting or executing them, makes no API
-calls, rejects mismatches, and prints only aggregate checks plus the archive SHA-256.
-It requires Node and `tar`; it is a fixture validator, not a general tenant health checker.
-The source archive was not copied into the repository.
+Expect `complete: true`, three `verified` profiles and two `reused` topics. IDs/revisions
+should remain unchanged. **Verify is not globally read-only**: without `--dry-run`, it
+can create missing resources, which is why the preceding preview matters.
 
-## Keeping evidence private and resumable
+Optionally back up dev's restored state, inspect prod again, and leave dev selected:
 
-`capture` writes four files per command: output, `.command.txt`, `.stderr`, and
-`.exit-code.txt`. A zero exit is necessary but not sufficient; keep the read-back and
-before/after comparisons too. The helper refuses existing output names before invoking
-a command. Retain failed attempts separately; never silently overwrite them.
+```bash
+airs runtime profiles backup --all --output-file ./dev-runtime-backup.json --output json
+airs tenant switch prod
+airs runtime profiles list --all --max 0 --output json
+airs runtime topics list --all --max 0 --output json
+airs tenant switch dev
+airs tenant list
+```
 
-Keep the raw archive, tenant receipts (local credential paths), backups, identities and
-audit fields private. For Docusaurus, publish only reviewed excerpts and explicit
-redactions. The guide now records `cli-version.txt` in future runs, and the saved helper
-reloads exported `PROD_TSG` / `DEV_TSG` from the registered tenants, addressing the
-shell-state failures encountered during this run.
+Compare prod's IDs, revisions, and configuration with the pre-migration state; migration
+should not change the source. Keep both backups private. If your terminal closes, tenant
+registrations and backup files persist: return to the backup directory, inspect
+`airs tenant list`, select the intended tenant, and resume from the last verified step.
+
+## Validated results — 2026-09-09
+
+The operator's submitted migration evidence was independently checked offline:
+
+| Stage | Verified result |
+| --- | --- |
+| Backup | 3 profiles, 2 referenced topics |
+| Dry-run | 3 profile creates, 2 topic creates, 1 DLP mapping; destination unchanged |
+| Restore | Complete; 3 profiles and 2 topics created; 0 Basic fallbacks |
+| Verify rerun | Complete; 3 profiles verified, 2 topics reused; destination unchanged |
+| Source | Profile/topic snapshots unchanged |
+| Custom DLP | Equivalent synthetic regex and rule tree, rebound to dev dependencies |
+
+The 45 captured commands used internal capture tooling and explicit JSON Runtime profile
+requests. This guide presents direct CLI commands instead; the name-based profile flags
+above are not a verbatim replay of those requests. Command syntax/request construction
+is checked locally; the archived run is not evidence of a new live execution of this
+edited guide. Always perform the read-back checks above, including other policy defaults.
+
+The archive did not record the CLI version or scanner test traffic. These results validate
+configuration migration, not detection efficacy or application cutover. Raw evidence,
+tenant IDs, local paths, and audit identities are not published here.
