@@ -4,13 +4,8 @@ import type { Command } from 'commander';
 import { SdkDictionariesService } from '../../../airs/dlp/dictionaries.js';
 import type { DictionaryRequest } from '../../../airs/dlp/types.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import {
-  dlpDictionaries,
-  fail,
-  type OutputFormat,
-  resolveOutput,
-  usageError,
-} from '../../renderer/index.js';
+import { dlpDictionaries, fail, resolveOutput, usageError } from '../../renderer/index.js';
+import { loadDlpClientOptions } from './config.js';
 import { buildMergePatch, parseBody } from './patch.js';
 
 // biome-ignore lint/suspicious/noExplicitAny: opts object from commander
@@ -50,7 +45,7 @@ export function register(dlp: Command): void {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const includeKeywords = opts.keywords || opts.includeKeywords;
-      const svc = new SdkDictionariesService();
+      const svc = new SdkDictionariesService(await loadDlpClientOptions());
       const params = {
         size,
         sort: opts.sort,
@@ -78,17 +73,18 @@ export function register(dlp: Command): void {
     .option('--metadata-file <path>', 'JSON metadata file (overrides --name/--category/...)')
     .option('--include-keywords', 'Include keywords in response')
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (opts) => {
+    .action(async (opts, command) => {
       try {
+        const format = await resolveOutput(command, opts);
         const metadata = await buildMetadata(opts);
         if (!opts.file) throw new Error('--file is required (multipart upload)');
         const file = await readFile(opts.file);
-        const r = await new SdkDictionariesService().create({
+        const r = await new SdkDictionariesService(await loadDlpClientOptions()).create({
           metadata,
           file,
           includeKeywords: opts.includeKeywords,
         });
-        dlpDictionaries.renderCreated(r, opts.output as OutputFormat);
+        dlpDictionaries.renderCreated(r, format);
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));
       }
@@ -103,7 +99,9 @@ export function register(dlp: Command): void {
       try {
         const includeKeywords = opts.keywords || opts.includeKeywords;
         dlpDictionaries.renderGet(
-          await new SdkDictionariesService().get(id, { includeKeywords }),
+          await new SdkDictionariesService(await loadDlpClientOptions()).get(id, {
+            includeKeywords,
+          }),
           await resolveOutput(getCmd, opts),
         );
       } catch (err) {
@@ -126,12 +124,13 @@ export function register(dlp: Command): void {
     .option('--metadata-file <path>', 'JSON metadata file')
     .option('--include-keywords', '')
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (id, opts) => {
+    .action(async (id, opts, command) => {
       try {
         const metadata = await buildMetadata(opts);
+        const format = await resolveOutput(command, opts);
         if (!opts.file) throw new Error('--file is required (multipart upload)');
         const file = await readFile(opts.file);
-        const r = await new SdkDictionariesService().replace(id, {
+        const r = await new SdkDictionariesService(await loadDlpClientOptions()).replace(id, {
           metadata,
           file,
           includeKeywords: opts.includeKeywords,
@@ -139,7 +138,7 @@ export function register(dlp: Command): void {
         if ('kind' in r && r.kind === 'fallback') {
           dlpDictionaries.renderReplaced204Fallback(id);
         } else {
-          dlpDictionaries.renderReplaced(r, opts.output as OutputFormat);
+          dlpDictionaries.renderReplaced(r, format);
         }
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));
@@ -152,8 +151,9 @@ export function register(dlp: Command): void {
     .option('--set <k=v...>', '(repeatable)', (v, p: string[] = []) => [...p, v])
     .option('--clear <key...>', '(repeatable)', (v, p: string[] = []) => [...p, v])
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (id, opts) => {
+    .action(async (id, opts, command) => {
       try {
+        const format = await resolveOutput(command, opts);
         if (opts.bodyFile && (opts.set || opts.clear)) {
           throw new Error('--body-file is mutually exclusive with --set/--clear');
         }
@@ -162,8 +162,8 @@ export function register(dlp: Command): void {
           : buildMergePatch({ set: opts.set, clear: opts.clear });
         dlpDictionaries.renderPatched(
           // biome-ignore lint/suspicious/noExplicitAny: buildMergePatch returns Record<string, unknown>, cast for patch()
-          await new SdkDictionariesService().patch(id, body as any),
-          opts.output as OutputFormat,
+          await new SdkDictionariesService(await loadDlpClientOptions()).patch(id, body as any),
+          format,
         );
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));
@@ -175,7 +175,7 @@ export function register(dlp: Command): void {
     .description('Delete a dictionary')
     .action(async (id) => {
       try {
-        await new SdkDictionariesService().delete(id);
+        await new SdkDictionariesService(await loadDlpClientOptions()).delete(id);
         dlpDictionaries.renderDeleted(id);
       } catch (err) {
         fail(err);

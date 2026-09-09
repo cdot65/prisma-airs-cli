@@ -25,6 +25,14 @@ The binary is `airs`. Five product command groups: `runtime`, `redteam`, `aigate
 
 ## Authentication
 
+DLP tenant authentication requires CLI 5.7.1+: all four `runtime dlp` CRUD groups now
+use the shared config loader and `managementClientOptions`, including named-tenant
+JSON credentials and endpoint overrides. DLP writes resolve `--output` before mutation.
+Regression: `tests/integration/dlp-tenant-auth.spec.ts` exercises CLI/SDK OAuth through
+a local HTTP server, also against built artifacts in the consumer Node matrix.
+Recovery from the 5.7.0 missing-client-ID failure preserves prior evidence and registrations:
+`docs-site/docs/runtime/dlp/tenant-auth-recovery.md`. Do not export secrets to work around it.
+
 Different commands require different credentials. Set these as environment variables or in `~/.prisma-airs/config.json`.
 
 For named tenants, `airs tenant create <name>` guides the user through TSG ID, OAuth

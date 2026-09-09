@@ -13,13 +13,33 @@ title: DLP
 
 ## Authentication
 
-DLP reuses the AIRS Management OAuth2 credentials — no DLP-specific tokens. A single `getOrCreateManagementClient()` singleton shares the token cache across every `client.dlp.*` call and the existing `runtime` services.
+DLP reuses the AIRS Management OAuth2 credentials — no DLP-specific tokens. Starting
+with **CLI 5.7.1**, all DLP CRUD commands resolve the selected tenant's JSON configuration,
+including its OAuth token and DLP endpoint overrides. No credential environment variables
+are required when using a named tenant. Conflicting `PANW_*` overrides fail before a request
+is sent. The SDK client shares a token cache within one CLI process.
+
+CLI 5.7.0 and earlier bypassed tenant configuration in these commands and could report
+`AISEC_MISSING_VARIABLE:clientId is required` despite valid tenant credentials. Upgrade
+instead of exporting secrets as a workaround. Version 5.7.1 also fixes structured output
+selection for DLP create, replace, and patch commands.
+
+If a migration stopped at this error, [resume without losing the existing evidence](tenant-auth-recovery.md).
+
+```bash
+npm install --global @cdot65/prisma-airs-cli@5.7.1
+airs tenant list
+airs runtime dlp patterns list --output json
+airs runtime dlp profiles list --output json
+```
+
+For legacy/default configuration, the equivalent environment settings are:
 
 | Variable | Required | What it does |
 |----------|:--------:|--------------|
-| `PANW_MGMT_CLIENT_ID` | Yes | OAuth2 client ID |
-| `PANW_MGMT_CLIENT_SECRET` | Yes | OAuth2 client secret |
-| `PANW_MGMT_TSG_ID` | Yes | Tenant Service Group ID |
+| `PANW_MGMT_CLIENT_ID` | Unless configured in JSON | OAuth2 client ID |
+| `PANW_MGMT_CLIENT_SECRET` | Unless configured in JSON | OAuth2 client secret |
+| `PANW_MGMT_TSG_ID` | Unless configured in JSON | Tenant Service Group ID |
 | `PANW_DLP_ENDPOINT` | -- | Override default DLP base URL (`api.dlp.paloaltonetworks.com`) |
 
 See [Environment Variables](../../reference/environment-variables.md) for the full list.

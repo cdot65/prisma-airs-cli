@@ -1,14 +1,9 @@
 import type { Command } from 'commander';
 import { SdkDataFilteringProfilesService } from '../../../airs/dlp/data-filtering-profiles.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import {
-  dlpFilteringProfiles,
-  fail,
-  type OutputFormat,
-  resolveOutput,
-  usageError,
-} from '../../renderer/index.js';
+import { dlpFilteringProfiles, fail, resolveOutput, usageError } from '../../renderer/index.js';
 import { buildFilteringProfileBody, repeatable } from './build-body.js';
+import { loadDlpClientOptions } from './config.js';
 import { parseBody } from './patch.js';
 
 function listFlags<T extends Command>(cmd: T): T {
@@ -44,7 +39,7 @@ export function register(dlp: Command): void {
   listCmd.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
-      const svc = new SdkDataFilteringProfilesService();
+      const svc = new SdkDataFilteringProfilesService(await loadDlpClientOptions());
       const all = opts.all
         ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
         : undefined;
@@ -63,7 +58,7 @@ export function register(dlp: Command): void {
     .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (id, opts) => {
       try {
-        const svc = new SdkDataFilteringProfilesService();
+        const svc = new SdkDataFilteringProfilesService(await loadDlpClientOptions());
         dlpFilteringProfiles.renderGet(await svc.get(id), await resolveOutput(getCmd, opts));
       } catch (err) {
         fail(err);
@@ -87,14 +82,15 @@ export function register(dlp: Command): void {
     .option('--body <json|->', 'Raw JSON body (escape hatch; or "-" for stdin)')
     .option('--body-file <path>', 'Raw JSON body file (escape hatch)')
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (id, opts) => {
+    .action(async (id, opts, command) => {
       try {
         const body = await resolveReplaceBody(opts);
-        const svc = new SdkDataFilteringProfilesService();
+        const format = await resolveOutput(command, opts);
+        const svc = new SdkDataFilteringProfilesService(await loadDlpClientOptions());
         dlpFilteringProfiles.renderReplaced(
           // biome-ignore lint/suspicious/noExplicitAny: body shape verified by SDK Zod
           await svc.replace(id, body as any),
-          opts.output as OutputFormat,
+          format,
         );
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));

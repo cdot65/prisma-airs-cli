@@ -90,5 +90,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - name: Verify named-tenant DLP authentication through built CLI
+        run: AIRS_CLI_ENTRY="$PWD/dist/cli/index.js" pnpm exec vitest run tests/integration/dlp-tenant-auth.spec.ts
       - name: Verify native DLP through built public CLI
         run: node .github/scripts/verify-dlp-consumer.mjs "$PWD/dist/cli/index.js"
