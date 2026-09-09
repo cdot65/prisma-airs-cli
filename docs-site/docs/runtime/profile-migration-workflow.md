@@ -4,6 +4,11 @@ title: Full tenant migration workflow
 
 # Full Runtime profile migration
 
+This page records the earlier Basic-fallback acceptance. For the newer operator-validated
+three-profile workflow preserving custom DLP through explicit dependency recreation and
+mapping, use [prod to dev — preserve custom DLP](prod-dev-migration.md). The two runs have
+different scopes; custom-DLP preservation does not imply that Runtime backup clones DLP resources.
+
 This workflow backs up all latest Runtime profiles and their referenced custom topics
 from `aisecurity`, restores them into an **empty** `cdot65` destination, and verifies a
 second run changes nothing. It is not a complete tenant export: API keys, applications,

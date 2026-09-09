@@ -11,6 +11,10 @@ This is configuration migration, not a traffic-log backup or HTML environment re
 For copy-and-paste commands and actual full migration evidence, see the
 [full tenant migration workflow](./profile-migration-workflow.md).
 
+For the validated three-profile example that **preserves custom DLP**, see
+[prod to dev with custom DLP](./prod-dev-migration.md). It includes operator receipts,
+independent policy/read-back checks and saved shell helpers for recovery.
+
 ## Back up
 
 ```bash

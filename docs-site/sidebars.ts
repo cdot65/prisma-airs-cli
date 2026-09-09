@@ -30,6 +30,7 @@ const sidebars: SidebarsConfig = {
         'runtime/config-management',
         'runtime/profile-transfer',
         'runtime/profile-migration-workflow',
+        'runtime/prod-dev-migration',
         'runtime/daily-report',
         {
           type: 'category',
