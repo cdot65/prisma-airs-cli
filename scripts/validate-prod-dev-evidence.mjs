@@ -27,7 +27,7 @@ export function readArchive(archive) {
     assert.equal(parts.length, 2, 'Expected one evidence directory');
     const leaf = parts[1];
     assert.ok(!Object.hasOwn(files, leaf), 'Duplicate evidence filename');
-    files[leaf] = execFileSync('tar', ['-xOzf', archive, name], {
+    files[leaf] = execFileSync('tar', ['-xOzf', archive, '--', name], {
       encoding: 'utf8',
       maxBuffer: 2_000_000,
       timeout: 10000,
