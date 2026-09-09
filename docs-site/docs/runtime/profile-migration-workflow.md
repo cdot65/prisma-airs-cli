@@ -214,3 +214,48 @@ runner with `--resume` passed all eight checks against the restored tenant: **ze
 created, 19 verified, zero topics created**. Independent policy checks and unchanged-source
 checks passed again. Private packaged-consumer evidence:
 `artifacts/full-runtime-migration-pebMFk/`. These were local package candidates, not npm releases.
+
+### Published-package verification — 2026-09-09
+
+SDK **0.30.0** and CLI **5.7.0** were published to npm through their GitHub release
+workflows with signed provenance. A fresh registry installation resolved SDK 0.30.0;
+all seven CLI package files matched the tested release candidate byte-for-byte.
+The installed CLI's OAuth integration tests passed (3/3), as did all 11 native DLP
+consumer checks. Those native checks used the documented local font configuration;
+GitHub separately passed consumer tests on Node 20.17.0, 22.13.0 and 24.
+
+The registry-installed CLI ran the full live acceptance runner with `--resume` against
+the already-restored tenant. **All eight checks passed**, without creating resources.
+Private evidence: `artifacts/full-runtime-migration-KilnEM/`.
+
+Aggregate summary of package verification and restore receipts:
+
+```json
+{
+  "cliVersion": "5.7.0",
+  "sdkVersion": "0.30.0",
+  "profilesCreated": 0,
+  "profilesVerified": 19,
+  "topicsCreated": 0,
+  "checks": 8,
+  "passed": true
+}
+```
+
+Independent comparison again verified source preservation, destination topic bindings,
+explicit policy settings, and unchanged IDs/revisions. Both credential files remained
+unchanged, and `cdot65` remained selected. The global executable on the acceptance host
+was updated from 5.6.0 to 5.7.0; users do not need a local repository checkout.
+
+Release evidence: [SDK publication](https://github.com/cdot65/prisma-airs-sdk/actions/runs/34301010969),
+[CLI publication](https://github.com/cdot65/prisma-airs-cli/actions/runs/34301575417),
+and [CLI release checks](https://github.com/cdot65/prisma-airs-cli/actions/runs/34301476326).
+The published container also passed native DLP consumer checks on both linux/amd64 and
+linux/arm64, with network access disabled during verification
+([container workflow](https://github.com/cdot65/prisma-airs-cli/actions/runs/34301575067)).
+
+Assessment: **9/10 for this Runtime migration MVP**, not for complete AIRS product
+coverage. Configuration migration, recovery, packaging and preservation checks pass.
+The remaining gap is intentional: custom Enterprise DLP profiles, patterns and dictionaries
+are not cloned, and Basic fallback cannot preserve their detection semantics. Full DLP
+dependency migration and post-migration scanner-efficacy tests remain separate work.
