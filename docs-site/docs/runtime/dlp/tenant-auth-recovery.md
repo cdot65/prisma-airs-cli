@@ -94,8 +94,19 @@ The preserved failed attempt plus successful retry belong in the final acceptanc
   tenant switching, pattern and advanced-profile creation/read-back, all four DLP list
   commands, explicit config paths, credential-file immutability and mixed-env rejection.
 - Verified JSON create acknowledgements parse directly, followed by full GET rule checks.
-- Live read-only checks with the available aisecurity config succeeded for pattern and
-  profile inventories (25 records each on the default page; not complete inventory totals).
+- Live read-only checks using the available aisecurity config, registered as a named tenant
+  in an isolated test registry, succeeded for all four groups. The normal registry and its
+  selected tenant were unchanged. Aggregate receipt (25 is the default page size, not the
+  complete inventory total):
+
+  ```json
+  {"group":"patterns","exitCode":0,"pageLength":25,"auth":"named tenant JSON via isolated registry"}
+  {"group":"profiles","exitCode":0,"pageLength":25,"auth":"named tenant JSON via isolated registry"}
+  {"group":"dictionaries","exitCode":0,"pageLength":25,"auth":"named tenant JSON via isolated registry"}
+  {"group":"filtering-profiles","exitCode":0,"pageLength":25,"auth":"named tenant JSON via isolated registry"}
+  ```
+
+  These are JSONL test-summary records, not the raw CLI inventory response.
 - The available cdot65 config reached OAuth but received HTTP 401. This is distinct from
   the fixed local missing-credentials error. No configuration or cloud resource was changed.
 - The new dev/prod registrations were not present in the agent's available registry;
