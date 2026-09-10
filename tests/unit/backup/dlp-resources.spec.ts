@@ -379,10 +379,43 @@ describe('planDlpResourcesRestore', () => {
     ]);
   });
 
-  it('fails when a referenced predefined pattern is missing in the destination', async () => {
+  it('fails when a referenced predefined pattern is missing, naming the mapping remedy', async () => {
     const envelope = await sourceEnvelope();
     await expect(planDlpResourcesRestore(memoryApi().api, envelope, '200')).rejects.toThrow(
-      /Missing predefined destination data pattern: SSN/,
+      /Missing predefined destination data pattern: SSN; bind an equivalent destination pattern with --pattern-map "SSN=<destination-name>"/,
+    );
+  });
+
+  it('binds a predefined reference through --pattern-map when catalogs differ', async () => {
+    const envelope = await sourceEnvelope();
+    const renamed: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'dest-ssn',
+      name: 'Social Security Numbers',
+      version: 11,
+    };
+    const { api } = memoryApi({ patterns: [renamed] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', {
+      patternMap: { SSN: 'Social Security Numbers' },
+    });
+    expect(plan.patterns).toContainEqual(
+      expect.objectContaining({ name: 'Social Security Numbers', action: 'map' }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.patterns).toContainEqual({
+      name: 'Social Security Numbers',
+      action: 'mapped',
+      id: 'dest-ssn',
+    });
+    const profileBody = api.profiles.create.mock.calls[0][0];
+    const leaves = (
+      profileBody.detection_rules?.[0] as {
+        expression_tree?: { sub_expressions?: Array<{ rule_item?: Record<string, unknown> }> };
+      }
+    ).expression_tree?.sub_expressions?.map((node) => node.rule_item);
+    expect(leaves?.[2]).toEqual(
+      expect.objectContaining({ id: 'dest-ssn', name: 'Social Security Numbers', version: 11 }),
     );
   });
 

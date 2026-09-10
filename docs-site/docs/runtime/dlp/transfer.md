@@ -46,7 +46,12 @@ destination-ID bindings forward and rewriting expression-tree leaves (id, name, 
 version) to destination identities. The entire plan is validated before any write, and
 destination state is re-checked after the confirmation prompt.
 
-- Predefined references resolve against the destination catalog and error if absent.
+- Predefined references resolve against the destination catalog by name and error if
+  absent. Predefined catalogs are not guaranteed to be uniform across tenants
+  (provisioning and licensing differ): when the destination lacks a referenced
+  predefined pattern or names it differently, bind an equivalent explicitly with
+  `--pattern-map "<source-name>=<destination-name>"` — the binding wins over name
+  resolution, and the destination pattern is still only referenced, never created.
 - Patterns using tenant-bound techniques (EDM, fingerprints, trained models, linked
   dictionaries) are never recreated: bind them to pre-provisioned destination patterns
   with `--pattern-map "source-name=destination-name"`.
@@ -135,6 +140,19 @@ Data pattern uses a tenant-bound detection technique: EDM Customer Records;
 provision it in the destination and bind it with
 --pattern-map "EDM Customer Records=<destination-name>"
 ```
+
+The same binding rescues a **predefined-catalog mismatch**. Tenants do not always
+carry identical predefined catalogs, so a profile referencing, say, `Internet - ipv4`
+can fail against a destination that lacks or renames it:
+
+```
+✗ Missing predefined destination data pattern: Internet - ipv4; bind an equivalent
+  destination pattern with --pattern-map "Internet - ipv4=<destination-name>"
+```
+
+List the destination's catalog to find the equivalent
+(`airs runtime dlp patterns list --all --output json`), then add
+`--pattern-map "Internet - ipv4=<name in destination>"` alongside any EDM bindings.
 
 Create (or identify) the equivalent EDM pattern in the destination tenant first — EDM
 datasets are provisioned per tenant outside this CLI — then bind it and preview again:

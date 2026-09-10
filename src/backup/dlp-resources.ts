@@ -601,10 +601,15 @@ export async function planDlpResourcesRestore(
   for (const source of backup.patterns) {
     if (!source.id || !source.name) throw new Error('Backup data pattern lacks identity');
     const retired = (record: DataPatternResponse) => RETIRED_PATTERN.has(record.status ?? 'active');
-    if (source.type === 'predefined') {
+    // An explicit binding beats implicit name resolution, for predefined
+    // references too: live tenants have shown predefined catalogs are not
+    // uniform, so the operator can bind an equivalent destination pattern.
+    if (source.type === 'predefined' && !Object.hasOwn(patternMap, source.name)) {
       const match = matchByName(destination.patterns, source.name, retired, 'data pattern');
       if (!match?.id || match.type !== 'predefined')
-        throw new Error(`Missing predefined destination data pattern: ${source.name}`);
+        throw new Error(
+          `Missing predefined destination data pattern: ${source.name}; bind an equivalent destination pattern with --pattern-map "${source.name}=<destination-name>"`,
+        );
       patternPlans.push({
         sourceId: source.id,
         name: source.name,
