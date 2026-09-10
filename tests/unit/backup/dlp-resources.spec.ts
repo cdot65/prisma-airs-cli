@@ -382,7 +382,70 @@ describe('planDlpResourcesRestore', () => {
   it('fails when a referenced predefined pattern is missing, naming the mapping remedy', async () => {
     const envelope = await sourceEnvelope();
     await expect(planDlpResourcesRestore(memoryApi().api, envelope, '200')).rejects.toThrow(
-      /Missing predefined destination data pattern: SSN; bind an equivalent destination pattern with --pattern-map "SSN=<destination-name>"/,
+      /Missing predefined destination data patterns: SSN \(no candidates\); bind each with --pattern-map "<source-name>=<destination-name>"/,
+    );
+  });
+
+  it('auto-resolves a renamed predefined pattern by identity (same id and technique)', async () => {
+    const envelope = await sourceEnvelope();
+    const renamed: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'src-pat-pre',
+      name: 'Social Security Numbers',
+      version: 7,
+    };
+    const { api } = memoryApi({ patterns: [renamed] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.patterns).toContainEqual(
+      expect.objectContaining({ name: 'Social Security Numbers', action: 'resolve' }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    const profileBody = api.profiles.create.mock.calls[0][0];
+    const leaves = (
+      profileBody.detection_rules?.[0] as {
+        expression_tree?: { sub_expressions?: Array<{ rule_item?: Record<string, unknown> }> };
+      }
+    ).expression_tree?.sub_expressions?.map((node) => node.rule_item);
+    expect(leaves?.[2]).toEqual(
+      expect.objectContaining({ id: 'src-pat-pre', name: 'Social Security Numbers', version: 7 }),
+    );
+  });
+
+  it('never identity-binds across differing techniques', async () => {
+    const envelope = await sourceEnvelope();
+    const impostor: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'src-pat-pre',
+      name: 'Different Detector',
+      detection_config: { technique: 'regex' },
+    };
+    const { api } = memoryApi({ patterns: [impostor] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN/,
+    );
+  });
+
+  it('reports every predefined miss at once with ranked same-technique candidates', async () => {
+    const envelope = await sourceEnvelope();
+    const patterns = [
+      ...structuredClone(envelope.patterns),
+      {
+        ...srcPredefined(),
+        id: 'src-pat-net',
+        name: 'Internet - ipv4',
+        detection_config: { technique: 'regex' },
+      },
+    ];
+    const nearMiss: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'dest-net',
+      name: 'Internet - IPv4',
+      detection_config: { technique: 'regex' },
+    };
+    const { api } = memoryApi({ patterns: [nearMiss] });
+    await expect(planDlpResourcesRestore(api, { ...envelope, patterns }, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN \(no candidates\); Internet - ipv4 \(candidates: "Internet - IPv4"\); bind each with --pattern-map/,
     );
   });
 

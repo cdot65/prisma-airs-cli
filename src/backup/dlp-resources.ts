@@ -502,6 +502,48 @@ function portablePattern(record: DataPatternResponse): boolean {
   );
 }
 
+function normalizedName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** Rank live, same-technique predefined candidates by name affinity, for the
+ * operator to review and bind explicitly. Suggestions only — never auto-bound.
+ */
+function predefinedCandidates(
+  source: DataPatternResponse,
+  records: DataPatternResponse[],
+): string[] {
+  const wanted = normalizedName(source.name ?? '');
+  const wantedTokens = new Set(wanted.split(' '));
+  return records
+    .filter(
+      (record): record is DataPatternResponse & { name: string } =>
+        record.type === 'predefined' &&
+        record.name != null &&
+        !RETIRED_PATTERN.has(record.status ?? 'active') &&
+        record.detection_config?.technique === source.detection_config?.technique,
+    )
+    .map((record) => {
+      const name = normalizedName(record.name);
+      const score =
+        name === wanted
+          ? 3
+          : name.includes(wanted) || wanted.includes(name)
+            ? 2
+            : name.split(' ').some((token) => wantedTokens.has(token))
+              ? 1
+              : 0;
+      return { name: record.name, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .slice(0, 3)
+    .map((item) => item.name);
+}
+
 function matchByName<T extends { name?: string | null }>(
   records: T[],
   name: string,
@@ -598,21 +640,36 @@ export async function planDlpResourcesRestore(
   }
 
   const patternPlans: PatternPlan[] = [];
+  const missingPredefined: Array<{ name: string; candidates: string[] }> = [];
   for (const source of backup.patterns) {
     if (!source.id || !source.name) throw new Error('Backup data pattern lacks identity');
     const retired = (record: DataPatternResponse) => RETIRED_PATTERN.has(record.status ?? 'active');
-    // An explicit binding beats implicit name resolution, for predefined
-    // references too: live tenants have shown predefined catalogs are not
-    // uniform, so the operator can bind an equivalent destination pattern.
+    // An explicit binding beats implicit resolution, for predefined references
+    // too: live tenants have shown predefined catalogs are not uniform, so the
+    // operator can bind an equivalent destination pattern.
     if (source.type === 'predefined' && !Object.hasOwn(patternMap, source.name)) {
-      const match = matchByName(destination.patterns, source.name, retired, 'data pattern');
-      if (!match?.id || match.type !== 'predefined')
-        throw new Error(
-          `Missing predefined destination data pattern: ${source.name}; bind an equivalent destination pattern with --pattern-map "${source.name}=<destination-name>"`,
-        );
+      // Identity beats display name: a destination predefined pattern with the
+      // SAME id and detection technique is the same PANW-shipped pattern even
+      // when the catalogs name it differently. Name similarity is never bound
+      // automatically — near-matches are only suggested in the failure.
+      const byId = destination.patterns.find(
+        (record) =>
+          record.id === source.id &&
+          record.type === 'predefined' &&
+          !retired(record) &&
+          record.detection_config?.technique === source.detection_config?.technique,
+      );
+      const match = byId ?? matchByName(destination.patterns, source.name, retired, 'data pattern');
+      if (!match?.id || !match.name || match.type !== 'predefined') {
+        missingPredefined.push({
+          name: source.name,
+          candidates: predefinedCandidates(source, destination.patterns),
+        });
+        continue;
+      }
       patternPlans.push({
         sourceId: source.id,
-        name: source.name,
+        name: match.name,
         action: 'resolve',
         existing: structuredClone(match),
       });
@@ -656,6 +713,21 @@ export async function planDlpResourcesRestore(
       existing: structuredClone(match),
     });
   }
+  // All predefined misses report at once, each with same-technique candidates,
+  // so differing catalogs cost one review instead of one failure per pattern.
+  if (missingPredefined.length)
+    throw new Error(
+      `Missing predefined destination data patterns: ${missingPredefined
+        .map(
+          (item) =>
+            `${item.name}${
+              item.candidates.length
+                ? ` (candidates: ${item.candidates.map((name) => `"${name}"`).join(', ')})`
+                : ' (no candidates)'
+            }`,
+        )
+        .join('; ')}; bind each with --pattern-map "<source-name>=<destination-name>"`,
+    );
 
   const profilePlans: ProfilePlan[] = [];
   for (const source of backup.profiles) {

@@ -46,12 +46,16 @@ destination-ID bindings forward and rewriting expression-tree leaves (id, name, 
 version) to destination identities. The entire plan is validated before any write, and
 destination state is re-checked after the confirmation prompt.
 
-- Predefined references resolve against the destination catalog by name and error if
-  absent. Predefined catalogs are not guaranteed to be uniform across tenants
-  (provisioning and licensing differ): when the destination lacks a referenced
-  predefined pattern or names it differently, bind an equivalent explicitly with
-  `--pattern-map "<source-name>=<destination-name>"` — the binding wins over name
+- Predefined references resolve against the destination catalog by identity first —
+  a destination predefined pattern with the same id and detection technique is the
+  same PANW-shipped pattern even when catalogs name it differently — then by exact
+  name. Predefined catalogs are not guaranteed to be uniform across tenants
+  (provisioning and licensing differ): when neither resolves, every miss is reported
+  at once with ranked same-technique candidates, and you bind equivalents explicitly
+  with `--pattern-map "<source-name>=<destination-name>"` — the binding wins over
   resolution, and the destination pattern is still only referenced, never created.
+  Name similarity is never bound automatically: a near-match is a suggestion for you,
+  not a decision by the CLI.
 - Patterns using tenant-bound techniques (EDM, fingerprints, trained models, linked
   dictionaries) are never recreated: bind them to pre-provisioned destination patterns
   with `--pattern-map "source-name=destination-name"`.
@@ -142,17 +146,23 @@ provision it in the destination and bind it with
 ```
 
 The same binding rescues a **predefined-catalog mismatch**. Tenants do not always
-carry identical predefined catalogs, so a profile referencing, say, `Internet - ipv4`
-can fail against a destination that lacks or renames it:
+carry identical predefined catalogs. A renamed built-in usually resolves itself — the
+CLI matches predefined references by identity (same id, same detection technique)
+before falling back to the name. When a reference truly cannot be resolved, the plan
+reports every miss at once, each with ranked same-technique candidates from the
+destination catalog:
 
 ```
-✗ Missing predefined destination data pattern: Internet - ipv4; bind an equivalent
-  destination pattern with --pattern-map "Internet - ipv4=<destination-name>"
+✗ Missing predefined destination data patterns: Internet - ipv4 (candidates:
+  "Internet - IPv4"); bind each with --pattern-map "<source-name>=<destination-name>"
 ```
 
-List the destination's catalog to find the equivalent
-(`airs runtime dlp patterns list --all --output json`), then add
-`--pattern-map "Internet - ipv4=<name in destination>"` alongside any EDM bindings.
+Review the candidates (or list the catalog yourself with
+`airs runtime dlp patterns list --all --output json`), then add one
+`--pattern-map "Internet - ipv4=<name in destination>"` per miss alongside any EDM
+bindings. Candidates are suggestions only — the CLI never binds a near-match on its
+own, because attaching a lookalike detector would silently change what the restored
+profile detects.
 
 Create (or identify) the equivalent EDM pattern in the destination tenant first — EDM
 datasets are provisioned per tenant outside this CLI — then bind it and preview again:
