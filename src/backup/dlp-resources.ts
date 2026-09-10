@@ -318,11 +318,18 @@ export async function backupDlpResources(
         profiles.push(structuredClone(profile));
       } catch (error) {
         const reason = error instanceof Error ? error.message : 'unsupported rule';
-        if (!options.skipUnsupported)
-          throw new Error(`Profile cannot be exported: ${name} ${reason}`);
         skipped.push({ profile: name, reason });
       }
     }
+    // Fail closed with the complete list: the envelope does not record
+    // exclusions, so a partial backup must be one explicit operator decision,
+    // not a retry loop discovering one unsupported profile at a time.
+    if (skipped.length && !options.skipUnsupported)
+      throw new Error(
+        `Profiles cannot be exported: ${skipped
+          .map((item) => `${item.profile} (${item.reason})`)
+          .join('; ')}; exclude unsupported profiles explicitly with --skip-unsupported`,
+      );
   }
 
   const byName = (a: { name?: string | null }, b: { name?: string | null }) =>

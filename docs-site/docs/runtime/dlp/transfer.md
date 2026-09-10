@@ -27,7 +27,8 @@ airs runtime dlp backup --resources profiles --skip-unsupported \
 - Profile dependency closure is captured at the exact referenced revision: a rule leaf
   pinning a pattern version the catalog no longer holds fails the export (or is
   excluded with a reason under `--skip-unsupported`, as are multi-profile rules and
-  direct EDM dataset references).
+  direct EDM dataset references). All unsupported profiles are reported in a single
+  failure, so one review covers them all.
 - Backups contain dictionary keywords: they are refused on stdout, written atomically
   at mode 0600 without overwriting, and capped at 20 MiB.
 
@@ -89,9 +90,35 @@ content:
 jq '{dictionaries: (.dictionaries | length), patterns: (.patterns | length), profiles: (.profiles | length)}' ./dlp-backup.json
 ```
 
-If a profile uses a multi-profile rule or references an EDM dataset directly, the
-export fails naming the profile; add `--skip-unsupported` to exclude such profiles and
-report each exclusion instead.
+#### When the export refuses: unsupported profiles
+
+A tenant often carries data profiles the transfer cannot rebuild faithfully — most
+commonly profiles built on a **multi-profile rule** (a rule that references *other data
+profiles* by server-assigned numeric id, such as SDK example profiles), and profiles
+referencing an EDM dataset directly. The export refuses these by default, lists every
+offender in one failure, and names the remedy:
+
+```
+✗ Profiles cannot be exported: sdk-example-5950c4ed (Unsupported detection rule
+  type: multi_profile); exclude unsupported profiles explicitly with --skip-unsupported
+```
+
+Failing closed is deliberate: the backup file does not record what was left out, so a
+partial backup must be one explicit operator decision at export time — never something
+a later restore quietly inherits. Once you have reviewed the list, re-run with the
+exclusion made explicit; each excluded profile is warned individually and counted in
+the operation summary:
+
+```bash
+airs runtime dlp backup --skip-unsupported --output-file ./dlp-backup.json
+```
+
+Multi-profile rules cannot transfer because their numeric profile ids are assigned per
+tenant by the server; transplanting or guessing a remapping would change which
+detection actually applies. Runtime AI security profiles bind DLP through individual
+data profile references, so excluding a multi-profile data profile does not affect the
+Runtime profiles this CLI migrates — but if you need the multi-profile definition in
+the destination, recreate it there against the destination's own profile ids.
 
 ### 3. Preview the restore against the destination
 

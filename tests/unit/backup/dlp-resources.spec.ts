@@ -227,7 +227,7 @@ describe('backupDlpResources', () => {
       detection_rules: [{ rule_type: 'multi_profile', multi_profile: { data_profile_ids: [1] } }],
     };
     await expect(backupDlpResources(sourceApi({ profiles: [multi] }).api, '100')).rejects.toThrow(
-      /Profile cannot be exported: Multi/,
+      /Profiles cannot be exported: Multi \(Unsupported detection rule type: multi_profile\); exclude unsupported profiles explicitly with --skip-unsupported/,
     );
     const { backup, skipped } = await backupDlpResources(
       sourceApi({ profiles: [multi] }).api,
@@ -238,6 +238,34 @@ describe('backupDlpResources', () => {
       { profile: 'Multi', reason: expect.stringContaining('multi_profile') },
     ]);
     expect(backup.profiles.map((p) => p.name)).toEqual(['Profile One']);
+  });
+
+  it('reports every unsupported profile in one failure, not one at a time', async () => {
+    const multi: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-m',
+      name: 'Multi',
+      detection_rules: [{ rule_type: 'multi_profile', multi_profile: { data_profile_ids: [1] } }],
+    };
+    const ghost: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-g',
+      name: 'Ghost',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: { rule_item: { detection_technique: 'regex', id: 'nope' } },
+        },
+      ],
+    };
+    const seed = { profiles: [multi, ghost] };
+    await expect(backupDlpResources(sourceApi(seed).api, '100')).rejects.toThrow(
+      /Multi \(Unsupported detection rule type: multi_profile\); Ghost \(references an unknown data pattern: nope\)/,
+    );
+    const { skipped } = await backupDlpResources(sourceApi(seed).api, '100', {
+      skipUnsupported: true,
+    });
+    expect(skipped.map((item) => item.profile).sort()).toEqual(['Ghost', 'Multi']);
   });
 
   it('fails on a direct EDM dataset reference unless skipUnsupported', async () => {
