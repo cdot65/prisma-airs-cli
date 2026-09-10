@@ -52,6 +52,7 @@ const sidebars: SidebarsConfig = {
             'runtime/dlp/profiles',
             'runtime/dlp/dictionaries',
             'runtime/dlp/generate',
+            'runtime/dlp/transfer',
           ],
         },
       ],

@@ -1,5 +1,32 @@
 # Release Notes
 
+## v5.8.0 (2026-09-10) — DLP backup and restore
+
+- Add `airs runtime dlp backup` and `airs runtime dlp restore`: staged transfer of
+  custom DLP dictionaries (with keyword payloads), data patterns, and data profiles
+  between tenants through a private, size-capped, no-clobber file.
+- Restore stages dictionaries → patterns → profiles, remapping profile expression-tree
+  references (id, name, version) to destination identities, with a full plan validated
+  before any write and destination state re-checked after confirmation.
+- Filter predefined (PANW-shipped) resources out of backups; referenced predefined
+  patterns and dictionaries are embedded as resolve-only references and matched in the
+  destination catalog by name, never created.
+- Enforce dependency closure at the exact referenced revision: stale pattern-version
+  pins, multi-profile rules, and direct EDM dataset references fail the export, or are
+  excluded with reasons under `--skip-unsupported`.
+- Require explicit `--pattern-map` bindings for tenant-bound detection techniques (EDM,
+  fingerprints, trained models, linked dictionaries); no lossy fallback exists.
+- Verify every create by re-reading the record, including keyword round-trip and
+  lifecycle state; report server-added fields, partial completion, and exit 1 on any
+  incomplete restore. `--on-conflict` supports `error`, read-only `verify`, and `skip`;
+  no update or delete is ever issued pending live verification of the DLP write path.
+- Reviewed under the AIRS Transfer Contract agent gate (9/10 PASS); see the
+  [DLP backup and restore guide](../runtime/dlp/transfer.md) for the end-to-end
+  prod-to-dev example and review evidence.
+- Also ships the previously merged read-only Red Team environment dashboard with
+  private HTML/Markdown deliverables, seven SDK data sources, explicit completeness,
+  and verified actual command-output examples.
+
 ## v5.7.0 (2026-09-09) — verified Runtime migration and Basic DLP fallback
 
 - Recognize built-in Basic DLP as portable across tenants, without a custom DLP mapping.
