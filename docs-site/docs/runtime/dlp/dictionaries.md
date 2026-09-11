@@ -23,7 +23,9 @@ Manage Dictionaries on the DLP service. Dictionaries provide keyword-list-driven
 
 ## list
 
-List all dictionaries with optional pagination.
+List tenant-created dictionaries with optional pagination. Predefined
+(PANW-shipped) dictionaries are hidden by default; add `--include-predefined` to
+show them.
 
 ```bash
 airs runtime dlp dictionaries list

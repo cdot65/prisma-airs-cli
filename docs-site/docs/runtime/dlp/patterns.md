@@ -19,7 +19,9 @@ Manage Data Patterns on the DLP service. Patterns define detection techniques (r
 
 ## list
 
-List all patterns with optional pagination and sorting.
+List tenant-created patterns with optional pagination and sorting. Predefined
+(PANW-shipped) patterns are hidden by default; add `--include-predefined` to show
+them.
 
 ```bash
 airs runtime dlp patterns list

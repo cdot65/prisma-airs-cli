@@ -23,7 +23,9 @@ Advanced-profile creation succeeded, but PATCH/PUT retirement returned HTTP 500.
 
 ## list
 
-List all profiles with optional pagination and sorting.
+List tenant-created profiles with optional pagination and sorting. Predefined
+(PANW-shipped) profiles are hidden by default; add `--include-predefined` to show
+them.
 
 ```bash
 airs runtime dlp profiles list

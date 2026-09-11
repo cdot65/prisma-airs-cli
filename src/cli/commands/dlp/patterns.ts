@@ -5,6 +5,7 @@ import { dlpPatterns, fail, resolveOutput, usageError } from '../../renderer/ind
 import { buildPatternBody, repeatable } from './build-body.js';
 import { loadDlpClientOptions } from './config.js';
 import { buildMergePatch, parseBody } from './patch.js';
+import { predefinedFlag, visibleRecords } from './visibility.js';
 
 function listFlags<T extends Command>(cmd: T): T {
   cmd
@@ -48,18 +49,19 @@ async function resolveWriteBody(opts: Record<string, unknown>): Promise<unknown>
 export function register(dlp: Command): void {
   const group = dlp.command('patterns').description('DLP data patterns (full CRUD)');
 
-  const listCmd = listFlags(group.command('list').description('List data patterns'));
+  const listCmd = predefinedFlag(
+    listFlags(group.command('list').description('List data patterns (tenant-created by default)')),
+  );
   listCmd.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataPatternsService(await loadDlpClientOptions());
       const result = opts.all
         ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
-        : undefined;
+        : (await svc.list({ page, size, sort: opts.sort })).content;
+      const visible = visibleRecords(result, opts.includePredefined);
       dlpPatterns.renderList(
-        result
-          ? { content: result, totalElements: result.length }
-          : await svc.list({ page, size, sort: opts.sort }),
+        { content: visible, totalElements: visible.length },
         await resolveOutput(listCmd, opts),
       );
     } catch (err) {

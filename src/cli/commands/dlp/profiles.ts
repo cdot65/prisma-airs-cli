@@ -5,6 +5,7 @@ import { dlpProfiles, fail, resolveOutput, usageError } from '../../renderer/ind
 import { buildProfileBody, repeatable } from './build-body.js';
 import { loadDlpClientOptions } from './config.js';
 import { buildMergePatch, parseBody } from './patch.js';
+import { predefinedFlag, visibleRecords } from './visibility.js';
 
 function listFlags<T extends Command>(cmd: T): T {
   cmd
@@ -61,18 +62,19 @@ export function register(dlp: Command): void {
       'DLP data profiles. No supported DELETE; status-based retirement is not live-verified.',
     );
 
-  const listCmd = listFlags(group.command('list').description('List data profiles'));
+  const listCmd = predefinedFlag(
+    listFlags(group.command('list').description('List data profiles (tenant-created by default)')),
+  );
   listCmd.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataProfilesService(await loadDlpClientOptions());
       const result = opts.all
         ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
-        : undefined;
+        : (await svc.list({ page, size, sort: opts.sort })).content;
+      const visible = visibleRecords(result, opts.includePredefined);
       dlpProfiles.renderList(
-        result
-          ? { content: result, totalElements: result.length }
-          : await svc.list({ page, size, sort: opts.sort }),
+        { content: visible, totalElements: visible.length },
         await resolveOutput(listCmd, opts),
       );
     } catch (err) {

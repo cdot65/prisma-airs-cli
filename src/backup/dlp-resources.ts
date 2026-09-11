@@ -307,6 +307,13 @@ export async function backupDlpResources(
       if (RETIRED_PROFILE.has(profile.profile_status ?? 'active')) continue;
       const name = profile.name ?? '(unnamed)';
       try {
+        // Live-observed: basic profiles read back with `detection_rules: null` —
+        // the API does not expose their rule content, and creating from an
+        // empty rule list is rejected (HTTP 400). Nothing to rebuild from.
+        if (!profile.detection_rules?.length)
+          throw new Error(
+            'has no exported detection rules (the API does not expose basic data profile content)',
+          );
         for (const leaf of ruleLeaves(profile)) {
           const id = leaf.value.id;
           if (id == null || id === '') {
@@ -327,6 +334,10 @@ export async function backupDlpResources(
           } else {
             const record = patternById.get(id);
             if (!record) throw new Error(`references an unknown data pattern: ${id}`);
+            // A retired dependency is broken configuration: restoring the
+            // profile would resurrect an archived pattern in the destination.
+            if (RETIRED_PATTERN.has(record.status ?? 'active'))
+              throw new Error(`references a retired data pattern: ${record.name ?? id}`);
             // The exact referenced revision must be the one exported (I-4): the
             // catalog holds only the current version, so a stale pin means the
             // enforced detection no longer matches what a restore would rebuild.
@@ -473,6 +484,19 @@ export function compareEcho(
     }
     if (b === null) {
       differences.push(path);
+      return;
+    }
+    // Live-observed (2026-09-11, TSG 1158365485): the server normalizes
+    // supported confidence levels on create — on the pattern's detection
+    // config and inside profile rule leaves alike — expanding the set for
+    // the technique. Requested levels must all survive; extras are reported.
+    if (
+      path.endsWith('.supported_confidence_levels') &&
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.every((level) => (b as unknown[]).includes(level))
+    ) {
+      if (a.length !== b.length) serverAdded.push(path);
       return;
     }
     if (Array.isArray(a) || Array.isArray(b)) {
@@ -770,6 +794,27 @@ export async function planDlpResourcesRestore(
       }
       throw new Error(
         `Data pattern uses a tenant-bound detection technique: ${source.name}; provision it in the destination and bind it with --pattern-map "${source.name}=<destination-name>"`,
+      );
+    }
+    // Live-observed: a UI copy of a predefined pattern reads back with
+    // `regexes: null` — the API does not export the copied detection content,
+    // and creating from such a record is rejected (HTTP 400). Without content
+    // the record cannot be rebuilt; it can only be bound or skipped.
+    if (
+      ['regex', 'weighted_regex'].includes(source.detection_config?.technique ?? '') &&
+      !(Array.isArray(source.matching_rules?.regexes) && source.matching_rules.regexes.length)
+    ) {
+      if (options.skipUnresolved) {
+        unresolved.push({
+          kind: 'pattern',
+          sourceId: source.id,
+          name: source.name,
+          reason: 'detection content is not exported by the API (copy of a predefined pattern)',
+        });
+        continue;
+      }
+      throw new Error(
+        `Data pattern has no exported detection content (a copy of a predefined pattern): ${source.name}; bind an equivalent with --pattern-map "${source.name}=<destination-name>" or exclude dependents with --skip-unresolved`,
       );
     }
     const name = `${prefix}${source.name}`;
@@ -1076,7 +1121,9 @@ export async function restoreDlpResources(
       const readBack = await api.dictionaries.get(created.id, { includeKeywords: true });
       const echo = dictionaryEcho(item.metadata, readBack, item.keywords);
       if (!echo.matches || readBack.name !== item.name)
-        throw new Error(`Restored dictionary did not verify: ${item.name}`);
+        throw new Error(
+          `Restored dictionary did not verify: ${item.name} (created id ${created.id}; inspect it before retrying)`,
+        );
       if (echo.serverAdded.length)
         result.serverAdded.push({ resource: `dictionary ${item.name}`, fields: echo.serverAdded });
       bindings.set(item.sourceId, { id: created.id, name: item.name });
@@ -1118,7 +1165,9 @@ export async function restoreDlpResources(
         readBack.name !== item.name ||
         RETIRED_PATTERN.has(readBack.status ?? 'active')
       )
-        throw new Error(`Restored data pattern did not verify: ${item.name}`);
+        throw new Error(
+          `Restored data pattern did not verify: ${item.name} (created id ${created.id}; inspect it before retrying)`,
+        );
       if (echo.serverAdded.length)
         result.serverAdded.push({
           resource: `data pattern ${item.name}`,
@@ -1174,7 +1223,9 @@ export async function restoreDlpResources(
         readBack.name !== item.name ||
         RETIRED_PROFILE.has(readBack.profile_status ?? 'active')
       )
-        throw new Error(`Restored data profile did not verify: ${item.name}`);
+        throw new Error(
+          `Restored data profile did not verify: ${item.name} (created id ${created.id}; inspect it before retrying)`,
+        );
       if (echo.serverAdded.length)
         result.serverAdded.push({
           resource: `data profile ${item.name}`,

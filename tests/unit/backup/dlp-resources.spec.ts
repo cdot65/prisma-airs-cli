@@ -921,6 +921,90 @@ describe('verify-mismatch detection', () => {
   });
 });
 
+describe('retired dependencies and unexported detection content', () => {
+  it('refuses a profile referencing a retired pattern; skipUnsupported excludes it', async () => {
+    const archived: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'src-pat-old',
+      name: 'old_archived',
+      status: 'deleted',
+    };
+    const dependent: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-old',
+      name: 'Old Profile',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: {
+            rule_item: { detection_technique: 'regex', id: 'src-pat-old', name: 'old_archived' },
+          },
+        },
+      ],
+    };
+    const seed = { patterns: [archived], profiles: [dependent] };
+    await expect(backupDlpResources(sourceApi(seed).api, '100')).rejects.toThrow(
+      /references a retired data pattern: old_archived/,
+    );
+    const { backup, skipped } = await backupDlpResources(sourceApi(seed).api, '100', {
+      skipUnsupported: true,
+    });
+    expect(skipped).toContainEqual({
+      profile: 'Old Profile',
+      reason: expect.stringContaining('retired data pattern'),
+    });
+    expect(backup.patterns.map((p) => p.name)).not.toContain('old_archived');
+    expect(backup.profiles.map((p) => p.name)).not.toContain('Old Profile');
+  });
+
+  it('refuses a profile without exported detection rules (basic profile)', async () => {
+    const basic: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-basic',
+      name: 'Basic Clone',
+      profile_type: 'basic',
+      detection_rules: null,
+    };
+    await expect(backupDlpResources(sourceApi({ profiles: [basic] }).api, '100')).rejects.toThrow(
+      /Basic Clone \(has no exported detection rules/,
+    );
+    const { backup, skipped } = await backupDlpResources(
+      sourceApi({ profiles: [basic] }).api,
+      '100',
+      { skipUnsupported: true },
+    );
+    expect(skipped).toContainEqual({
+      profile: 'Basic Clone',
+      reason: expect.stringContaining('no exported detection rules'),
+    });
+    expect(backup.profiles.map((p) => p.name)).toEqual(['Profile One']);
+  });
+
+  it('treats a pattern without exported detection content as unresolvable', async () => {
+    const copy: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'src-pat-copy',
+      name: 'Copy - DEA',
+      matching_rules: { regexes: null, proximity_keywords: ['DEA'], proximity_distance: 200 },
+    };
+    const envelope = await sourceEnvelope({ patterns: [copy] });
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Data pattern has no exported detection content \(a copy of a predefined pattern\): Copy - DEA/,
+    );
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toContainEqual(
+      expect.objectContaining({
+        name: 'Copy - DEA',
+        reason: expect.stringContaining('not exported by the API'),
+      }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.patterns.map((p) => p.name)).not.toContain('Copy - DEA');
+  });
+});
+
 describe('predefined reference stubs and candidate quality', () => {
   it('embeds predefined references as slim stubs, never predefined content', async () => {
     const envelope = await sourceEnvelope({
@@ -955,10 +1039,13 @@ describe('predefined reference stubs and candidate quality', () => {
         mk('c4', 'Social Security'),
         mk('c5', 'UK SSN', { status: 'deleted' }),
         mk('c6', 'SSN Regex', { detection_config: { technique: 'regex' } }),
+        mk('c7', 'EU SSN Records'),
+        mk('c8', 'Global SSN Directory'),
       ],
     });
+    // Four names qualify (one exact, three containment); the cap keeps three.
     await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
-      /Missing predefined destination data patterns: SSN \(candidates: "ssn", "US SSN Numbers"\)/,
+      /Missing predefined destination data patterns: SSN \(candidates: "ssn", "EU SSN Records", "Global SSN Directory"\)/,
     );
   });
 });
@@ -1122,6 +1209,20 @@ describe('skip-unresolved and progress', () => {
 });
 
 describe('compareEcho', () => {
+  it('tolerates server-normalized supported confidence levels, reported not failed', () => {
+    const normalized = compareEcho(
+      { detection_config: { technique: 'regex', supported_confidence_levels: ['high'] } },
+      { detection_config: { technique: 'regex', supported_confidence_levels: ['high', 'low'] } },
+    );
+    expect(normalized.matches).toBe(true);
+    expect(normalized.serverAdded).toContain('body.detection_config.supported_confidence_levels');
+    const lost = compareEcho(
+      { detection_config: { supported_confidence_levels: ['high', 'medium'] } },
+      { detection_config: { supported_confidence_levels: ['high', 'low'] } },
+    );
+    expect(lost.matches).toBe(false);
+  });
+
   it('unifies null and absent, reports server additions, ignores top-level metadata', () => {
     const result = compareEcho(
       { a: 1, b: null, nested: { keep: 'x' } },

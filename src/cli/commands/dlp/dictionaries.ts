@@ -7,6 +7,7 @@ import { registerPageAliases, resolvePageParams } from '../../pagination.js';
 import { dlpDictionaries, fail, resolveOutput, usageError } from '../../renderer/index.js';
 import { loadDlpClientOptions } from './config.js';
 import { buildMergePatch, parseBody } from './patch.js';
+import { predefinedFlag, visibleRecords } from './visibility.js';
 
 // biome-ignore lint/suspicious/noExplicitAny: opts object from commander
 async function buildMetadata(opts: any): Promise<DictionaryRequest> {
@@ -40,6 +41,7 @@ export function register(dlp: Command): void {
     .option('--keywords', 'Include keyword list in response')
     .option('--include-keywords', 'Alias for --keywords')
     .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml');
+  predefinedFlag(listCmd);
   registerPageAliases(listCmd, { sizeFlag: '--size', sizeKey: 'size' });
   listCmd.action(async (opts) => {
     try {
@@ -51,9 +53,12 @@ export function register(dlp: Command): void {
         sort: opts.sort,
         keywords: includeKeywords ? true : undefined,
       };
-      const all = opts.all ? await svc.listAll({ ...params, max: Number(opts.max) }) : undefined;
+      const all = opts.all
+        ? await svc.listAll({ ...params, max: Number(opts.max) })
+        : (await svc.list({ ...params, page })).content;
+      const visible = visibleRecords(all, opts.includePredefined);
       dlpDictionaries.renderList(
-        all ? { content: all, totalElements: all.length } : await svc.list({ ...params, page }),
+        { content: visible, totalElements: visible.length },
         await resolveOutput(listCmd, opts),
       );
     } catch (err) {

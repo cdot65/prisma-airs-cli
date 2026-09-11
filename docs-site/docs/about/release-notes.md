@@ -1,5 +1,27 @@
 # Release Notes
 
+## v5.9.0 (2026-09-11) — Tenant-first DLP listings and live-verified transfer
+
+- `airs runtime dlp {patterns, profiles, dictionaries} list` now shows only
+  tenant-created records by default; predefined (PANW-shipped) catalog content is
+  hidden until requested with `--include-predefined`.
+- Backup refuses profiles referencing retired patterns instead of resurrecting
+  archived configuration in the destination, and refuses basic profiles whose rule
+  content the API does not export; both are excluded with reasons under
+  `--skip-unsupported`.
+- Restore classifies patterns without exported detection content (UI copies of
+  predefined patterns) as unresolvable, with `--pattern-map` and `--skip-unresolved`
+  as explicit remedies, and tolerates the server's `supported_confidence_levels`
+  normalization — reported, never silently accepted.
+- Post-create verification failures now name the created record id, since the write
+  landed even though it did not verify.
+- The pattern and profile transfer paths are now live-verified end to end: a
+  complete cross-tenant migration ran with creates, read-back verification, reuse,
+  verify-resume, and explicit skips. The dictionary create path remains
+  live-unproven — a live probe matrix indicates a tenant-level restriction on custom
+  dictionaries, and restores involving dictionaries fail safe. See
+  [live acceptance](../runtime/dlp/transfer.md) in the guide.
+
 ## v5.8.0 (2026-09-10) — DLP backup and restore
 
 - Add `airs runtime dlp backup` and `airs runtime dlp restore`: staged transfer of

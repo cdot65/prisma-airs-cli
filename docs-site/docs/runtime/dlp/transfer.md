@@ -27,9 +27,11 @@ airs runtime dlp backup --resources profiles --skip-unsupported \
   definition ever enters a backup file.
 - Profile dependency closure is captured at the exact referenced revision: a rule leaf
   pinning a pattern version the catalog no longer holds fails the export (or is
-  excluded with a reason under `--skip-unsupported`, as are multi-profile rules and
-  direct EDM dataset references). All unsupported profiles are reported in a single
-  failure, so one review covers them all.
+  excluded with a reason under `--skip-unsupported`, as are multi-profile rules,
+  direct EDM dataset references, and profiles referencing a **retired** pattern —
+  restoring those would resurrect archived configuration in the destination). All
+  unsupported profiles are reported in a single failure, so one review covers them
+  all.
 - Backups contain dictionary keywords: they are refused on stdout, written atomically
   at mode 0600 without overwriting, and capped at 20 MiB.
 
@@ -64,7 +66,11 @@ destination state is re-checked after the confirmation prompt.
   or `skip`. There is no `update`.
 - `--skip-unresolved` turns unresolvable references into explicit skips: the reference
   and **every profile that depends on it** are excluded from the restore, each warned
-  individually and reported in the plan, the summary, and `--output json`. Profiles
+  individually and reported in the plan, the summary, and `--output json`. This covers
+  missing predefined patterns and dictionaries, unmapped tenant-bound patterns, and
+  patterns whose detection content the API does not export — a UI copy of a predefined
+  pattern reads back without its regexes and cannot be recreated (live-verified as an
+  HTTP 400); bind it with `--pattern-map` or skip it. Profiles
   are always skipped whole — a detection leaf is never removed from a restored
   profile, because that would silently weaken what it detects. Failing closed remains
   the default.
@@ -169,7 +175,8 @@ destination catalog:
 ```
 
 Review the candidates (or list the catalog yourself with
-`airs runtime dlp patterns list --all --output json`), then add one
+`airs runtime dlp patterns list --all --include-predefined --output json` — listings
+hide predefined records by default), then add one
 `--pattern-map "Internet - ipv4=<name in destination>"` per miss alongside any EDM
 bindings. Candidates are suggestions only — the CLI never binds a near-match on its
 own, because attaching a lookalike detector would silently change what the restored
@@ -257,6 +264,46 @@ write. To restore alongside existing resources rather than into them, prefix eve
 airs runtime dlp restore ./dlp-backup.json --name-prefix migrated- \
   --pattern-map "EDM Customer Records=Dev EDM Customer Records"
 ```
+
+## Live acceptance (2026-09-11)
+
+A complete live migration ran between registered tenants (source TSG 1852583913 →
+destination TSG 1158365485). The **pattern and profile create paths are live-verified
+with read-back verification**; the dictionary create path is not (see below).
+
+- **Backup**: 4 patterns / 3 profiles exported (8.6 KB with slim predefined stubs;
+  the first full-tenant envelope of 7/7 was 16 KB); 9 profiles excluded with reasons
+  under `--skip-unsupported` (multi-profile rules, retired dependencies, basic
+  profiles without exported rules).
+- **Restore, final pass**: `Restore complete` — 2 patterns reused, 1 profile
+  verified (read-only resume of an earlier partial run), 1 profile created and
+  verified by re-read, 1 profile skipped under `--skip-unresolved` (its predefined
+  pattern does not exist in the destination catalog), with server-added fields
+  reported.
+- **Fail-safe demonstrations along the way**, four distinct stops, all exit 1 with
+  honest reporting: one HTTP 400 before any write landed (zero writes reported); one
+  HTTP 400 after the pattern stage completed, with the completed pattern writes
+  reported; and two read-back verification refusals — the second naming the created
+  record's id. HTTP-status failures always sanitize to a generic status line by
+  design; created ids appear only in verification-refusal messages. The root causes
+  are now handled: UI copies of predefined patterns and basic profiles read back
+  without their detection content (unexportable classes, gated with explicit
+  remedies), and the server normalizes `supported_confidence_levels` on create
+  (tolerated and reported, never silently accepted).
+- **Idempotency**: re-running the same restore reuses and verifies without writes.
+
+This supersedes the May 2026 records of HTTP 400s for `POST /v2/api/data-patterns`,
+`POST /v2/api/data-profiles`, and get-by-id on both: all work live; those 400s were
+request-content classes, now classified.
+
+**The dictionary create path remains live-unproven.** No custom dictionaries exist in
+any observed tenant, and a live probe matrix against `POST /v2/api/dictionaries`
+(2026-09-11) found the endpoint's validation gates working — a mis-named part,
+wrong content type, or missing field each returns a *detailed* error — while every
+fully-valid request (SDK encoding and hand-rolled variants alike) receives a
+detail-free HTTP 400, consistent with a tenant-level restriction on custom
+dictionaries. A restore involving dictionaries fails safe: staged stop, sanitized
+error, honest partial reporting, exit 1.
 
 ## Review evidence
 
