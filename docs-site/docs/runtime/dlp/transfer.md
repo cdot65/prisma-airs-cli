@@ -67,7 +67,31 @@ destination state is re-checked after the confirmation prompt.
   dictionaries) are never recreated: bind them to pre-provisioned destination patterns
   with `--pattern-map "source-name=destination-name"`.
 - `--on-conflict` for data profiles is `error` (default), `verify` (read-only resume),
-  or `skip`. There is no `update`.
+  `skip`, or `reconcile`. There is no `update` — the DLP profile update endpoint is a
+  live HTTP 500.
+- `--on-conflict reconcile` implements two rules for a name that already exists in the
+  destination:
+  1. **Active duplicate** — the profile is verified against the source end-state
+     (identical to `verify`). Because there is no update path, a divergent active
+     profile still fails: the API cannot make it match.
+  2. **Archived-name collision** — a create that returns HTTP 409 names an archived
+     profile the API never lists (profiles cannot be deleted, only archived in the
+     SCM UI, and archived names are never released). Reconcile retries once under a
+     unique suffix (`<name truncated to fit>-<6 hex>`, within the 32-char limit),
+     verifies the created record by read-back, and reports each rename.
+  Caveat: reconcile is **complete-once, not idempotent** for archived-name
+  collisions. A suffixed copy carries a new name, so the original name stays
+  tombstoned; re-running reconcile creates *another* suffixed copy rather than
+  reusing the first. Run it once, or clear the archived profiles in the SCM UI first.
+  Profiles created under a fresh name (no tombstone) verify normally on re-run.
+
+  Live-exercised (2026-09-11, prod TSG 1001464285 → dev TSG 1158365485): a profiles
+  restore into a dev tenant carrying archived-name tombstones completed under
+  `reconcile` — six archived-name collisions were each suffixed and read-back
+  verified, one fresh name created normally, every rename reported. A second run
+  produced a *second* set of suffixes for the same source names (e.g.
+  `Acceptance - Codename Gua-95cfa7` and `…-f26fdc`), which is the documented
+  non-idempotency, not a defect.
 - `--skip-unresolved` turns unresolvable references into explicit skips: the reference
   and **every profile that depends on it** are excluded from the restore, each warned
   individually and reported in the plan, the summary, and `--output json`. This covers
