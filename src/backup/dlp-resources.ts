@@ -229,6 +229,8 @@ export interface DlpBackupOptions {
   maxPages?: number;
   /** Exclude profiles with non-transferable rules instead of failing the export. */
   skipUnsupported?: boolean;
+  /** Export-phase progress events (inventory reads). */
+  onProgress?: (event: { phase: 'inventories' }) => void;
 }
 
 export interface DlpBackupResult {
@@ -251,6 +253,7 @@ export async function backupDlpResources(
   const kinds = options.resources ?? [...DLP_RESOURCE_KINDS];
   if (!kinds.length || kinds.some((kind) => !DLP_RESOURCE_KINDS.includes(kind)))
     throw new Error('resources must name dictionaries, patterns and/or profiles');
+  options.onProgress?.({ phase: 'inventories' });
   const inventory = await inventories(api, maxPages);
   tenantIdentity([...inventory.patterns, ...inventory.profiles]);
 
@@ -354,6 +357,36 @@ export async function backupDlpResources(
   return { backup, skipped };
 }
 
+/** Progress events for pure transfer operations (I-1: the module performs no
+ * output itself; callers render). Items are reported after they complete.
+ */
+export type DlpTransferStage = 'dictionaries' | 'patterns' | 'profiles';
+export type DlpProgress =
+  | { phase: 'inventories' }
+  | { phase: 'recheck' }
+  | { phase: 'stage'; stage: DlpTransferStage; total: number }
+  | {
+      phase: 'item';
+      stage: DlpTransferStage;
+      name: string;
+      action: 'created' | 'reused' | 'resolved' | 'mapped' | 'verified' | 'skipped';
+      index: number;
+      total: number;
+    };
+export type DlpProgressListener = (event: DlpProgress) => void;
+
+/** A reference the destination cannot satisfy, skipped under --skip-unresolved
+ * along with every profile that depends on it. Whole profiles only: a detection
+ * leaf is never silently removed from a restored profile.
+ */
+export interface UnresolvedReference {
+  kind: 'dictionary' | 'pattern';
+  sourceId: string;
+  name: string;
+  reason: string;
+  candidates?: string[];
+}
+
 export interface DlpRestoreOptions {
   namePrefix?: string;
   /** Applies to data profiles. Dependencies always reuse-if-identical or fail. */
@@ -361,6 +394,10 @@ export interface DlpRestoreOptions {
   /** Explicit source pattern name → already provisioned destination pattern name (P-2). */
   patternMap?: Record<string, string>;
   maxPages?: number;
+  /** Skip unresolvable references and every dependent profile instead of failing. */
+  skipUnresolved?: boolean;
+  /** Plan-phase progress events (inventory reads). */
+  onProgress?: DlpProgressListener;
 }
 
 type DependencyAction = 'create' | 'reuse' | 'resolve' | 'map';
@@ -384,6 +421,8 @@ interface ProfilePlan {
   source: DataProfileResponse;
   action: 'create' | 'verify' | 'skip';
   existing?: DataProfileResponse;
+  /** Present when the skip was forced by unresolved dependencies. */
+  reason?: string;
 }
 export interface DlpRestorePlan {
   sourceTsgId: string;
@@ -391,6 +430,7 @@ export interface DlpRestorePlan {
   dictionaries: DictionaryPlan[];
   patterns: PatternPlan[];
   profiles: ProfilePlan[];
+  unresolved: UnresolvedReference[];
   maxPages: number;
 }
 
@@ -584,7 +624,9 @@ export async function planDlpResourcesRestore(
   if (unknownMapped.length)
     throw new Error(`--pattern-map names absent from the backup: ${unknownMapped.join(', ')}`);
   const crossTenant = backup.source.tsgId !== destinationTsgId;
+  const unresolved: UnresolvedReference[] = [];
 
+  options.onProgress?.({ phase: 'inventories' });
   const destination = await inventories(api, maxPages);
   const sourceTenant = tenantIdentity([...backup.patterns, ...backup.profiles]);
   const destinationTenant = tenantIdentity([...destination.patterns, ...destination.profiles]);
@@ -604,8 +646,18 @@ export async function planDlpResourcesRestore(
     if (!source.id || !source.name) throw new Error('Backup dictionary lacks identity');
     if (source.type === 'predefined') {
       const match = matchByName(destination.dictionaries, source.name, () => false, 'dictionary');
-      if (!match?.id || match.type !== 'predefined')
+      if (!match?.id || match.type !== 'predefined') {
+        if (options.skipUnresolved) {
+          unresolved.push({
+            kind: 'dictionary',
+            sourceId: source.id,
+            name: source.name,
+            reason: 'missing predefined destination dictionary',
+          });
+          continue;
+        }
         throw new Error(`Missing predefined destination dictionary: ${source.name}`);
+      }
       dictionaryPlans.push({
         sourceId: source.id,
         name: source.name,
@@ -661,10 +713,16 @@ export async function planDlpResourcesRestore(
       );
       const match = byId ?? matchByName(destination.patterns, source.name, retired, 'data pattern');
       if (!match?.id || !match.name || match.type !== 'predefined') {
-        missingPredefined.push({
-          name: source.name,
-          candidates: predefinedCandidates(source, destination.patterns),
-        });
+        const candidates = predefinedCandidates(source, destination.patterns);
+        if (options.skipUnresolved)
+          unresolved.push({
+            kind: 'pattern',
+            sourceId: source.id,
+            name: source.name,
+            reason: 'no identity or name match in the destination catalog',
+            candidates,
+          });
+        else missingPredefined.push({ name: source.name, candidates });
         continue;
       }
       patternPlans.push({
@@ -687,10 +745,20 @@ export async function planDlpResourcesRestore(
       });
       continue;
     }
-    if (!portablePattern(source))
+    if (!portablePattern(source)) {
+      if (options.skipUnresolved) {
+        unresolved.push({
+          kind: 'pattern',
+          sourceId: source.id,
+          name: source.name,
+          reason: 'tenant-bound detection technique without --pattern-map',
+        });
+        continue;
+      }
       throw new Error(
         `Data pattern uses a tenant-bound detection technique: ${source.name}; provision it in the destination and bind it with --pattern-map "${source.name}=<destination-name>"`,
       );
+    }
     const name = `${prefix}${source.name}`;
     assertName(name);
     const body = patternRequest(source, name);
@@ -760,6 +828,7 @@ export async function planDlpResourcesRestore(
     dictionaries: dictionaryPlans,
     patterns: patternPlans,
     profiles: profilePlans,
+    unresolved,
     maxPages,
   };
 
@@ -771,14 +840,29 @@ export async function planDlpResourcesRestore(
     ...dictionaryPlans.map((d) => d.sourceId),
     ...patternPlans.map((p) => p.sourceId),
   ]);
+  const unresolvedById = new Map(unresolved.map((item) => [item.sourceId, item]));
   for (const item of profilePlans) {
     if (item.action === 'skip') continue;
+    const missing = new Set<string>();
     for (const leaf of ruleLeaves(item.source)) {
       const id = leaf.value.id;
-      if (id != null && id !== '' && !planned.has(String(id)))
-        throw new Error(
-          `Backup data profile references a resource absent from the backup: ${item.name}`,
-        );
+      if (id != null && id !== '' && !planned.has(String(id))) missing.add(String(id));
+    }
+    if (missing.size) {
+      const skippable = [...missing].filter((id) => unresolvedById.has(id));
+      // A profile is skipped whole, and only when every missing dependency is
+      // an operator-acknowledged unresolved reference; an id absent from the
+      // backup itself is still a hard failure.
+      if (skippable.length === missing.size) {
+        item.action = 'skip';
+        item.reason = `unresolved references: ${skippable
+          .map((id) => unresolvedById.get(id)?.name)
+          .join(', ')}`;
+        continue;
+      }
+      throw new Error(
+        `Backup data profile references a resource absent from the backup: ${item.name}`,
+      );
     }
     const body = profileRequest(item, bindings, crossTenant, item.action === 'verify');
     if (item.action === 'verify' && body && !compareEcho(body, item.existing).matches)
@@ -872,8 +956,14 @@ export interface DlpRestoreResult {
     action: 'created' | 'reused' | 'resolved' | 'mapped';
     id: string;
   }>;
-  profiles: Array<{ name: string; action: 'created' | 'verified' | 'skipped'; id?: string }>;
+  profiles: Array<{
+    name: string;
+    action: 'created' | 'verified' | 'skipped';
+    id?: string;
+    reason?: string;
+  }>;
   serverAdded: Array<{ resource: string; fields: string[] }>;
+  unresolved: UnresolvedReference[];
   error?: string;
 }
 
@@ -895,6 +985,7 @@ function assertUnchanged(current: unknown, prior: unknown, label: string): void 
 export async function restoreDlpResources(
   api: DlpTransferApi,
   plan: DlpRestorePlan,
+  options: { onProgress?: DlpProgressListener } = {},
 ): Promise<DlpRestoreResult> {
   const result: DlpRestoreResult = {
     sourceTsgId: plan.sourceTsgId,
@@ -904,10 +995,20 @@ export async function restoreDlpResources(
     patterns: [],
     profiles: [],
     serverAdded: [],
+    unresolved: structuredClone(plan.unresolved ?? []),
   };
   const crossTenant = plan.sourceTsgId !== plan.destinationTsgId;
+  const emit = options.onProgress;
+  const emitItem = (
+    stage: DlpTransferStage,
+    name: string,
+    action: 'created' | 'reused' | 'resolved' | 'mapped' | 'verified' | 'skipped',
+    index: number,
+    total: number,
+  ) => emit?.({ phase: 'item', stage, name, action, index, total });
   try {
     // Recheck the full plan after confirmation, before the first write (I-6).
+    emit?.({ phase: 'recheck' });
     const current = await inventories(api, plan.maxPages);
     for (const item of plan.dictionaries) {
       const match = matchByName(current.dictionaries, item.name, () => false, 'dictionary');
@@ -936,11 +1037,20 @@ export async function restoreDlpResources(
     }
 
     const bindings = planBindings(plan);
+    if (plan.dictionaries.length)
+      emit?.({ phase: 'stage', stage: 'dictionaries', total: plan.dictionaries.length });
     for (const item of plan.dictionaries) {
       if (item.action !== 'create') {
         const id = item.existing?.id;
         if (!id) throw new Error(`Destination dictionary has no identity: ${item.name}`);
         result.dictionaries.push({ name: item.name, action: DEPENDENCY_ACTIONS[item.action], id });
+        emitItem(
+          'dictionaries',
+          item.name,
+          DEPENDENCY_ACTIONS[item.action],
+          result.dictionaries.length,
+          plan.dictionaries.length,
+        );
         continue;
       }
       if (!item.metadata || !item.keywords) throw new Error('Dictionary plan is incomplete');
@@ -958,13 +1068,29 @@ export async function restoreDlpResources(
         result.serverAdded.push({ resource: `dictionary ${item.name}`, fields: echo.serverAdded });
       bindings.set(item.sourceId, { id: created.id, name: item.name });
       result.dictionaries.push({ name: item.name, action: 'created', id: created.id });
+      emitItem(
+        'dictionaries',
+        item.name,
+        'created',
+        result.dictionaries.length,
+        plan.dictionaries.length,
+      );
     }
 
+    if (plan.patterns.length)
+      emit?.({ phase: 'stage', stage: 'patterns', total: plan.patterns.length });
     for (const item of plan.patterns) {
       if (item.action !== 'create') {
         const id = item.existing?.id;
         if (!id) throw new Error(`Destination data pattern has no identity: ${item.name}`);
         result.patterns.push({ name: item.name, action: DEPENDENCY_ACTIONS[item.action], id });
+        emitItem(
+          'patterns',
+          item.name,
+          DEPENDENCY_ACTIONS[item.action],
+          result.patterns.length,
+          plan.patterns.length,
+        );
         continue;
       }
       if (!item.body) throw new Error('Data pattern plan is incomplete');
@@ -991,15 +1117,20 @@ export async function restoreDlpResources(
         version: readBack.version ?? undefined,
       });
       result.patterns.push({ name: item.name, action: 'created', id: created.id });
+      emitItem('patterns', item.name, 'created', result.patterns.length, plan.patterns.length);
     }
 
+    if (plan.profiles.length)
+      emit?.({ phase: 'stage', stage: 'profiles', total: plan.profiles.length });
     for (const item of plan.profiles) {
       if (item.action === 'skip') {
         result.profiles.push({
           name: item.name,
           action: 'skipped',
           id: item.existing?.id ?? undefined,
+          ...(item.reason ? { reason: item.reason } : {}),
         });
+        emitItem('profiles', item.name, 'skipped', result.profiles.length, plan.profiles.length);
         continue;
       }
       const body = profileRequest(item, bindings, crossTenant, true);
@@ -1018,6 +1149,7 @@ export async function restoreDlpResources(
           action: 'verified',
           id: item.existing?.id ?? undefined,
         });
+        emitItem('profiles', item.name, 'verified', result.profiles.length, plan.profiles.length);
         continue;
       }
       const created = await api.profiles.create(body);
@@ -1036,6 +1168,7 @@ export async function restoreDlpResources(
           fields: echo.serverAdded,
         });
       result.profiles.push({ name: item.name, action: 'created', id: created.id });
+      emitItem('profiles', item.name, 'created', result.profiles.length, plan.profiles.length);
     }
     result.complete = true;
   } catch (error) {

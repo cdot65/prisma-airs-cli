@@ -61,6 +61,16 @@ destination state is re-checked after the confirmation prompt.
   with `--pattern-map "source-name=destination-name"`.
 - `--on-conflict` for data profiles is `error` (default), `verify` (read-only resume),
   or `skip`. There is no `update`.
+- `--skip-unresolved` turns unresolvable references into explicit skips: the reference
+  and **every profile that depends on it** are excluded from the restore, each warned
+  individually and reported in the plan, the summary, and `--output json`. Profiles
+  are always skipped whole — a detection leaf is never removed from a restored
+  profile, because that would silently weaken what it detects. Failing closed remains
+  the default.
+- The default pretty output narrates progress: inventory reads, the
+  post-confirmation recheck, and each resource as it lands (`created`, `reused`,
+  `resolved`, `mapped`, `verified`, `skipped`, with counts). Machine formats such as
+  `--output json` print no progress, keeping stdout parseable.
 - Every create is verified by re-reading the record; a retired or divergent read-back
   stops the run, which reports exactly what completed and exits 1.
 
@@ -163,6 +173,11 @@ Review the candidates (or list the catalog yourself with
 bindings. Candidates are suggestions only — the CLI never binds a near-match on its
 own, because attaching a lookalike detector would silently change what the restored
 profile detects.
+
+When no equivalent exists in the destination and losing the dependent profiles is
+acceptable, `--skip-unresolved` restores everything else: each unresolved reference
+and each skipped profile is warned and reported, so the loss is explicit rather than
+discovered later.
 
 Create (or identify) the equivalent EDM pattern in the destination tenant first — EDM
 datasets are provisioned per tenant outside this CLI — then bind it and preview again:

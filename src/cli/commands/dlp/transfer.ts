@@ -8,6 +8,7 @@ import { ZodError } from 'zod';
 import {
   backupDlpResources,
   DLP_RESOURCE_KINDS,
+  type DlpProgress,
   type DlpResourceKind,
   DlpResourcesBackupSchema,
   type DlpTransferApi,
@@ -94,6 +95,34 @@ function failure(error: unknown): void {
   process.exitCode = 1;
 }
 
+const STAGE_LABELS = {
+  dictionaries: 'dictionaries',
+  patterns: 'data patterns',
+  profiles: 'data profiles',
+} as const;
+const ITEM_LABELS = {
+  dictionaries: 'dictionary',
+  patterns: 'data pattern',
+  profiles: 'data profile',
+} as const;
+
+/** Pretty output narrates progress; machine formats keep stdout parseable. */
+function progressRenderer(format: string): ((event: DlpProgress) => void) | undefined {
+  if (format !== 'pretty') return undefined;
+  return (event) => {
+    if (event.phase === 'inventories')
+      ui.info('Reading inventories (dictionaries, data patterns, data profiles)…');
+    else if (event.phase === 'recheck') ui.info('Rechecking destination state before writing…');
+    else if (event.phase === 'stage')
+      ui.info(`Restoring ${STAGE_LABELS[event.stage]} (${event.total})…`);
+    else
+      ui.bullet(
+        `${ITEM_LABELS[event.stage]} ${event.action}: ${event.name} (${event.index}/${event.total})`,
+        event.action === 'skipped' ? 'skip' : 'success',
+      );
+  };
+}
+
 /** Human formats get one resource per row, never giant JSON arrays inside table cells. */
 function renderRestore(
   value: Record<string, unknown>,
@@ -132,6 +161,11 @@ function renderRestore(
         markdown ? 'markdown' : 'table',
       ) || '(none)',
     );
+  }
+  if (rows('unresolved').length) {
+    blocks.push(heading('Unresolved references — dependent profiles skipped'));
+    for (const entry of rows('unresolved'))
+      blocks.push(`${entry.kind} ${entry.name}: ${entry.reason}`);
   }
   if (rows('serverAdded').length) {
     blocks.push(heading('Verified server-added fields (source omitted these)'));
@@ -200,6 +234,7 @@ export function register(dlp: Command): void {
           resources: opts.resources,
           maxPages: opts.maxPages,
           skipUnsupported: Boolean(opts.skipUnsupported),
+          onProgress: progressRenderer(format),
         });
         for (const item of skipped)
           ui.warning(`Skipped unsupported data profile: ${item.profile} (${item.reason})`);
@@ -252,9 +287,13 @@ export function register(dlp: Command): void {
     )
     .option(
       '--pattern-map <source=destination>',
-      'Bind a tenant-bound source pattern to an existing destination pattern (repeatable)',
+      'Bind a tenant-bound or predefined source pattern to an existing destination pattern (repeatable)',
       (value: string, prior: string[]) => [...prior, value],
       [],
+    )
+    .option(
+      '--skip-unresolved',
+      'Skip references with no destination match, and every profile depending on them; whole profiles only, each reported',
     )
     .option(
       '--max-pages <n>',
@@ -305,19 +344,38 @@ export function register(dlp: Command): void {
           throw new CliUsageError(
             '--expect-tsg does not match the selected destination tenant; no API request was made',
           );
+        const onProgress = progressRenderer(format);
         const plan = await planDlpResourcesRestore(api, data, tsgId, {
           namePrefix: opts.namePrefix,
           onConflict: opts.onConflict,
           patternMap: mappings,
           maxPages: opts.maxPages,
+          skipUnresolved: Boolean(opts.skipUnresolved),
+          onProgress,
         });
+        for (const entry of plan.unresolved)
+          ui.warning(
+            `Unresolved ${entry.kind === 'dictionary' ? 'dictionary' : 'data pattern'}: ${entry.name} (${entry.reason})${
+              entry.candidates?.length
+                ? `; candidates: ${entry.candidates.map((name) => `"${name}"`).join(', ')}`
+                : ''
+            }`,
+          );
+        for (const profile of plan.profiles)
+          if (profile.reason)
+            ui.warning(`Skipping data profile: ${profile.name} (${profile.reason})`);
         const summary = {
           sourceTsgId: plan.sourceTsgId,
           destinationTsgId: plan.destinationTsgId,
           dryRun: Boolean(opts.dryRun),
           dictionaries: plan.dictionaries.map((d) => ({ name: d.name, action: d.action })),
           patterns: plan.patterns.map((p) => ({ name: p.name, action: p.action })),
-          profiles: plan.profiles.map((p) => ({ name: p.name, action: p.action })),
+          profiles: plan.profiles.map((p) => ({
+            name: p.name,
+            action: p.action,
+            ...(p.reason ? { reason: p.reason } : {}),
+          })),
+          unresolved: plan.unresolved.map(({ kind, name, reason }) => ({ kind, name, reason })),
         };
         const columns = [
           { key: 'sourceTsgId', label: 'Source TSG' },
@@ -325,6 +383,7 @@ export function register(dlp: Command): void {
           { key: 'dictionaries', label: 'Dictionaries' },
           { key: 'patterns', label: 'Data patterns' },
           { key: 'profiles', label: 'Data profiles' },
+          { key: 'unresolved', label: 'Unresolved references' },
           { key: 'serverAdded', label: 'Verified server-added fields' },
           { key: 'dryRun', label: 'Dry run' },
           { key: 'complete', label: 'Complete' },
@@ -343,7 +402,7 @@ export function register(dlp: Command): void {
             Boolean(opts.force),
             { action: `restore DLP resources into TSG ${tsgId}` },
           );
-        const result = await restoreDlpResources(api, plan);
+        const result = await restoreDlpResources(api, plan, { onProgress });
         console.log(renderRestore({ ...result }, columns, format));
         if (!result.complete) {
           ui.error(result.error ?? 'Restore incomplete');

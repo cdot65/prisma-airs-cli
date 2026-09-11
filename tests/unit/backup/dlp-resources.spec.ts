@@ -921,6 +921,164 @@ describe('verify-mismatch detection', () => {
   });
 });
 
+describe('skip-unresolved and progress', () => {
+  it('skips unresolved references and their dependent profiles, restoring the rest', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi();
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toEqual([
+      expect.objectContaining({
+        kind: 'pattern',
+        name: 'SSN',
+        reason: expect.stringContaining('no identity or name match'),
+      }),
+    ]);
+    expect(plan.profiles).toEqual([
+      expect.objectContaining({ action: 'skip', reason: 'unresolved references: SSN' }),
+    ]);
+    const events: Array<Record<string, unknown>> = [];
+    const result = await restoreDlpResources(api, plan, {
+      onProgress: (event) => events.push(event as never),
+    });
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries).toEqual([
+      expect.objectContaining({ name: 'Keywords', action: 'created' }),
+    ]);
+    expect(result.patterns).toEqual([
+      expect.objectContaining({ name: 'Custom Regex', action: 'created' }),
+    ]);
+    expect(result.profiles).toEqual([
+      { name: 'Profile One', action: 'skipped', reason: 'unresolved references: SSN' },
+    ]);
+    expect(result.unresolved).toHaveLength(1);
+    expect(events[0]).toEqual({ phase: 'recheck' });
+    expect(events).toContainEqual({ phase: 'stage', stage: 'patterns', total: 1 });
+    expect(events).toContainEqual({
+      phase: 'item',
+      stage: 'profiles',
+      name: 'Profile One',
+      action: 'skipped',
+      index: 1,
+      total: 1,
+    });
+  });
+
+  it('skips tenant-bound patterns without a map and their dependents', async () => {
+    const edmProfile: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-edm',
+      name: 'EDM Profile',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: {
+            rule_item: {
+              detection_technique: 'edm',
+              id: 'src-pat-edm',
+              name: 'EDM SSN',
+              version: 1,
+            },
+          },
+        },
+      ],
+    };
+    const envelope = await sourceEnvelope({ patterns: [srcEdm()], profiles: [edmProfile] });
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toContainEqual(
+      expect.objectContaining({ name: 'EDM SSN', reason: expect.stringContaining('tenant-bound') }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({ name: 'EDM Profile', action: 'skip' }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    );
+  });
+
+  it('skips a missing predefined dictionary and its dependents', async () => {
+    const envelope = await sourceEnvelope({
+      dictionaries: [srcPreDict()],
+      profiles: [preDictProfile()],
+    });
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toContainEqual(
+      expect.objectContaining({ kind: 'dictionary', name: 'Legal Terms' }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({
+        name: 'Legal Profile',
+        action: 'skip',
+        reason: 'unresolved references: Legal Terms',
+      }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    );
+  });
+
+  it('still fails on ids absent from the backup even with skip-unresolved', async () => {
+    const envelope = await sourceEnvelope();
+    const profiles = structuredClone(envelope.profiles);
+    profiles[0].detection_rules = [
+      {
+        rule_type: 'expression_tree',
+        expression_tree: { rule_item: { detection_technique: 'regex', id: 'ghost' } },
+      },
+    ];
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(
+      planDlpResourcesRestore(api, { ...envelope, profiles }, '200', { skipUnresolved: true }),
+    ).rejects.toThrow(/absent from the backup/);
+  });
+
+  it('emits inventory progress for backup and plan', async () => {
+    const backupEvents: Array<Record<string, unknown>> = [];
+    await backupDlpResources(sourceApi().api, '100', {
+      onProgress: (event) => backupEvents.push(event),
+    });
+    expect(backupEvents).toEqual([{ phase: 'inventories' }]);
+    const planEvents: Array<Record<string, unknown>> = [];
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await planDlpResourcesRestore(api, await sourceEnvelope(), '200', {
+      onProgress: (event) => planEvents.push(event as never),
+    });
+    expect(planEvents).toEqual([{ phase: 'inventories' }]);
+  });
+
+  it('narrates the full stage order during a successful restore', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    const events: Array<Record<string, unknown>> = [];
+    const result = await restoreDlpResources(api, plan, {
+      onProgress: (event) => events.push(event as never),
+    });
+    expect(result.complete).toBe(true);
+    expect(events.map((event) => event.phase)).toEqual([
+      'recheck',
+      'stage',
+      'item',
+      'stage',
+      'item',
+      'item',
+      'stage',
+      'item',
+    ]);
+    expect(events[1]).toEqual({ phase: 'stage', stage: 'dictionaries', total: 1 });
+    expect(events[4]).toEqual(
+      expect.objectContaining({ stage: 'patterns', action: 'created', index: 1, total: 2 }),
+    );
+    expect(events[5]).toEqual(
+      expect.objectContaining({ stage: 'patterns', name: 'SSN', action: 'resolved', index: 2 }),
+    );
+    expect(events[7]).toEqual(
+      expect.objectContaining({ stage: 'profiles', name: 'Profile One', action: 'created' }),
+    );
+  });
+});
+
 describe('compareEcho', () => {
   it('unifies null and absent, reports server additions, ignores top-level metadata', () => {
     const result = compareEcho(
