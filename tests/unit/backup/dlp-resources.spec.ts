@@ -1707,3 +1707,87 @@ describe('restore receipt and reference safety regressions', () => {
     for (const kind of kinds) expect(api[kind].create).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('reconcile conflict policy', () => {
+  const conflictOn = (api: DlpTransferApi, name: string): void => {
+    const real = api.profiles.create;
+    api.profiles.create = vi.fn(async (body) => {
+      if (body.name === name) throw Object.assign(new Error('conflict'), { statusCode: 409 });
+      return real(body);
+    });
+  };
+
+  it('gives an archived-name create 409 a unique suffix and verifies it', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    conflictOn(api, 'Profile One');
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { onConflict: 'reconcile' });
+    expect(plan.suffixOnConflict).toBe(true);
+    expect(plan.profiles).toEqual([
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    ]);
+    const result = await restoreDlpResources(api, plan, { suffixGenerator: () => 'abc123' });
+    expect(result.complete).toBe(true);
+    expect(result.profiles).toContainEqual(
+      expect.objectContaining({
+        action: 'created',
+        name: 'Profile One-abc123',
+        renamedFrom: 'Profile One',
+      }),
+    );
+  });
+
+  it('does not suffix outside reconcile — a create 409 fails safe', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    conflictOn(api, 'Profile One');
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.suffixOnConflict).toBe(false);
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toMatch(/HTTP 409/);
+  });
+
+  it('routes an active-name duplicate through verify semantics (requirement #1)', async () => {
+    const envelope = await sourceEnvelope();
+    const conflicting: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'dest-prof-9',
+      tenant_id: 'tenant-dest',
+    };
+    const { api } = memoryApi({ patterns: [destPredefined()], profiles: [conflicting] });
+    // reconcile treats an active-name match exactly as verify: it must reconcile
+    // against destination dependencies (here absent), never blindly create.
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { onConflict: 'reconcile' }),
+    ).rejects.toThrow(/cannot be verified without its destination dependencies/);
+  });
+
+  it('truncates a long base name so the suffixed name fits 32 chars', async () => {
+    const longName = 'Profile Name Twenty Eight Ch';
+    const envelope = await sourceEnvelope({
+      profiles: [{ ...srcProfile(), id: 'src-prof-long', name: longName }],
+    });
+    const filtered = {
+      ...envelope,
+      profiles: envelope.profiles.filter((p) => p.name === longName),
+    };
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    conflictOn(api, longName);
+    const plan = await planDlpResourcesRestore(api, filtered, '200', { onConflict: 'reconcile' });
+    const result = await restoreDlpResources(api, plan, { suffixGenerator: () => 'deadbe' });
+    expect(result.complete).toBe(true);
+    const created = result.profiles.find((p) => p.renamedFrom === longName);
+    expect(created?.name.length).toBeLessThanOrEqual(32);
+    expect(created?.name.endsWith('-deadbe')).toBe(true);
+  });
+
+  it('rejects an invalid conflict policy', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(
+      // @ts-expect-error invalid policy value
+      planDlpResourcesRestore(api, envelope, '200', { onConflict: 'nope' }),
+    ).rejects.toThrow(/Invalid conflict policy/);
+  });
+});

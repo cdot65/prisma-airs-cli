@@ -538,8 +538,11 @@ export interface UnresolvedReference {
 
 export interface DlpRestoreOptions {
   namePrefix?: string;
-  /** Applies to data profiles. Dependencies always reuse-if-identical or fail. */
-  onConflict?: 'error' | 'verify' | 'skip';
+  /** Applies to data profiles. Dependencies always reuse-if-identical or fail.
+   * 'reconcile': an active-name match verifies against source (no update path
+   * exists — a divergent active profile fails); a create-time 409, which names
+   * an archived tombstone the API never lists, is retried under a unique suffix. */
+  onConflict?: 'error' | 'verify' | 'skip' | 'reconcile';
   /** Explicit source pattern name → already provisioned destination pattern name (P-2). */
   patternMap?: Record<string, string>;
   maxPages?: number;
@@ -580,6 +583,8 @@ export interface DlpRestorePlan {
   patterns: PatternPlan[];
   profiles: ProfilePlan[];
   unresolved: UnresolvedReference[];
+  /** Retry a create-time 409 (an archived tombstone) under a unique suffix. */
+  suffixOnConflict: boolean;
   maxPages: number;
 }
 
@@ -788,7 +793,8 @@ export async function planDlpResourcesRestore(
   )
     throw new Error('Invalid --name-prefix');
   const conflict = options.onConflict ?? 'error';
-  if (!['error', 'verify', 'skip'].includes(conflict)) throw new Error('Invalid conflict policy');
+  if (!['error', 'verify', 'skip', 'reconcile'].includes(conflict))
+    throw new Error('Invalid conflict policy');
   const patternMap = options.patternMap ?? {};
   uniqueNames(backup.dictionaries, 'dictionary');
   uniqueNames(backup.patterns, 'data pattern');
@@ -1057,6 +1063,7 @@ export async function planDlpResourcesRestore(
     patterns: patternPlans,
     profiles: profilePlans,
     unresolved,
+    suffixOnConflict: conflict === 'reconcile',
     maxPages,
   };
 
@@ -1229,6 +1236,8 @@ export interface DlpRestoreResult {
     action: 'created' | 'verified' | 'skipped';
     id?: string;
     reason?: string;
+    /** Set when a create-time 409 forced a unique-suffix rename (reconcile). */
+    renamedFrom?: string;
   }>;
   serverAdded: Array<{ resource: string; fields: string[] }>;
   unresolved: UnresolvedReference[];
@@ -1252,10 +1261,27 @@ function assertUnchanged(current: unknown, prior: unknown, label: string): void 
 /** Execute a bound plan stage by stage; stop on the first failure, report every
  * completed write, and never roll back silently (I-9).
  */
+/** Default unique suffix: 6 lowercase hex. The server enforces name uniqueness,
+ * so a rare collision simply 409s again and fails cleanly rather than silently.
+ */
+function defaultProfileSuffix(): string {
+  return Math.floor(Math.random() * 0x1000000)
+    .toString(16)
+    .padStart(6, '0');
+}
+
+/** Fit a unique suffix onto a profile name within the live 32-char limit. */
+function suffixedProfileName(name: string, suffix: string): string {
+  const tail = `-${suffix}`;
+  const room = 32 - tail.length;
+  const base = name.length > room ? name.slice(0, room) : name;
+  return `${base}${tail}`;
+}
+
 export async function restoreDlpResources(
   api: DlpTransferApi,
   plan: DlpRestorePlan,
-  options: { onProgress?: DlpProgressListener } = {},
+  options: { onProgress?: DlpProgressListener; suffixGenerator?: () => string } = {},
 ): Promise<DlpRestoreResult> {
   const result: DlpRestoreResult = {
     sourceTsgId: plan.sourceTsgId,
@@ -1270,6 +1296,7 @@ export async function restoreDlpResources(
   };
   const crossTenant = plan.sourceTsgId !== plan.destinationTsgId;
   const emit = options.onProgress;
+  const suffixGenerator = options.suffixGenerator ?? defaultProfileSuffix;
   const emitItem = (
     stage: DlpTransferStage,
     name: string,
@@ -1440,28 +1467,47 @@ export async function restoreDlpResources(
         emitItem('profiles', item.name, 'verified', result.profiles.length, plan.profiles.length);
         continue;
       }
-      const created = await api.profiles.create(body);
-      if (!created.id) throw new Error(`Restored data profile did not verify: ${item.name}`);
-      result.unverifiedCreates.push({ kind: 'profiles', name: item.name, id: created.id });
+      // An active-name collision is caught at plan time; a create-time 409
+      // therefore names an archived tombstone the API never lists. Under
+      // reconcile, retry once under a unique suffix so the restore completes.
+      let writeBody = body;
+      let finalName = item.name;
+      let created: DataProfileResponse;
+      try {
+        created = await api.profiles.create(writeBody);
+      } catch (error) {
+        if (!plan.suffixOnConflict || (error as { statusCode?: number })?.statusCode !== 409)
+          throw error;
+        finalName = suffixedProfileName(item.name, suffixGenerator());
+        writeBody = { ...body, name: finalName };
+        created = await api.profiles.create(writeBody);
+      }
+      if (!created.id) throw new Error(`Restored data profile did not verify: ${finalName}`);
+      result.unverifiedCreates.push({ kind: 'profiles', name: finalName, id: created.id });
       const readBack = await api.profiles.get(created.id);
-      const echo = compareEcho(body, readBack);
+      const echo = compareEcho(writeBody, readBack);
       if (
         !echo.matches ||
         readBack.id !== created.id ||
-        readBack.name !== item.name ||
+        readBack.name !== finalName ||
         RETIRED_PROFILE.has(readBack.profile_status ?? 'active')
       )
         throw new Error(
-          `Restored data profile did not verify: ${item.name} (created id ${created.id}; inspect it before retrying)`,
+          `Restored data profile did not verify: ${finalName} (created id ${created.id}; inspect it before retrying)`,
         );
       if (echo.serverAdded.length)
         result.serverAdded.push({
-          resource: `data profile ${item.name}`,
+          resource: `data profile ${finalName}`,
           fields: echo.serverAdded,
         });
-      result.profiles.push({ name: item.name, action: 'created', id: created.id });
+      result.profiles.push({
+        name: finalName,
+        action: 'created',
+        id: created.id,
+        ...(finalName !== item.name ? { renamedFrom: item.name } : {}),
+      });
       result.unverifiedCreates.pop();
-      emitItem('profiles', item.name, 'created', result.profiles.length, plan.profiles.length);
+      emitItem('profiles', finalName, 'created', result.profiles.length, plan.profiles.length);
     }
     result.complete = true;
   } catch (error) {

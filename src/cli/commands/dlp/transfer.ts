@@ -181,6 +181,11 @@ function renderRestore(
       ),
     );
   }
+  const renamed = rows('profiles').filter((p) => p.renamedFrom);
+  if (renamed.length) {
+    blocks.push(heading('Renamed around archived-name collisions'));
+    for (const p of renamed) blocks.push(`${p.renamedFrom} -> ${p.name}`);
+  }
   if (rows('serverAdded').length) {
     blocks.push(heading('Verified server-added fields (source omitted these)'));
     for (const item of rows('serverAdded'))
@@ -296,7 +301,7 @@ export function register(dlp: Command): void {
     .option('--name-prefix <prefix>', 'Prefix restored custom resource names to avoid collisions')
     .option(
       '--on-conflict <policy>',
-      'Existing data profile names: error, verify (resume without writes) or skip. Updates are unsupported until the DLP profile write path is live-verified.',
+      'Existing data profile names: error, verify (resume without writes), skip, or reconcile (verify active duplicates, and give archived-name collisions a unique suffix). Profile update is a live server error, so a divergent active profile still fails.',
       'error',
     )
     .option(
@@ -331,8 +336,8 @@ export function register(dlp: Command): void {
     )
     .action(async (file: string, opts) => {
       try {
-        if (!['error', 'verify', 'skip'].includes(opts.onConflict))
-          throw new CliUsageError('--on-conflict must be error, verify or skip');
+        if (!['error', 'verify', 'skip', 'reconcile'].includes(opts.onConflict))
+          throw new CliUsageError('--on-conflict must be error, verify, skip or reconcile');
         if (opts.force && !opts.expectTsg)
           throw new CliUsageError('--force requires --expect-tsg <destination-tsg>');
         const mappings = patternMap(opts.patternMap);
