@@ -1,5 +1,24 @@
 # Release Notes
 
+## v5.9.1 (2026-09-11) — DLP dictionary and profile migration remediation
+
+- Pin published SDK 0.30.1 for sanitized RFC 7807 field diagnostics. Dictionary API
+  errors exit 1; invalid local input exits 2 without leaking payload fragments.
+- Correct dictionary region examples to the live-verified SCM label `United States`.
+  CSV restores preserve the first keyword by rebuilding the header; TXT remains
+  newline-delimited. Five dictionaries, including a UI-created 19-keyword dictionary,
+  restored prod → dev with exact re-GET verification.
+- Sort DLP inventories and validate IDs/counts across pages, including the live
+  50-record cap and snake_case pagination. Incomplete catalogs fail closed.
+- Build profile flag inputs from verified pattern identities and the actual rule
+  tree shape. Refuse unsupported basic writes and names over the observed 32-character
+  limit before API writes.
+- Harden transfer preflight, typed reference compatibility, and create verification;
+  retain confirmed created IDs when verification cannot complete.
+- Preserve version-1 envelopes and explicit mapping/whole-profile skips. See the
+  [live acceptance transcript](../runtime/dlp/transfer.md)
+  for the exact live findings and separately identified mocked failure cases.
+
 ## v5.9.0 (2026-09-11) — Tenant-first DLP listings and live-verified transfer
 
 - `airs runtime dlp {patterns, profiles, dictionaries} list` now shows only

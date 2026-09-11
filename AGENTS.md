@@ -6,6 +6,19 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 
 ## Quick Context
 
+### DLP remediation (CLI 5.9.1 / SDK 0.30.1)
+
+Dictionary creates work with SCM display region labels such as `United States`; a generic
+400 never proves missing entitlement. CSV uploads consume a header and retain literal quote
+characters; TXT has no header. Restore reconstructs the correct format and verifies every
+keyword. All transfer inventories sort by name, honor the observed 50-record cap and
+snake_case pagination, and reject duplicates/count drift. Profile `--pattern-id` resolves
+actual pattern metadata into `sub_expressions[].rule_item`; basic writes and names over the
+live 32-character limit refuse before OAuth. Keep transfer fail-closed and never update/delete.
+Published SDK 0.30.1 provides sanitized problem diagnostics. Exact evidence, supported classes,
+and limitations: `docs-site/docs/runtime/dlp/transfer.md`. Do not reuse earlier sparse-catalog
+or entitlement hypotheses as current facts.
+
 ### AgentGuard browser API additions (CLI 5.4.1 / SDK 0.29.0)
 
 `airs agentguard scans list`, `scans vulnerabilities <scanUuid>`, `stats`, `rules list`, and `report` provide read-only AI Supply Chain agent/skill telemetry using Management OAuth. Reports are HTML by default or Markdown, use private no-clobber CWD files, and contain aggregates only. Finding content requires `--include-content`; debug bodies are omitted. Only `30_DAYS` statistics are verified. Rules pagination reports page length, so `--all` must continue until a short/empty page. Failed scans may contain null summaries/durations; null metrics are unknown, never zero. Use `scripts/e2e-agentguard.mjs` for read-only live acceptance. CLI 5.4.1 requires registry-published SDK 0.29.0; never publish with a local link override.

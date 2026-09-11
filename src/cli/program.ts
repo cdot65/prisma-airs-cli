@@ -80,19 +80,51 @@ export function buildProgram(): Command {
   const pkg = JSON.parse(readFileSync(join(here, '../../package.json'), 'utf-8'));
 
   const program = new Command();
+  let dlpDebugBodyEnvironment: { previous: string | undefined } | undefined;
+  const restoreDlpDebugBody = () => {
+    if (!dlpDebugBodyEnvironment) return;
+    const { previous } = dlpDebugBodyEnvironment;
+    if (previous === undefined) delete process.env.PANW_AI_SEC_DEBUG_BODY;
+    else process.env.PANW_AI_SEC_DEBUG_BODY = previous;
+    dlpDebugBodyEnvironment = undefined;
+  };
+  program.hook('postAction', restoreDlpDebugBody);
+  // Embedded callers can catch action failures instead of exiting the process.
+  const parseAsync = program.parseAsync.bind(program);
+  program.parseAsync = async (...args: Parameters<typeof program.parseAsync>) => {
+    try {
+      return await parseAsync(...args);
+    } finally {
+      restoreDlpDebugBody();
+    }
+  };
   program
     .name('airs')
     .description(
       'CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits',
     )
     .version(pkg.version)
-    .option('--debug', 'Log all AIRS/SCM API requests and responses to a JSONL file')
+    .option('--debug', 'Write redacted API diagnostics to a private JSONL file')
     .option('--output <format>', 'Default output format for read commands')
     .option('--quiet', 'Suppress status and decorative output (data and errors still print)');
 
   program.hook('preAction', async (_thisCommand, actionCommand) => {
     const root = actionCommand.optsWithGlobals?.() ?? _thisCommand.opts();
     setQuiet(Boolean(root.quiet));
+    let ancestor: Command | null = actionCommand;
+    let agentGuard = false;
+    let dlp = false;
+    while (ancestor) {
+      if (ancestor.name() === 'agentguard') agentGuard = true;
+      if (ancestor.name() === 'dlp' && ancestor.parent?.name() === 'runtime') dlp = true;
+      ancestor = ancestor.parent;
+    }
+    if (dlp) {
+      // SDK 0.30.1 reads this per request. Never let SDK body logging bypass the CLI
+      // logger's omission of DLP keywords, regexes, metadata, and reflected error payloads.
+      dlpDebugBodyEnvironment = { previous: process.env.PANW_AI_SEC_DEBUG_BODY };
+      process.env.PANW_AI_SEC_DEBUG_BODY = '0';
+    }
     const profileTransfer =
       actionCommand.parent?.name() === 'profiles' &&
       actionCommand.parent.parent?.name() === 'runtime' &&
@@ -137,13 +169,9 @@ export function buildProgram(): Command {
         `debug-api-${Date.now()}-${randomUUID().slice(0, 8)}.jsonl`,
       );
       try {
-        let ancestor: Command | null = actionCommand;
-        let agentGuard = false;
-        while (ancestor) {
-          if (ancestor.name() === 'agentguard') agentGuard = true;
-          ancestor = ancestor.parent;
-        }
-        installDebugLogger(logPath, { omitBodies: agentGuard });
+        installDebugLogger(logPath, {
+          omitBodies: agentGuard || dlp,
+        });
       } catch {
         ui.error(
           'Cannot create the debug log in the current working directory. Run from a writable directory or omit --debug.',

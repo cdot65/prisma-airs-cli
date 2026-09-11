@@ -89,28 +89,143 @@ function assertName(name: string): void {
 interface SpringPage<T> {
   content: T[];
   last?: boolean;
+  first?: boolean;
+  empty?: boolean;
+  number?: number;
+  size?: number;
+  numberOfElements?: number;
   totalPages?: number;
+  totalElements?: number;
+  number_of_elements?: number;
+  total_pages?: number;
+  total_elements?: number;
+  pageable?: {
+    offset?: number;
+    pageNumber?: number;
+    pageSize?: number;
+    page_number?: number;
+    page_size?: number;
+  };
 }
 
-/** Complete Spring-page inventory or explicit failure (I-3). One sweep per stage (§3). */
-async function springPages<T>(
+/** Complete Spring-page inventory or explicit failure (I-3). One sweep per stage (§3).
+ * Live 2026-09-11: unsorted prod/dev inventories repeated IDs while omitting hundreds
+ * of records. Use the verified name sort and refuse duplicate IDs/count drift rather
+ * than deduplicating incomplete data. Dictionaries also cap requested size 100 at
+ * 50 and return snake_case page metadata. Honor a consistent effective page size
+ * and both metadata spellings. See docs-site/docs/runtime/dlp/transfer.md.
+ */
+async function springPages<T extends { id?: string | null }>(
   fetch: (page: number) => Promise<SpringPage<T>>,
   maxPages: number,
   label: string,
 ): Promise<T[]> {
   pagesLimit(maxPages);
   const items: T[] = [];
+  const ids = new Set<string>();
+  let totalPages: number | undefined;
+  let totalElements: number | undefined;
+  let effectiveSize: number | undefined;
+  const inconsistent = (): never => {
+    throw new Error(
+      `Inventory of ${label} has inconsistent pagination metadata; retry the operation`,
+    );
+  };
+  const alias = (camel: number | undefined, snake: number | undefined): number | undefined => {
+    if (camel !== undefined && snake !== undefined && camel !== snake) inconsistent();
+    return camel ?? snake;
+  };
   for (let page = 0; page < maxPages; page++) {
     const result = await fetch(page);
-    items.push(...result.content);
-    if (items.length > 10000)
+    const pageSize = alias(result.pageable?.pageSize, result.pageable?.page_size);
+    const suppliedSize = alias(result.size, pageSize);
+    if (
+      suppliedSize !== undefined &&
+      (!Number.isSafeInteger(suppliedSize) ||
+        suppliedSize < 1 ||
+        suppliedSize > 100 ||
+        (effectiveSize !== undefined && suppliedSize !== effectiveSize))
+    )
+      inconsistent();
+    effectiveSize = suppliedSize ?? effectiveSize ?? 100;
+    const suppliedPages = alias(result.totalPages, result.total_pages);
+    const suppliedElements = alias(result.totalElements, result.total_elements);
+    if (items.length + result.content.length > 10000)
       throw new Error(`Inventory of ${label} exceeds the 10000-record safety limit`);
-    const last =
-      result.last ??
-      (result.totalPages !== undefined
-        ? page + 1 >= result.totalPages
-        : result.content.length < 100);
-    if (last) return items;
+    for (const [actual, expected] of [
+      [result.number, page],
+      [result.size, effectiveSize],
+      [alias(result.numberOfElements, result.number_of_elements), result.content.length],
+      [result.first, page === 0],
+      [result.empty, result.content.length === 0],
+      [alias(result.pageable?.pageNumber, result.pageable?.page_number), page],
+      [pageSize, effectiveSize],
+      [result.pageable?.offset, page * effectiveSize],
+    ]) {
+      if (actual !== undefined && actual !== expected) inconsistent();
+    }
+    for (const [actual, previous] of [
+      [suppliedPages, totalPages],
+      [suppliedElements, totalElements],
+    ]) {
+      if (
+        actual !== undefined &&
+        (!Number.isSafeInteger(actual) ||
+          actual < 0 ||
+          (previous !== undefined && actual !== previous))
+      )
+        inconsistent();
+    }
+    totalPages = suppliedPages ?? totalPages;
+    totalElements = suppliedElements ?? totalElements;
+    if (
+      totalPages !== undefined &&
+      totalElements !== undefined &&
+      totalPages !== Math.ceil(totalElements / effectiveSize)
+    )
+      inconsistent();
+    if (
+      totalPages !== undefined &&
+      (page >= Math.max(totalPages, 1) || (totalPages === 0 && result.content.length !== 0))
+    )
+      inconsistent();
+    if (
+      totalElements !== undefined &&
+      result.content.length !==
+        Math.min(effectiveSize, Math.max(0, totalElements - page * effectiveSize))
+    )
+      inconsistent();
+    for (const item of result.content) {
+      if (typeof item.id !== 'string' || !item.id.trim())
+        throw new Error(
+          `Inventory of ${label} contains a missing resource ID; retry the operation`,
+        );
+      if (ids.has(item.id))
+        throw new Error(
+          `Inventory of ${label} contains duplicate resource IDs; retry the operation`,
+        );
+      ids.add(item.id);
+      items.push(item);
+    }
+    const expectedLast =
+      totalPages !== undefined
+        ? page + 1 >= totalPages
+        : totalElements !== undefined
+          ? items.length === totalElements
+          : undefined;
+    if (result.last !== undefined && expectedLast !== undefined && result.last !== expectedLast)
+      inconsistent();
+    const last = result.last ?? expectedLast ?? result.content.length < effectiveSize;
+    if (
+      totalPages !== undefined &&
+      totalPages > 0 &&
+      ((!last && result.content.length !== effectiveSize) || (last && result.content.length === 0))
+    )
+      inconsistent();
+    if (last) {
+      if (totalElements !== undefined && items.length !== totalElements) inconsistent();
+      return items;
+    }
     if (!result.content.length) throw new Error(`Inventory of ${label} did not advance`);
   }
   throw new Error(`Inventory of ${label} is incomplete: increase --max-pages`);
@@ -119,17 +234,17 @@ async function springPages<T>(
 async function inventories(api: DlpTransferApi, maxPages: number) {
   return {
     dictionaries: await springPages<DictionaryResponse>(
-      (page) => api.dictionaries.list({ page, size: 100, keywords: true }),
+      (page) => api.dictionaries.list({ page, size: 100, sort: ['name,asc'], keywords: true }),
       maxPages,
       'dictionaries',
     ),
     patterns: await springPages<DataPatternResponse>(
-      (page) => api.patterns.list({ page, size: 100 }),
+      (page) => api.patterns.list({ page, size: 100, sort: ['name,asc'] }),
       maxPages,
       'data patterns',
     ),
     profiles: await springPages<DataProfileResponse>(
-      (page) => api.profiles.list({ page, size: 100 }),
+      (page) => api.profiles.list({ page, size: 100, sort: ['name,asc'] }),
       maxPages,
       'data profiles',
     ),
@@ -327,13 +442,17 @@ export async function backupDlpResources(
           if (leaf.technique === 'dictionary') {
             const record = dictionaryById.get(id);
             if (!record) throw new Error(`references an unknown dictionary: ${id}`);
-            // Dictionaries carry no version; a pinned leaf could never rebind (I-4).
-            if (leaf.value.version != null)
+            // Live prod/dev 2026-09-11: unversioned dictionary GETs are referenced
+            // by rule leaves with server-supplied version 1. Preserve exactly this
+            // nominal revision; unknown pins remain unexportable (transfer.md).
+            if (leaf.value.version != null && leaf.value.version !== 1)
               throw new Error(`references a version-pinned dictionary: ${id}`);
             addDictionary(record);
           } else {
             const record = patternById.get(id);
             if (!record) throw new Error(`references an unknown data pattern: ${id}`);
+            if (record.detection_config?.technique !== leaf.technique)
+              throw new Error('references a data pattern with a different detection technique');
             // A retired dependency is broken configuration: restoring the
             // profile would resurrect an archived pattern in the destination.
             if (RETIRED_PATTERN.has(record.status ?? 'active'))
@@ -528,6 +647,24 @@ function keywordSet(value: unknown): string[] | undefined {
   return [...(value as string[])].sort();
 }
 
+/** Rebuild only verified upload formats, without losing CSV's first keyword.
+ * Live 2026-09-11: a CSV upload consumes its first row as a header; TXT does not.
+ * CSV quoting is literal: adding quotes changes the keyword. See transfer.md live acceptance.
+ * No keyword normalization is allowed: line breaks/empty words and unknown formats
+ * are refused during planning before any write instead of silently changing detection.
+ */
+function dictionaryFile(metadata: DictionaryRequest, keywords: string[]): string {
+  if (!keywords.length || keywords.some((word) => !word.length || /[\r\n]/.test(word)))
+    throw new Error('Dictionary contains keywords that cannot be faithfully uploaded');
+  if (/\.csv$/i.test(metadata.original_file_name)) {
+    if (keywords.some((word) => word.includes(',')))
+      throw new Error('Dictionary CSV contains unsupported multi-column keywords');
+    return `keywords\n${keywords.join('\n')}\n`;
+  }
+  if (/\.txt$/i.test(metadata.original_file_name)) return `${keywords.join('\n')}\n`;
+  throw new Error('Dictionary filename must end in .csv or .txt for a verified upload');
+}
+
 /** Dictionary responses echo `original_file_name` under `dictionary_metadata`,
  * not at the top level, so metadata compares as a projection plus that field.
  */
@@ -556,6 +693,7 @@ function dictionaryRequest(source: DictionaryResponse, name: string): Dictionary
     region_name: source.region_name,
     ...(source.description != null ? { description: source.description } : {}),
     ...(source.is_case_sensitive != null ? { is_case_sensitive: source.is_case_sensitive } : {}),
+    ...(source.tags != null ? { tags: structuredClone(source.tags) } : {}),
   };
   const parsed = DictionaryRequestSchema.safeParse(metadata);
   if (!parsed.success)
@@ -655,6 +793,27 @@ export async function planDlpResourcesRestore(
   uniqueNames(backup.dictionaries, 'dictionary');
   uniqueNames(backup.patterns, 'data pattern');
   uniqueNames(backup.profiles, 'data profile');
+  const sourceBindings = new Map<string, Binding>();
+  for (const [kind, records] of [
+    ['dictionary', backup.dictionaries],
+    ['pattern', backup.patterns],
+  ] as const) {
+    for (const record of records) {
+      if (!record.id) continue; // Existing resource-specific validation reports missing identities.
+      if (sourceBindings.has(record.id))
+        throw new Error('Backup contains duplicate dependency identities');
+      sourceBindings.set(record.id, {
+        id: record.id,
+        name: record.name ?? '',
+        kind,
+        technique:
+          kind === 'dictionary'
+            ? 'dictionary'
+            : (record as DataPatternResponse).detection_config?.technique,
+        version: kind === 'dictionary' ? 1 : ((record as DataPatternResponse).version ?? undefined),
+      });
+    }
+  }
   const unknownMapped = Object.keys(patternMap).filter(
     (name) => !backup.patterns.some((p) => p.name === name),
   );
@@ -710,6 +869,7 @@ export async function planDlpResourcesRestore(
     if (!keywords) throw new Error(`Backup dictionary lacks keywords: ${source.name}`);
     const match = matchByName(destination.dictionaries, name, () => false, 'dictionary');
     if (!match) {
+      dictionaryFile(metadata, keywords); // Validate uploads; legacy read-only reuse needs no encoding.
       dictionaryPlans.push({ sourceId: source.id, name, action: 'create', metadata, keywords });
       continue;
     }
@@ -762,6 +922,11 @@ export async function planDlpResourcesRestore(
         else missingPredefined.push({ name: source.name, candidates });
         continue;
       }
+      if (
+        !source.detection_config?.technique ||
+        match.detection_config?.technique !== source.detection_config.technique
+      )
+        throw new Error(`Destination data pattern detection technique differs: ${source.name}`);
       patternPlans.push({
         sourceId: source.id,
         name: match.name,
@@ -774,6 +939,11 @@ export async function planDlpResourcesRestore(
       const target = patternMap[source.name];
       const match = matchByName(destination.patterns, target, retired, 'data pattern');
       if (!match?.id) throw new Error(`Missing mapped destination data pattern: ${target}`);
+      if (
+        !source.detection_config?.technique ||
+        match.detection_config?.technique !== source.detection_config.technique
+      )
+        throw new Error(`Mapped destination data pattern detection technique differs: ${target}`);
       patternPlans.push({
         sourceId: source.id,
         name: target,
@@ -904,7 +1074,15 @@ export async function planDlpResourcesRestore(
     const missing = new Set<string>();
     for (const leaf of ruleLeaves(item.source)) {
       const id = leaf.value.id;
-      if (id != null && id !== '' && !planned.has(String(id))) missing.add(String(id));
+      if (id == null || id === '') continue;
+      if (typeof id !== 'string') throw new Error('Backup contains a non-string rule reference ID');
+      const sourceBinding = sourceBindings.get(id);
+      if (sourceBinding) {
+        assertLeafBinding(leaf, sourceBinding);
+        if (leaf.value.version != null && leaf.value.version !== sourceBinding.version)
+          throw new Error('Backup rule pins an unknown source dependency version');
+      }
+      if (!planned.has(id)) missing.add(id);
     }
     if (missing.size) {
       const skippable = [...missing].filter((id) => unresolvedById.has(id));
@@ -932,21 +1110,40 @@ export async function planDlpResourcesRestore(
 }
 
 interface Binding {
+  kind: 'dictionary' | 'pattern';
+  technique?: string;
   id: string;
   name: string;
   version?: number;
+}
+
+function assertLeafBinding(leaf: RuleLeaf, binding: Binding): void {
+  if (
+    (leaf.technique === 'dictionary') !== (binding.kind === 'dictionary') ||
+    leaf.technique !== binding.technique
+  )
+    throw new Error('Data profile rule detection technique does not match its dependency');
 }
 
 /** Bindings resolvable at plan time: everything except records still to create. */
 function planBindings(plan: DlpRestorePlan): Map<string, Binding> {
   const bindings = new Map<string, Binding>();
   for (const item of plan.dictionaries)
-    if (item.existing?.id) bindings.set(item.sourceId, { id: item.existing.id, name: item.name });
+    if (item.existing?.id)
+      bindings.set(item.sourceId, {
+        id: item.existing.id,
+        name: item.name,
+        version: 1,
+        kind: 'dictionary',
+        technique: 'dictionary',
+      });
   for (const item of plan.patterns)
     if (item.existing?.id)
       bindings.set(item.sourceId, {
         id: item.existing.id,
         name: item.name,
+        kind: 'pattern',
+        technique: item.existing.detection_config?.technique,
         version: item.existing.version ?? undefined,
       });
   return bindings;
@@ -962,6 +1159,15 @@ function profileRequest(
   crossTenant: boolean,
   requireBindings: boolean,
 ): ReturnType<typeof AdvancedDataProfileRequestSchema.parse> | undefined {
+  // Live create boundary: 32 UTF-16 code units accepted, 33 refused (2026-09-11).
+  // The published SDK schema permits 64; validate the observed limit before any
+  // dependency create, including --name-prefix. See transfer.md acceptance.
+  if (item.action === 'create' && item.name.length > 32)
+    throw new Error('Data profile name exceeds the live API limit of 32 characters');
+  if (item.action === 'create' && item.source.profile_type === 'basic')
+    throw new Error('Data profile basic writes cannot round-trip through the API');
+  if (item.action === 'create' && !item.source.detection_rules?.length)
+    throw new Error('Data profile has no exported detection rules to create');
   const detectionRules = structuredClone(item.source.detection_rules ?? []);
   const known = new Set<ObjectValue>();
   let deferred = false;
@@ -970,6 +1176,9 @@ function profileRequest(
     known.add(leaf.value);
     const id = leaf.value.id;
     if (id == null || id === '') continue;
+    // Check even deferred creates: a nonstandard pin must fail the entire plan.
+    if (leaf.technique === 'dictionary' && leaf.value.version != null && leaf.value.version !== 1)
+      throw new Error('Dictionary rule has an unsupported version pin');
     const binding = bindings.get(String(id));
     if (!binding) {
       if (requireBindings)
@@ -979,6 +1188,7 @@ function profileRequest(
       deferred = true;
       continue;
     }
+    assertLeafBinding(leaf, binding);
     leaf.value.id = binding.id;
     if (leaf.value.name != null) leaf.value.name = binding.name;
     if (leaf.value.version != null) {
@@ -1022,6 +1232,8 @@ export interface DlpRestoreResult {
   }>;
   serverAdded: Array<{ resource: string; fields: string[] }>;
   unresolved: UnresolvedReference[];
+  /** Confirmed POST receipts whose resource has not passed read-back verification. */
+  unverifiedCreates: Array<{ kind: DlpResourceKind; name: string; id: string }>;
   error?: string;
 }
 
@@ -1053,6 +1265,7 @@ export async function restoreDlpResources(
     patterns: [],
     profiles: [],
     serverAdded: [],
+    unverifiedCreates: [],
     unresolved: structuredClone(plan.unresolved ?? []),
   };
   const crossTenant = plan.sourceTsgId !== plan.destinationTsgId;
@@ -1114,20 +1327,28 @@ export async function restoreDlpResources(
       if (!item.metadata || !item.keywords) throw new Error('Dictionary plan is incomplete');
       const created = await api.dictionaries.create({
         metadata: item.metadata,
-        file: `${item.keywords.join('\n')}\n`,
+        file: dictionaryFile(item.metadata, item.keywords),
         includeKeywords: true,
       });
       if (!created.id) throw new Error(`Restored dictionary did not verify: ${item.name}`);
+      result.unverifiedCreates.push({ kind: 'dictionaries', name: item.name, id: created.id });
       const readBack = await api.dictionaries.get(created.id, { includeKeywords: true });
       const echo = dictionaryEcho(item.metadata, readBack, item.keywords);
-      if (!echo.matches || readBack.name !== item.name)
+      if (!echo.matches || readBack.id !== created.id || readBack.name !== item.name)
         throw new Error(
           `Restored dictionary did not verify: ${item.name} (created id ${created.id}; inspect it before retrying)`,
         );
       if (echo.serverAdded.length)
         result.serverAdded.push({ resource: `dictionary ${item.name}`, fields: echo.serverAdded });
-      bindings.set(item.sourceId, { id: created.id, name: item.name });
+      bindings.set(item.sourceId, {
+        id: created.id,
+        name: item.name,
+        version: 1,
+        kind: 'dictionary',
+        technique: 'dictionary',
+      });
       result.dictionaries.push({ name: item.name, action: 'created', id: created.id });
+      result.unverifiedCreates.pop();
       emitItem(
         'dictionaries',
         item.name,
@@ -1156,12 +1377,14 @@ export async function restoreDlpResources(
       if (!item.body) throw new Error('Data pattern plan is incomplete');
       const created = await api.patterns.create(item.body);
       if (!created.id) throw new Error(`Restored data pattern did not verify: ${item.name}`);
+      result.unverifiedCreates.push({ kind: 'patterns', name: item.name, id: created.id });
       const readBack = await api.patterns.get(created.id);
       const echo = compareEcho(item.body, readBack);
       // Lifecycle state is server-owned but load-bearing: a retired record is
       // invisible to name matching, so a "created" result must read back live.
       if (
         !echo.matches ||
+        readBack.id !== created.id ||
         readBack.name !== item.name ||
         RETIRED_PATTERN.has(readBack.status ?? 'active')
       )
@@ -1176,9 +1399,12 @@ export async function restoreDlpResources(
       bindings.set(item.sourceId, {
         id: created.id,
         name: item.name,
+        kind: 'pattern',
+        technique: readBack.detection_config?.technique,
         version: readBack.version ?? undefined,
       });
       result.patterns.push({ name: item.name, action: 'created', id: created.id });
+      result.unverifiedCreates.pop();
       emitItem('patterns', item.name, 'created', result.patterns.length, plan.patterns.length);
     }
 
@@ -1216,10 +1442,12 @@ export async function restoreDlpResources(
       }
       const created = await api.profiles.create(body);
       if (!created.id) throw new Error(`Restored data profile did not verify: ${item.name}`);
+      result.unverifiedCreates.push({ kind: 'profiles', name: item.name, id: created.id });
       const readBack = await api.profiles.get(created.id);
       const echo = compareEcho(body, readBack);
       if (
         !echo.matches ||
+        readBack.id !== created.id ||
         readBack.name !== item.name ||
         RETIRED_PROFILE.has(readBack.profile_status ?? 'active')
       )
@@ -1232,6 +1460,7 @@ export async function restoreDlpResources(
           fields: echo.serverAdded,
         });
       result.profiles.push({ name: item.name, action: 'created', id: created.id });
+      result.unverifiedCreates.pop();
       emitItem('profiles', item.name, 'created', result.profiles.length, plan.profiles.length);
     }
     result.complete = true;
@@ -1246,6 +1475,9 @@ export async function restoreDlpResources(
           )
         ? error.message
         : 'Restore stopped; verify destination state before retrying';
+    const unverified = result.unverifiedCreates[0];
+    if (unverified)
+      result.error += `; unverified create: ${unverified.kind} ${unverified.name} (id ${unverified.id}); inspect this resource before retrying`;
   }
   return result;
 }

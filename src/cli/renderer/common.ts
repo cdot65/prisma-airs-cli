@@ -18,7 +18,7 @@ export function fail(err: unknown): never {
   console.error(chalk.red(`\n  ✗ Error: ${message}`));
   if (status !== undefined) {
     console.error(chalk.red(`    HTTP ${status}`));
-    console.error(chalk.dim('    Re-run with --debug to capture full API traffic.'));
+    console.error(chalk.dim('    Re-run with --debug to capture redacted API diagnostics.'));
   }
   console.error('');
   process.exit(1);

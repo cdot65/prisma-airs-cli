@@ -57,8 +57,8 @@ export function register(dlp: Command): void {
       const { page, size } = resolvePageParams(listCmd, opts);
       const svc = new SdkDataPatternsService(await loadDlpClientOptions());
       const result = opts.all
-        ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
-        : (await svc.list({ page, size, sort: opts.sort })).content;
+        ? await svc.listAll({ size, sort: opts.sort ?? ['name,asc'], max: Number(opts.max) })
+        : (await svc.list({ page, size, sort: opts.sort ?? ['name,asc'] })).content;
       const visible = visibleRecords(result, opts.includePredefined);
       dlpPatterns.renderList(
         { content: visible, totalElements: visible.length },

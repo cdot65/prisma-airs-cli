@@ -342,8 +342,8 @@ describe('backupDlpResources', () => {
     await expect(backupDlpResources(big, '100')).rejects.toThrow(/safety limit/);
 
     const endless = memoryApi().api;
-    endless.patterns.list = vi.fn(async () => ({
-      content: [{ id: 'p', name: 'p' }],
+    endless.patterns.list = vi.fn(async ({ page }) => ({
+      content: [{ id: `p${page}`, name: `p${page}` }],
       last: false,
     })) as never;
     await expect(backupDlpResources(endless, '100', { maxPages: 2 })).rejects.toThrow(
@@ -352,6 +352,205 @@ describe('backupDlpResources', () => {
     await expect(backupDlpResources(memoryApi().api, '100', { maxPages: 0 })).rejects.toThrow(
       /maxPages/,
     );
+  });
+
+  it('requests the live-verified stable name sort for every inventory', async () => {
+    const { api } = sourceApi();
+    await backupDlpResources(api, '100');
+    expect(api.dictionaries.list).toHaveBeenCalledWith({
+      page: 0,
+      size: 100,
+      sort: ['name,asc'],
+      keywords: true,
+    });
+    for (const kind of ['patterns', 'profiles'] as const)
+      expect(api[kind].list).toHaveBeenCalledWith({ page: 0, size: 100, sort: ['name,asc'] });
+  });
+
+  it('rejects overlapping pages observed live without exposing resource content or silently deduplicating', async () => {
+    const { api } = memoryApi();
+    const records = Array.from({ length: 100 }, (_, i) => ({
+      ...srcPattern(),
+      id: `p${i}`,
+      name: `Private keyword ${i}`,
+    }));
+    api.patterns.list = vi.fn(async ({ page }) => ({
+      content: page === 0 ? records : [records[99]],
+      last: page === 1,
+      number: page,
+      size: 100,
+      totalPages: 2,
+      totalElements: 101,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      'Inventory of data patterns contains duplicate resource IDs; retry the operation',
+    );
+    expect(api.patterns.list).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    undefined,
+    null,
+    '',
+    '   ',
+  ])('rejects an inventory resource with missing ID %s', async (id) => {
+    const { api } = memoryApi({ patterns: [{ ...srcPattern(), id }] });
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(/missing resource ID/);
+  });
+
+  it.each([
+    { number: 1 },
+    { size: 0 },
+    { numberOfElements: 2 },
+    { first: false },
+    { empty: true },
+    { pageable: { pageNumber: 1 } },
+    { pageable: { pageSize: 101 } },
+    { pageable: { offset: 100 } },
+    { totalPages: -1 },
+    { totalElements: 1.5 },
+    { totalPages: 0 },
+    { totalPages: 2, totalElements: 1 },
+    { totalElements: 2 },
+    { totalPages: 2, last: true },
+    { totalPages: 1, last: false },
+    { totalElements: 1, last: false },
+  ])('rejects inconsistent supplied page metadata %j', async (metadata) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async () => ({
+      content: [srcPattern()],
+      last: true,
+      ...metadata,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+
+  it.each([
+    'totalPages',
+    'totalElements',
+  ] as const)('rejects changing %s between pages', async (field) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async ({ page }) => ({
+      content: Array.from({ length: 100 }, (_, i) => ({ ...srcPattern(), id: `p${page}-${i}` })),
+      last: false,
+      [field]: page === 0 ? 200 : 201,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+    expect(api.patterns.list).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    'all',
+    'totalPages',
+    'totalElements',
+    'none',
+  ] as const)('accepts complete distinct pages with %s optional metadata', async (mode) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async ({ page }) => {
+      const content = Array.from({ length: page === 0 ? 100 : 1 }, (_, i) => ({
+        ...srcPattern(),
+        id: `p${page}-${i}`,
+        name: `Pattern ${page}-${i}`,
+      }));
+      const metadata =
+        mode === 'all'
+          ? {
+              number: page,
+              size: 100,
+              numberOfElements: content.length,
+              first: page === 0,
+              empty: false,
+              last: page === 1,
+              totalElements: 101,
+              totalPages: 2,
+              pageable: { pageNumber: page, pageSize: 100, offset: page * 100 },
+            }
+          : mode === 'totalPages'
+            ? { totalPages: 2 }
+            : mode === 'totalElements'
+              ? { totalElements: 101 }
+              : {};
+      return { content, ...metadata };
+    }) as never;
+    const { backup } = await backupDlpResources(api, '100', { resources: ['patterns'] });
+    expect(backup.patterns).toHaveLength(101);
+    expect(api.patterns.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('accepts the live dictionary page-size cap and snake_case metadata across pages', async () => {
+    const { api } = memoryApi();
+    api.dictionaries.list = vi.fn(async ({ page }) => ({
+      content: Array.from({ length: page === 0 ? 50 : 1 }, (_, i) => ({
+        ...srcDictionary(),
+        id: `dict-${page}-${i}`,
+        name: `Dictionary ${page}-${i}`,
+      })),
+      number: page,
+      size: 50,
+      total_pages: 2,
+      total_elements: 51,
+      number_of_elements: page === 0 ? 50 : 1,
+      last: page === 1,
+      pageable: { page_number: page, page_size: 50, offset: page * 50 },
+    })) as never;
+    const { backup } = await backupDlpResources(api, '100', { resources: ['dictionaries'] });
+    expect(backup.dictionaries).toHaveLength(51);
+    expect(api.dictionaries.list).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    { totalPages: 1, total_pages: 2 },
+    { totalElements: 1, total_elements: 2 },
+    { numberOfElements: 1, number_of_elements: 2 },
+    { pageable: { pageNumber: 0, page_number: 1 } },
+    { pageable: { pageSize: 50, page_size: 100 } },
+    { size: 100, pageable: { page_size: 50 } },
+    { size: 50.5 },
+    { total_elements: -1 },
+    { number_of_elements: 2 },
+  ])('rejects inconsistent snake/camel page metadata %j', async (metadata) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async () => ({
+      content: [srcPattern()],
+      last: true,
+      ...metadata,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+
+  it('rejects a page-size cap that changes during a sweep', async () => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async ({ page }) => ({
+      content: [{ ...srcPattern(), id: `p${page}` }],
+      last: false,
+      size: page === 0 ? 50 : 25,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+
+  it('accepts empty Spring pages with zero totals', async () => {
+    const { api } = sourceApi();
+    api.dictionaries.list = vi.fn(async () => ({
+      content: [],
+      totalPages: 0,
+      totalElements: 0,
+      number: 0,
+      size: 100,
+      empty: true,
+      first: true,
+      last: true,
+    })) as never;
+    api.profiles.list = vi.fn(async () => ({ content: [], totalPages: 0 })) as never;
+    const { backup } = await backupDlpResources(api, '100', { resources: ['patterns'] });
+    expect(backup.patterns).toHaveLength(1);
   });
 
   it('refuses mixed tenant identities in the inventory', async () => {
@@ -801,7 +1000,7 @@ describe('version and lifecycle fidelity', () => {
     ]);
   });
 
-  it('fails export when a leaf pins a dictionary version', async () => {
+  it('fails export when a leaf pins an unobserved dictionary version', async () => {
     const pinned: DataProfileResponse = {
       ...preDictProfile(),
       detection_rules: [
@@ -812,7 +1011,7 @@ describe('version and lifecycle fidelity', () => {
               detection_technique: 'dictionary',
               id: 'src-dict-1',
               name: 'Keywords',
-              version: 1,
+              version: 2,
             },
           },
         },
@@ -1240,5 +1439,271 @@ describe('compareEcho', () => {
     const stranger = compareEcho({ a: 1 }, { a: 1, surprise: true });
     expect(stranger.matches).toBe(true);
     expect(stranger.serverAdded).toEqual(['body.surprise']);
+  });
+});
+
+describe('live dictionary upload fidelity (2026-09-11)', () => {
+  it.each([
+    'csv',
+    'CSV',
+  ])('adds one header to %s while preserving literal quotes and first keyword', async (extension) => {
+    // Live API consumes the CSV header but retains quote characters literally.
+    // This intentionally is not an RFC4180 encoder. See transfer.md acceptance log.
+    const dictionary = {
+      ...srcDictionary(),
+      keywords: ['"alpha"', 'bravo'],
+      dictionary_metadata: { original_file_name: `sample.${extension}` },
+    };
+    const source = memoryApi({ dictionaries: [dictionary] });
+    const { backup } = await backupDlpResources(source.api, 'source', {
+      resources: ['dictionaries'],
+    });
+    const dest = memoryApi();
+    dest.api.dictionaries.create.mockImplementationOnce(async ({ metadata, file }) => {
+      expect(file).toBe('keywords\n"alpha"\nbravo\n');
+      const record = {
+        ...dictionary,
+        ...metadata,
+        id: 'created-csv',
+        keywords: String(file).trimEnd().split('\n').slice(1),
+      };
+      dest.state.dictionaries.push(record);
+      return record;
+    });
+    const plan = await planDlpResourcesRestore(dest.api, backup, 'destination');
+    const result = await restoreDlpResources(dest.api, plan);
+    expect(result.complete).toBe(true);
+    expect(dest.api.dictionaries.get).toHaveBeenCalledWith('created-csv', {
+      includeKeywords: true,
+    });
+  });
+
+  it.each([
+    { file: 'words.csv', words: ['secret,word'] },
+    { file: 'words.txt', words: ['secret\nword'] },
+    { file: 'words.txt', words: ['secret\rword'] },
+    { file: 'words.txt', words: [''] },
+    { file: 'words.txt', words: [] },
+    { file: 'words.json', words: ['secret'] },
+  ])('refuses unsupported uploads before any create without exposing words ($file)', async ({
+    file,
+    words,
+  }) => {
+    const source = memoryApi({
+      dictionaries: [
+        { ...srcDictionary(), keywords: words, dictionary_metadata: { original_file_name: file } },
+      ],
+    });
+    const { backup } = await backupDlpResources(source.api, 'source', {
+      resources: ['dictionaries'],
+    });
+    const dest = memoryApi();
+    await expect(planDlpResourcesRestore(dest.api, backup, 'destination')).rejects.toThrow(
+      /^Dictionary/,
+    );
+    await expect(planDlpResourcesRestore(dest.api, backup, 'destination')).rejects.not.toThrow(
+      /secret/,
+    );
+    expect(dest.api.dictionaries.create).not.toHaveBeenCalled();
+    expect(dest.api.patterns.create).not.toHaveBeenCalled();
+    expect(dest.api.profiles.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('review regressions', () => {
+  it('reuses an exact legacy dictionary without requiring a new upload format', async () => {
+    const dictionary = {
+      ...srcDictionary(),
+      dictionary_metadata: { original_file_name: 'legacy.data' },
+    };
+    const source = memoryApi({ dictionaries: [dictionary] });
+    const { backup } = await backupDlpResources(source.api, 'source', {
+      resources: ['dictionaries'],
+    });
+    const dest = memoryApi({ dictionaries: [{ ...dictionary, id: 'dest-legacy' }] });
+    const plan = await planDlpResourcesRestore(dest.api, backup, 'destination');
+    const result = await restoreDlpResources(dest.api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries[0].action).toBe('reused');
+    expect(dest.api.dictionaries.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    false,
+    true,
+  ])('refuses an impossible Spring page shape with totals only (empty last: %s)', async (emptyLast) => {
+    const source = memoryApi();
+    source.api.dictionaries.list.mockImplementation(async ({ page }: { page: number }) => ({
+      content:
+        page === 0
+          ? emptyLast
+            ? Array.from({ length: 100 }, (_, i) => ({
+                ...srcDictionary(),
+                id: `dict-${i}`,
+                name: `Dict ${i}`,
+              }))
+            : [srcDictionary()]
+          : [],
+      totalPages: 2,
+      last: page === 1,
+    }));
+    await expect(backupDlpResources(source.api, 'source')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+});
+
+describe('restore receipt and reference safety regressions', () => {
+  const kinds = ['dictionaries', 'patterns', 'profiles'] as const;
+  const leaf = (backup: DlpResourcesBackup, index: number): Record<string, unknown> => {
+    const rule = backup.profiles[0].detection_rules?.[0] as {
+      expression_tree: { sub_expressions: Array<{ rule_item: Record<string, unknown> }> };
+    };
+    return rule.expression_tree.sub_expressions[index].rule_item;
+  };
+
+  it.each(
+    kinds,
+  )('retains the confirmed %s POST receipt when GET fails and stops later stages', async (kind) => {
+    const backup = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    api[kind].get.mockRejectedValue(
+      Object.assign(new Error('PRIVATE-KEYWORDS'), { statusCode: 503 }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    const created = state[kind].at(-1);
+    expect(result.complete).toBe(false);
+    expect(result.unverifiedCreates).toEqual([{ kind, name: created?.name, id: created?.id }]);
+    expect(result.error).toContain('HTTP 503');
+    expect(result.error).toContain(`id ${created?.id}`);
+    expect(JSON.stringify(result)).not.toContain('PRIVATE-KEYWORDS');
+    expect(result[kind]).not.toContainEqual(
+      expect.objectContaining({ action: 'created', id: created?.id }),
+    );
+    for (const later of kinds.slice(kinds.indexOf(kind) + 1))
+      expect(api[later].create).not.toHaveBeenCalled();
+  });
+
+  it.each(
+    kinds.flatMap((kind) => [undefined, 'wrong-resource'].map((id) => ({ kind, id }))),
+  )('rejects missing or mismatched GET identity after $kind POST (GET id $id)', async ({
+    kind,
+    id,
+  }) => {
+    const backup = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    api[kind].get.mockImplementation(async () => ({ ...state[kind].at(-1), id }) as never);
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    const created = state[kind].at(-1);
+    expect(result.unverifiedCreates).toEqual([{ kind, name: created?.name, id: created?.id }]);
+    expect(result.error).toContain('did not verify');
+    for (const later of kinds.slice(kinds.indexOf(kind) + 1))
+      expect(api[later].create).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes an opaque GET error from a verified create without leaking its message', async () => {
+    const backup = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    api.dictionaries.get.mockRejectedValue(new Error('PRIVATE-KEYWORDS'));
+    const result = await restoreDlpResources(api, plan);
+    expect(result.unverifiedCreates).toEqual([
+      { kind: 'dictionaries', name: 'Keywords', id: 'dest-dict-0' },
+    ]);
+    expect(result.error).toContain('Restore stopped');
+    expect(result.error).not.toContain('PRIVATE-KEYWORDS');
+  });
+
+  it.each([
+    'name fallback',
+    'explicit map',
+  ])('rejects a predefined technique mismatch through %s before writes', async (mode) => {
+    const backup = await sourceEnvelope();
+    const { api } = memoryApi({
+      patterns: [{ ...destPredefined(), detection_config: { technique: 'regex' } }],
+    });
+    await expect(
+      planDlpResourcesRestore(
+        api,
+        backup,
+        '200',
+        mode === 'explicit map' ? { patternMap: { SSN: 'SSN' } } : {},
+      ),
+    ).rejects.toThrow(/detection technique differs/);
+    for (const kind of kinds) expect(api[kind].create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { index: 0, patch: { detection_technique: 'ml' } },
+    { index: 0, patch: { id: 'src-dict-1' } },
+    { index: 1, patch: { id: 'src-pat-1' } },
+    { index: 0, patch: { version: 77 } },
+    { index: 1, patch: { version: 2 } },
+  ])('rejects malformed v1 source references before deferred dependency creates (%j)', async ({
+    index,
+    patch,
+  }) => {
+    const backup = await sourceEnvelope();
+    Object.assign(leaf(backup, index), patch);
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, backup, '200')).rejects.toThrow(/technique|version/);
+    for (const kind of kinds) expect(api[kind].create).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate source IDs across dependency kinds', async () => {
+    const backup = await sourceEnvelope();
+    backup.dictionaries[0].id = backup.patterns[0].id;
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, backup, '200')).rejects.toThrow(
+      /duplicate dependency identities/,
+    );
+    expect(api.dictionaries.list).not.toHaveBeenCalled();
+  });
+
+  it('refuses to export a pattern leaf whose technique disagrees with its source', async () => {
+    const { api } = sourceApi({ patterns: [] });
+    const profile = srcProfile();
+    const source = { profiles: [profile] } as DlpResourcesBackup;
+    leaf(source, 0).detection_technique = 'ml';
+    api.profiles.list.mockResolvedValue({ content: [profile], last: true });
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(/different detection technique/);
+  });
+
+  it.each([
+    'basic',
+    'empty',
+    'absent',
+  ] as const)('rejects known non-round-trippable %s profiles before dependency writes', async (mode) => {
+    const backup = await sourceEnvelope();
+    if (mode === 'basic') backup.profiles[0].profile_type = 'basic';
+    else backup.profiles[0].detection_rules = mode === 'empty' ? [] : undefined;
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, backup, '200')).rejects.toThrow(
+      /basic writes|no exported detection rules/,
+    );
+    for (const kind of kinds) expect(api[kind].create).not.toHaveBeenCalled();
+  });
+
+  it('preserves nominal dictionary revision 1 through create and read-only resume', async () => {
+    const source = sourceApi();
+    const profile = source.state.profiles[0];
+    const input = { profiles: [profile] } as DlpResourcesBackup;
+    leaf(input, 1).version = 1;
+    const { backup } = await backupDlpResources(source.api, '100');
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.unverifiedCreates).toEqual([]);
+    const body = { profiles: [api.profiles.create.mock.calls[0][0]] } as DlpResourcesBackup;
+    expect(leaf(body, 1)).toMatchObject({ id: 'dest-dict-0', version: 1 });
+    const resumed = await planDlpResourcesRestore(api, backup, '200', { onConflict: 'verify' });
+    const verified = await restoreDlpResources(api, resumed);
+    expect(verified.complete).toBe(true);
+    expect(verified.profiles[0].action).toBe('verified');
+    for (const kind of kinds) expect(api[kind].create).toHaveBeenCalledTimes(1);
   });
 });

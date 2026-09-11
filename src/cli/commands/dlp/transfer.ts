@@ -167,6 +167,20 @@ function renderRestore(
     for (const entry of rows('unresolved'))
       blocks.push(`${entry.kind} ${entry.name}: ${entry.reason}`);
   }
+  if (rows('unverifiedCreates').length) {
+    blocks.push(heading('Created resources awaiting verification'));
+    blocks.push(
+      formatOutput(
+        rows('unverifiedCreates'),
+        [
+          { key: 'kind', label: 'Resource' },
+          { key: 'name', label: 'Name' },
+          { key: 'id', label: 'Created ID' },
+        ],
+        markdown ? 'markdown' : 'table',
+      ),
+    );
+  }
   if (rows('serverAdded').length) {
     blocks.push(heading('Verified server-added fields (source omitted these)'));
     for (const item of rows('serverAdded'))
@@ -385,6 +399,7 @@ export function register(dlp: Command): void {
           { key: 'profiles', label: 'Data profiles' },
           { key: 'unresolved', label: 'Unresolved references' },
           { key: 'serverAdded', label: 'Verified server-added fields' },
+          { key: 'unverifiedCreates', label: 'Created resources awaiting verification' },
           { key: 'dryRun', label: 'Dry run' },
           { key: 'complete', label: 'Complete' },
         ];
