@@ -57,7 +57,7 @@ Underlying API `expression_tree` responses are recursive — many nodes carry `n
 
 ## create
 
-`--name` is required. `--profile-type` defaults to `advanced`. For the common case — a flat boolean of pattern IDs — pass `--pattern-id <id>` repeatedly and (optionally) `--combinator and|or|not|and_not|or_not` (default `or`):
+`--name` is required. `--profile-type` defaults to `advanced`. Basic writes are rejected before any API call: on September 11, the API returned an advanced profile when a basic profile was requested. This guard applies to create, replace, and patch, including raw JSON bodies. For the common case — a flat boolean of pattern IDs — pass `--pattern-id <id>` repeatedly and (optionally) `--combinator and|or|not|and_not|or_not` (default `or`):
 
 ```bash
 airs runtime dlp profiles create \
@@ -74,13 +74,26 @@ Flag reference:
 
 | Flag | Notes |
 |------|-------|
-| `--name <s>` | Required (unless `--body-file`) |
-| `--profile-type <s>` | `basic` or `advanced` (default `advanced`) |
+| `--name <s>` | Required (unless supplied in the body); at most 32 characters |
+| `--profile-type <s>` | `advanced` (default); `basic` writes are unsupported |
 | `--description <s>` | Optional |
 | `--granular` | Mark as granular data profile |
-| `--pattern-id <id>` | Repeatable; each becomes a leaf in `expression_tree.condition_pattern[]` |
+| `--pattern-id <id>` | Repeatable; each is resolved with GET and becomes `expression_tree.sub_expressions[].rule_item` |
 | `--combinator <op>` | `or` (default), `and`, `not`, `and_not`, `or_not` |
-| `--confidence <level>` | Leaf confidence (default `high`) |
+| `--confidence <level>` | `low`, `medium`, or `high` (default); must be supported by each referenced pattern |
+
+Profile names are limited to **32 characters**, including any restore name prefix.
+An identical-body live probe on September 11 succeeded at 32 characters and returned HTTP 400
+at 33. The published SDK schema allows 64, but the CLI enforces the observed 32-character
+limit before OAuth for flags and raw create/replace/patch bodies. See the
+[recorded boundary evidence](transfer.md).
+
+Before writing, the CLI fetches every distinct `--pattern-id` from the selected tenant.
+Each leaf carries the fetched ID, name, version, detection technique, and supported confidence
+levels, with `match_type: include` and `occurrence_count >= 1`. Missing, inactive, or incomplete
+references stop the command before POST/PUT. Regex and weighted-regex references retain their
+own techniques. This rule shape was verified live on September 11; see the
+[transfer acceptance log](transfer.md). API failures exit 1; invalid inputs exit 2.
 
 **Output (`--output json`)** — curated ack:
 
@@ -97,7 +110,7 @@ Flag reference:
 
 ### Escape hatch — `--body-file` for complex rules
 
-For nested `expression_tree` (AND-of-ORs etc.) or `multi_profile` composition, pass JSON:
+For nested `expression_tree` (AND-of-ORs etc.) or `multi_profile` composition, pass JSON. Raw bodies are sent as supplied; use IDs, names, versions, and techniques from the selected tenant. Replace the placeholders below with current pattern metadata before running the example:
 
 ```bash
 # expression_tree with AND of two sub-rules
@@ -111,11 +124,13 @@ cat > profile-expr.json <<'EOF'
       "expression_tree": {
         "operator_type": "and",
         "sub_expressions": [
-          { "rule_item": { "detection_technique": "regex", "match_type": "include",
+          { "rule_item": { "id": "<first-pattern-id>", "name": "<first-pattern-name>", "version": 1,
+                           "detection_technique": "regex", "match_type": "include",
                            "confidence_level": "high",
                            "occurrence_operator_type": "more_than_equal_to",
                            "occurrence_count": 1 } },
-          { "rule_item": { "detection_technique": "weighted_regex", "match_type": "include",
+          { "rule_item": { "id": "<second-pattern-id>", "name": "<second-pattern-name>", "version": 1,
+                           "detection_technique": "weighted_regex", "match_type": "include",
                            "confidence_level": "high",
                            "occurrence_operator_type": "more_than_equal_to",
                            "occurrence_count": 1 } }

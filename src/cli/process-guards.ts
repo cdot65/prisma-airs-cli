@@ -4,7 +4,7 @@ import chalk from 'chalk';
 export function handleUnhandledRejection(reason: unknown): void {
   const message = reason instanceof Error ? reason.message : String(reason);
   console.error(chalk.red(`\n  Unexpected error: ${message}`));
-  console.error(chalk.dim('  Re-run with --debug to capture full API traffic.\n'));
+  console.error(chalk.dim('  Re-run with --debug to capture redacted API diagnostics.\n'));
   process.exit(1);
 }
 
