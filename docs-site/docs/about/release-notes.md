@@ -1,5 +1,26 @@
 # Release Notes
 
+## v5.11.0 (2026-09-11) — Scope-first AI Gateway workspace provisioning
+
+- `airs aigateway workspaces create` now provisions a workspace the way Strata Cloud
+  Manager's UI does (captured 2026-09-11): create the SCM IAM scope, create the
+  workspace with that `scope_name`, then PUT the scope back with the new workspace slug
+  bound as a resource. That last step is what grants data-plane access. A bare create
+  against a scope that does not exist yet is the `400 AB01` seen on September 6.
+- `--scope-name` is optional and defaults to SCM's `ws_<name>_<suffix>` convention;
+  `--existing-scope` binds a scope created earlier and preserves its other bindings.
+  Partial failures are reported with the created slug and scope, never hidden.
+- New `airs aigateway scopes {list, get, create, bind, delete}` expose each step on its
+  own and list unbound scopes. `list`/`get` were verified live; `create`/`bind` send the
+  captured SCM bodies; `delete` is not live-verified. `PANW_IAM_ENDPOINT` / `iamEndpoint`
+  override the IAM base URL.
+- Fix `--output json` being ignored on `workspaces create` and `update` (the root
+  program's own `--output` consumed the flag).
+- Pin SDK 0.31.0 (`gw.iamScopes`, `gw.workspaces.provision()`).
+
+See [workspaces](../cli/aigateway/workspaces.md) and the
+[workflow cheat sheet](../cli/aigateway/workflows.md#create-a-workspace).
+
 ## v5.9.1 (2026-09-11) — DLP dictionary and profile migration remediation
 
 - Pin published SDK 0.30.1 for sanitized RFC 7807 field diagnostics. Dictionary API
