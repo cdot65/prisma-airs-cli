@@ -297,13 +297,15 @@ This supersedes the May 2026 records of HTTP 400s for `POST /v2/api/data-pattern
 request-content classes, now classified.
 
 **The dictionary create path remains live-unproven.** No custom dictionaries exist in
-any observed tenant, and a live probe matrix against `POST /v2/api/dictionaries`
-(2026-09-11) found the endpoint's validation gates working — a mis-named part,
-wrong content type, or missing field each returns a *detailed* error — while every
-fully-valid request (SDK encoding and hand-rolled variants alike) receives a
-detail-free HTTP 400, consistent with a tenant-level restriction on custom
-dictionaries. A restore involving dictionaries fails safe: staged stop, sanitized
-error, honest partial reporting, exit 1.
+any observed tenant, and live probe matrices against `POST /v2/api/dictionaries`
+(2026-09-11, run independently on two tenants) found the endpoint's validation gates
+working — a mis-named part, wrong content type, or missing field each returns a
+*detailed* error — while every fully-valid request (SDK encoding and hand-rolled
+variants alike, across region variants) receives a detail-free HTTP 400 on both
+tenants. This is consistent with an account- or license-level restriction on custom
+dictionaries (an Enterprise DLP entitlement) rather than a client defect. A restore
+involving dictionaries fails safe: staged stop, sanitized error, honest partial
+reporting, exit 1.
 
 ## Review evidence
 
