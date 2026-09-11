@@ -921,6 +921,48 @@ describe('verify-mismatch detection', () => {
   });
 });
 
+describe('predefined reference stubs and candidate quality', () => {
+  it('embeds predefined references as slim stubs, never predefined content', async () => {
+    const envelope = await sourceEnvelope({
+      dictionaries: [srcPreDict()],
+      profiles: [preDictProfile()],
+    });
+    const ssn = envelope.patterns.find((p) => p.type === 'predefined');
+    expect(Object.keys(ssn ?? {}).sort()).toEqual([
+      'detection_config',
+      'id',
+      'name',
+      'type',
+      'version',
+    ]);
+    expect(ssn?.detection_config).toEqual({ technique: 'ml' });
+    const legal = envelope.dictionaries.find((d) => d.type === 'predefined');
+    expect(Object.keys(legal ?? {}).sort()).toEqual(['id', 'name', 'type']);
+  });
+
+  it('ranks candidates by strong affinity only, deduplicated and capped', async () => {
+    const envelope = await sourceEnvelope();
+    const mk = (
+      id: string,
+      name: string,
+      extra: Partial<DataPatternResponse> = {},
+    ): DataPatternResponse => ({ ...destPredefined(), id, name, ...extra });
+    const { api } = memoryApi({
+      patterns: [
+        mk('c1', 'ssn'),
+        mk('c2', 'US SSN Numbers'),
+        mk('c3', 'US SSN Numbers'),
+        mk('c4', 'Social Security'),
+        mk('c5', 'UK SSN', { status: 'deleted' }),
+        mk('c6', 'SSN Regex', { detection_config: { technique: 'regex' } }),
+      ],
+    });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN \(candidates: "ssn", "US SSN Numbers"\)/,
+    );
+  });
+});
+
 describe('skip-unresolved and progress', () => {
   it('skips unresolved references and their dependent profiles, restoring the rest', async () => {
     const envelope = await sourceEnvelope();

@@ -259,15 +259,34 @@ export async function backupDlpResources(
 
   const dictionaries = new Map<string, DictionaryResponse>();
   const patterns = new Map<string, DataPatternResponse>();
+  // Predefined content is PANW's, not the tenant's: the envelope carries only
+  // the slim resolution stub a restore needs to rebind the reference (identity,
+  // name, type, detection technique) — never the predefined definition itself.
   const addDictionary = (record: DictionaryResponse): void => {
     if (!record.id) throw new Error('Inventory dictionary has no id');
     if (record.type !== 'predefined' && !Array.isArray(record.keywords))
       throw new Error(`Dictionary keywords were not returned by the region: ${record.name}`);
-    dictionaries.set(record.id, structuredClone(record));
+    const stored =
+      record.type === 'predefined'
+        ? ({ id: record.id, name: record.name, type: record.type } as DictionaryResponse)
+        : record;
+    dictionaries.set(record.id, structuredClone(stored));
   };
   const addPattern = (record: DataPatternResponse): void => {
     if (!record.id) throw new Error('Inventory data pattern has no id');
-    patterns.set(record.id, structuredClone(record));
+    const stored =
+      record.type === 'predefined'
+        ? ({
+            id: record.id,
+            name: record.name,
+            type: record.type,
+            ...(record.version != null ? { version: record.version } : {}),
+            ...(record.detection_config?.technique
+              ? { detection_config: { technique: record.detection_config.technique } }
+              : {}),
+          } as DataPatternResponse)
+        : record;
+    patterns.set(record.id, structuredClone(stored));
   };
 
   if (kinds.includes('dictionaries'))
@@ -551,37 +570,31 @@ function normalizedName(value: string): string {
 
 /** Rank live, same-technique predefined candidates by name affinity, for the
  * operator to review and bind explicitly. Suggestions only — never auto-bound.
+ * Only strong affinity (normalized equality or containment) qualifies: a shared
+ * token alone suggests lookalikes, not equivalents. Names are deduplicated.
  */
 function predefinedCandidates(
   source: DataPatternResponse,
   records: DataPatternResponse[],
 ): string[] {
   const wanted = normalizedName(source.name ?? '');
-  const wantedTokens = new Set(wanted.split(' '));
-  return records
-    .filter(
-      (record): record is DataPatternResponse & { name: string } =>
-        record.type === 'predefined' &&
-        record.name != null &&
-        !RETIRED_PATTERN.has(record.status ?? 'active') &&
-        record.detection_config?.technique === source.detection_config?.technique,
+  const scored = new Map<string, number>();
+  for (const record of records) {
+    if (
+      record.type !== 'predefined' ||
+      record.name == null ||
+      RETIRED_PATTERN.has(record.status ?? 'active') ||
+      record.detection_config?.technique !== source.detection_config?.technique
     )
-    .map((record) => {
-      const name = normalizedName(record.name);
-      const score =
-        name === wanted
-          ? 3
-          : name.includes(wanted) || wanted.includes(name)
-            ? 2
-            : name.split(' ').some((token) => wantedTokens.has(token))
-              ? 1
-              : 0;
-      return { name: record.name, score };
-    })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+      continue;
+    const name = normalizedName(record.name);
+    const score = name === wanted ? 2 : name.includes(wanted) || wanted.includes(name) ? 1 : 0;
+    if (score > 0) scored.set(record.name, Math.max(scored.get(record.name) ?? 0, score));
+  }
+  return [...scored.entries()]
+    .sort(([aName, aScore], [bName, bScore]) => bScore - aScore || aName.localeCompare(bName))
     .slice(0, 3)
-    .map((item) => item.name);
+    .map(([name]) => name);
 }
 
 function matchByName<T extends { name?: string | null }>(

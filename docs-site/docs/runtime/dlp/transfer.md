@@ -21,9 +21,10 @@ airs runtime dlp backup --resources profiles --skip-unsupported \
 
 - Exports **custom** dictionaries (with their keyword payloads), custom and
   file-property data patterns, and custom data profiles. Predefined (PANW-shipped)
-  resources are never exported as content; when a profile references one, the exact
-  referenced record is embedded as a **resolve-only reference** so restore can rebind
-  it in the destination catalog by name.
+  resources are never exported as content: when a profile references one, the backup
+  embeds only a **slim resolve-only stub** — id, name, type, and detection technique —
+  so restore can rebind the reference in the destination catalog. No predefined
+  definition ever enters a backup file.
 - Profile dependency closure is captured at the exact referenced revision: a rule leaf
   pinning a pattern version the catalog no longer holds fails the export (or is
   excluded with a reason under `--skip-unsupported`, as are multi-profile rules and
