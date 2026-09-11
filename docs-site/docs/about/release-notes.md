@@ -1,5 +1,10 @@
 # Release Notes
 
+## v5.11.1 (2026-09-11) — SDK 0.31.1
+
+- Pin SDK 0.31.1, which fixes `generateWorkspaceScopeName()` on Node 18. The CLI requires
+  Node 20 or newer, so 5.11.0 was unaffected; this keeps the dependency current.
+
 ## v5.11.0 (2026-09-11) — Scope-first AI Gateway workspace provisioning
 
 - `airs aigateway workspaces create` now provisions a workspace the way Strata Cloud
