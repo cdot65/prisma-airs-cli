@@ -101,6 +101,7 @@ Model Security commands also reuse the `PANW_MGMT_*` credentials. All endpoint o
 | `PANW_AI_GW_DATA_ENDPOINT` | -- | AI Gateway scoped data-plane endpoint |
 | `PANW_AI_GW_ADMIN_ENDPOINT` | -- | AI Gateway tenant-wide admin endpoint |
 | `PANW_AI_GW_TOKEN_ENDPOINT` | -- | AI Gateway OAuth endpoint |
+| `PANW_IAM_ENDPOINT` | -- | SCM IAM endpoint for workspace scopes (default `https://api.apps.paloaltonetworks.com/iam/v1`) |
 
 AI Gateway reuses the shared `PANW_MGMT_*` credentials.
 

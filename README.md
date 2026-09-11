@@ -20,7 +20,7 @@
 - **SCM dashboard and sessions** — `runtime dashboard` and `runtime sessions` expose application activity, daily trends, checked pagination and explicit session-to-content drill-down. Legacy `scan-logs query` is **broken/under refactor** and exits with migration guidance; see the [session reference](https://cdot65.github.io/prisma-airs-cli/cli/runtime/sessions/)
 - **Guardrail Optimization** — atomic CLI commands (`create`, `apply`, `eval`, `revert`) for custom topic guardrails, designed for autonomous agent loops (see [`AGENTS.md`](AGENTS.md))
 - **AI Red Teaming** — adversarial scanning with static, dynamic, and custom prompt set attack modes
-- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/resources/)** — workspaces, configs, guardrails, providers, API keys, integrations, MCP, deployments, plugins, audit logs, and telemetry
+- **[AI Gateway](https://cdot65.github.io/prisma-airs-cli/cli/aigateway/resources/)** — workspaces (scope-first provisioning), IAM scopes, configs, guardrails, providers, API keys, integrations, MCP, deployments, plugins, audit logs, and telemetry
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
 - **Unified automation output** — resource reads support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`, with pipe-safe stdout; environment deliverables use HTML or Markdown
 - **Complete pagination** — consistent `--limit`, `--offset`, and `--all` traversal with a configurable safety cap

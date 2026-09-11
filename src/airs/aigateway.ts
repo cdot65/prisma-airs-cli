@@ -2,19 +2,23 @@ import {
   AIGatewayChartFiltersSchema,
   AIGatewayClient,
   type AIGatewayClientOptions,
-  type GatewayWorkspaceCreateRequest,
+  type GatewayWorkspaceProvisionRequest,
   type GatewayWorkspaceUpdateRequest,
+  type IamScope,
 } from '@cdot65/prisma-airs-sdk';
 import type {
   AiGatewayCostOptions,
   AiGatewayCostReport,
   AiGatewayPlane,
+  AiGatewayScope,
+  AiGatewayScopeCreateRequest,
   AiGatewayService,
   AiGatewayWorkspace,
   AiGatewayWorkspaceCreateRequest,
   AiGatewayWorkspaceDetail,
   AiGatewayWorkspaceGetOptions,
   AiGatewayWorkspaceListOptions,
+  AiGatewayWorkspaceProvisionResult,
   AiGatewayWorkspaceUpdateRequest,
 } from './types.js';
 
@@ -57,6 +61,20 @@ function normalizeWorkspaceDetail(raw: Record<string, unknown>): AiGatewayWorksp
       | Record<string, unknown>
       | undefined,
     settings: raw.settings as Record<string, unknown> | undefined,
+  };
+}
+
+/** Normalize an SDK IAM scope into an AiGatewayScope. */
+function normalizeScope(raw: IamScope): AiGatewayScope {
+  return {
+    name: raw.name,
+    description: raw.description,
+    resources: raw.resources.map((r) => ({
+      resourceType: r.resource_type,
+      resourceId: r.resource_id,
+    })),
+    tsgId: raw.tsg_id,
+    id: raw.id,
   };
 }
 
@@ -133,11 +151,9 @@ export class SdkAiGatewayService implements AiGatewayService {
 
   async createWorkspace(
     request: AiGatewayWorkspaceCreateRequest,
-  ): Promise<AiGatewayWorkspaceDetail> {
-    const body: GatewayWorkspaceCreateRequest = {
-      name: request.name,
-      scope_name: request.scopeName,
-    };
+  ): Promise<AiGatewayWorkspaceProvisionResult> {
+    const body: GatewayWorkspaceProvisionRequest = { name: request.name };
+    if (request.scopeName !== undefined) body.scope_name = request.scopeName;
     if (request.description !== undefined) body.description = request.description;
     if (request.icon !== undefined) body.icon = request.icon;
     if (request.defaults !== undefined) body.defaults = request.defaults;
@@ -145,11 +161,44 @@ export class SdkAiGatewayService implements AiGatewayService {
     if (request.usageLimits !== undefined) body.usage_limits = request.usageLimits;
     if (request.rateLimits !== undefined) body.rate_limits = request.rateLimits;
 
-    const created = (await this.client.workspaces.create(body)) as Record<string, unknown>;
+    // SCM's own order: IAM scope → workspace → PUT the scope back with the
+    // workspace slug bound. A bare workspaces.create() against a scope that
+    // does not exist yet is what produced the 400 AB01 seen on 2026-09-06.
+    const result = await this.client.workspaces.provision(
+      body,
+      request.existingScope ? { existingScope: true } : {},
+    );
+    const created = result.workspace as unknown as Record<string, unknown>;
     // create omits status, is_default, icon, both limit fields, and the
-    // settings blocks — re-read for the full record. Admin plane, because a
-    // fresh workspace's scope may not be granted to this service account yet.
-    return this.refetchAfterWrite(created.id as string, created);
+    // settings blocks — re-read for the full record. Admin plane, because the
+    // fresh scope is not granted to this service account.
+    const workspace = await this.refetchAfterWrite(created.id as string, created);
+    return { workspace, scope: normalizeScope(result.scope), scopeCreated: result.scopeCreated };
+  }
+
+  async listScopes(): Promise<AiGatewayScope[]> {
+    const response = await this.client.iamScopes.list();
+    return response.items.map(normalizeScope);
+  }
+
+  async getScope(name: string): Promise<AiGatewayScope> {
+    return normalizeScope(await this.client.iamScopes.get(name));
+  }
+
+  async createScope(request: AiGatewayScopeCreateRequest): Promise<AiGatewayScope> {
+    return normalizeScope(await this.client.iamScopes.create(request));
+  }
+
+  async bindScope(name: string, workspaceRef: string): Promise<AiGatewayScope> {
+    // SCM binds by slug. Accept a UUID or display name too, resolved on the
+    // admin plane because a scope being bound is, by definition, not yet
+    // granted to this service account.
+    const slug = await this.resolveWorkspaceRef(workspaceRef, ['admin'], true);
+    return normalizeScope(await this.client.iamScopes.bindWorkspace(name, slug));
+  }
+
+  async deleteScope(name: string): Promise<void> {
+    await this.client.iamScopes.delete(name);
   }
 
   async updateWorkspace(

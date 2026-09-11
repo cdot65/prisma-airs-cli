@@ -37,7 +37,8 @@ the `PANW_MGMT_*` OAuth credentials and optionally accepts the `PANW_AI_GW_*_END
 | `plugins` | `list`, `create` | Admin plane; the SDK has no verified get/update/delete endpoints. |
 | `providers` | `list`, `get`, `create`, `update`, `delete` | Data plane; detail credentials are redacted by default. |
 | `telemetry` | cache, cost, errors, feedback, grouping, latency, logs, requests, retries, tokens, users | Data plane; uses workspace slug. |
-| `workspaces` | `list`, `get`, `create`, `update`, `archive` | Reads span both planes; writes use the admin plane. |
+| `scopes` | `list`, `get`, `create`, `bind`, `delete` | SCM IAM scopes (`/iam/v1`) that a workspace `scope_name` points at. `delete` is not live-verified. |
+| `workspaces` | `list`, `get`, `create`, `update`, `archive` | Reads span both planes; writes use the admin plane. `create` provisions the IAM scope, the workspace, and the scope binding in SCM's own order. |
 
 `workspace` remains an accepted compatibility alias for `workspaces`. The deprecated
 `workspace delete` spelling still archives and prints a warning; it deliberately has no `rm`

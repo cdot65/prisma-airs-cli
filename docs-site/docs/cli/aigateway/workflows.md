@@ -67,33 +67,45 @@ the caller's SCM workspace scope.
 
 ## Create a workspace
 
-The September 6 live verification did **not** establish successful workspace creation: SCM
-returned HTTP 400 (AB01), including explicit defaults and a metadata variant. The command below
-documents the interface, not a passing provisioning recipe. An unused SCM-provisioned scope or a
-known-good request is still needed to distinguish provisioning requirements from a contract change.
-Do not change existing workspace/IAM bindings to bypass this failure.
+A workspace's `scope_name` names an **SCM IAM scope** that has to exist first. `workspaces create`
+runs the three calls Strata Cloud Manager's UI runs (captured 2026-09-11): create the IAM scope,
+create the workspace with that `scope_name`, then `PUT` the scope back with the new workspace slug
+bound as a resource. That last step is what grants data-plane access. Skipping the first step is
+why a bare create with a made-up scope returned HTTP 400 (AB01) on September 6.
 
-Choose a human-readable display name and an SCM role scope. The server generates the UUID and
-slug; `--scope-name` is not derived from `--name`:
+Choose a display name; the server generates the UUID and slug, and the CLI generates a scope name
+in SCM's own `ws_<name>_<suffix>` style unless `--scope-name` says otherwise:
 
 ```bash
 airs aigateway workspaces create \
   --name Development \
-  --scope-name dev_airs_workspace_<tsg-id> \
   --description 'Development AI Gateway traffic' \
   --output json
 ```
 
-Confirm the resulting values:
+To pick the scope name yourself, or to bind a scope created earlier with
+`airs aigateway scopes create`, pass `--scope-name` (and `--existing-scope` for the latter):
+
+```bash
+airs aigateway workspaces create --name Development --scope-name ws_development_4k2p9x
+airs aigateway workspaces create --name Development --scope-name ws_development_4k2p9x --existing-scope
+```
+
+Confirm the resulting values and the binding:
 
 ```bash
 airs aigateway workspaces list --plane admin --output json |
   jq '.[] | select(.name == "Development") | {id, name, slug, scopeName}'
+
+airs aigateway scopes get ws_development_4k2p9x --output json |
+  jq '.resources'      # => [{ "resourceType": "workspace", "resourceId": "<slug>" }]
 ```
 
 The workspace's `scopeName` must also be granted to the intended service account through SCM
 Access Management. If no caller holds that workspace-scope role, the workspace remains visible on
-the admin plane but will not appear in a normal data-plane list.
+the admin plane but will not appear in a normal data-plane list. If provisioning stops after the
+workspace was created, the error names the slug and scope; finish with
+`airs aigateway scopes bind <scope> --workspace <slug>`.
 
 ## Add an integration to a workspace
 

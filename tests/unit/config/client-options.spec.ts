@@ -140,6 +140,7 @@ describe('aiGatewayClientOptions', () => {
       aiGwDataEndpoint: 'https://gw-data.example.com/ai_gw/v2',
       aiGwAdminEndpoint: 'https://gw-admin.example.com/ai_gw/admin/v2',
       aiGwTokenEndpoint: 'https://gw-token.example.com',
+      iamEndpoint: 'https://iam.example.com/iam/v1',
     });
     expect(aiGatewayClientOptions(config)).toEqual({
       clientId: 'cid',
@@ -147,8 +148,13 @@ describe('aiGatewayClientOptions', () => {
       tsgId: 'tsg',
       dataEndpoint: 'https://gw-data.example.com/ai_gw/v2',
       adminEndpoint: 'https://gw-admin.example.com/ai_gw/admin/v2',
+      iamEndpoint: 'https://iam.example.com/iam/v1',
       tokenEndpoint: 'https://gw-token.example.com',
     });
+  });
+
+  it('leaves iamEndpoint undefined so the SDK default (api.apps .../iam/v1) applies', () => {
+    expect(aiGatewayClientOptions(ConfigSchema.parse({})).iamEndpoint).toBeUndefined();
   });
 
   it('falls back to mgmtTokenEndpoint when aiGwTokenEndpoint unset', () => {

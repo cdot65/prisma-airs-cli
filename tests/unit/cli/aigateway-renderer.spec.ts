@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AiGatewayWorkspace, AiGatewayWorkspaceDetail } from '../../../src/airs/types.js';
-import { renderWorkspaceDetail, renderWorkspaceList } from '../../../src/cli/renderer/aigateway.js';
+import type {
+  AiGatewayScope,
+  AiGatewayWorkspace,
+  AiGatewayWorkspaceDetail,
+} from '../../../src/airs/types.js';
+import {
+  renderScopeDetail,
+  renderScopeList,
+  renderWorkspaceDetail,
+  renderWorkspaceList,
+} from '../../../src/cli/renderer/aigateway.js';
 
 const workspace: AiGatewayWorkspace = {
   id: 'ws-uuid-1',
@@ -73,5 +82,53 @@ describe('renderWorkspaceDetail', () => {
     const out = captured();
     expect(out).toContain('unknown');
     expect(out.toLowerCase()).not.toContain('inactive');
+  });
+});
+
+const boundScope: AiGatewayScope = {
+  name: 'ws_truffles_ggolfu',
+  description: 'Online recipe generation application',
+  resources: [{ resourceType: 'workspace', resourceId: 'ws-truffl-03e7d9' }],
+  tsgId: '1001464285',
+  id: 'ws_truffles_ggolfu:1001464285',
+};
+const unboundScope: AiGatewayScope = { ...boundScope, name: 'ws_orphan_a1b2c3', resources: [] };
+
+describe('renderScopeList', () => {
+  it('flattens bindings to type:id in structured rows', () => {
+    renderScopeList([boundScope, unboundScope], 'json');
+    const rows = JSON.parse(captured());
+    expect(rows[0].resources).toBe('workspace:ws-truffl-03e7d9');
+    expect(rows[1].resources).toBe('');
+  });
+
+  it('marks unbound scopes in pretty output', () => {
+    renderScopeList([boundScope, unboundScope], 'pretty');
+    const out = captured();
+    expect(out).toContain('ws-truffl-03e7d9');
+    expect(out).toContain('unbound');
+  });
+
+  it('prints an empty-list notice for no scopes in pretty output, but [] for json', () => {
+    renderScopeList([], 'pretty');
+    expect(captured()).toContain('No IAM scopes found');
+    logSpy.mockClear();
+    renderScopeList([], 'json');
+    expect(JSON.parse(captured())).toEqual([]);
+  });
+});
+
+describe('renderScopeDetail', () => {
+  it('emits the full normalized scope as json', () => {
+    renderScopeDetail(boundScope, 'json');
+    expect(JSON.parse(captured())).toEqual(boundScope);
+  });
+
+  it('shows bound resources, or an unbound marker, in pretty output', () => {
+    renderScopeDetail(boundScope, 'pretty');
+    expect(captured()).toContain('workspace:ws-truffl-03e7d9');
+    logSpy.mockClear();
+    renderScopeDetail(unboundScope, 'pretty');
+    expect(captured()).toContain('unbound');
   });
 });

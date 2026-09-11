@@ -6,7 +6,13 @@ const mockWorkspacesGet = vi.fn();
 const mockWorkspacesCreate = vi.fn();
 const mockWorkspacesUpdate = vi.fn();
 const mockWorkspacesDelete = vi.fn();
+const mockWorkspacesProvision = vi.fn();
 const mockTelemetryCost = vi.fn();
+const mockScopesList = vi.fn();
+const mockScopesGet = vi.fn();
+const mockScopesCreate = vi.fn();
+const mockScopesBind = vi.fn();
+const mockScopesDelete = vi.fn();
 
 function makeMockClient() {
   return {
@@ -16,12 +22,36 @@ function makeMockClient() {
       create: mockWorkspacesCreate,
       update: mockWorkspacesUpdate,
       delete: mockWorkspacesDelete,
+      provision: mockWorkspacesProvision,
+    },
+    iamScopes: {
+      list: mockScopesList,
+      get: mockScopesGet,
+      create: mockScopesCreate,
+      bindWorkspace: mockScopesBind,
+      delete: mockScopesDelete,
     },
     telemetry: {
       cost: mockTelemetryCost,
     },
   };
 }
+
+// Captured from SCM's UI creating a workspace (2026-09-11).
+const boundScope = {
+  name: 'ws_truffles_ggolfu',
+  description: 'Online recipe generation application',
+  resources: [{ metadata: [], resource_id: 'ws-truffl-03e7d9', resource_type: 'workspace' }],
+  tsg_id: '1001464285',
+  id: 'ws_truffles_ggolfu:1001464285',
+};
+const normalizedBoundScope = {
+  name: 'ws_truffles_ggolfu',
+  description: 'Online recipe generation application',
+  resources: [{ resourceType: 'workspace', resourceId: 'ws-truffl-03e7d9' }],
+  tsgId: '1001464285',
+  id: 'ws_truffles_ggolfu:1001464285',
+};
 
 vi.mock('@cdot65/prisma-airs-sdk', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@cdot65/prisma-airs-sdk')>()),
@@ -174,36 +204,128 @@ describe('workspace writes', () => {
   });
 
   describe('createWorkspace', () => {
-    it('sends snake_case body and renders from a follow-up admin-plane get, not the write response', async () => {
-      mockWorkspacesCreate.mockResolvedValue({ id: 'ws-uuid-9', slug: 'ws-produc-985697' });
+    const provisioned = {
+      scope: boundScope,
+      workspace: { id: 'ws-uuid-9', slug: 'ws-produc-985697', scope_name: 'ws_production_bx7qw0' },
+      scopeCreated: true,
+    };
+
+    it('delegates to SDK provision() (scope → workspace → bind) with a snake_case body', async () => {
+      mockWorkspacesProvision.mockResolvedValue(provisioned);
       mockWorkspacesGet.mockResolvedValue(detail);
-      const ws = await service.createWorkspace({
+      const result = await service.createWorkspace({
         name: 'Production',
         scopeName: 'ws_production_bx7qw0',
         description: 'All production applications',
         rateLimits: [{ type: 'requests', unit: 'rpm', value: 100 }],
       });
-      expect(mockWorkspacesCreate).toHaveBeenCalledWith({
-        name: 'Production',
-        scope_name: 'ws_production_bx7qw0',
-        description: 'All production applications',
-        rate_limits: [{ type: 'requests', unit: 'rpm', value: 100 }],
-      });
+      expect(mockWorkspacesProvision).toHaveBeenCalledWith(
+        {
+          name: 'Production',
+          scope_name: 'ws_production_bx7qw0',
+          description: 'All production applications',
+          rate_limits: [{ type: 'requests', unit: 'rpm', value: 100 }],
+        },
+        {},
+      );
+      // The bare create() is never called directly any more: it would 400 AB01 on a new scope.
+      expect(mockWorkspacesCreate).not.toHaveBeenCalled();
+      expect(result.scope).toEqual(normalizedBoundScope);
+      expect(result.scopeCreated).toBe(true);
+    });
+
+    it('omits scope_name so the SDK generates one, and passes existingScope through', async () => {
+      mockWorkspacesProvision.mockResolvedValue({ ...provisioned, scopeCreated: false });
+      mockWorkspacesGet.mockResolvedValue(detail);
+      const generated = await service.createWorkspace({ name: 'Truffles' });
+      expect(mockWorkspacesProvision).toHaveBeenCalledWith({ name: 'Truffles' }, {});
+      expect(generated.scopeCreated).toBe(false);
+
+      await service.createWorkspace({ name: 'Staging', scopeName: 'ws_s', existingScope: true });
+      expect(mockWorkspacesProvision).toHaveBeenLastCalledWith(
+        { name: 'Staging', scope_name: 'ws_s' },
+        { existingScope: true },
+      );
+    });
+
+    it('renders from a follow-up admin-plane get, not the write response', async () => {
+      mockWorkspacesProvision.mockResolvedValue(provisioned);
+      mockWorkspacesGet.mockResolvedValue(detail);
+      const { workspace } = await service.createWorkspace({ name: 'Production' });
       expect(mockWorkspacesGet).toHaveBeenCalledWith('ws-uuid-9', { plane: 'admin' });
-      expect(ws.rateLimits).toEqual([{ type: 'requests', unit: 'rpm', value: 100 }]);
+      expect(workspace.rateLimits).toEqual([{ type: 'requests', unit: 'rpm', value: 100 }]);
     });
 
     it('falls back to the normalized create response when the follow-up get fails', async () => {
-      mockWorkspacesCreate.mockResolvedValue({
-        id: 'ws-uuid-9',
-        slug: 'ws-produc-985697',
-        name: 'Production',
-        is_default: 0,
+      mockWorkspacesProvision.mockResolvedValue({
+        ...provisioned,
+        workspace: { id: 'ws-uuid-9', slug: 'ws-produc-985697', name: 'Production', is_default: 0 },
       });
       mockWorkspacesGet.mockRejectedValue(Object.assign(new Error('boom'), { statusCode: 500 }));
-      const ws = await service.createWorkspace({ name: 'Production', scopeName: 'ws_p' });
-      expect(ws.id).toBe('ws-uuid-9');
-      expect(ws.name).toBe('Production');
+      const { workspace } = await service.createWorkspace({ name: 'Production' });
+      expect(workspace.id).toBe('ws-uuid-9');
+      expect(workspace.name).toBe('Production');
+    });
+
+    it('propagates provisioning failures untouched (the SDK already names the partial state)', async () => {
+      mockWorkspacesProvision.mockRejectedValue(
+        new Error(
+          'workspace create failed after creating its IAM scope — IAM scope ws_x was deleted again',
+        ),
+      );
+      await expect(service.createWorkspace({ name: 'x' })).rejects.toThrow(/was deleted again/);
+      expect(mockWorkspacesGet).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('IAM scopes', () => {
+    it('listScopes normalizes items and flags unbound scopes by an empty resources array', async () => {
+      mockScopesList.mockResolvedValue({
+        count: 2,
+        items: [boundScope, { ...boundScope, name: 'ws_orphan_a1b2c3', resources: [] }],
+      });
+      const scopes = await service.listScopes();
+      expect(scopes[0]).toEqual(normalizedBoundScope);
+      expect(scopes[1].resources).toEqual([]);
+    });
+
+    it('getScope and createScope pass straight through', async () => {
+      mockScopesGet.mockResolvedValue(boundScope);
+      expect(await service.getScope('ws_truffles_ggolfu')).toEqual(normalizedBoundScope);
+      expect(mockScopesGet).toHaveBeenCalledWith('ws_truffles_ggolfu');
+
+      mockScopesCreate.mockResolvedValue({ ...boundScope, resources: [] });
+      const created = await service.createScope({ name: 'ws_truffles_ggolfu', description: 'd' });
+      expect(mockScopesCreate).toHaveBeenCalledWith({
+        name: 'ws_truffles_ggolfu',
+        description: 'd',
+      });
+      expect(created.resources).toEqual([]);
+    });
+
+    it('bindScope resolves a display name or UUID to the slug on the admin plane', async () => {
+      mockWorkspacesList.mockResolvedValue({ data: [listRow] });
+      mockScopesBind.mockResolvedValue(boundScope);
+      await service.bindScope('ws_x', 'Main');
+      expect(mockWorkspacesList).toHaveBeenCalledWith({ plane: 'admin' });
+      expect(mockScopesBind).toHaveBeenCalledWith('ws_x', 'ws-main-a-349e0e');
+
+      await service.bindScope('ws_x', 'ws-uuid-1');
+      expect(mockScopesBind).toHaveBeenLastCalledWith('ws_x', 'ws-main-a-349e0e');
+    });
+
+    it('bindScope passes an already-slug ref through and returns the normalized scope', async () => {
+      mockWorkspacesList.mockResolvedValue({ data: [listRow] });
+      mockScopesBind.mockResolvedValue(boundScope);
+      const scope = await service.bindScope('ws_x', 'ws-main-a-349e0e');
+      expect(mockScopesBind).toHaveBeenCalledWith('ws_x', 'ws-main-a-349e0e');
+      expect(scope).toEqual(normalizedBoundScope);
+    });
+
+    it('deleteScope delegates by name', async () => {
+      mockScopesDelete.mockResolvedValue(undefined);
+      await service.deleteScope('ws_truffles_ggolfu');
+      expect(mockScopesDelete).toHaveBeenCalledWith('ws_truffles_ggolfu');
     });
   });
 

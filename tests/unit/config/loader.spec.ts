@@ -115,11 +115,13 @@ describe('loadConfig', () => {
     vi.stubEnv('PANW_AI_GW_DATA_ENDPOINT', 'https://gw-data.example.com/ai_gw/v2');
     vi.stubEnv('PANW_AI_GW_ADMIN_ENDPOINT', 'https://gw-admin.example.com/ai_gw/admin/v2');
     vi.stubEnv('PANW_AI_GW_TOKEN_ENDPOINT', 'https://gw-token.example.com');
+    vi.stubEnv('PANW_IAM_ENDPOINT', 'https://iam.example.com/iam/v1');
 
     const config = await loadConfig({}, configPath);
     expect(config.aiGwDataEndpoint).toBe('https://gw-data.example.com/ai_gw/v2');
     expect(config.aiGwAdminEndpoint).toBe('https://gw-admin.example.com/ai_gw/admin/v2');
     expect(config.aiGwTokenEndpoint).toBe('https://gw-token.example.com');
+    expect(config.iamEndpoint).toBe('https://iam.example.com/iam/v1');
     expect(config.airsApiToken).toBe('tok-env');
     expect(config.airsApiEndpoint).toBe('https://airs.example.com');
     expect(config.airsNumRetries).toBe(2);

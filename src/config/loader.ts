@@ -35,6 +35,7 @@ function fromEnv(): Record<string, unknown> {
     aiGwDataEndpoint: env.PANW_AI_GW_DATA_ENDPOINT,
     aiGwAdminEndpoint: env.PANW_AI_GW_ADMIN_ENDPOINT,
     aiGwTokenEndpoint: env.PANW_AI_GW_TOKEN_ENDPOINT,
+    iamEndpoint: env.PANW_IAM_ENDPOINT,
     aiGwInferenceEndpoint: env.PANW_AI_GW_INFERENCE_ENDPOINT,
     aiGwInferenceApiKey: env.PANW_AI_GW_INFERENCE_API_KEY,
     aiGwInferenceModel: env.PANW_AI_GW_INFERENCE_MODEL,

@@ -66,6 +66,7 @@ Optional JSON file at `~/.prisma-airs/config.json`. Keys use camelCase matching 
 | `aiGwDataEndpoint` | `PANW_AI_GW_DATA_ENDPOINT` | AI Gateway data-plane endpoint |
 | `aiGwAdminEndpoint` | `PANW_AI_GW_ADMIN_ENDPOINT` | AI Gateway admin endpoint |
 | `aiGwTokenEndpoint` | `PANW_AI_GW_TOKEN_ENDPOINT` | AI Gateway OAuth endpoint |
+| `iamEndpoint` | `PANW_IAM_ENDPOINT` | SCM IAM endpoint for AI Gateway workspace scopes |
 
 The config file location itself is overridden with
 `PRISMA_AIRS_CONFIG_PATH`; it is not a `ConfigSchema` key.

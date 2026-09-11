@@ -65,6 +65,7 @@ export function aiGatewayClientOptions(config: Config): AIGatewayClientOptions {
     tsgId: config.mgmtTsgId,
     dataEndpoint: config.aiGwDataEndpoint,
     adminEndpoint: config.aiGwAdminEndpoint,
+    iamEndpoint: config.iamEndpoint,
     tokenEndpoint: config.aiGwTokenEndpoint ?? config.mgmtTokenEndpoint,
   };
 }

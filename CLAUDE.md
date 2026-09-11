@@ -104,7 +104,7 @@ src/
 │   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties, adapters CRUD+validate)
-│   │   ├── aigateway.ts   # AI Gateway workspace CRUD + cost telemetry (two-plane routing, --all merge)
+│   │   ├── aigateway.ts   # AI Gateway workspace CRUD + IAM scopes + cost telemetry (two-plane routing, --all merge; create = scope → workspace → bind)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Validated item-centric v2 bulk state; atomic 0600 checkpoints for safe resume
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
@@ -135,7 +135,7 @@ src/
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
-│   ├── aigateway.ts       # SdkAiGatewayService — workspace CRUD/cost telemetry + 403 grant hints
+│   ├── aigateway.ts       # SdkAiGatewayService — workspace provisioning (SDK provision()), IAM scopes, cost telemetry + 403 grant hints
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ProfileTopic, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
 ├── backup/

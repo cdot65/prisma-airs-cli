@@ -1398,8 +1398,14 @@ export interface AiGatewayService {
     workspaceRef: string,
     opts?: AiGatewayWorkspaceGetOptions,
   ): Promise<AiGatewayWorkspaceDetail>;
-  /** Create a workspace (admin plane); renders from a follow-up get, not the write response. */
-  createWorkspace(request: AiGatewayWorkspaceCreateRequest): Promise<AiGatewayWorkspaceDetail>;
+  /**
+   * Provision a workspace the way SCM's UI does: create the IAM scope, create the workspace
+   * with that `scope_name`, then bind the scope to the new workspace slug. The workspace is
+   * rendered from a follow-up get, not the write response.
+   */
+  createWorkspace(
+    request: AiGatewayWorkspaceCreateRequest,
+  ): Promise<AiGatewayWorkspaceProvisionResult>;
   /** Partial update (admin plane); the API returns `{}`, so the result comes from a re-read. */
   updateWorkspace(
     workspaceRef: string,
@@ -1409,17 +1415,59 @@ export interface AiGatewayService {
   deleteWorkspace(workspaceRef: string): Promise<void>;
   /** Total and per-day spend for a workspace. Values are CENTS. */
   getTelemetryCost(opts: AiGatewayCostOptions): Promise<AiGatewayCostReport>;
+  /** Every IAM scope in the tenant, including unbound leftovers (`resources` empty). */
+  listScopes(): Promise<AiGatewayScope[]>;
+  /** One IAM scope by name. */
+  getScope(name: string): Promise<AiGatewayScope>;
+  /** Create an unbound IAM scope (step 1 of provisioning, on its own). */
+  createScope(request: AiGatewayScopeCreateRequest): Promise<AiGatewayScope>;
+  /** Bind a workspace (slug, UUID, or unique name) to an existing scope, keeping other bindings. */
+  bindScope(name: string, workspaceRef: string): Promise<AiGatewayScope>;
+  /** Delete an IAM scope by name. Not live-verified upstream. */
+  deleteScope(name: string): Promise<void>;
+}
+
+/** A resource bound to an IAM scope; for workspaces `resourceId` is the workspace slug. */
+export interface AiGatewayScopeResource {
+  resourceType: string;
+  resourceId: string;
+}
+
+/** Normalized SCM IAM scope (`/iam/v1/scopes`). */
+export interface AiGatewayScope {
+  name: string;
+  description: string;
+  resources: AiGatewayScopeResource[];
+  tsgId: string;
+  /** `${name}:${tsgId}` — display only; the API key is `name`. */
+  id: string;
+}
+
+/** Request to create an IAM scope on its own. */
+export interface AiGatewayScopeCreateRequest {
+  name: string;
+  description?: string;
+}
+
+/** What `createWorkspace` returns: the re-read workspace plus the scope it is bound to. */
+export interface AiGatewayWorkspaceProvisionResult {
+  workspace: AiGatewayWorkspaceDetail;
+  scope: AiGatewayScope;
+  /** `false` when an existing scope was bound instead of a new one being created. */
+  scopeCreated: boolean;
 }
 
 /** Request to create an AI Gateway workspace. */
 export interface AiGatewayWorkspaceCreateRequest {
   name: string;
   /**
-   * SCM role scope granting data-plane access, e.g. `ws_production_bx7qw0`.
-   * Required and not derived from `name` — a workspace created with a scope
-   * nobody holds is invisible to data-plane lists.
+   * IAM scope name, e.g. `ws_production_bx7qw0`. Created (or, with
+   * `existingScope`, reused) before the workspace and bound to it afterwards.
+   * Generated as `ws_<name>_<suffix>` when omitted — SCM's own convention.
    */
-  scopeName: string;
+  scopeName?: string;
+  /** Bind to a scope that already exists instead of creating one. Requires `scopeName`. */
+  existingScope?: boolean;
   description?: string;
   icon?: string;
   defaults?: GatewayDefaultsInput;

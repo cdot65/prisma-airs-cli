@@ -34,6 +34,8 @@ export const ConfigSchema = z.object({
   aiGwDataEndpoint: z.string().optional(),
   aiGwAdminEndpoint: z.string().optional(),
   aiGwTokenEndpoint: z.string().optional(),
+  // SCM IAM (workspace scopes); creds shared with mgmt*
+  iamEndpoint: z.string().optional(),
   // Runtime inference has separate key authentication, never management OAuth.
   aiGwInferenceEndpoint: z.string().optional(),
   aiGwInferenceApiKey: z.string().optional(),
