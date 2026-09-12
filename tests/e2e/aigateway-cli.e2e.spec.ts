@@ -1,17 +1,20 @@
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
-import { config } from 'dotenv';
 import { describe, expect, it } from 'vitest';
-
-config({ path: '.env.ai-gateway.local', quiet: true });
+import { selectedTenant } from '../helpers/live-tenant.js';
 
 const execFileAsync = promisify(execFile);
-const hasCredentials = Boolean(
-  process.env.PANW_MGMT_CLIENT_ID &&
-    process.env.PANW_MGMT_CLIENT_SECRET &&
-    process.env.PANW_MGMT_TSG_ID,
-);
+// The spawned CLI reads the operator's selected tenant; no environment credentials exist.
+const tenant = (() => {
+  try {
+    return selectedTenant();
+  } catch {
+    return undefined;
+  }
+})();
+// Live calls are opt-in, like the other e2e suites: RUN_AIGATEWAY_E2E=1 plus a selected tenant.
+const hasCredentials = process.env.RUN_AIGATEWAY_E2E === '1' && Boolean(tenant);
 const workspaceSlug = process.env.AI_GATEWAY_E2E_WORKSPACE_SLUG ?? 'ws-develo-71f8d8';
 
 async function runJson<T = unknown>(...args: string[]): Promise<T> {
@@ -76,7 +79,7 @@ describe.skipIf(!hasCredentials)('AI Gateway CLI live E2E', () => {
       ['integrations', 'list'],
       ['mcp', 'integrations', 'list'],
       ['organisations', 'self', 'get'],
-      ['organisations', 'auth-settings', 'get', '--tsg-id', process.env.PANW_MGMT_TSG_ID ?? ''],
+      ['organisations', 'auth-settings', 'get', '--tsg-id', tenant?.tsgId ?? ''],
       ['plugins', 'list'],
     ]);
     expect(results).toHaveLength(7);

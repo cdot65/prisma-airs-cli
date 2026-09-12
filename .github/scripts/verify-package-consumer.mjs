@@ -155,7 +155,7 @@ const invalidUnit = spawnSync(
     encoding: 'utf8',
     timeout: 30000,
     maxBuffer: 1048576,
-    env: { PATH: process.env.PATH, NO_COLOR: '1', SCAN_CONCURRENCY: 'invalid' },
+    env: { PATH: process.env.PATH, NO_COLOR: '1', PANW_CLI_SCAN_CONCURRENCY: 'invalid' },
     stdio: ['ignore', 'pipe', 'pipe'],
   },
 );

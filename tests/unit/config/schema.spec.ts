@@ -28,25 +28,33 @@ describe('ConfigSchema', () => {
     expect(() => ConfigSchema.parse({ scanConcurrency: 21 })).toThrow();
   });
 
-  it('preserves endpoint/auth override fields when provided', () => {
+  it('preserves scanner and shared management override fields when provided', () => {
     const config = ConfigSchema.parse({
       airsApiToken: 'tok-1',
       airsApiEndpoint: 'https://airs.example.com',
-      redTeamDataEndpoint: 'https://rt-data.example.com',
-      redTeamMgmtEndpoint: 'https://rt-mgmt.example.com',
-      redTeamTokenEndpoint: 'https://rt-token.example.com',
-      modelSecDataEndpoint: 'https://ms-data.example.com',
-      modelSecMgmtEndpoint: 'https://ms-mgmt.example.com',
-      modelSecTokenEndpoint: 'https://ms-token.example.com',
+      mgmtEndpoint: 'https://mgmt.example.com',
+      mgmtTokenEndpoint: 'https://token.example.com',
+      mgmtDashboardEndpoint: 'https://dash.example.com/aisec',
     });
     expect(config.airsApiToken).toBe('tok-1');
     expect(config.airsApiEndpoint).toBe('https://airs.example.com');
+    expect(config.mgmtEndpoint).toBe('https://mgmt.example.com');
+    expect(config.mgmtTokenEndpoint).toBe('https://token.example.com');
+    expect(config.mgmtDashboardEndpoint).toBe('https://dash.example.com/aisec');
+  });
+
+  it('drops retired per-product token endpoints but keeps base-URL overrides', () => {
+    const config = ConfigSchema.parse({
+      redTeamDataEndpoint: 'https://rt-data.example.com',
+      redTeamTokenEndpoint: 'https://rt-token.example.com',
+      modelSecTokenEndpoint: 'https://ms-token.example.com',
+      agentGuardTokenEndpoint: 'https://ag-token.example.com',
+      aiGwTokenEndpoint: 'https://gw-token.example.com',
+      dlpEndpoint: 'https://dlp.example.com',
+    }) as Record<string, unknown>;
     expect(config.redTeamDataEndpoint).toBe('https://rt-data.example.com');
-    expect(config.redTeamMgmtEndpoint).toBe('https://rt-mgmt.example.com');
-    expect(config.redTeamTokenEndpoint).toBe('https://rt-token.example.com');
-    expect(config.modelSecDataEndpoint).toBe('https://ms-data.example.com');
-    expect(config.modelSecMgmtEndpoint).toBe('https://ms-mgmt.example.com');
-    expect(config.modelSecTokenEndpoint).toBe('https://ms-token.example.com');
+    expect(config.dlpEndpoint).toBe('https://dlp.example.com');
+    for (const key of Object.keys(config)) expect(key).not.toMatch(/TokenEndpoint$/);
   });
 
   it('defaults endpoint/auth override fields to undefined', () => {
@@ -80,23 +88,12 @@ describe('ConfigSchema', () => {
     expect(config.mgmtTsgId).toBe('tsg-1');
   });
 
-  it('preserves AI Gateway endpoint fields when provided', () => {
+  it('keeps the AI Gateway inference key fields (workspace key, not SCM OAuth)', () => {
     const config = ConfigSchema.parse({
-      aiGwDataEndpoint: 'https://gw-data.example.com/ai_gw/v2',
-      aiGwAdminEndpoint: 'https://gw-admin.example.com/ai_gw/admin/v2',
-      aiGwTokenEndpoint: 'https://gw-token.example.com',
-      iamEndpoint: 'https://iam.example.com/iam/v1',
+      aiGwInferenceEndpoint: 'https://gw.example.com/v1',
+      aiGwInferenceApiKey: 'runtime-key',
     });
-    expect(config.aiGwDataEndpoint).toBe('https://gw-data.example.com/ai_gw/v2');
-    expect(config.aiGwAdminEndpoint).toBe('https://gw-admin.example.com/ai_gw/admin/v2');
-    expect(config.aiGwTokenEndpoint).toBe('https://gw-token.example.com');
-    expect(config.iamEndpoint).toBe('https://iam.example.com/iam/v1');
-  });
-
-  it('defaults AI Gateway endpoint fields to undefined (SDK falls back to env/defaults)', () => {
-    const config = ConfigSchema.parse({});
-    expect(config.aiGwDataEndpoint).toBeUndefined();
-    expect(config.aiGwAdminEndpoint).toBeUndefined();
-    expect(config.aiGwTokenEndpoint).toBeUndefined();
+    expect(config.aiGwInferenceEndpoint).toBe('https://gw.example.com/v1');
+    expect(config.aiGwInferenceApiKey).toBe('runtime-key');
   });
 });

@@ -27,8 +27,8 @@ airs runtime profiles list
 Local utility commands (no tenant state touched):
 
 ```bash
-airs config list           # effective config with per-key source (env/file/default)
-airs config path           # where the config file lives
+airs tenant read           # selected tenant settings, credentials redacted
+airs tenant path           # where the selected tenant file lives
 airs completion zsh        # print shell completion script (bash|zsh|fish)
 ```
 

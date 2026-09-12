@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { buildProgram } from '../../../src/cli/program.js';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const originalFetch = globalThis.fetch;
 let directory: string;
@@ -21,6 +22,7 @@ it.each([
   ['after', 400],
 ] as const)('DLP program --debug %s retains HTTP metadata but never bodies for status %s', async (position, status) => {
   directory = mkdtempSync(join(tmpdir(), 'airs-dlp-debug-'));
+  await useTestTenant();
   vi.spyOn(process, 'cwd').mockReturnValue(directory);
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubEnv('PANW_AI_SEC_DEBUG_BODY', '1');

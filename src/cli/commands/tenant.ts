@@ -3,16 +3,16 @@ import {
   createManagedTenant,
   isTenantSecret,
   setTenantSetting,
+  unsetTenantSetting,
   validateTenantSettingKey,
 } from '../../config/tenant-settings.js';
 import {
   createTenant,
-  defaultTenantConfigPath,
   deleteTenant,
-  expandConfigPath,
   readTenantConfig,
   readTenantStore,
   switchTenant,
+  type TenantEntry,
   validateTenantName,
 } from '../../config/tenants.js';
 import { confirmOrAbort } from '../confirm.js';
@@ -36,19 +36,46 @@ const COLUMNS = [
   { key: 'configPath', label: 'Config file' },
 ];
 
+const KEY_VALUE_COLUMNS = [
+  { key: 'key', label: 'Key' },
+  { key: 'value', label: 'Value' },
+];
+
+/** Registered entry by name, or the selected tenant when no name is given. */
+function resolveEntry(name: string | undefined): TenantEntry {
+  const store = readTenantStore();
+  const selected = name ?? store.active;
+  if (!selected)
+    throw new Error(
+      store.tenants.length
+        ? `No tenant selected; pass a name or run 'airs tenant switch <name>' (registered: ${store.tenants.map((entry) => entry.name).join(', ')})`
+        : "No tenant selected; run 'airs tenant create <name>' first",
+    );
+  const entry = store.tenants.find((value) => value.name === selected);
+  if (!entry) throw new Error('Tenant not found');
+  return entry;
+}
+
+function redact(key: string, value: unknown): unknown {
+  return isTenantSecret(key) && value ? '[REDACTED]' : (value ?? '');
+}
+
 export function registerTenantCommand(program: Command): void {
   const tenant = program
     .command('tenant')
-    .description('Create, configure and select named tenants')
+    .description('Create, configure and select tenants (the only configuration source)')
     .addHelpText(
       'after',
       examples(
         'airs tenant create development',
+        'airs tenant switch development',
         'airs tenant set development defaultOutput yaml',
+        'airs tenant set development airsApiKey',
+        'airs tenant unset development defaultOutput',
+        'airs tenant get development mgmtTsgId',
         'airs tenant create production --config /secure/production.json',
-        'airs tenant switch production',
         'airs tenant read',
-        'airs tenant switch default',
+        'airs tenant path',
       ),
     );
 
@@ -97,7 +124,7 @@ export function registerTenantCommand(program: Command): void {
 
   tenant
     .command('set <name> <key> [value]')
-    .description('Update one named tenant setting; prompt when omitted, hide secrets')
+    .description('Update one tenant setting; prompt when omitted, hide secrets')
     .option('--stdin', 'Read one value from piped stdin (recommended for automated secret updates)')
     .action(
       async (name: string, key: string, value: string | undefined, opts: { stdin?: boolean }) => {
@@ -123,18 +150,43 @@ export function registerTenantCommand(program: Command): void {
     );
 
   tenant
+    .command('unset <name> <key>')
+    .description('Remove one tenant setting so the default applies; credentials cannot be cleared')
+    .action(async (name: string, key: string) => {
+      try {
+        const removed = await unsetTenantSetting(name, key);
+        if (removed) ui.success(`Removed ${key} from tenant ${name}; selection unchanged.`);
+        else ui.info(`${key} is not set for tenant ${name} — nothing to do`);
+      } catch (error) {
+        fail(error);
+      }
+    });
+
+  const get = tenant
+    .command('get <name> <key>')
+    .description('Print one effective tenant setting; credential values are redacted')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
+    .action(async (name: string, key: string, opts: { output?: string }) => {
+      try {
+        validateTenantSettingKey(key);
+        const format = await resolveOutput(get, opts, { ignoreConfig: true });
+        const entry = resolveEntry(name);
+        const config = readTenantConfig(entry.configPath, entry.tsgId) as Record<string, unknown>;
+        const value = redact(key, config[key]);
+        if (format === 'pretty') console.log(String(value));
+        else console.log(formatOutput([{ key, value }], KEY_VALUE_COLUMNS, format));
+      } catch (error) {
+        fail(error);
+      }
+    });
+
+  tenant
     .command('switch <name>')
-    .description(
-      'Persist the selected tenant; default restores legacy config/environment resolution',
-    )
+    .description('Persist the selected tenant for subsequent commands')
     .action(async (name: string) => {
       try {
         const entry = await switchTenant(name);
-        ui.success(
-          entry
-            ? `Selected ${entry.name} (TSG ${entry.tsgId})`
-            : 'Selected default; explicit config/environment overrides still apply',
-        );
+        ui.success(`Selected ${entry.name} (TSG ${entry.tsgId})`);
       } catch (error) {
         fail(error);
       }
@@ -148,18 +200,17 @@ export function registerTenantCommand(program: Command): void {
       try {
         const format = await resolveOutput(list, opts, { ignoreConfig: true });
         const store = readTenantStore();
-        const explicit = process.env.PRISMA_AIRS_CONFIG_PATH;
-        const rows = [
-          {
-            name: 'default',
-            active: store.active === null,
-            tsgId: '',
-            configPath: defaultTenantConfigPath(),
-          },
-          ...store.tenants.map((entry) => ({ ...entry, active: entry.name === store.active })),
-        ];
-        if (explicit)
-          ui.status('PRISMA_AIRS_CONFIG_PATH overrides the selected tenant for API commands.');
+        if (store.tenants.length === 0 && format === 'pretty') {
+          ui.emptyList('tenants');
+          ui.status("Run 'airs tenant create <name>' to register one.");
+          return;
+        }
+        if (store.active === null && store.tenants.length)
+          ui.status("No tenant selected; run 'airs tenant switch <name>'.");
+        const rows = store.tenants.map((entry) => ({
+          ...entry,
+          active: entry.name === store.active,
+        }));
         console.log(formatOutput(rows, COLUMNS, format === 'pretty' ? 'table' : format));
       } catch (error) {
         fail(error);
@@ -168,34 +219,32 @@ export function registerTenantCommand(program: Command): void {
 
   const read = tenant
     .command('read [name]')
-    .description('Read a tenant config with all credential values redacted')
+    .description(
+      'Read a tenant config with all credential values redacted; defaults to the selected tenant',
+    )
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .action(async (name: string | undefined, opts: { output?: string }) => {
       try {
         const format = await resolveOutput(read, opts, { ignoreConfig: true });
-        const store = readTenantStore();
-        const selected = name ?? store.active ?? 'default';
-        const entry = store.tenants.find((value) => value.name === selected);
-        if (selected !== 'default' && !entry) throw new Error('Tenant not found');
-        const path =
-          entry?.configPath ??
-          expandConfigPath(process.env.PRISMA_AIRS_CONFIG_PATH || defaultTenantConfigPath());
-        const config = readTenantConfig(path, entry?.tsgId);
+        const entry = resolveEntry(name);
+        const config = readTenantConfig(entry.configPath, entry.tsgId);
         const rows = Object.entries(config).map(([key, value]) => ({
           key,
-          value: /key|secret|token|password/i.test(key) && value ? '[REDACTED]' : (value ?? ''),
+          value: redact(key, value),
         }));
-        ui.status(`Tenant ${selected}${entry ? ` (TSG ${entry.tsgId})` : ''}: ${path}`);
-        console.log(
-          formatOutput(
-            rows,
-            [
-              { key: 'key', label: 'Key' },
-              { key: 'value', label: 'Value' },
-            ],
-            format === 'pretty' ? 'table' : format,
-          ),
-        );
+        ui.status(`Tenant ${entry.name} (TSG ${entry.tsgId}): ${entry.configPath}`);
+        console.log(formatOutput(rows, KEY_VALUE_COLUMNS, format === 'pretty' ? 'table' : format));
+      } catch (error) {
+        fail(error);
+      }
+    });
+
+  tenant
+    .command('path [name]')
+    .description('Print the config file path of a tenant; defaults to the selected tenant')
+    .action((name: string | undefined) => {
+      try {
+        console.log(resolveEntry(name).configPath);
       } catch (error) {
         fail(error);
       }
@@ -203,22 +252,25 @@ export function registerTenantCommand(program: Command): void {
 
   tenant
     .command('delete <name>')
-    .description('Unregister an inactive tenant; retain its source config file')
-    .option('--force', 'Skip interactive confirmation; active tenant deletion remains refused')
+    .description(
+      'Unregister a tenant; retain its source config file and clear the selection if it was selected',
+    )
+    .option('--force', 'Skip interactive confirmation')
     .action(async (name: string, opts: { force?: boolean }) => {
       try {
         const store = readTenantStore();
-        if (name === 'default' || name === store.active)
-          throw new Error('Switch away first; default and active tenants cannot be deleted');
         if (!store.tenants.some((entry) => entry.name === name))
           throw new Error('Tenant not found');
+        const selected = store.active === name;
         await confirmOrAbort(
-          `Unregister tenant ${name}? Its config file will be retained.`,
+          `Unregister tenant ${name}?${selected ? ' It is the selected tenant; no tenant will be selected afterwards.' : ''} Its config file will be retained.`,
           Boolean(opts.force),
           { action: `unregister tenant ${name}` },
         );
-        await deleteTenant(name);
-        ui.success(`Unregistered ${name}; source config file retained`);
+        const { selectionCleared } = await deleteTenant(name);
+        ui.success(
+          `Unregistered ${name}; source config file retained${selectionCleared ? '; no tenant is selected' : ''}`,
+        );
       } catch (error) {
         fail(error);
       }

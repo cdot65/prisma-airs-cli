@@ -1,5 +1,38 @@
 # Release Notes
 
+## v6.0.0 (2026-09-12) — Tenant files are the only configuration source
+
+- **Breaking:** `airs config` is removed and no environment variable configures the CLI any
+  more. `dotenv` and `.env` loading are gone, `PRISMA_AIRS_CONFIG_PATH` is ignored, and the
+  `~/.prisma-airs/config.json` "default" tenant no longer exists. Register a tenant with
+  `airs tenant create <name>` (or `--config <path>` for an existing file) and select it with
+  `airs tenant switch <name>`; with no selection every API command stops with
+  `No tenant selected` and lists the registered names. Only `PRISMA_AIRS_TENANTS_PATH` and
+  `XDG_STATE_HOME` (registry location) and the SDK diagnostics `PANW_AI_SEC_DEBUG`,
+  `PANW_AI_SEC_DEBUG_BODY`, `PANW_AI_SEC_TIMEOUT_MS` are still honored.
+- `airs tenant` now covers everything `airs config` did: `get <name> <key>`,
+  `unset <name> <key>` (credentials cannot be cleared), and `path [name]` join `create`,
+  `switch`, `set`, `list`, `read`, and `delete`. Deleting the selected tenant clears the
+  selection instead of being refused.
+- **Breaking:** one SCM OAuth credential set and one token endpoint per tenant. Management,
+  DLP, Red Team, Model Security, AgentGuard, AI Gateway, and SCM IAM all authenticate with
+  `mgmtClientId` / `mgmtClientSecret` / `mgmtTsgId` through `mgmtTokenEndpoint`. The
+  per-product token endpoint keys (`redTeamTokenEndpoint`, `modelSecTokenEndpoint`,
+  `agentGuardTokenEndpoint`, `aiGwTokenEndpoint`) are retired and ignored, and the SDK's
+  per-product credential variables are never consulted because the CLI now passes every
+  credential and endpoint explicitly. Product base-URL overrides remain file-only keys with
+  SDK defaults.
+- `airs doctor` is tenant-first: it fails clearly when no tenant is selected, validates the
+  tenant file against its pinned TSG, warns about retired keys in the file and about
+  `PANW_*` / `PRISMA_AIRS_CONFIG_PATH` variables still set in the shell (names only), treats
+  a missing scanner key as skipped, and phrases every remedy as `airs tenant set`.
+- Every product base URL now defaults to `api.apps.paloaltonetworks.com` (AISEC management,
+  Red Team, Model Security, AgentGuard, AI Gateway, IAM); only DLP stays on
+  `api.dlp.paloaltonetworks.com`. The values come from the SDK constants, so this lands with
+  SDK 0.32.0, which this release pins.
+- Live e2e scripts and specs resolve the operator's selected tenant through the registry
+  (`AIRS_E2E_TENANT=<name>` picks another registered one) instead of a config-path variable.
+
 ## v5.11.1 (2026-09-11) — SDK 0.31.1
 
 - Pin SDK 0.31.1, which fixes `generateWorkspaceScopeName()` on Node 18. The CLI requires

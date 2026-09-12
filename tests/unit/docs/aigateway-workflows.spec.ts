@@ -43,7 +43,7 @@ describe('AI Gateway workflow documentation', () => {
     const page = await read('docs/cli/aigateway/workflows.md');
 
     expect(page).toContain('# AI Gateway workflow cheat sheet');
-    expect(page).toContain('PANW_MGMT_CLIENT_ID');
+    expect(page).toContain('airs tenant create dev');
     expect(page).toContain('--scope-name');
     expect(page).toContain('scopeName');
     expect(page).toContain('slug');

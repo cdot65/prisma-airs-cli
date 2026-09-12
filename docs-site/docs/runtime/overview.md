@@ -16,7 +16,7 @@ Runtime Security is the core module of Prisma AIRS CLI for real-time prompt scan
 
 ## Authentication
 
-Runtime scanning requires a Scanner API key (`PANW_AI_SEC_API_KEY`). Configuration management requires Management API credentials (`PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`). Guardrail generation requires both.
+Runtime scanning requires a Scanner API key (`PANW_AI_SEC_API_KEY`). Configuration management requires Management API credentials (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` in the selected tenant file). Guardrail generation requires both.
 
 :::tip[Exact command syntax]
 Every runtime command with options and example output lives in the

@@ -1,22 +1,21 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { ManagementClient } from '@cdot65/prisma-airs-sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { collectRuntimeDailyReport } from '../../src/reports/runtime.js';
 import type { RuntimeDailyReport } from '../../src/reports/types.js';
+import { isolatedRegistry, selectedTenant } from '../helpers/live-tenant.js';
 
 const runFile = promisify(execFile);
 const enabled = process.env.RUN_RUNTIME_REPORT_E2E === '1';
 
 describe.skipIf(!enabled)('live read-only runtime report', () => {
   const cliPath = resolve(process.env.RUNTIME_REPORT_CLI_ENTRY ?? 'dist/cli/index.js');
-  const configPath = resolve(
-    process.env.PRISMA_AIRS_CONFIG_PATH ?? join(homedir(), '.prisma-airs/config.json'),
-  );
+  const tenant = selectedTenant();
+  const configPath = tenant.configPath;
   const outputDirectory = resolve(
     'artifacts/runtime-report',
     new Date().toISOString().replaceAll(':', '-'),
@@ -52,22 +51,11 @@ describe.skipIf(!enabled)('live read-only runtime report', () => {
     config = JSON.parse(originalConfig.toString('utf8'));
     env = {
       ...process.env,
-      PRISMA_AIRS_CONFIG_PATH: configPath,
+      PRISMA_AIRS_TENANTS_PATH: await isolatedRegistry(tenant),
       PANW_AI_SEC_DEBUG: '0',
       PANW_AI_SEC_DEBUG_BODY: '0',
       PANW_AI_SEC_TIMEOUT_MS: '20000',
     };
-    for (const [field, name] of Object.entries({
-      mgmtClientId: 'PANW_MGMT_CLIENT_ID',
-      mgmtClientSecret: 'PANW_MGMT_CLIENT_SECRET',
-      mgmtTsgId: 'PANW_MGMT_TSG_ID',
-      mgmtEndpoint: 'PANW_MGMT_ENDPOINT',
-      mgmtDashboardEndpoint: 'PANW_MGMT_DASHBOARD_ENDPOINT',
-      mgmtTokenEndpoint: 'PANW_MGMT_TOKEN_ENDPOINT',
-    })) {
-      if (config[field]) env[name] = config[field];
-      else delete env[name];
-    }
     await mkdir(outputDirectory, { recursive: true, mode: 0o700 });
   });
 

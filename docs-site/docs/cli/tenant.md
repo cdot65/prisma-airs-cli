@@ -5,23 +5,21 @@ sidebar_label: tenant
 
 # Tenant selection
 
-Guided creation and individual setting updates are available in CLI **5.6.0**.
-
-Create a tenant configuration through guided prompts, or register an existing Prisma
-AIRS JSON file. You can then update individual settings and switch between tenants.
-Existing files can be read-only: registering, switching, reading, and deleting
-registrations never modify the source configuration or copy its credentials.
+Tenants are the **only** configuration source. Create a tenant through guided prompts or
+register an existing Prisma AIRS JSON file, select it, and every command reads that file.
+Existing files can be read-only: registering, switching, reading, and deleting registrations
+never modify the source configuration or copy its credentials.
 
 ## Set up without a JSON file
 
 ```bash
 airs tenant create development
 # Prompts, one at a time: TSG ID, OAuth client ID, and a hidden OAuth client secret.
+airs tenant switch development
 airs tenant set development defaultOutput yaml
 airs tenant set development scanConcurrency 3
 airs tenant set development airsApiKey
 # Hidden prompt for the runtime scanning key.
-airs tenant switch development
 airs tenant read
 ```
 
@@ -29,13 +27,14 @@ airs tenant read
 setup without registering a partial tenant (exit 130). This configures access to an
 existing cloud tenant; it does not provision a tenant or service account.
 
-`set <name> <key> [value]` changes just one setting in that named tenant's file,
-without changing the active selection. Omit the value to be prompted. Credentials
-use hidden prompts and cannot be passed as command-line arguments. Keys use the
-same camelCase names as `airs config`, such as `mgmtClientSecret`,
-`mgmtDashboardEndpoint`, and `aiGwInferenceApiKey`. Values are schema-validated;
+`set <name> <key> [value]` changes just one setting in that tenant's file, without
+changing the active selection. Omit the value to be prompted. Credentials use hidden
+prompts and cannot be passed as command-line arguments. Values are schema-validated;
 unrelated fields are preserved. Credential fields cannot be cleared. The registered
 `mgmtTsgId` is pinned: create another tenant to use a different TSG.
+
+`unset <name> <key>` removes one setting so the default applies again; `get <name> <key>`
+prints one value with credentials redacted; `path [name]` prints the file path.
 
 For automation, pipe a secret from your secret manager or private file:
 
@@ -48,14 +47,16 @@ airs tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.tx
 Stdin accepts one nonempty value, up to 64 KiB, with an optional final newline.
 Without a terminal, supply the creation IDs and `--client-secret-stdin`, or use
 `--config`. Do not combine `--config` with new-config options. Neither creation nor
-editing tests OAuth access; a successful save confirms local configuration only.
+editing tests OAuth access; a successful save confirms local configuration only. Run
+`airs doctor` for that.
 
 New configs are stored under `configs/` alongside the tenant registry, with a unique
 filename, directory mode `0700`, and file mode `0600` on POSIX. Secrets are stored in
 that private JSON file, **not encrypted**, and never in the registry. Back up and
-protect these files. `tenant set` requires a writable regular file and parent directory;
-it does not bypass read-only permissions. Updates use a per-config lock and atomic
-replacement with mode `0600`. Deleting a registration retains even CLI-created configs.
+protect these files. `tenant set` and `tenant unset` require a writable regular file and
+parent directory; they do not bypass read-only permissions. Updates use a per-config lock
+and atomic replacement with mode `0600`. Deleting a registration retains even CLI-created
+configs.
 
 ## Use an existing JSON file
 
@@ -66,31 +67,33 @@ airs tenant list --output json
 airs tenant switch development
 airs tenant read
 airs tenant read production --output yaml
-airs tenant switch default
 airs tenant delete production --force
 ```
 
 `create --config` registers an **existing file**, not a new cloud tenant or service account. Each
-file must contain `mgmtClientId`, `mgmtClientSecret`, and `mgmtTsgId`. Add product-specific
-keys/endpoints to that same file as needed. A registration does not become active until
-you run `switch`. Names are 1–64 letters, digits, hyphens, or underscores, beginning with
-a letter or digit. `default` is reserved.
+file must contain `mgmtClientId`, `mgmtClientSecret`, and `mgmtTsgId`. Add other keys to that
+same file as needed (see [configuration options](../reference/configuration.md)). A
+registration does not become active until you run `switch`. Names are 1–64 letters, digits,
+hyphens, or underscores, beginning with a letter or digit.
 
 | Command | Behavior |
 | --- | --- |
 | `create <name>` | Prompt for TSG ID, client ID and hidden secret; create a private config |
 | `create <name> --config <path>` | Validate and register an existing config; resolve its real absolute path |
-| `set <name> <key> [value] [--stdin]` | Update one setting; prompt if omitted, hide credentials, preserve selection |
 | `switch <name>` | Validate its pinned TSG identity and persist the selection for subsequent CLI processes |
-| `switch default` | Return to legacy config/environment resolution |
+| `set <name> <key> [value] [--stdin]` | Update one setting; prompt if omitted, hide credentials, preserve selection |
+| `unset <name> <key>` | Remove one non-credential setting so the default applies |
+| `get <name> <key> --output <format>` | Print one setting, credentials redacted |
 | `list --output <format>` | Show names, selected status, TSG IDs, and file paths; no credential reads |
-| `read [name] --output <format>` | Show registered-file settings, with all credential values fully redacted; defaults to selected tenant |
-| `delete <name> [--force]` | Unregister an inactive tenant; keep its config file; confirmation required unless forced |
+| `read [name] --output <format>` | Show file settings with all credential values redacted; defaults to the selected tenant |
+| `path [name]` | Print a tenant's config file path; defaults to the selected tenant |
+| `delete <name> [--force]` | Unregister a tenant; keep its config file; clears the selection if it was selected |
 
-`list` and `read` support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`.
-There is intentionally no `tenant read --reveal`. Active registrations and `default`
-cannot be deleted. Switch away first. A missing/invalid active config fails closed;
-`tenant list` and `tenant switch default` remain available for recovery.
+`list`, `read`, and `get` support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`.
+There is intentionally no `--reveal`. A missing or invalid selected config fails closed;
+`tenant list`, `tenant switch`, and `tenant delete` remain available for recovery. With no
+tenant selected, every API command stops with `No tenant selected` and names the registered
+tenants.
 
 ## Registry and precedence
 
@@ -102,22 +105,14 @@ use mode `0700` and the registry uses `0600` on POSIX systems. Back up the regis
 and its referenced config files separately. If a process leaves a lock behind, confirm
 that no writer is running before removing that specific `.lock` file.
 
-Config-file selection is: explicit library path, then `PRISMA_AIRS_CONFIG_PATH`, then
-the selected tenant, then `~/.prisma-airs/config.json`. `switch` refuses a named selection
-while `PRISMA_AIRS_CONFIG_PATH` is set, to prevent an apparently successful but ineffective
-switch. If that variable is set afterward, it deliberately overrides selection and
-`tenant list` warns about it.
-
-Named tenants reject nonempty `PANW_MGMT_*`, `PANW_MODEL_SEC_*`, `PANW_RED_TEAM_*`,
-`PANW_AGENT_GUARD_*`, `PANW_AI_GW_*`, `PANW_DLP_*`, and `PANW_AI_SEC_API_*` environment
-overrides. Put those settings in the tenant file or unset them; this prevents mixing
-one tenant's credentials with another tenant's endpoints. Output and concurrency
-settings can still come from the environment. With `default`, legacy precedence remains.
+Config resolution is: CLI flags, then the selected tenant's file, then defaults. No
+environment variable supplies a configuration value, and a `.env` file is not loaded.
+`airs doctor` names the selected tenant and TSG, validates the file against its pinned
+identity, lists any `PANW_*` or `PRISMA_AIRS_CONFIG_PATH` variables still set in the shell
+(they are ignored), and phrases every remedy as `airs tenant set <name> <key>`.
 
 Selection affects new commands, not already running processes. For parallel jobs targeting
-different tenants, use separate registries or explicit `PRISMA_AIRS_CONFIG_PATH` values.
-`airs config path` shows the file that API commands will use; explicit `config set/unset`
-operations target that file and still require it to be writable.
+different tenants, give each job its own registry through `PRISMA_AIRS_TENANTS_PATH`.
 
 For disposable Docker containers, persist the registry separately from the read-only
 config mount (for the published root-based image, mount a volume at
@@ -169,9 +164,3 @@ returned `defaultOutput: yaml` and `[REDACTED]` for `mgmtClientSecret`. Separate
 built-CLI integration tests verified stdin setup, secret rotation, individual endpoint
 updates, and OAuth/profile retrieval against a local HTTP test API. The existing
 two-tenant profile backup/restore integration workflows also passed.
-
-After npm publication, the installed CLI **5.6.0** passed all six setup/OAuth/migration
-workflows again on 2026-09-08 at 21:47 UTC, plus eleven native consumer checks. Its seven
-packaged files exactly matched the pre-release candidate. `airs --version` returned
-`5.6.0`. These tests use synthetic tenants and a local HTTP API; they do not alter
-your live tenant credentials or the default config file.

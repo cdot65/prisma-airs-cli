@@ -5,15 +5,15 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { ManagementClient } from '@cdot65/prisma-airs-sdk';
+import { selectedTenant } from './lib/live-tenant.mjs';
 
 const exec = promisify(execFile);
 const repo = fileURLToPath(new URL('..', import.meta.url));
-const source = process.env.PRISMA_AIRS_CONFIG_PATH ?? join(homedir(), '.prisma-airs/config.json');
+const source = selectedTenant().configPath;
 const bytes = await readFile(source);
 const config = JSON.parse(bytes.toString());
 // This process uses the supplied file only; never mix an inherited endpoint/key with it.

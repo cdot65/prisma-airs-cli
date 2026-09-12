@@ -108,7 +108,6 @@ beforeEach(async () => {
     ),
   );
   env.PRISMA_AIRS_TENANTS_PATH = join(directory, 'tenants.json');
-  env.DOTENV_CONFIG_PATH = '/dev/null';
   env.NO_COLOR = '1';
   configs = [];
   for (const [name, tsg] of [
@@ -234,20 +233,14 @@ describe('DLP commands use selected tenant config through real CLI and SDK OAuth
     expect(await readFile(join(directory, 'dev.json'), 'utf8')).toBe(configs[1]);
   }, 60000);
 
-  it('rejects mixed environment credentials before any OAuth or resource write', async () => {
-    const result = await cli(
-      ['runtime', 'dlp', 'patterns', 'create', '--name', 'do-not-create', '--regex', 'example'],
-      { PANW_MGMT_CLIENT_ID: 'wrong-client' },
-      2,
-    );
-    expect(result.stderr).toContain('Named tenant selection conflicts');
-    expect(requests).toEqual([]);
-  });
-
-  it('still supports an explicitly selected config file', async () => {
+  it('ignores environment credentials and config paths; only the selected tenant file authenticates', async () => {
     await cli(['runtime', 'dlp', 'profiles', 'list', '--output', 'json'], {
+      PANW_MGMT_CLIENT_ID: 'wrong-client',
+      PANW_MGMT_CLIENT_SECRET: 'wrong-secret',
+      PANW_MGMT_TSG_ID: '200',
+      PANW_DLP_ENDPOINT: 'http://127.0.0.1:9/never',
       PRISMA_AIRS_CONFIG_PATH: join(directory, 'dev.json'),
     });
-    expect(requests.map((r) => r.tsg)).toEqual(['200', '200']);
+    expect(requests.map((r) => r.tsg)).toEqual(['100', '100']);
   });
 });

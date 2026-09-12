@@ -24,10 +24,9 @@
 - **Model Security** — ML model supply chain scanning with security groups, rules, and violation tracking
 - **Unified automation output** — resource reads support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`, with pipe-safe stdout; environment deliverables use HTML or Markdown
 - **Complete pagination** — consistent `--limit`, `--offset`, and `--all` traversal with a configurable safety cap
-- **`airs doctor`** — one-command diagnostics for environment, credentials, and API connectivity
-- **Tenant configuration** — `airs tenant create|set|switch|list|read|delete` supports guided setup with hidden secret prompts, individual setting updates, and existing-file registration without changing read-only mounts
+- **`airs doctor`** — one-command diagnostics for the selected tenant, its credentials, and API connectivity
+- **Tenant configuration** — `airs tenant create|switch|set|unset|get|list|read|path|delete` is the only configuration surface: guided setup with hidden secret prompts, individual setting updates, and existing-file registration without changing read-only mounts
 - **Profile migration** — `airs runtime profiles backup|restore` exports private JSON/YAML, previews cross-tenant restores, remaps topics and explicit DLP dependencies, and verifies restored policies ([guide](https://cdot65.github.io/prisma-airs-cli/runtime/profile-transfer/))
-- **`airs config`** — manage the selected config file from the CLI (`list`, `get`, `set`, `unset`, `path`)
 
 ## Install
 
@@ -41,8 +40,9 @@ Requires **Node.js 20.17+, 22.13+, or 24+** (exact engine range: `^20.17.0 || ^2
 ## Quick Start
 
 ```bash
-# Configure credentials
-cp .env.example .env   # add your API keys
+# Configure credentials (prompts for TSG ID, client ID, and a hidden secret)
+airs tenant create dev
+airs tenant switch dev
 
 # Check your setup
 airs doctor
@@ -101,13 +101,13 @@ Resource read commands share one contract (environment report files have their o
 - JSON/YAML lists are bare arrays of complete normalized records; detail reads are complete objects.
 - Table, Markdown, and CSV are stable human-oriented projections. CSV uses RFC 4180 quoting.
 - Data is written to stdout; status, paging hints, warnings, and errors are written to stderr.
-- Output precedence is command `--output`, global `--output`, `defaultOutput`/`PANW_CLI_OUTPUT`, then `pretty`.
+- Output precedence is command `--output`, global `--output`, `defaultOutput`, then `pretty`.
 - Paginated lists use `--limit`, `--offset`, and `--all`. Complete traversal is capped at 10,000 records by default; change it with `--max`, or use `--max 0` for no cap.
 - Profile and topic lists return only the latest revision by default. Use `--all-versions` or `--revision` when historical revisions are needed.
 
 ```bash
 airs --output json runtime profiles list --all | jq '.[].profileName'
-PANW_CLI_OUTPUT=yaml airs runtime topics get "My Topic"
+airs --output yaml runtime topics get "My Topic"
 airs model-security scans list --all --max 25000 --output csv > scans.csv
 ```
 
@@ -125,7 +125,7 @@ The full guides, complete CLI reference, configuration, and architecture live on
 
 ## Configuration
 
-Credentials come from environment variables or `~/.prisma-airs/config.json`. At minimum: `PANW_AI_SEC_API_KEY` (scanning) and `PANW_MGMT_CLIENT_ID` / `PANW_MGMT_CLIENT_SECRET` / `PANW_MGMT_TSG_ID` (management). Set `defaultOutput` in the config file or `PANW_CLI_OUTPUT` in the environment to choose a default read format. See [`.env.example`](.env.example) and the [configuration guide](https://cdot65.github.io/prisma-airs-cli/getting-started/configuration/) for the full list.
+Configuration lives only in tenant files managed by `airs tenant`; environment variables are not read. Every management-plane product (Management, DLP, Red Team, Model Security, AgentGuard, AI Gateway) authenticates with the tenant's single SCM OAuth credential set (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId`); scanning adds `airsApiKey`. Set `defaultOutput` with `airs tenant set <name> defaultOutput json` to choose a default read format. See the [configuration guide](https://cdot65.github.io/prisma-airs-cli/getting-started/configuration/) for the full list.
 
 ## License
 

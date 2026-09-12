@@ -27,11 +27,26 @@ const sharp = consumerRequire('sharp');
 assert.ok(sharp.versions.vips, 'Native libvips must load from this consumer.');
 const work = mkdtempSync(join(tmpdir(), 'prisma-airs-dlp-consumer-'));
 const config = join(work, 'config.json');
+const registry = join(work, 'tenants.json');
 const cache = join(work, 'cache');
 mkdirSync(cache);
+// Configuration comes only from the selected tenant file; the registry below selects it.
+function writeTenant(settings = {}) {
+  const credentials = {
+    mgmtClientId: 'consumer',
+    mgmtClientSecret: 'consumer-secret',
+    mgmtTsgId: '1',
+  };
+  writeFileSync(config, `${JSON.stringify({ ...credentials, ...settings })}\n`, { mode: 0o600 });
+  writeFileSync(
+    registry,
+    `${JSON.stringify({ version: 1, active: 'consumer', tenants: [{ name: 'consumer', configPath: config, tsgId: '1' }] })}\n`,
+    { mode: 0o600 },
+  );
+}
 const env = {
   PATH: process.env.PATH,
-  PRISMA_AIRS_CONFIG_PATH: config,
+  PRISMA_AIRS_TENANTS_PATH: registry,
   NO_COLOR: '1',
   // Give fontconfig a writable, disposable cache without inheriting the user's home.
   XDG_CACHE_HOME: cache,
@@ -72,7 +87,7 @@ function checkSignature(path, format) {
 }
 
 try {
-  writeFileSync(config, '{}\n', { mode: 0o600 });
+  writeTenant();
   caseResult('installed CLI version matches its package', () => {
     const result = run(['--version']);
     assert.equal(result.status, 0);
@@ -136,7 +151,7 @@ try {
     assert.equal(JSON.parse(result.stdout).clean, 1);
   });
   caseResult('file default JSON is respected', () => {
-    writeFileSync(config, '{"defaultOutput":"json"}\n');
+    writeTenant({ defaultOutput: 'json' });
     const result = run([
       'runtime',
       'dlp',
@@ -149,14 +164,15 @@ try {
     assert.equal(result.status, 0, result.stderr);
     assert.equal(JSON.parse(result.stdout).dirty, 4);
   });
-  caseResult('environment JSON overrides file pretty', () => {
-    writeFileSync(config, '{"defaultOutput":"pretty"}\n');
+  caseResult('environment variables are ignored; the tenant file pretty default wins', () => {
+    writeTenant({ defaultOutput: 'pretty' });
     const result = run(
       ['runtime', 'dlp', 'generate', '--types', 'svg', '--out', join(work, 'environment')],
       { PANW_CLI_OUTPUT: 'json' },
     );
     assert.equal(result.status, 0, result.stderr);
-    assert.equal(JSON.parse(result.stdout).clean, 1);
+    assert.throws(() => JSON.parse(result.stdout));
+    assert.match(result.stdout, /svg/);
   });
   caseResult(
     'explicit pretty overrides environment JSON and quiet preserves per-format data',

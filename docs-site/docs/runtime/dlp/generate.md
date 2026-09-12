@@ -31,7 +31,7 @@ airs runtime dlp generate [options]
 | `--out <dir>` | `./temp` | Output base directory |
 | `--techniques <list>` | `all` | `all` or comma list of technique ids |
 | `--seed <n>` | random | Safe integer seed for reproducible payloads |
-| `--output <fmt>` | configured, otherwise `pretty` | `pretty` or `json` summary; explicit flag overrides `PANW_CLI_OUTPUT`, config and default |
+| `--output <fmt>` | configured, otherwise `pretty` | `pretty` or `json` summary; explicit flag overrides the tenant's `defaultOutput` and the default |
 
 **Auth:** none — purely local file generation.
 

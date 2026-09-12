@@ -35,7 +35,7 @@ describe('collectCompletionNodes', () => {
   it('includes the root node with top-level command groups and global flags', () => {
     const root = nodes.find((n) => n.path === '');
     expect(root).toBeDefined();
-    for (const word of ['runtime', 'redteam', 'model-security', 'config', 'doctor', 'completion']) {
+    for (const word of ['runtime', 'redteam', 'model-security', 'tenant', 'doctor', 'completion']) {
       expect(root?.words).toContain(word);
     }
     expect(root?.words).toContain('--debug');

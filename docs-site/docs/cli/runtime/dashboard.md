@@ -41,7 +41,7 @@ overview bucket totals may not reconcile with top-level counters.
 The dashboard host defaults to `https://api.apps.paloaltonetworks.com/aisec`. Override it with
 `PANW_MGMT_DASHBOARD_ENDPOINT` or config `mgmtDashboardEndpoint`; `mgmtEndpoint` remains
 separate for other Management resources. Credentials are the existing `mgmtClientId`,
-`mgmtClientSecret`, `mgmtTsgId`, or matching `PANW_MGMT_*` variables. No Scanner key, browser
+`mgmtClientSecret`, `mgmtTsgId` in the selected tenant file. No Scanner key, browser
 token, Origin or Referer is needed. Debug files in CWD omit dashboard bodies; explicitly
 displayed JSON/YAML may still contain confidential metadata.
 

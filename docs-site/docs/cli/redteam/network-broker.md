@@ -8,7 +8,7 @@ Manage Red Team **network broker channels** — the data-plane relays that conne
 red team clients to targets. Channels live on a distinct network-broker endpoint;
 set `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` (or `redTeamNetworkBrokerEndpoint` in
 config) to override it. OAuth credentials are shared with the other Red Team
-commands (`PANW_MGMT_*`).
+commands (the tenant's `mgmt*` keys).
 
 ### redteam network-broker channels list
 

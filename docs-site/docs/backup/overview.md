@@ -14,7 +14,7 @@ below retain their existing behavior and file format.
 ## Prerequisites
 
 - Prisma AIRS CLI installed and configured ([Installation](../getting-started/installation.mdx))
-- AIRS management credentials set (`PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`)
+- AIRS management credentials set (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` in the selected tenant file)
 
 ---
 
@@ -186,10 +186,12 @@ Move targets between AIRS tenants:
 
 ```bash
 # Export from source tenant
-PANW_MGMT_TSG_ID=source-tsg airs redteam targets backup
+airs tenant switch source
+airs redteam targets backup
 
 # Import to destination tenant
-PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./airs-backup/targets/
+airs tenant switch destination
+airs redteam targets restore --input-dir ./airs-backup/targets/
 ```
 
 ### Version Control

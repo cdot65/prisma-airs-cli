@@ -6,7 +6,7 @@ sidebar_label: models
 
 Browse the scanned **model catalog** (read-only): models, their versions, and the
 files within each version. Credentials are shared with the other Model Security
-commands (`PANW_MGMT_*`).
+commands (the tenant's `mgmt*` keys).
 
 ### model-security models list
 

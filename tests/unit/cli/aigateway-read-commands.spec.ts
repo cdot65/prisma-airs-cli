@@ -2,6 +2,7 @@ import type { AIGatewayClient } from '@cdot65/prisma-airs-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAiGatewayClientFactoryForTest } from '../../../src/cli/commands/aigateway/shared.js';
 import { buildProgram } from '../../../src/cli/program.js';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const methods = {
   apiKeysGetService: vi.fn(),
@@ -81,8 +82,9 @@ function fakeClient(): AIGatewayClient {
 
 let restoreFactory: (() => void) | undefined;
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await useTestTenant();
   for (const method of Object.values(methods)) method.mockResolvedValue({ data: [] });
   methods.configsGet.mockResolvedValue({ id: 'config-1' });
   methods.deploymentsGet.mockResolvedValue({ id: 'deployment-1' });

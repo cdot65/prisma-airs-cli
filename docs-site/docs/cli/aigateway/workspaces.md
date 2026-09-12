@@ -7,7 +7,7 @@ sidebar_position: 3
 
 Manage **AI Gateway workspaces** — the unit almost every other AI Gateway
 resource is keyed by. Credentials are shared with the management API
-(`PANW_MGMT_*`); only the endpoints are AI Gateway-specific
+(the tenant's `mgmt*` keys); only the endpoints are AI Gateway-specific
 (`PANW_AI_GW_DATA_ENDPOINT`, `PANW_AI_GW_ADMIN_ENDPOINT`, with
 `PANW_AI_GW_TOKEN_ENDPOINT` falling back to `PANW_MGMT_TOKEN_ENDPOINT`).
 

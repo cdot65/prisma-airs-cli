@@ -40,7 +40,6 @@ describe('help examples', () => {
     ['redteam', 'scan'],
     ['redteam', 'targets', 'list'],
     ['model-security', 'scans', 'list'],
-    ['config'],
     ['doctor'],
   ];
 

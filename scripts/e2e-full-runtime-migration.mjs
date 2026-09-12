@@ -38,7 +38,7 @@ const env = Object.fromEntries(
       !key.startsWith('PANW_') && !['PRISMA_AIRS_CONFIG_PATH', 'FORCE_COLOR'].includes(key),
   ),
 );
-Object.assign(env, { DOTENV_CONFIG_PATH: '/dev/null', NO_COLOR: '1' });
+Object.assign(env, { NO_COLOR: '1' });
 const exec = promisify(execFile);
 const transcript = [],
   results = [],

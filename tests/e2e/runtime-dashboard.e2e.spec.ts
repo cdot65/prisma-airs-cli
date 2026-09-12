@@ -1,40 +1,27 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { load } from 'js-yaml';
 import { describe, expect, it } from 'vitest';
+import { isolatedRegistry, selectedTenant } from '../helpers/live-tenant.js';
 
 const execute = promisify(execFile);
 
 describe.skipIf(process.env.RUN_RUNTIME_REPORT_E2E !== '1')('live built CLI SCM dashboard', () => {
   it('authenticates, enumerates, drills down and reads content without persisting customer text', async () => {
     const entry = resolve(process.env.RUNTIME_REPORT_CLI_ENTRY ?? 'dist/cli/index.js');
-    const configPath = resolve(
-      process.env.PRISMA_AIRS_CONFIG_PATH ?? join(homedir(), '.prisma-airs/config.json'),
-    );
+    const tenant = selectedTenant();
+    const configPath = tenant.configPath;
     const original = await readFile(configPath);
-    const config = JSON.parse(original.toString('utf8')) as Record<string, string>;
     const env = {
       ...process.env,
-      PRISMA_AIRS_CONFIG_PATH: configPath,
+      PRISMA_AIRS_TENANTS_PATH: await isolatedRegistry(tenant),
       PANW_AI_SEC_DEBUG: '0',
       PANW_AI_SEC_DEBUG_BODY: '0',
       PANW_AI_SEC_TIMEOUT_MS: '20000',
     };
-    for (const [field, variable] of Object.entries({
-      mgmtClientId: 'PANW_MGMT_CLIENT_ID',
-      mgmtClientSecret: 'PANW_MGMT_CLIENT_SECRET',
-      mgmtTsgId: 'PANW_MGMT_TSG_ID',
-      mgmtEndpoint: 'PANW_MGMT_ENDPOINT',
-      mgmtTokenEndpoint: 'PANW_MGMT_TOKEN_ENDPOINT',
-      mgmtDashboardEndpoint: 'PANW_MGMT_DASHBOARD_ENDPOINT',
-    })) {
-      if (config[field]) env[variable] = config[field];
-      else delete env[variable];
-    }
     const directory = resolve(
       'artifacts/runtime-dashboard',
       new Date().toISOString().replaceAll(':', '-'),

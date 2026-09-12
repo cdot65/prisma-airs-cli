@@ -32,10 +32,9 @@ airs runtime profiles restore --help
 ```
 
 The restore help must include `--on-conflict` with `verify` and `--on-missing-dlp`.
-Ensure there are no conflicting `PANW_*`, `PRISMA_AIRS_CONFIG_PATH`, or `.env`
-credential overrides in your terminal; environment overrides take precedence over
-named-tenant JSON credentials. Do not export secrets to work around an authentication
-failure. See [tenant authentication recovery](dlp/tenant-auth-recovery.md).
+Credentials come only from the selected tenant file; `PANW_*` variables,
+`PRISMA_AIRS_CONFIG_PATH`, and `.env` files are ignored (`airs doctor` lists any still set).
+Do not export secrets to work around an authentication failure. See [tenant authentication recovery](dlp/tenant-auth-recovery.md).
 
 Throughout this guide, replace quoted placeholders such as `"<DEV_TSG>"` with the
 actual value printed by an earlier `airs` command. They are **not environment variables**.

@@ -6,7 +6,6 @@ import { Command } from 'commander';
 import { registerAgentGuardCommand } from './commands/agentguard.js';
 import { registerAiGatewayCommand } from './commands/aigateway.js';
 import { registerCompletionCommand } from './commands/completion.js';
-import { registerConfigCommand } from './commands/config.js';
 import { registerDoctorCommand } from './commands/doctor.js';
 import { registerModelSecurityCommand } from './commands/modelsecurity.js';
 import { registerRedteamCommand } from './commands/redteam.js';
@@ -187,7 +186,6 @@ export function buildProgram(): Command {
   registerModelSecurityCommand(program);
   registerAgentGuardCommand(program);
   registerAiGatewayCommand(program);
-  registerConfigCommand(program);
   registerTenantCommand(program);
   registerDoctorCommand(program);
   registerCompletionCommand(program);

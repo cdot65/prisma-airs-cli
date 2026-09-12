@@ -52,8 +52,7 @@ Output selection uses this precedence, from highest to lowest:
 
 1. The read command's `--output <format>`.
 2. The global `airs --output <format>` option.
-3. `defaultOutput` in `~/.prisma-airs/config.json`, including its
-   `PANW_CLI_OUTPUT` environment mapping.
+3. `defaultOutput` in the selected tenant file (`airs tenant set <name> defaultOutput json`).
 4. `pretty`.
 
 ## Pagination and revisions

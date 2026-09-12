@@ -159,5 +159,5 @@ it('refuses mixed input modes, secret arguments and identity changes', async () 
   await cli(['set', 'dev', 'defaultOutput', 'json', '--stdin'], 'yaml', 1);
   await cli(['set', 'dev', 'mgmtTsgId', '200'], undefined, 1);
   await cli(['set', 'dev', 'notAKey', 'FAKE-SECRET'], undefined, 1);
-  expect(JSON.parse((await cli(['list', '--output', 'json'])).stdout)[1].tsgId).toBe('100');
+  expect(JSON.parse((await cli(['list', '--output', 'json'])).stdout)[0].tsgId).toBe('100');
 }, 60000);

@@ -398,9 +398,8 @@ describe('real CLI + SDK OAuth with isolated source and destination tenants', ()
       expect(Math.max(...rendered.split('\n').map((line) => line.length))).toBeLessThan(160);
     }
     expect(inventories['100'].profiles[0].profile_id).toBe(sourceProfileId);
-    await cli(['tenant', 'delete', 'destination', '--force'], {}, 1);
-    await cli(['tenant', 'switch', 'default']);
     await cli(['tenant', 'delete', 'destination', '--force']);
+    await cli(['runtime', 'profiles', 'backup'], {}, 1);
     for (const [i, tsg] of ['100', '200'].entries())
       expect(digest(await readFile(join(directory, `${tsg}.json`)))).toBe(
         digest(initialConfigs[i]),
@@ -430,15 +429,10 @@ describe('real CLI + SDK OAuth with isolated source and destination tenants', ()
       2,
     );
     expect(requests).toHaveLength(count);
-    await cli(
-      ['tenant', 'switch', 'source'],
-      { PANW_MGMT_CLIENT_SECRET: 'FAKE-SECRET-override' },
-      1,
-    );
+    await cli(['tenant', 'switch', 'source'], { PANW_MGMT_CLIENT_SECRET: 'FAKE-SECRET-override' });
     await chmod(join(directory, '100.json'), 0o600);
     await writeFile(join(directory, '100.json'), '{}');
     await cli(['runtime', 'profiles', 'backup'], {}, 1);
     await cli(['tenant', 'list', '--output', 'json']);
-    await cli(['tenant', 'switch', 'default']);
   }, 60000);
 });

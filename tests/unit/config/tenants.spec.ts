@@ -3,9 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inspectConfig, loadConfig, resolveConfigFilePath } from '../../../src/config/loader.js';
 import {
-  assertTenantEnvironment,
   createTenant,
-  defaultTenantConfigPath,
   deleteTenant,
   expandConfigPath,
   readTenantConfig,
@@ -43,10 +41,10 @@ afterEach(async () => {
 });
 
 describe('tenant registration and isolation', () => {
-  it('retains default behavior without a registry', () => {
+  it('has no tenants and no config source without a registry', () => {
     expect(readTenantStore()).toEqual({ version: 1, active: null, tenants: [] });
     expect(selectedTenant()).toBeUndefined();
-    expect(resolveConfigFilePath()).toBe(defaultTenantConfigPath());
+    expect(() => resolveConfigFilePath()).toThrow('No tenant selected');
   });
 
   it('registers and switches read-only files without copying their secrets', async () => {
@@ -65,19 +63,33 @@ describe('tenant registration and isolation', () => {
     expect(await readFile(tenantStorePath(), 'utf8')).not.toContain('SECRET');
     expect((await stat(tenantStorePath())).mode & 0o777).toBe(0o600);
     expect((await stat(join(directory, 'state'))).mode & 0o777).toBe(0o700);
-    await switchTenant('default');
-    expect(resolveConfigFilePath()).toBe(defaultTenantConfigPath());
+    expect(resolveConfigFilePath()).toBe(destination);
   });
 
-  it('never deletes the referenced config', async () => {
+  it('ignores every environment variable while a tenant is selected', async () => {
     await createTenant('source', source);
     await switchTenant('source');
-    await expect(deleteTenant('source')).rejects.toThrow('Switch to another');
-    await switchTenant('default');
-    await deleteTenant('source');
-    expect(readTenantStore().tenants).toEqual([]);
+    vi.stubEnv('PANW_MGMT_TSG_ID', '200');
+    vi.stubEnv('PANW_MGMT_CLIENT_SECRET', 'ENV-LEAK');
+    vi.stubEnv('PANW_CLI_OUTPUT', 'yaml');
+    vi.stubEnv('PRISMA_AIRS_CONFIG_PATH', destination);
+    const config = await loadConfig();
+    expect(config.mgmtTsgId).toBe('100');
+    expect(config.mgmtClientSecret).toBe('SECRET-100');
+    expect(config.defaultOutput).toBeUndefined();
+    expect((await loadConfig({}, destination)).mgmtTsgId).toBe('200');
+  });
+
+  it('never deletes the referenced config and clears the selection when deleting the selected tenant', async () => {
+    await createTenant('source', source);
+    await createTenant('destination', destination);
+    await switchTenant('source');
+    expect(await deleteTenant('destination')).toEqual({ selectionCleared: false });
+    expect(readTenantStore().active).toBe('source');
+    expect(await deleteTenant('source')).toEqual({ selectionCleared: true });
+    expect(readTenantStore()).toEqual({ version: 1, active: null, tenants: [] });
     expect(await readFile(source, 'utf8')).toContain('SECRET-100');
-    await expect(deleteTenant('default')).rejects.toThrow('cannot be deleted');
+    await expect(loadConfig()).rejects.toThrow('No tenant selected');
     await expect(deleteTenant('absent')).rejects.toThrow('not found');
   });
 
@@ -85,7 +97,6 @@ describe('tenant registration and isolation', () => {
     '',
     '../escape',
     'a/b',
-    'default',
     'space name',
     '-bad',
     'a'.repeat(65),
@@ -113,7 +124,7 @@ describe('tenant registration and isolation', () => {
     await rm(source);
     await expect(loadConfig()).rejects.toThrow('valid tenant config');
     expect(readTenantStore().active).toBe('source');
-    await switchTenant('default');
+    await deleteTenant('source');
     expect(readTenantStore().active).toBeNull();
   });
 
@@ -130,38 +141,6 @@ describe('tenant registration and isolation', () => {
     await switchTenant('source');
     await expect(switchTenant('absent')).rejects.toThrow('not found');
     expect(readTenantStore().active).toBe('source');
-  });
-
-  it.each([
-    'PANW_MGMT_CLIENT_SECRET',
-    'PANW_RED_TEAM_CLIENT_ID',
-    'PANW_AI_GW_DATA_ENDPOINT',
-    'PANW_AI_SEC_API_KEY',
-    'PANW_DLP_ENDPOINT',
-  ])('rejects mixed credentials/endpoints: %s', async (key) => {
-    await createTenant('source', source);
-    vi.stubEnv(key, 'SUPER-SECRET');
-    expect(() => assertTenantEnvironment()).toThrow(key);
-    await expect(switchTenant('source')).rejects.not.toThrow('SUPER-SECRET');
-    expect(readTenantStore().active).toBeNull();
-  });
-
-  it('rejects environment overrides introduced after selection but allows recovery', async () => {
-    await createTenant('source', source);
-    await switchTenant('source');
-    vi.stubEnv('PANW_MGMT_TSG_ID', '200');
-    await expect(loadConfig()).rejects.toThrow('environment overrides');
-    await switchTenant('default');
-    expect(readTenantStore().active).toBeNull();
-  });
-
-  it('preserves explicit file precedence without silently switching under an override', async () => {
-    await createTenant('source', source);
-    await switchTenant('source');
-    vi.stubEnv('PRISMA_AIRS_CONFIG_PATH', destination);
-    expect((await loadConfig()).mgmtTsgId).toBe('200');
-    expect((await loadConfig({}, source)).mgmtTsgId).toBe('100');
-    await expect(switchTenant('source')).rejects.toThrow('Unset PRISMA_AIRS_CONFIG_PATH');
   });
 
   it.each([

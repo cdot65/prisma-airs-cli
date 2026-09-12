@@ -71,6 +71,11 @@ No environment variable names changed. Only default paths in config changed:
 
 If you had explicit `DATA_DIR` or `MEMORY_DIR` overrides, they continue to work as-is.
 
+> **Later change (2026-09-12):** the CLI no longer reads any environment variable or
+> `.env` file, and `airs config` is gone. Register a tenant with `airs tenant create` and
+> manage settings with `airs tenant set|unset|get|read`. `airs doctor` lists variables that
+> are still set and ignored.
+
 ### 5. Update Docker usage
 
 ```bash

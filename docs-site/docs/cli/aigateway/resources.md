@@ -19,7 +19,7 @@ airs aigateway <resource> <action> [id]
 
 Run any group with `--help` to see its identifiers, required flags, and examples. All reads accept
 `--output pretty|table|markdown|csv|json|yaml`; JSON list output is a bare array. AI Gateway reuses
-the `PANW_MGMT_*` OAuth credentials and optionally accepts the `PANW_AI_GW_*_ENDPOINT` overrides.
+the tenant's `mgmt*` OAuth credentials and optionally honors the `aiGwDataEndpoint` / `aiGwAdminEndpoint` overrides.
 
 ## Command map
 
@@ -146,7 +146,7 @@ blocked; do not interpret the ping result as the only health signal.
 
 ## Local live-safe E2E
 
-Place management credentials in the ignored, owner-only `.env.ai-gateway.local` file and run:
+Select the tenant to test against (`airs tenant switch <name>`, or set `AIRS_E2E_TENANT`), opt in with `RUN_AIGATEWAY_E2E=1`, and run:
 
 ```bash
 pnpm test:e2e:aigateway

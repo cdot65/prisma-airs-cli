@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { reportClient } from '../../helpers/runtime-report.js';
+import { TEST_CREDENTIALS, useTestTenant } from '../../helpers/tenant.js';
 
 const factory = vi.hoisted(() => ({ getOrCreateManagementClient: vi.fn() }));
 vi.mock('../../../src/airs/management.js', async (original) => ({
@@ -15,13 +16,14 @@ import { setQuiet } from '../../../src/cli/renderer/ui.js';
 
 describe('airs runtime report command', () => {
   let directory: string;
+  let tenant: Awaited<ReturnType<typeof useTestTenant>>;
   let client: ReturnType<typeof reportClient>;
   beforeEach(async () => {
     vi.clearAllMocks();
     process.exitCode = undefined;
     directory = await mkdtemp(join(tmpdir(), 'airs-report-command-'));
-    vi.stubEnv('PRISMA_AIRS_CONFIG_PATH', join(directory, 'config.json'));
-    vi.stubEnv('PANW_CLI_OUTPUT', 'json'); // Artifact default deliberately independent of terminal format.
+    // Artifact default deliberately independent of terminal format.
+    tenant = await useTestTenant({ defaultOutput: 'json' });
     client = reportClient();
     factory.getOrCreateManagementClient.mockReturnValue(client);
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -142,7 +144,10 @@ describe('airs runtime report command', () => {
   });
 
   it('handles invalid config without exposing file contents', async () => {
-    vi.stubEnv('SCAN_CONCURRENCY', 'SECRET');
+    await writeFile(
+      tenant.configPath,
+      JSON.stringify({ ...TEST_CREDENTIALS, scanConcurrency: 'SECRET' }),
+    );
     await run(['--output-file', join(directory, 'invalid.html')]);
     expect(process.exitCode).toBe(1);
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain('SECRET');

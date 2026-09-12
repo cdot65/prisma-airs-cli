@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { client, scan } from '../../helpers/agentguard.js';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const factory = vi.hoisted(() => ({ create: vi.fn() }));
 vi.mock('@cdot65/prisma-airs-sdk', async (original) => ({
@@ -19,13 +20,13 @@ import { setQuiet } from '../../../src/cli/renderer/ui.js';
 
 describe('AgentGuard CLI', () => {
   let directory: string;
+  let _tenant: Awaited<ReturnType<typeof useTestTenant>>;
   let c: ReturnType<typeof client>;
   beforeEach(async () => {
     vi.clearAllMocks();
     process.exitCode = undefined;
     directory = await mkdtemp(join(tmpdir(), 'airs-agentguard-test-'));
-    vi.stubEnv('PRISMA_AIRS_CONFIG_PATH', join(directory, 'config.json'));
-    vi.stubEnv('PANW_CLI_OUTPUT', 'json');
+    _tenant = await useTestTenant({ defaultOutput: 'json' });
     c = client();
     factory.create.mockReturnValue(c);
     vi.spyOn(console, 'error').mockImplementation(() => {});

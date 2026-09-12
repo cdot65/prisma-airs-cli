@@ -9,7 +9,7 @@ Manage the Red Team end-user license agreement, compute instances, devices, cont
 ## Prerequisites
 
 - Prisma AIRS CLI installed and configured ([Installation](../getting-started/installation.mdx))
-- AIRS management credentials set (`PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`)
+- AIRS management credentials set (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` in the selected tenant file)
 
 ---
 
@@ -144,7 +144,7 @@ running next to the target connects to its channel and forwards scan traffic.
 Channels live on a **distinct data-plane endpoint** from the rest of the Red Team API.
 Override it with `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` (or `redTeamNetworkBrokerEndpoint`
 in `~/.prisma-airs/config.json`); OAuth credentials are shared with the other Red Team
-commands (`PANW_MGMT_*`).
+commands (the tenant's `mgmt*` keys).
 
 ### Channel Statistics
 

@@ -7,6 +7,7 @@ import type { AIGatewayClient } from '@cdot65/prisma-airs-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAiGatewayClientFactoryForTest } from '../../../src/cli/commands/aigateway/shared.js';
 import { buildProgram } from '../../../src/cli/program.js';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -53,6 +54,7 @@ let restoreFactory: (() => void) | undefined;
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  await useTestTenant();
   directory = await mkdtemp(join(tmpdir(), 'airs-aigateway-cli-'));
   restoreFactory = setAiGatewayClientFactoryForTest(async () => fakeClient());
   for (const method of Object.values(calls)) method.mockResolvedValue({});

@@ -29,8 +29,8 @@ airs runtime dlp patterns list --all --max 0 --output json
 airs runtime dlp profiles list --all --max 0 --output json
 ```
 
-Confirm prod's selected TSG. Avoid conflicting `PANW_*`, explicit config-path, or
-`.env` credential overrides; do not export secrets as a workaround. If credentials need
+Confirm prod's selected TSG. Environment variables, `PRISMA_AIRS_CONFIG_PATH`, and `.env`
+files are ignored; do not export secrets as a workaround. If credentials need
 correction, update one setting at a time using hidden secret entry:
 
 ```bash

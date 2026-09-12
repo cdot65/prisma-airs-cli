@@ -13,7 +13,7 @@ the six-format and pagination contract described in
 [Exit Codes & Output Streams](../getting-started/exit-codes-and-output.md).
 
 In option tables, **Resolved** means the format is selected in this order: the command's
-`--output`, the global `airs --output`, `defaultOutput` / `PANW_CLI_OUTPUT`, then the `pretty`
+`--output`, the global `airs --output`, `defaultOutput`, then the `pretty`
 fallback. Captured examples that show pretty output without an explicit format assume no output
 override is configured; add `--output pretty` to reproduce that presentation regardless of local
 configuration. JSON and YAML examples always specify their format explicitly.
@@ -63,6 +63,6 @@ configuration. JSON and YAML examples always specify their format explicitly.
 
 Utility commands are documented in the guides:
 
-- [`airs config`](../getting-started/configuration.md)
+- [`airs tenant`](tenant.md)
 - [`airs doctor`](../getting-started/quick-start.md#verifying-your-setup)
 - [`airs completion`](../getting-started/quick-start.md#shell-completion)

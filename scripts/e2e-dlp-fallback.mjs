@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { ManagementClient } from '@cdot65/prisma-airs-sdk';
+import { isolatedRegistry } from './lib/live-tenant.mjs';
 
 const exec = promisify(execFile);
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -31,7 +32,11 @@ assert.notEqual(sourceTenant.tsgId, destination.tsgId);
 const configBytes = await readFile(destination.configPath);
 const config = JSON.parse(configBytes.toString());
 assert.equal(config.mgmtTsgId, destination.tsgId);
-env.PRISMA_AIRS_CONFIG_PATH = destination.configPath;
+env.PRISMA_AIRS_TENANTS_PATH = await isolatedRegistry({
+  name: destination.name,
+  configPath: destination.configPath,
+  tsgId: destination.tsgId,
+});
 const client = new ManagementClient({
   clientId: config.mgmtClientId,
   clientSecret: config.mgmtClientSecret,

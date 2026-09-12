@@ -9,7 +9,7 @@ Custom prompt sets let you define your own attack prompts for CUSTOM red team sc
 ## Prerequisites
 
 - Prisma AIRS CLI installed and configured ([Installation](../getting-started/installation.mdx))
-- AIRS management credentials set (`PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`)
+- AIRS management credentials set (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` in the selected tenant file)
 
 ---
 

@@ -4,7 +4,7 @@ title: Configuration Management
 
 # Configuration Management
 
-Prisma AIRS CLI exposes full CRUD over AIRS runtime configuration resources via `airs runtime` subcommand groups. All config management commands require Management API credentials (`PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID`).
+Prisma AIRS CLI exposes full CRUD over AIRS runtime configuration resources via `airs runtime` subcommand groups. All config management commands use the selected tenant's SCM OAuth credentials (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId`).
 
 ## Security Profiles
 

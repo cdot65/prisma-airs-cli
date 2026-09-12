@@ -60,13 +60,52 @@ export async function createManagedTenant(name: string, config: Record<string, u
   }
 }
 
+/** Credential keys can be rotated but never removed from a registered tenant. */
+export const CREDENTIAL_KEYS = ['mgmtTsgId', 'mgmtClientId', 'mgmtClientSecret'] as const;
+
 /** Explicitly edit one registered tenant, preserving its identity and unrelated settings. */
 export async function setTenantSetting(name: string, key: string, value: string): Promise<void> {
   validateTenantSettingKey(key);
-  const entry = readTenantStore().tenants.find((tenant) => tenant.name === name);
-  if (!entry) throw new Error('Tenant not found; register a named tenant first');
+  const entry = findTenant(name);
   if (key === 'mgmtTsgId' && value !== entry.tsgId)
     throw new Error('TSG identity is pinned; create another tenant instead of changing mgmtTsgId');
+  await rewriteTenantConfig(entry, (current) => {
+    const result = ConfigSchema.safeParse({ ...current, [key]: value });
+    if (!result.success) throw new Error('Invalid value for configuration setting');
+    return { ...current, [key]: Reflect.get(result.data, key) };
+  });
+}
+
+/**
+ * Remove one setting so the schema default (or nothing) applies again. Returns false
+ * when the key was not present. Credentials cannot be cleared.
+ */
+export async function unsetTenantSetting(name: string, key: string): Promise<boolean> {
+  validateTenantSettingKey(key);
+  if ((CREDENTIAL_KEYS as readonly string[]).includes(key))
+    throw new Error(`${key} is a credential and cannot be cleared; set a new value instead`);
+  const entry = findTenant(name);
+  let removed = false;
+  await rewriteTenantConfig(entry, (current) => {
+    if (!Object.hasOwn(current, key)) return current;
+    removed = true;
+    const { [key]: _dropped, ...rest } = current;
+    return rest;
+  });
+  return removed;
+}
+
+function findTenant(name: string) {
+  const entry = readTenantStore().tenants.find((tenant) => tenant.name === name);
+  if (!entry) throw new Error('Tenant not found; register a named tenant first');
+  return entry;
+}
+
+/** Locked, atomic rewrite of one tenant file; the change callback receives the raw current JSON. */
+async function rewriteTenantConfig(
+  entry: { configPath: string; tsgId: string },
+  change: (current: Record<string, unknown>) => Record<string, unknown>,
+): Promise<void> {
   const path = entry.configPath;
   const lockPath = `${path}.lock`;
   const lock = await open(lockPath, 'wx', 0o600).catch(() => {
@@ -83,10 +122,9 @@ export async function setTenantSetting(name: string, key: string, value: string)
       throw new Error('Tenant config is not a writable regular file');
     await access(path, constants.W_OK);
     const current = readTenantConfigFile(path, entry.tsgId);
-    const result = ConfigSchema.safeParse({ ...current, [key]: value });
-    if (!result.success) throw new Error('Invalid value for configuration setting');
-    const next = { ...current, [key]: Reflect.get(result.data, key) };
+    const next = change(current);
     validateCredentials(next);
+    if (next === current) return;
     const file = await open(temporary, 'wx', 0o600);
     created = true;
     try {

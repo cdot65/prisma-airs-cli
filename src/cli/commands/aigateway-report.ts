@@ -93,7 +93,7 @@ export function registerAiGatewayReportCommand(aigateway: Command): void {
           title: opts.title,
           maxPages,
           workspace: opts.workspace,
-          tsgId: config.mgmtTsgId ?? process.env.PANW_AI_GW_TSG_ID ?? '',
+          tsgId: config.mgmtTsgId ?? '',
           start,
           end,
         });

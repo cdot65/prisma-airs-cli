@@ -1,10 +1,10 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { isolatedRegistry, selectedTenant } from '../helpers/live-tenant.js';
 
 const run = promisify(execFile);
 describe.skipIf(process.env.RUN_AIGATEWAY_DASHBOARD_E2E !== '1')(
@@ -15,9 +15,8 @@ describe.skipIf(process.env.RUN_AIGATEWAY_DASHBOARD_E2E !== '1')(
       'artifacts/aigateway-dashboard',
       new Date().toISOString().replaceAll(':', '-'),
     );
-    const configPath = resolve(
-      process.env.PRISMA_AIRS_CONFIG_PATH ?? join(homedir(), '.prisma-airs/config.json'),
-    );
+    const tenant = selectedTenant();
+    const configPath = tenant.configPath;
     let original: Buffer;
     let env: NodeJS.ProcessEnv;
     const checks: string[] = [];
@@ -56,7 +55,7 @@ describe.skipIf(process.env.RUN_AIGATEWAY_DASHBOARD_E2E !== '1')(
       original = await readFile(configPath);
       env = {
         ...process.env,
-        PRISMA_AIRS_CONFIG_PATH: configPath,
+        PRISMA_AIRS_TENANTS_PATH: await isolatedRegistry(tenant),
         PANW_AI_SEC_DEBUG: '0',
         PANW_AI_SEC_DEBUG_BODY: '0',
         PANW_AI_SEC_TIMEOUT_MS: '20000',

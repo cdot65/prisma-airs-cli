@@ -134,7 +134,7 @@ availability SLA or compliance attestation.
 | 1 | Generation failed, every source was unavailable, or `--strict` found an incomplete source; inspect any generated artifact |
 | 2 | Invalid options, unsupported output format, or debug logging requested |
 
-General terminal output preferences (such as `PANW_CLI_OUTPUT=json`) do not change the default
+General terminal output preferences (such as the tenant's `defaultOutput: json`) do not change the default
 HTML deliverable. Explicit global `--output` is honored if it is `html` or `markdown`; an explicit
 command-local `--output` wins.
 

@@ -6,7 +6,7 @@ sidebar_label: adapter
 
 Manage **custom target adapters** — user-supplied scripts that run through a
 network broker channel to reach targets no built-in connection type can. OAuth
-credentials are shared with the other Red Team commands (`PANW_MGMT_*`).
+credentials are shared with the other Red Team commands (the tenant's `mgmt*` keys).
 
 ### redteam adapter list
 

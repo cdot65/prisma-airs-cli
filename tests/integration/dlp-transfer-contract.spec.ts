@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type { DataPatternResponse, DataProfileResponse } from '@cdot65/prisma-airs-sdk';
 import type { DlpResourcesBackup } from '../../src/backup/dlp-resources.js';
+import { writeTestRegistry } from '../helpers/tenant.js';
 
 const exec = promisify(execFile);
 const secretKeyword = 'PRIVATE-DICTIONARY-KEYWORD';
@@ -229,29 +230,28 @@ beforeEach(async () => {
   });
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  const config = join(directory, 'dev.json');
-  await writeFile(
-    config,
-    JSON.stringify({
-      mgmtClientId: 'client-dev',
-      mgmtClientSecret: 'FAKE-SECRET',
-      mgmtTsgId: '200',
-      mgmtTokenEndpoint: `${base}/oauth/token`,
-      dlpEndpoint: `${base}/dlp`,
-    }),
-    { mode: 0o600 },
-  );
   env = Object.fromEntries(
     Object.entries(process.env).filter(
       ([key]) => !key.startsWith('PANW_') && !key.startsWith('PRISMA_AIRS_'),
     ),
   );
-  Object.assign(env, {
-    PRISMA_AIRS_CONFIG_PATH: config,
-    PRISMA_AIRS_TENANTS_PATH: join(directory, 'tenants.json'),
-    DOTENV_CONFIG_PATH: '/dev/null',
-    NO_COLOR: '1',
-  });
+  Object.assign(env, { PRISMA_AIRS_TENANTS_PATH: join(directory, 'tenants.json'), NO_COLOR: '1' });
+  await writeTestRegistry(
+    String(env.PRISMA_AIRS_TENANTS_PATH),
+    [
+      {
+        name: 'dev',
+        config: {
+          mgmtClientId: 'client-dev',
+          mgmtClientSecret: 'FAKE-SECRET',
+          mgmtTsgId: '200',
+          mgmtTokenEndpoint: `${base}/oauth/token`,
+          dlpEndpoint: `${base}/dlp`,
+        },
+      },
+    ],
+    'dev',
+  );
 });
 afterEach(async () => {
   await new Promise<void>((done) => server.close(() => done()));

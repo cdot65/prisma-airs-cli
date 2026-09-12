@@ -6,10 +6,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { z } from 'zod';
 import { type Config, ConfigSchema } from './schema.js';
 
-const NameSchema = z
-  .string()
-  .regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/)
-  .refine((v) => v !== 'default');
+const NameSchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/);
 const EntrySchema = z
   .object({
     name: NameSchema,
@@ -46,15 +43,11 @@ export function expandConfigPath(path: string): string {
   return path === '~' ? homedir() : path.startsWith('~/') ? join(homedir(), path.slice(2)) : path;
 }
 
-export function defaultTenantConfigPath(): string {
-  return join(homedir(), '.prisma-airs', 'config.json');
-}
-
 function missing(error: unknown): boolean {
   return (error as NodeJS.ErrnoException)?.code === 'ENOENT';
 }
 
-/** Missing registry means legacy/default behavior; corrupt registries fail closed. */
+/** A missing registry simply has no tenants; corrupt registries fail closed. */
 export function readTenantStore(): TenantStore {
   const path = tenantStorePath();
   try {
@@ -101,19 +94,6 @@ export function readTenantConfigFile(
   return parsed;
 }
 
-/** Prevent mixed credentials/endpoints when using a named tenant. */
-export function assertTenantEnvironment(): void {
-  const conflicts = Object.keys(process.env).filter(
-    (key) =>
-      /^PANW_(?:MGMT_|MODEL_SEC_|RED_TEAM_|AGENT_GUARD_|AI_GW_|DLP_|AI_SEC_API_)/.test(key) &&
-      Boolean(process.env[key]),
-  );
-  if (conflicts.length)
-    throw new Error(
-      `Named tenant selection conflicts with environment overrides: ${conflicts.sort().join(', ')}. Unset them or switch to default.`,
-    );
-}
-
 async function changeStore(change: (store: TenantStore) => void): Promise<TenantStore> {
   const path = tenantStorePath();
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -154,7 +134,7 @@ async function changeStore(change: (store: TenantStore) => void): Promise<Tenant
 export function validateTenantName(name: string): void {
   if (!NameSchema.safeParse(name).success)
     throw new Error(
-      'Tenant name must be 1–64 letters, digits, hyphens or underscores, start with a letter/digit, and not be default',
+      'Tenant name must be 1–64 letters, digits, hyphens or underscores and start with a letter/digit',
     );
 }
 
@@ -180,34 +160,31 @@ export async function createTenant(name: string, configPath: string): Promise<Te
   return entry;
 }
 
-/** Switch only the registry pointer; default restores legacy config/environment resolution. */
-export async function switchTenant(name: string): Promise<TenantEntry | undefined> {
+/** Switch only the registry pointer after validating the target file against its pinned TSG. */
+export async function switchTenant(name: string): Promise<TenantEntry> {
   let selected: TenantEntry | undefined;
   await changeStore((store) => {
-    if (name === 'default') {
-      store.active = null;
-      return;
-    }
-    if (process.env.PRISMA_AIRS_CONFIG_PATH)
-      throw new Error(
-        'Unset PRISMA_AIRS_CONFIG_PATH before switching tenants; it overrides named selection',
-      );
-    assertTenantEnvironment();
     selected = store.tenants.find((entry) => entry.name === name);
     if (!selected) throw new Error('Tenant not found');
     readTenantConfig(selected.configPath, selected.tsgId);
     store.active = name;
   });
-  return selected;
+  return selected as TenantEntry;
 }
 
-/** Unregister only; deleting the active entry is refused and source files are retained. */
-export async function deleteTenant(name: string): Promise<void> {
+/**
+ * Unregister only; source files are retained. Deleting the selected tenant clears the
+ * selection, after which every API command asks for a tenant until one is switched to.
+ */
+export async function deleteTenant(name: string): Promise<{ selectionCleared: boolean }> {
+  let selectionCleared = false;
   await changeStore((store) => {
-    if (name === 'default') throw new Error('The default tenant cannot be deleted');
-    if (store.active === name)
-      throw new Error('Switch to another tenant or default before deleting the active tenant');
     if (!store.tenants.some((entry) => entry.name === name)) throw new Error('Tenant not found');
     store.tenants = store.tenants.filter((entry) => entry.name !== name);
+    if (store.active === name) {
+      store.active = null;
+      selectionCleared = true;
+    }
   });
+  return { selectionCleared };
 }

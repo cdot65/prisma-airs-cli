@@ -55,15 +55,9 @@ export async function resolveOutput(
   while (rootCommand.parent) rootCommand = rootCommand.parent;
   const globalIsExplicit = rootCommand.getOptionValueSource?.('output') === 'cli';
   const globalOutput = globalIsExplicit ? rootCommand.opts().output : undefined;
-  let configured: string | undefined;
-  try {
-    configured = resolution.ignoreConfig
-      ? process.env.PANW_CLI_OUTPUT
-      : (await loadConfig()).defaultOutput;
-  } catch (error) {
-    if (process.env.PANW_CLI_OUTPUT !== undefined) configured = process.env.PANW_CLI_OUTPUT;
-    else throw error;
-  }
+  // Only the selected tenant file can supply a default format; there is no
+  // environment fallback. Commands that must run without a tenant pass ignoreConfig.
+  const configured = resolution.ignoreConfig ? undefined : (await loadConfig()).defaultOutput;
   const candidate = String(
     localIsExplicit ? opts.output : (globalOutput ?? configured ?? 'pretty'),
   );

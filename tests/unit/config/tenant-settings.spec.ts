@@ -5,6 +5,7 @@ import {
   createManagedTenant,
   isTenantSecret,
   setTenantSetting,
+  unsetTenantSetting,
 } from '../../../src/config/tenant-settings.js';
 import { readTenantStore, tenantStorePath } from '../../../src/config/tenants.js';
 
@@ -28,7 +29,7 @@ it('creates private credentials separately from the registry without persisting 
   expect(readTenantStore().active).toBeNull();
 });
 
-it.each(['default', '../escape', ''])('rejects invalid name %j before writing', async (name) => {
+it.each(['space name', '../escape', ''])('rejects invalid name %j before writing', async (name) => {
   await expect(createManagedTenant(name, config)).rejects.toThrow('Tenant name');
   expect(await readdir(directory)).toEqual([]);
 });
@@ -123,4 +124,23 @@ it('distinguishes credentials from token endpoints', () => {
     expect(isTenantSecret(key)).toBe(true);
   for (const key of ['mgmtTokenEndpoint', 'mgmtClientId', 'defaultOutput'])
     expect(isTenantSecret(key)).toBe(false);
+});
+
+describe('unsetTenantSetting', () => {
+  it('removes a non-credential key and reports whether it was present', async () => {
+    const entry = await createManagedTenant('dev', { ...config, defaultOutput: 'yaml' });
+    expect(await unsetTenantSetting('dev', 'defaultOutput')).toBe(true);
+    expect(JSON.parse(await readFile(entry.configPath, 'utf8'))).toEqual(config);
+    expect(await unsetTenantSetting('dev', 'defaultOutput')).toBe(false);
+    expect((await stat(entry.configPath)).mode & 0o777).toBe(0o600);
+  });
+
+  it('refuses to clear credentials or unknown keys', async () => {
+    await createManagedTenant('dev', config);
+    await expect(unsetTenantSetting('dev', 'mgmtClientSecret')).rejects.toThrow(
+      'cannot be cleared',
+    );
+    await expect(unsetTenantSetting('dev', 'bogus')).rejects.toThrow('Unknown configuration key');
+    await expect(unsetTenantSetting('absent', 'defaultOutput')).rejects.toThrow('Tenant not found');
+  });
 });

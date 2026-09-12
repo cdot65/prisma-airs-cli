@@ -13,6 +13,7 @@ import type {
   SubmittedBatch,
 } from '../../airs/types.js';
 import { managementClientOptions, runtimeInitOptions } from '../../config/client-options.js';
+import { assertScannerCredentials } from '../../config/credentials.js';
 import { loadConfig } from '../../config/loader.js';
 import {
   buildProfileOverrides,
@@ -312,9 +313,7 @@ export function registerRuntimeCommand(program: Command): void {
     let releaseJobLock: (() => Promise<void>) | undefined;
     try {
       const config = await loadConfig({});
-      if (!config.airsApiKey && !config.airsApiToken) {
-        fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
-      }
+      assertScannerCredentials(config);
 
       const raw = await readFile(opts.file, 'utf-8');
       const prompts = parseInputFile(raw, opts.file);
@@ -921,9 +920,7 @@ export function registerRuntimeCommand(program: Command): void {
       stateFile = await fs.promises.realpath(stateFile);
       releaseJobLock = await acquireBulkScanLock(stateFile);
       const config = await loadConfig({});
-      if (!config.airsApiKey && !config.airsApiToken) {
-        fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
-      }
+      assertScannerCredentials(config);
 
       const state = await loadBulkScanState(stateFile);
       const service = new SdkRuntimeService(runtimeInitOptions(config));
@@ -1058,9 +1055,7 @@ export function registerRuntimeCommand(program: Command): void {
     .action(async (prompt: string, opts) => {
       try {
         const config = await loadConfig({});
-        if (!config.airsApiKey && !config.airsApiToken) {
-          fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
-        }
+        assertScannerCredentials(config);
 
         const service = new SdkRuntimeService(runtimeInitOptions(config));
         ui.status('Prisma AIRS Runtime Scan');

@@ -21,8 +21,8 @@ without reviewing the policies and the explicit loss of custom DLP protection.
 ## Prerequisites
 
 Use CLI **5.7.1 or newer** and existing named tenants with valid Management credentials.
-Run commands individually from a private working directory with no conflicting environment
-or `.env` credential overrides. These commands use the installed `airs` executable.
+Run commands individually from a private working directory; environment variables and
+`.env` files are not read. These commands use the installed `airs` executable.
 
 ```bash
 airs --version

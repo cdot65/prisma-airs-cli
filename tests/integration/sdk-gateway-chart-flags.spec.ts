@@ -20,7 +20,12 @@ vi.mock('@cdot65/prisma-airs-sdk', async (importOriginal) => ({
   },
 }));
 vi.mock('../../src/config/loader.js', () => ({
-  loadConfig: async () => ({ defaultOutput: 'json' }),
+  loadConfig: async () => ({
+    defaultOutput: 'json',
+    mgmtClientId: 'client',
+    mgmtClientSecret: 'secret',
+    mgmtTsgId: '1234',
+  }),
 }));
 
 describe('public CLI chart flags through the registry SDK transport', () => {

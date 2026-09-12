@@ -8,7 +8,7 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock('../../../src/config/loader.js', () => ({
   loadConfig: async () => ({
-    defaultOutput: process.env.PANW_CLI_OUTPUT ?? state.configuredOutput,
+    defaultOutput: state.configuredOutput,
   }),
 }));
 vi.mock('../../../src/dlp/index.js', () => ({ generateCorpus: state.generate }));
@@ -30,7 +30,6 @@ describe('DLP generate public command output and preflight', () => {
   beforeEach(() => {
     state.configuredOutput = 'pretty';
     state.generate.mockReset().mockResolvedValue(summary);
-    vi.stubEnv('PANW_CLI_OUTPUT', undefined);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(process, 'exit').mockImplementation((code) => {
@@ -60,10 +59,10 @@ describe('DLP generate public command output and preflight', () => {
     expect(console.log).toHaveBeenCalledExactlyOnceWith(JSON.stringify(summary, null, 2));
   });
 
-  it('honors the output environment override', async () => {
+  it('ignores the retired output environment override', async () => {
     vi.stubEnv('PANW_CLI_OUTPUT', 'json');
     await run(['runtime', 'dlp', 'generate']);
-    expect(console.log).toHaveBeenCalledExactlyOnceWith(JSON.stringify(summary, null, 2));
+    expect(console.log).not.toHaveBeenCalledWith(JSON.stringify(summary, null, 2));
   });
 
   it('explicit pretty output wins over configured JSON', async () => {

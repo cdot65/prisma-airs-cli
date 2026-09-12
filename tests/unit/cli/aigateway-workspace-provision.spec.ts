@@ -6,6 +6,7 @@ import type {
   AiGatewayWorkspaceProvisionResult,
 } from '../../../src/airs/types.js';
 import { buildProgram } from '../../../src/cli/program.js';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const service = {
   createWorkspace: vi.fn(),
@@ -56,8 +57,9 @@ const stdoutJson = () => {
   return JSON.parse(line);
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await useTestTenant();
   // Re-applied per test: restoreAllMocks() strips vi.fn implementations between tests.
   vi.mocked(SdkAiGatewayService).mockImplementation(
     () => service as unknown as SdkAiGatewayService,

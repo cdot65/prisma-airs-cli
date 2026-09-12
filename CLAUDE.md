@@ -99,7 +99,7 @@ src/
 │   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── dlp/           # DLP CLI commands (4 subgroups + aggregator + shared patch/parseBody utils)
-│   │   ├── config.ts      # airs config {list,get,set,unset,path} — manage ~/.prisma-airs/config.json
+│   │   ├── tenant.ts      # airs tenant {create,switch,set,unset,get,list,read,path,delete} — the only config surface
 │   │   ├── doctor.ts      # airs doctor — environment/credential/connectivity diagnostics
 │   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
@@ -173,7 +173,7 @@ tests/
 - **Flag canon**: `--output` = format (`pretty|table|csv|json|yaml`), `--output-file`/`--output-dir` = destinations, `--file`/`--input-dir` = inputs, `--limit`/`--offset` = pagination, `--force` = skip confirmation. Old v2 spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) are hidden deprecated aliases, removed in v3 — see `docs-site/docs/about/flag-migration.md`
 - **Confirmation prompts**: destructive commands prompt interactively unless `--force` (non-TTY requires `--force`)
 - **Aliases**: every `list` command accepts `ls`, every `delete` accepts `rm`
-- **Utility commands**: `airs config {list,get,set,unset,path}` (config file management), `airs doctor` (env/credential/connectivity diagnostics), `airs completion <shell>` (shell completions)
+- **Utility commands**: `airs tenant {create,switch,set,unset,get,list,read,path,delete}` (tenant files are the only configuration source), `airs doctor` (tenant/credential/connectivity diagnostics), `airs completion <shell>` (shell completions)
 
 ### Topic Commands (`src/cli/commands/topics-*.ts`)
 - **`create`** (`topics-create.ts`): create or update a custom topic; validates AIRS constraints (name ≤100, desc ≤250, each example ≤250, combined ≤1000, max 5 examples), upserts by name
@@ -268,7 +268,7 @@ These four commands compose into an autoresearch-style optimization loop: an age
 
 ### AI Gateway (`src/airs/aigateway.ts`)
 - Runtime inference lives separately in `src/cli/commands/aigateway/inference.ts`: `airs aigateway inference {chat,responses,embeddings}` uses an explicit runtime endpoint/API key, not SCM OAuth. Config keys `aiGwInferenceEndpoint`, `aiGwInferenceApiKey`, `aiGwInferenceModel`, `aiGwEmbeddingModel` map to `PANW_AI_GW_INFERENCE_ENDPOINT`, `PANW_AI_GW_INFERENCE_API_KEY`, `PANW_AI_GW_INFERENCE_MODEL`, `PANW_AI_GW_EMBEDDING_MODEL`. JSON streaming means JSONL; pretty streaming means text. Preserve cancellation/backpressure, cleanup before exit helpers, zero automatic retries, and omission of runtime bodies in debug logs. Release the SDK changeset before updating the CLI pin.
-- `SdkAiGatewayService` wraps `AiGatewayClient` for workspace CRUD and cost telemetry, using the existing `PANW_MGMT_*` OAuth credentials plus optional `PANW_AI_GW_{DATA,ADMIN,TOKEN}_ENDPOINT` overrides.
+- `SdkAiGatewayService` wraps `AiGatewayClient` for workspace CRUD and cost telemetry, using the tenant's `mgmt*` OAuth credentials plus optional `PANW_AI_GW_{DATA,ADMIN,TOKEN}_ENDPOINT` overrides.
 - Two authorization planes: data-plane reads return active workspaces in the caller's SCM role scope; admin-plane reads and all writes require the tenant-root AI Gateway admin grant. A 403 is decorated with the missing-grant hint.
 - CLI: `airs aigateway workspace {list,get,create,update,delete}` and `airs aigateway telemetry cost`.
 - `workspace list` defaults to scoped data-plane reads. `--plane admin --status active|archived` reads tenant-wide state; `--all` merges both admin lifecycle states and is mutually exclusive with `--plane`/`--status`.
@@ -325,30 +325,9 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `scanConcurrency` default 5 — higher risks rate limiting
 - `topics create` validates and rejects descriptions exceeding 250 bytes (UTF-8) rather than silently truncating
 
-## Environment Variables
+## Configuration
 
-See `.env.example` for the full list. Config priority: CLI flags > env vars > `~/.prisma-airs/config.json` > Zod defaults.
-
-### Required
-
-| Variable | Purpose |
-|----------|---------|
-| `PANW_AI_SEC_API_KEY` | Prisma AIRS Scanner API |
-| `PANW_MGMT_CLIENT_ID` | Prisma AIRS Management OAuth2 |
-| `PANW_MGMT_CLIENT_SECRET` | Prisma AIRS Management OAuth2 |
-| `PANW_MGMT_TSG_ID` | Prisma AIRS Tenant Service Group |
-
-### Optional
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
-| `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
-| `PANW_AI_GW_DATA_ENDPOINT` | SDK default | AI Gateway data-plane endpoint (`/ai_gw/v2`) |
-| `PANW_AI_GW_ADMIN_ENDPOINT` | SDK default | AI Gateway admin-plane endpoint (`/ai_gw/admin/v2`) |
-| `PANW_AI_GW_TOKEN_ENDPOINT` | mgmt token endpoint | AI Gateway token endpoint override |
-| `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
-| `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
+The CLI reads **no configuration from the environment**; `dotenv` is gone. `loadConfig()` resolves CLI flags > the selected tenant's file (registry at `$XDG_STATE_HOME/prisma-airs/tenants.json`, override with `PRISMA_AIRS_TENANTS_PATH`) > Zod defaults, and throws `No tenant selected` otherwise. `src/config/schema.ts` lists every key; `RETIRED_CONFIG_KEYS` are the per-product token endpoints. Every management-plane product authenticates with the one `mgmt*` credential set and `mgmtTokenEndpoint`; product base URLs are optional file-only overrides defaulting to SDK constants. `src/config/client-options.ts` passes every credential and endpoint explicitly (asserting `mgmt*` first) so the SDK never falls back to its own `PANW_*` lookups. `src/config/env.ts` only lists ignored names for `airs doctor`; `PANW_AI_SEC_DEBUG`, `PANW_AI_SEC_DEBUG_BODY`, and `PANW_AI_SEC_TIMEOUT_MS` remain SDK-read diagnostics. Tests register tenants with `tests/helpers/tenant.ts` (`useTestTenant`, `writeTestRegistry`); live scripts resolve the operator's selected tenant with `scripts/lib/live-tenant.mjs` / `tests/helpers/live-tenant.ts`.
 
 ## Guardrail Optimization Loop
 

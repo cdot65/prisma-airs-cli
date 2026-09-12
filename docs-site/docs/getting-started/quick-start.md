@@ -10,7 +10,20 @@ Make sure [installation](installation.mdx) is complete and your credentials are 
 
 ## Verifying your setup
 
-Run `airs doctor` to preflight your environment before doing anything else. It checks your Node.js version, config file, which credentials are set (and from where), and makes one cheap authenticated call to each API to verify connectivity.
+Run `airs doctor` to preflight your environment before doing anything else. It reports, in order:
+
+1. **Node.js version** against the supported engine range.
+2. **Tenant** — which tenant every other command will use; fails with the registered names
+   when none is selected.
+3. **Config file** — parses and schema-validates the tenant file, confirms it carries the
+   registered TSG, and flags retired keys.
+4. **Environment** — names (never values) of any `PANW_*` or `PRISMA_AIRS_CONFIG_PATH`
+   variables still set; they are [ignored](../reference/environment-variables.md#ignored-names)
+   because tenant files are the only configuration source.
+5. **Scanner credentials** and **Management credentials**, with a remedy phrased as
+   `airs tenant set <name> <key>`.
+6. One cheap authenticated call each to the **Scanner API**, **Management OAuth**, and
+   **AI Gateway API** to verify connectivity and grants.
 
 ```bash
 # Pretty pass/warn/fail report with fix hints
@@ -21,7 +34,9 @@ airs doctor --output json
 airs doctor --output markdown
 ```
 
-Warnings (e.g. no config file when using env vars only) do not fail the command — only hard failures like missing credentials or unreachable APIs exit non-zero.
+Each check is `pass`, `warn`, `fail`, or `skip`. Only `fail` exits non-zero. A missing scanner
+key is `skip` (scan commands are simply unavailable), a missing AI Gateway grant is `warn`, and
+missing management credentials, a conflicting environment, or an unreachable API is `fail`.
 
 ---
 

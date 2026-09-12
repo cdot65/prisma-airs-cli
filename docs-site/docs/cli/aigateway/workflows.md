@@ -28,16 +28,14 @@ AI Gateway **management** reuses the same SCM OAuth client ID, client secret, an
 Team, and Model Security APIs. It does not require a second AI Gateway credential set:
 
 ```bash
-export PANW_MGMT_CLIENT_ID='<client-id>'
-export PANW_MGMT_CLIENT_SECRET='<client-secret>'
-export PANW_MGMT_TSG_ID='<tsg-id>'
-
+airs tenant create dev      # prompts for the client ID, secret, and TSG ID
+airs tenant switch dev
 airs doctor
 ```
 
-`PANW_AI_GW_DATA_ENDPOINT`, `PANW_AI_GW_ADMIN_ENDPOINT`, and `PANW_AI_GW_TOKEN_ENDPOINT` are
-optional API endpoint overrides. They are normally unset. They are not the URL of a privately
-deployed gateway.
+`aiGwDataEndpoint` and `aiGwAdminEndpoint` are optional base-URL overrides in the tenant file.
+They are normally unset. They are not the URL of a privately deployed gateway. There is no
+AI Gateway token endpoint: every product authenticates through `mgmtTokenEndpoint`.
 
 [Runtime inference](inference.md) is a separate credential plane: it uses the deployed gateway
 URL and `PANW_AI_GW_INFERENCE_API_KEY`, not management OAuth.
@@ -219,10 +217,9 @@ Confirm that the client ID, client secret, and TSG ID belong to the same SCM ser
 remove stale endpoint overrides:
 
 ```bash
-airs config unset mgmtTokenEndpoint
-airs config unset aiGwTokenEndpoint
-airs config unset aiGwDataEndpoint
-airs config unset aiGwAdminEndpoint
+airs tenant unset <name> mgmtTokenEndpoint
+airs tenant unset <name> aiGwDataEndpoint
+airs tenant unset <name> aiGwAdminEndpoint
 airs doctor
 ```
 

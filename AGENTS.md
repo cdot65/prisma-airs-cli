@@ -32,7 +32,7 @@ or entitlement hypotheses as current facts.
 5. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 6. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files (subcommands under `redteam targets`)
 
-The binary is `airs`. Five product command groups: `runtime`, `redteam`, `aigateway`, `model-security`, `agentguard` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` writes a new private `./debug-api-<timestamp>-<unique suffix>.jsonl` in the current working directory (secrets redacted; no automatic pruning); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
+The binary is `airs`. Five product command groups: `runtime`, `redteam`, `aigateway`, `model-security`, `agentguard` (backup/restore live under `redteam targets`), plus utility commands `airs tenant` (the only configuration surface), `airs doctor` (tenant/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` writes a new private `./debug-api-<timestamp>-<unique suffix>.jsonl` in the current working directory (secrets redacted; no automatic pruning); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
 
 ---
 
@@ -59,20 +59,21 @@ to activate; `read` redacts credentials and `delete` retains the config file.
 
 ### Credential Sets
 
-| Credential Set | Environment Variables | Used By |
+Configuration comes **only** from the selected tenant's JSON file; environment variables and
+`.env` files are ignored (`airs doctor` lists any still set). Keys use camelCase.
+
+| Credential Set | Tenant file keys | Used By |
 |---|---|---|
-| **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime topics eval` |
-| **Management API** (OAuth2) | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` | All CRUD commands (profiles, topics, api-keys, customer-apps), all redteam, aigateway, and model-security commands, `backup`, `restore` |
+| **Scanner API** | `airsApiKey` (or `airsApiToken`) | `runtime scan`, `runtime bulk-scan`, `runtime topics eval` |
+| **SCM OAuth2** | `mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` (+ `mgmtTokenEndpoint`) | Every other command: management CRUD, DLP, redteam, model-security, agentguard, aigateway, `backup`, `restore` |
 
-### Optional Management Endpoints
-
-| Variable | Purpose |
-|---|---|
-| `PANW_MGMT_ENDPOINT` | Override management API base URL |
-| `PANW_MGMT_TOKEN_ENDPOINT` | Override OAuth2 token URL |
-| `PANW_AI_GW_DATA_ENDPOINT` | Override AI Gateway scoped data-plane URL |
-| `PANW_AI_GW_ADMIN_ENDPOINT` | Override AI Gateway tenant admin-plane URL |
-| `PANW_AI_GW_TOKEN_ENDPOINT` | Override AI Gateway OAuth2 token URL (defaults to management token URL) |
+There is one OAuth credential set and one token endpoint per tenant; no product has its own.
+Optional base-URL overrides (`mgmtEndpoint`, `dlpEndpoint`, `redTeam*Endpoint`,
+`modelSec*Endpoint`, `agentGuard*Endpoint`, `aiGwDataEndpoint`, `aiGwAdminEndpoint`,
+`iamEndpoint`) default to SDK constants and never affect authentication. Doctor checks Node,
+tenant selection, config file (with TSG pin), ignored environment variables, both credential
+sets, and one authenticated call per API; statuses are pass/warn/fail/skip and only `fail`
+exits 1. Tenant selection for a job or container is isolated with `PRISMA_AIRS_TENANTS_PATH`.
 
 ### Verifying Credentials
 
@@ -971,7 +972,7 @@ airs redteam targets delete <uuid>
 airs redteam targets restore --input-dir ./pre-change-backup/ --overwrite
 
 # 4. Migrate targets to another tenant
-PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./pre-change-backup/
+airs tenant switch destination && airs redteam targets restore --input-dir ./pre-change-backup/
 ```
 
 ### Workflow 8: Autonomous guardrail optimization (agent loop)

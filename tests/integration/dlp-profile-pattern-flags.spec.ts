@@ -5,6 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
+import { writeTestRegistry } from '../helpers/tenant.js';
 
 const exec = promisify(execFile);
 let directory: string;
@@ -95,20 +96,23 @@ beforeEach(async () => {
       ([key]) => !key.startsWith('PANW_') && !key.startsWith('PRISMA_AIRS_'),
     ),
   );
-  env.PRISMA_AIRS_CONFIG_PATH = join(directory, 'config.json');
   env.PRISMA_AIRS_TENANTS_PATH = join(directory, 'tenants.json');
-  env.DOTENV_CONFIG_PATH = '/dev/null';
   env.NO_COLOR = '1';
-  await writeFile(
-    env.PRISMA_AIRS_CONFIG_PATH,
-    JSON.stringify({
-      mgmtClientId: 'test-client',
-      mgmtClientSecret: 'FAKE-SECRET',
-      mgmtTsgId: '100',
-      mgmtTokenEndpoint: `${base}/oauth/token`,
-      dlpEndpoint: `${base}/dlp`,
-    }),
-    { mode: 0o600 },
+  await writeTestRegistry(
+    env.PRISMA_AIRS_TENANTS_PATH,
+    [
+      {
+        name: 'test',
+        config: {
+          mgmtClientId: 'test-client',
+          mgmtClientSecret: 'FAKE-SECRET',
+          mgmtTsgId: '100',
+          mgmtTokenEndpoint: `${base}/oauth/token`,
+          dlpEndpoint: `${base}/dlp`,
+        },
+      },
+    ],
+    'test',
   );
 });
 

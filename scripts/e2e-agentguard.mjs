@@ -4,25 +4,25 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readdir, readFile, stat } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import * as sdk from '@cdot65/prisma-airs-sdk';
 import { load as yaml } from 'js-yaml';
+import { isolatedRegistry, selectedTenant } from './lib/live-tenant.mjs';
 
 const exec = promisify(execFile);
 process.env.PANW_AI_SEC_DEBUG = '0';
 process.env.PANW_AI_SEC_DEBUG_BODY = '0';
 const repo = fileURLToPath(new URL('..', import.meta.url));
-const configPath =
-  process.env.PRISMA_AIRS_CONFIG_PATH ?? join(homedir(), '.prisma-airs/config.json');
+const tenant = selectedTenant();
+const configPath = tenant.configPath;
 const configBytes = await readFile(configPath);
 const config = JSON.parse(configBytes.toString());
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const env = {
   ...process.env,
-  PRISMA_AIRS_CONFIG_PATH: configPath,
+  PRISMA_AIRS_TENANTS_PATH: await isolatedRegistry(tenant),
   PANW_AI_SEC_DEBUG: '0',
   PANW_AI_SEC_DEBUG_BODY: '0',
   NO_COLOR: '1',

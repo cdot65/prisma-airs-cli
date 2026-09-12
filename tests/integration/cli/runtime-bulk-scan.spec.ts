@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const sdk = vi.hoisted(() => ({
   asyncScan: vi.fn(),
@@ -32,9 +33,7 @@ describe('runtime bulk-scan', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'airs-bulk-scan-'));
-    vi.stubEnv('PANW_AI_SEC_API_KEY', 'test-api-key');
-    vi.stubEnv('PRISMA_AIRS_CONFIG_PATH', path.join(tmpDir, 'missing-config.json'));
-    vi.stubEnv('DATA_DIR', path.join(tmpDir, 'runs'));
+    await useTestTenant({ airsApiKey: 'test-api-key', dataDir: path.join(tmpDir, 'runs') });
   });
 
   afterEach(async () => {

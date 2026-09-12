@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Command } from 'commander';
 import { load } from 'js-yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEST_CREDENTIALS, useTestTenant } from '../../helpers/tenant.js';
 
 const factory = vi.hoisted(() => ({ getOrCreateManagementClient: vi.fn() }));
 vi.mock('../../../src/airs/management.js', () => factory);
@@ -12,6 +13,7 @@ import { registerRuntimeDashboardCommands } from '../../../src/cli/commands/runt
 
 describe('runtime dashboard/session commands', () => {
   let directory: string;
+  let tenant: Awaited<ReturnType<typeof useTestTenant>>;
   const names = [
     'applicationsOverview',
     'application',
@@ -48,8 +50,7 @@ describe('runtime dashboard/session commands', () => {
     vi.clearAllMocks();
     process.exitCode = undefined;
     directory = await mkdtemp(join(tmpdir(), 'airs-dashboard-command-'));
-    vi.stubEnv('PRISMA_AIRS_CONFIG_PATH', join(directory, 'config.json'));
-    vi.stubEnv('PANW_CLI_OUTPUT', 'json');
+    tenant = await useTestTenant({ defaultOutput: 'json' });
     methods = Object.fromEntries(
       names.map((name) => [name, vi.fn().mockResolvedValue({ result: name })]),
     );
@@ -109,7 +110,10 @@ describe('runtime dashboard/session commands', () => {
     'yaml',
   ])('rejects week before configuration/authentication (%s)', async (format) => {
     // Invalid config would fail if option validation did not happen first.
-    await writeFile(join(directory, 'config.json'), JSON.stringify({ scanConcurrency: 'invalid' }));
+    await writeFile(
+      tenant.configPath,
+      JSON.stringify({ ...TEST_CREDENTIALS, scanConcurrency: 'invalid' }),
+    );
     const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('exit');
     });
@@ -307,8 +311,9 @@ describe('runtime dashboard/session commands', () => {
   });
   it('uses dashboard-only override without changing the configured management host', async () => {
     await writeFile(
-      join(directory, 'config.json'),
+      tenant.configPath,
       JSON.stringify({
+        ...TEST_CREDENTIALS,
         mgmtEndpoint: 'https://management.example.test',
         mgmtDashboardEndpoint: 'https://dashboard.example.test/aisec',
       }),
