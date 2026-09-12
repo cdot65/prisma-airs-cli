@@ -19,6 +19,7 @@ const methods = {
   guardrailsList: vi.fn(),
   integrationsModels: vi.fn(),
   integrationsWorkspaces: vi.fn(),
+  integrationsCatalog: vi.fn(),
   mcpCapabilities: vi.fn(),
   mcpMetadata: vi.fn(),
   organisationsAuth: vi.fn(),
@@ -56,6 +57,7 @@ function fakeClient(): AIGatewayClient {
     },
     guardrails: { list: methods.guardrailsList, getCatalog: methods.catalog },
     integrations: {
+      catalog: methods.integrationsCatalog,
       getModels: methods.integrationsModels,
       getWorkspaces: methods.integrationsWorkspaces,
     },
@@ -156,6 +158,22 @@ describe('AI Gateway read command SDK mappings', () => {
 
     await run('api-keys', 'service', 'list', '--workspace', 'workspace-1');
     expect(methods.apiKeysListService).toHaveBeenCalledWith({ workspaceId: 'workspace-1' });
+  });
+
+  it('lists the provider catalog for --ai-provider slugs', async () => {
+    methods.integrationsCatalog.mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: '0a9635da-bd84-11ef-9c04-1235d6b0b075',
+          slug: 'x-ai',
+          name: 'x-ai',
+          status: 'active',
+        },
+      ],
+    });
+    await run('integrations', 'providers');
+    expect(methods.integrationsCatalog).toHaveBeenCalledTimes(1);
   });
 
   it('maps config detail and version reads', async () => {

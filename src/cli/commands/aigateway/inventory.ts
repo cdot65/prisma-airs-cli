@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import {
   AI_GATEWAY_DEPLOYMENT_STATUSES,
   AI_GATEWAY_DEPLOYMENT_TYPES,
@@ -7,6 +8,7 @@ import {
   AI_GATEWAY_MUTABLE_MCP_CAPABILITY_TYPES,
   type AIGatewayClient,
   type AIGatewaySecretOperation,
+  customHostConfiguration,
   GatewayApiKeyRotateRequestSchema,
   GatewayApiKeyUpdateRequestSchema,
   GatewayConfigCreateRequestSchema,
@@ -34,7 +36,8 @@ import {
 } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { redactDeep } from '../../debug-logger.js';
-import { CliUsageError } from '../../renderer/index.js';
+import { CliUsageError, ui } from '../../renderer/index.js';
+import { readTenantStdin } from '../../tenant-input.js';
 import {
   addReadOutput,
   addWriteOutput,
@@ -558,27 +561,49 @@ function registerIntegrations(root: Command): void {
     { option: 'organisationId', path: 'organisation_id' },
     { option: 'secretMappings', path: 'secret_mappings', parse: parseJsonOption },
     { option: 'slug', path: 'slug' },
+    // Derived by prepareIntegrationOptions() from --base-url / --header.
+    { option: 'providerAuthType', path: 'configurations.provider_auth_type' },
+    { option: 'customHost', path: 'configurations.custom_host' },
+    { option: 'customHeaders', path: 'configurations.custom_headers', parse: parseStringMapOption },
   ];
-  const addIntegrationFields = (command: Command) =>
+  const addIntegrationSharedFields = (command: Command) =>
     command
-      .option('--ai-provider-id <uuid>', 'Provider catalog UUID')
+      .option(
+        '--base-url <url>',
+        'Self-hosted or OpenAI-compatible endpoint (configurations.custom_host)',
+      )
       .option('--configurations <json>', 'Provider configuration object')
       .option('--description <text>', 'Integration description')
-      .option('--key <credential>', 'Inline provider credential (prefer secret mappings)')
-      .option('--name <name>', 'Integration name')
-      .option('--organisation-id <tsg>', 'Numeric TSG id')
-      .option('--secret-mappings <json>', 'Secret reference mapping array')
-      .option('--slug <slug>', 'Stable integration slug');
-  const integrationUpdateFields = integrationFields.filter((field) =>
-    ['configurations', 'description', 'key', 'name', 'secretMappings'].includes(field.option),
-  );
-  const addIntegrationUpdateFields = (command: Command) =>
-    command
-      .option('--configurations <json>', 'Provider configuration object')
-      .option('--description <text>', 'Integration description')
-      .option('--key <credential>', 'Inline provider credential (prefer secret mappings)')
+      .option(
+        '--header <name=value>',
+        'Extra header sent to the custom host (repeatable)',
+        collectOption,
+      )
+      .option('--key <credential>', 'Inline provider credential (visible in shell history)')
+      .option('--key-file <path>', 'Read the provider credential from a file')
+      .option('--key-stdin', 'Read the provider credential from piped stdin')
       .option('--name <name>', 'Integration name')
       .option('--secret-mappings <json>', 'Secret reference mapping array');
+  const addIntegrationFields = (command: Command) =>
+    addIntegrationSharedFields(command)
+      .option(
+        '--ai-provider <slug-or-uuid>',
+        "Provider catalog slug (see 'integrations providers') or UUID",
+      )
+      .option('--ai-provider-id <uuid>', 'Provider catalog UUID')
+      .option('--organisation-id <tsg>', 'Numeric TSG id')
+      .option('--slug <slug>', 'Stable integration slug');
+  const integrationUpdateFields = integrationFields.filter(
+    (field) => !['aiProviderId', 'organisationId', 'slug'].includes(field.option),
+  );
+  const providers = addReadOutput(
+    group
+      .command('providers')
+      .description('List the provider catalog: the slug or UUID that --ai-provider accepts'),
+  );
+  providers.action((opts) =>
+    runList(providers, opts, 'catalog providers', (client) => client.integrations.catalog()),
+  );
   const create = addWriteOutput(
     addStructuredInputOptions(
       addIntegrationFields(
@@ -587,32 +612,38 @@ function registerIntegrations(root: Command): void {
     ),
   );
   create.action((opts) =>
-    runWrite(
-      create,
-      opts,
-      () => buildStructuredRequest(opts, GatewayIntegrationCreateRequestSchema, integrationFields),
-      (client, body) => client.integrations.create(body),
-    ),
+    runWrite(create, opts, async (client) => {
+      const prepared = await prepareIntegrationOptions(opts, client);
+      const body = await buildStructuredRequest(
+        prepared,
+        GatewayIntegrationCreateRequestSchema,
+        integrationFields,
+      );
+      if (!body.key && !(Array.isArray(body.secret_mappings) && body.secret_mappings.length)) {
+        throw new CliUsageError(
+          'A provider credential is required: pass --key-stdin, --key-file, --secret-mappings, or --key (the gateway rejects a credential-less integration with a generic AB01)',
+        );
+      }
+      return client.integrations.create(body);
+    }),
   );
   const update = addWriteOutput(
     addStructuredInputOptions(
-      addIntegrationUpdateFields(
+      addIntegrationSharedFields(
         group.command('update <id>').description('Update an integration with structured flags'),
       ),
     ),
   );
   update.action((id, opts) =>
-    runWrite(
-      update,
-      opts,
-      () =>
-        buildStructuredRequest(
-          opts,
-          GatewayIntegrationUpdateRequestSchema,
-          integrationUpdateFields,
-        ),
-      (client, body) => client.integrations.update(id, body),
-    ),
+    runWrite(update, opts, async (client) => {
+      const prepared = await prepareIntegrationOptions(opts, client);
+      const body = await buildStructuredRequest(
+        prepared,
+        GatewayIntegrationUpdateRequestSchema,
+        integrationUpdateFields,
+      );
+      return client.integrations.update(id, body);
+    }),
   );
   const remove = addWriteOutput(
     group
@@ -1019,6 +1050,81 @@ function registerPlugins(root: Command): void {
       (client, body) => client.plugins.create(body),
     ),
   );
+}
+
+interface IntegrationInputOptions {
+  key?: string;
+  keyStdin?: boolean;
+  keyFile?: string;
+  baseUrl?: string;
+  header?: string[];
+  aiProvider?: string;
+  aiProviderId?: string;
+  [option: string]: unknown;
+}
+
+/**
+ * Resolve the credential source, provider reference, and custom-host flags into the
+ * option keys that the integration request fields map. Credentials never come from
+ * the environment; `--key` inline is accepted but warned about.
+ */
+export async function prepareIntegrationOptions(
+  opts: IntegrationInputOptions,
+  client: AIGatewayClient,
+): Promise<Record<string, unknown>> {
+  const sources = [opts.key !== undefined, Boolean(opts.keyStdin), opts.keyFile !== undefined];
+  if (sources.filter(Boolean).length > 1) {
+    throw new CliUsageError('Use only one of --key, --key-stdin, or --key-file');
+  }
+  const prepared: Record<string, unknown> = { ...opts };
+  delete prepared.keyStdin;
+  delete prepared.keyFile;
+  delete prepared.baseUrl;
+  delete prepared.header;
+  delete prepared.aiProvider;
+  if (opts.keyStdin) {
+    try {
+      prepared.key = await readTenantStdin();
+    } catch {
+      throw new CliUsageError('--key-stdin requires one nonempty credential on piped stdin');
+    }
+  } else if (opts.keyFile !== undefined) {
+    let raw: string;
+    try {
+      raw = await readFile(opts.keyFile, 'utf8');
+    } catch {
+      throw new CliUsageError(`Cannot read --key-file ${opts.keyFile}`);
+    }
+    const value = raw.replace(/\r?\n$/, '');
+    if (!value.trim() || /[\r\n\0]/.test(value)) {
+      throw new CliUsageError('--key-file must contain exactly one nonempty credential');
+    }
+    prepared.key = value;
+  } else if (opts.key !== undefined) {
+    ui.warning(
+      'Inline --key is visible in shell history and process listings; prefer --key-stdin, --key-file, or --secret-mappings',
+    );
+  }
+  if (opts.aiProvider !== undefined && opts.aiProviderId !== undefined) {
+    throw new CliUsageError('Use --ai-provider or --ai-provider-id, not both');
+  }
+  if (opts.aiProvider !== undefined) {
+    prepared.aiProviderId = await client.integrations.resolveProviderId(opts.aiProvider);
+  }
+  if (opts.baseUrl !== undefined) {
+    let configuration: ReturnType<typeof customHostConfiguration>;
+    try {
+      configuration = customHostConfiguration({ host: opts.baseUrl });
+    } catch (error) {
+      throw new CliUsageError(
+        `Invalid --base-url: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    prepared.providerAuthType = configuration.provider_auth_type;
+    prepared.customHost = configuration.custom_host;
+  }
+  if (opts.header?.length) prepared.customHeaders = opts.header;
+  return prepared;
 }
 
 /** Register SDK 0.20 inventory commands, in canonical alphabetical order. */

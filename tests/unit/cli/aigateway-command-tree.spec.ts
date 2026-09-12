@@ -99,7 +99,7 @@ describe('AI Gateway command tree', () => {
       requireCommand(gateway, 'integrations')
         .commands.map((command) => command.name())
         .sort(),
-    ).toEqual(['create', 'delete', 'get', 'list', 'models', 'update', 'workspaces']);
+    ).toEqual(['create', 'delete', 'get', 'list', 'models', 'providers', 'update', 'workspaces']);
     expect(
       requireCommand(gateway, 'deployments')
         .commands.map((command) => command.name())

@@ -26,6 +26,8 @@ const calls = {
   organisationUpdate: vi.fn(),
   pluginCreate: vi.fn(),
   providerCreate: vi.fn(),
+  integrationResolve: vi.fn(),
+  integrationUpdate: vi.fn(),
 };
 
 function fakeClient(): AIGatewayClient {
@@ -40,7 +42,9 @@ function fakeClient(): AIGatewayClient {
     guardrails: { create: calls.guardrailCreate },
     integrations: {
       create: calls.integrationCreate,
+      resolveProviderId: calls.integrationResolve,
       setWorkspaces: calls.integrationSetWorkspaces,
+      update: calls.integrationUpdate,
     },
     mcpIntegrations: { create: calls.mcpCreate, setWorkspaces: calls.mcpSetWorkspaces },
     organisations: { updateSelf: calls.organisationUpdate },
@@ -77,6 +81,159 @@ async function requestFile(value: unknown, extension = 'json'): Promise<string> 
 async function run(...args: string[]): Promise<void> {
   await buildProgram().parseAsync(['node', 'airs', 'aigateway', ...args]);
 }
+
+async function keyFile(value: string): Promise<string> {
+  const path = join(directory, `${Math.random().toString(36).slice(2)}.key`);
+  await writeFile(path, `${value}\n`, { mode: 0o600 });
+  return path;
+}
+
+describe('integration credentials, provider slugs, and custom hosts', () => {
+  const xai = '0a9635da-bd84-11ef-9c04-1235d6b0b075';
+  const usageExit = () =>
+    vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+
+  it('resolves --ai-provider slugs through the catalog and maps --base-url/--header to the verified custom-host shape', async () => {
+    calls.integrationResolve.mockResolvedValue(xai);
+    await run(
+      'integrations',
+      'create',
+      '--organisation-id',
+      '1001464285',
+      '--ai-provider',
+      'x-ai',
+      '--name',
+      'talos7',
+      '--slug',
+      'talos7',
+      '--key-file',
+      await keyFile('sk-from-file'),
+      '--base-url',
+      'http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1',
+      '--header',
+      'x-team=ml',
+    );
+    expect(calls.integrationResolve).toHaveBeenCalledWith('x-ai');
+    expect(calls.integrationCreate).toHaveBeenCalledWith({
+      organisation_id: '1001464285',
+      ai_provider_id: xai,
+      name: 'talos7',
+      slug: 'talos7',
+      key: 'sk-from-file',
+      configurations: {
+        provider_auth_type: 'apiKey',
+        custom_host: 'http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1',
+        custom_headers: { 'x-team': 'ml' },
+      },
+    });
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).not.toContain('sk-from-file');
+  });
+
+  it('refuses a credential-less create before any request and names the remedies', async () => {
+    const exit = usageExit();
+    await expect(
+      run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+      ),
+    ).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(calls.integrationCreate).not.toHaveBeenCalled();
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain('--key-stdin, --key-file, --secret-mappings');
+  });
+
+  it('accepts secret mappings as the credential and warns about inline --key', async () => {
+    await run(
+      'integrations',
+      'create',
+      '--organisation-id',
+      '1001464285',
+      '--ai-provider-id',
+      xai,
+      '--name',
+      'a',
+      '--slug',
+      'a',
+      '--secret-mappings',
+      '[{"target_field":"key","secret_reference_id":"ref-1"}]',
+    );
+    expect(calls.integrationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secret_mappings: [{ target_field: 'key', secret_reference_id: 'ref-1' }],
+      }),
+    );
+    await run(
+      'integrations',
+      'create',
+      '--organisation-id',
+      '1001464285',
+      '--ai-provider-id',
+      xai,
+      '--name',
+      'b',
+      '--slug',
+      'b',
+      '--key',
+      'inline-secret',
+    );
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain('visible in shell history');
+    expect(stderr).not.toContain('inline-secret');
+  });
+
+  it.each([
+    { args: ['--key', 'x', '--key-file', '/dev/null'], message: 'only one of --key' },
+    { args: ['--ai-provider', 'x-ai', '--key', 'x'], message: 'not both' },
+    { args: ['--key', 'x', '--base-url', 'qwen:8000/v1'], message: 'Invalid --base-url' },
+    { args: ['--key-file', '/nonexistent/key'], message: 'Cannot read --key-file' },
+  ])('rejects conflicting or invalid integration input: $message', async ({ args, message }) => {
+    const exit = usageExit();
+    await expect(
+      run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+        ...args,
+      ),
+    ).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(calls.integrationCreate).not.toHaveBeenCalled();
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain(message);
+  });
+
+  it('updates the custom host without touching the credential', async () => {
+    await run(
+      'integrations',
+      'update',
+      'e2af2b22-d1f0-44d8-a7e3-6940a98f94c1',
+      '--base-url',
+      'https://llm.example/v1',
+    );
+    expect(calls.integrationUpdate).toHaveBeenCalledWith('e2af2b22-d1f0-44d8-a7e3-6940a98f94c1', {
+      configurations: { provider_auth_type: 'apiKey', custom_host: 'https://llm.example/v1' },
+    });
+  });
+});
 
 describe('AI Gateway mutation commands', () => {
   const workspaceId = '11111111-1111-4111-8111-111111111111';
@@ -206,6 +363,8 @@ describe('AI Gateway mutation commands', () => {
       'vertex-prod',
       '--slug',
       'vertex-prod',
+      '--key-file',
+      await keyFile('vertex-service-key'),
       '--set',
       'configurations.vertex_project_id=project-1',
     );
@@ -214,6 +373,7 @@ describe('AI Gateway mutation commands', () => {
       ai_provider_id: providerCatalogId,
       name: 'vertex-prod',
       slug: 'vertex-prod',
+      key: 'vertex-service-key',
       configurations: { vertex_project_id: 'project-1' },
     });
 

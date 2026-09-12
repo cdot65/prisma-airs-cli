@@ -1,5 +1,17 @@
 # Release Notes
 
+## v6.1.0 (2026-09-12) — Provider slugs, credential inputs, and self-hosted endpoints for integrations
+
+- `airs aigateway integrations providers` lists the provider catalog, and `integrations create`
+  accepts `--ai-provider <slug-or-uuid>` (`x-ai`, `open-ai`, …) next to `--ai-provider-id`.
+- Credentials no longer have to sit in `argv`: `--key-file <path>` and `--key-stdin` join
+  `--secret-mappings`; inline `--key` still works but warns. A create with no credential now
+  stops with a usage error naming the remedies instead of the gateway's opaque `400 AB01`.
+- `--base-url <url>` and repeatable `--header name=value` on `create` and `update` write the
+  live-verified self-hosted endpoint shape (`provider_auth_type: apiKey`, `custom_host`,
+  `custom_headers`), so an in-cluster OpenAI-compatible server needs no hand-built JSON.
+- Pins SDK 0.33.0 (`integrations.catalog()`, `resolveProviderId()`, `customHostConfiguration()`).
+
 ## v6.0.0 (2026-09-12) — Tenant files are the only configuration source
 
 - **Breaking:** `airs config` is removed and no environment variable configures the CLI any

@@ -31,7 +31,7 @@ the tenant's `mgmt*` OAuth credentials and optionally honors the `aiGwDataEndpoi
 | `configs` | `list`, `get`, `versions`, `create`, `update`, `delete` | Data plane; delete is permanent. |
 | `deployments` | `list`, `get`, `create`, `update`, `archive`, `ping` | Admin plane; archive is soft removal. |
 | `guardrails` | `list`, `get`, `create`, `update`, `delete` | Data plane; delete is permanent. |
-| `integrations` | `list`, `get`, `create`, `update`, `delete` | Admin plane; includes `models list/set` and `workspaces list/set`. |
+| `integrations` | `providers`, `list`, `get`, `create`, `update`, `delete` | Admin plane; `providers` lists the catalog slugs; includes `models list/set` and `workspaces list/set`. |
 | `mcp integrations` | `list`, `get`, `create`, `update`, `delete` | Admin plane; includes capabilities, metadata, and workspace access. |
 | `organisations` | `self get/update`, `auth-settings get/update` | Admin plane; auth settings require the numeric TSG id. |
 | `plugins` | `list`, `create` | Admin plane; the SDK has no verified get/update/delete endpoints. |
@@ -82,6 +82,41 @@ before OAuth or network access.
 The dotted path addresses the SDK request body, so config routing settings begin with `config.` and
 integration-specific settings begin with `configurations.`. Run the exact leaf command with
 `--help` for its named flags and known values sourced from SDK 0.20 catalogs.
+
+### Provider integrations
+
+An integration binds one provider family to your organisation and needs a credential; the
+gateway rejects a credential-less create with a generic `400 AB01`. Name the provider by catalog
+slug (`airs aigateway integrations providers` lists all 77) or UUID, and keep the credential out
+of `argv`:
+
+```bash
+# xAI, credential from a file (or --key-stdin for a secret manager pipe)
+airs aigateway integrations create \
+  --organisation-id 1001464285 \
+  --ai-provider x-ai \
+  --name redtail-x --slug redtail-x \
+  --key-file ~/.secrets/xai.key
+
+# A self-hosted OpenAI-compatible endpoint (vLLM, Ollama, an in-cluster service)
+airs aigateway integrations create \
+  --organisation-id 1001464285 \
+  --ai-provider open-ai \
+  --name talos7 --slug talos7 --description "Kubernetes node" \
+  --base-url http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1 \
+  --header x-team=ml \
+  --key-stdin < ~/.secrets/qwen.key
+
+# Move an existing integration to a new host without touching its credential
+airs aigateway integrations update <integration-id> --base-url https://llm.example/v1
+```
+
+`--base-url` writes the live-verified `configurations.custom_host` shape
+(`provider_auth_type: apiKey`, `custom_host`, optional `custom_headers` from repeatable
+`--header name=value`). The host must be an absolute http(s) URL including its API prefix; the
+gateway rejects hosts that do not look resolvable. `--secret-mappings` remains the way to bind a
+stored secret reference instead of a key, and `--key` inline still works but prints a warning
+because it lands in shell history.
 
 ### File escape hatch
 
