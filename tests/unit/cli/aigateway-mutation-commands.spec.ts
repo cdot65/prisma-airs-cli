@@ -7,6 +7,36 @@ import type { AIGatewayClient } from '@cdot65/prisma-airs-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAiGatewayClientFactoryForTest } from '../../../src/cli/commands/aigateway/shared.js';
 import { buildProgram } from '../../../src/cli/program.js';
+
+const prompt = vi.hoisted(() => ({
+  value: undefined as string | undefined,
+  piped: undefined as string | undefined,
+}));
+vi.mock('../../../src/cli/tenant-input.js', () => ({
+  promptTenantValue: async () => {
+    if (prompt.value === undefined) throw new Error('Interactive setup requires a terminal.');
+    return prompt.value;
+  },
+  readTenantStdin: async () => {
+    if (prompt.piped === undefined) throw new Error('--stdin requires piped input');
+    return prompt.piped;
+  },
+}));
+
+function stubTty(value: boolean): () => void {
+  const streams = [process.stdin, process.stderr] as Array<NodeJS.ReadStream | NodeJS.WriteStream>;
+  const previous = streams.map((stream) => Object.getOwnPropertyDescriptor(stream, 'isTTY'));
+  for (const stream of streams)
+    Object.defineProperty(stream, 'isTTY', { value, configurable: true });
+  return () => {
+    streams.forEach((stream, index) => {
+      const descriptor = previous[index];
+      if (descriptor) Object.defineProperty(stream, 'isTTY', descriptor);
+      else delete (stream as { isTTY?: boolean }).isTTY;
+    });
+  };
+}
+
 import { useTestTenant } from '../../helpers/tenant.js';
 
 const execFileAsync = promisify(execFile);
@@ -132,6 +162,98 @@ describe('integration credentials, provider slugs, and custom hosts', () => {
     expect(stderr).not.toContain('sk-from-file');
   });
 
+  it('prompts for the key with hidden input in a terminal when no credential flag is given', async () => {
+    prompt.value = 'sk-from-prompt';
+    const restoreTty = stubTty(true);
+    try {
+      await run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+      );
+      expect(calls.integrationCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'sk-from-prompt' }),
+      );
+      calls.integrationCreate.mockClear();
+      await run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'b',
+        '--slug',
+        'b',
+        '--key-stdin',
+      );
+      expect(calls.integrationCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'sk-from-prompt' }),
+      );
+    } finally {
+      prompt.value = undefined;
+      restoreTty();
+    }
+  });
+
+  it('reads a piped credential with --key-stdin outside a terminal', async () => {
+    prompt.piped = 'sk-from-pipe';
+    const restoreTty = stubTty(false);
+    try {
+      await run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'c',
+        '--slug',
+        'c',
+        '--key-stdin',
+      );
+      expect(calls.integrationCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'sk-from-pipe' }),
+      );
+    } finally {
+      prompt.piped = undefined;
+      restoreTty();
+    }
+  });
+
+  it('explains the pipe form when --key-stdin has no piped input outside a terminal', async () => {
+    const exit = usageExit();
+    const restoreTty = stubTty(false);
+    await expect(
+      run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+        '--key-stdin',
+      ),
+    ).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain('--key-stdin < provider.key');
+    restoreTty();
+  });
+
   it('refuses a credential-less create before any request and names the remedies', async () => {
     const exit = usageExit();
     await expect(
@@ -151,7 +273,7 @@ describe('integration credentials, provider slugs, and custom hosts', () => {
     expect(exit).toHaveBeenCalledWith(2);
     expect(calls.integrationCreate).not.toHaveBeenCalled();
     const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
-    expect(stderr).toContain('--key-stdin, --key-file, --secret-mappings');
+    expect(stderr).toContain('--key-file, --key-stdin (piped), --secret-mappings');
   });
 
   it('accepts secret mappings as the credential and warns about inline --key', async () => {

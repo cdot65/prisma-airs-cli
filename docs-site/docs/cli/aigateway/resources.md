@@ -88,7 +88,8 @@ integration-specific settings begin with `configurations.`. Run the exact leaf c
 An integration binds one provider family to your organisation and needs a credential; the
 gateway rejects a credential-less create with a generic `400 AB01`. Name the provider by catalog
 slug (`airs aigateway integrations providers` lists all 77) or UUID, and keep the credential out
-of `argv`:
+of `argv`: in a terminal, omit every key flag and `create` prompts with hidden input; in
+automation, use `--key-file` or pipe it with `--key-stdin`:
 
 ```bash
 # xAI, credential from a file (or --key-stdin for a secret manager pipe)
@@ -105,7 +106,7 @@ airs aigateway integrations create \
   --name talos7 --slug talos7 --description "Kubernetes node" \
   --base-url http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1 \
   --header x-team=ml \
-  --key-stdin < ~/.secrets/qwen.key
+  --key-stdin < ~/.secrets/qwen.key        # or omit the key flags to be prompted
 
 # Move an existing integration to a new host without touching its credential
 airs aigateway integrations update <integration-id> --base-url https://llm.example/v1

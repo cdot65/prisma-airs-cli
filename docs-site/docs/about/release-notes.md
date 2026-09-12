@@ -1,5 +1,11 @@
 # Release Notes
 
+## v6.1.1 (2026-09-12) — Prompt for the provider key in a terminal
+
+- `airs aigateway integrations create` now prompts for the provider key with hidden input when
+  it runs in a terminal and no credential flag is given, and `--key-stdin` without piped input
+  falls back to the same prompt. Outside a terminal the `--key-stdin` error shows the pipe form.
+
 ## v6.1.0 (2026-09-12) — Provider slugs, credential inputs, and self-hosted endpoints for integrations
 
 - `airs aigateway integrations providers` lists the provider catalog, and `integrations create`

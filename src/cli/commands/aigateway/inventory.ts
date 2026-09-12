@@ -37,7 +37,7 @@ import {
 import type { Command } from 'commander';
 import { redactDeep } from '../../debug-logger.js';
 import { CliUsageError, ui } from '../../renderer/index.js';
-import { readTenantStdin } from '../../tenant-input.js';
+import { promptTenantValue, readTenantStdin } from '../../tenant-input.js';
 import {
   addReadOutput,
   addWriteOutput,
@@ -613,7 +613,7 @@ function registerIntegrations(root: Command): void {
   );
   create.action((opts) =>
     runWrite(create, opts, async (client) => {
-      const prepared = await prepareIntegrationOptions(opts, client);
+      const prepared = await prepareIntegrationOptions(opts, client, { promptWhenMissing: true });
       const body = await buildStructuredRequest(
         prepared,
         GatewayIntegrationCreateRequestSchema,
@@ -621,7 +621,7 @@ function registerIntegrations(root: Command): void {
       );
       if (!body.key && !(Array.isArray(body.secret_mappings) && body.secret_mappings.length)) {
         throw new CliUsageError(
-          'A provider credential is required: pass --key-stdin, --key-file, --secret-mappings, or --key (the gateway rejects a credential-less integration with a generic AB01)',
+          'A provider credential is required: run in a terminal to be prompted, or pass --key-file, --key-stdin (piped), --secret-mappings, or --key (the gateway rejects a credential-less integration with a generic AB01)',
         );
       }
       return client.integrations.create(body);
@@ -1071,6 +1071,7 @@ interface IntegrationInputOptions {
 export async function prepareIntegrationOptions(
   opts: IntegrationInputOptions,
   client: AIGatewayClient,
+  settings: { promptWhenMissing?: boolean } = {},
 ): Promise<Record<string, unknown>> {
   const sources = [opts.key !== undefined, Boolean(opts.keyStdin), opts.keyFile !== undefined];
   if (sources.filter(Boolean).length > 1) {
@@ -1082,11 +1083,19 @@ export async function prepareIntegrationOptions(
   delete prepared.baseUrl;
   delete prepared.header;
   delete prepared.aiProvider;
+  const interactive = Boolean(process.stdin.isTTY && process.stderr.isTTY);
   if (opts.keyStdin) {
-    try {
-      prepared.key = await readTenantStdin();
-    } catch {
-      throw new CliUsageError('--key-stdin requires one nonempty credential on piped stdin');
+    if (interactive) {
+      // Nothing is piped; fall back to a hidden prompt instead of failing.
+      prepared.key = await promptTenantValue('Provider API key:', true);
+    } else {
+      try {
+        prepared.key = await readTenantStdin();
+      } catch {
+        throw new CliUsageError(
+          '--key-stdin reads one credential from piped stdin, e.g. `airs aigateway integrations create ... --key-stdin < provider.key`; in a terminal, omit every key flag to be prompted',
+        );
+      }
     }
   } else if (opts.keyFile !== undefined) {
     let raw: string;
@@ -1104,6 +1113,13 @@ export async function prepareIntegrationOptions(
     ui.warning(
       'Inline --key is visible in shell history and process listings; prefer --key-stdin, --key-file, or --secret-mappings',
     );
+  } else if (
+    settings.promptWhenMissing &&
+    interactive &&
+    opts.secretMappings === undefined &&
+    opts.file === undefined
+  ) {
+    prepared.key = await promptTenantValue('Provider API key:', true);
   }
   if (opts.aiProvider !== undefined && opts.aiProviderId !== undefined) {
     throw new CliUsageError('Use --ai-provider or --ai-provider-id, not both');
