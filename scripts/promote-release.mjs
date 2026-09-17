@@ -51,13 +51,17 @@ const exchanged = await json(`${registry}/-/npm/v1/oidc/token/exchange/package/$
 });
 assert.ok(exchanged.token);
 console.log(`::add-mask::${exchanged.token}`);
-const response = await fetch(`${registry}/-/package/${name}/dist-tags/latest`, {
+const escapedName = manifest.name.replace('/', '%2f');
+const response = await fetch(`${registry}/-/package/${escapedName}/dist-tags/latest`, {
   method: 'PUT',
   headers: { Authorization: `Bearer ${exchanged.token}`, 'Content-Type': 'application/json' },
   body: JSON.stringify(version),
   signal: AbortSignal.timeout(30000),
 });
-assert.ok(response.ok, `Promotion failed: ${response.status}`);
+if (!response.ok) {
+  const detail = (await response.text()).replaceAll(exchanged.token, '[redacted]').slice(0, 500);
+  throw new Error(`Promotion failed: ${response.status} ${detail}`);
+}
 const tags = await json(`${registry}/-/package/${name}/dist-tags`);
 assert.equal(tags.latest, version);
 console.log(`${manifest.name}@${version} is latest; paired with airs-harness@${harnessVersion}`);
