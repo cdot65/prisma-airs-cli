@@ -2,7 +2,6 @@
   "published": true,
   "cli_version": "7.0.0",
   "harness_version": "0.1.0-alpha.22",
-  "registry": "https://npm.cdot.io",
   "native_source_commit": "2a787c03d1673b28fe85803c4082dd1a5e85a36e",
   "harness_manifest": {
     "name": "airs-harness",
@@ -16,8 +15,7 @@
     },
     "dist": {
       "integrity": "sha512-IEviewrC6GJerKNZ8kZsHidanbubp4uPRWdn0gTwEYCCtcoXsY8fjyON6L6hlFdHkBFF59vdypPmPcKi/lwiyA==",
-      "shasum": "e6f5b4c4afc1c1b484b4b101fd7c2428f560b913",
-      "tarball": "https://npm.cdot.io/airs-harness/-/airs-harness-0.1.0-alpha.22.tgz"
+      "shasum": "e6f5b4c4afc1c1b484b4b101fd7c2428f560b913"
     }
   },
   "installed_platforms": [
