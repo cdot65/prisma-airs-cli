@@ -3,6 +3,16 @@ name: Publish to npm
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      promote_version:
+        description: Published CLI version to promote after harness acceptance
+        type: string
+        required: true
+      harness_version:
+        description: Published harness version that bundles this CLI
+        type: string
+        required: true
 
 env:
   # pnpm/action-setup has no Node 24 major yet; force it (and any JS action) onto Node 24.
@@ -10,6 +20,7 @@ env:
 
 jobs:
   publish:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     environment: npm
     permissions:
@@ -54,3 +65,21 @@ jobs:
           tag=latest
           if [ "$RELEASE_PRERELEASE" = true ]; then tag=next; fi
           npm publish --access public --tag "$tag"
+
+  promote:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Promote the accepted paired release
+        env:
+          PROMOTE_VERSION: ${{ inputs.promote_version }}
+          HARNESS_VERSION: ${{ inputs.harness_version }}
+        run: node scripts/promote-release.mjs
