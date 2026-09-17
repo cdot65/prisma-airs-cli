@@ -16,12 +16,17 @@ package remains `@cdot65/prisma-airs-cli`. The Prisma AIRS Harness takes the
 shell aliases, service definitions and user-created skills before changing their
 installed command. Product config files and tenant registrations stay in place.
 
+Standalone **7.0.1** is the stable release for default npm installs. Harness
+alpha.22 bundles the independently pinned **7.0.0** CLI. The patch changes release
+metadata, not command behavior or tenant configuration; either standalone version
+can coexist with that harness.
+
 ## Upgrade an existing standalone installation
 
 Upgrade the CLI **before** installing the renamed harness so it releases `airs`:
 
 ```sh
-npm install -g @cdot65/prisma-airs-cli@7.0.0
+npm install -g @cdot65/prisma-airs-cli@7.0.1
 airs-cli --version
 airs-cli tenant list
 ```
