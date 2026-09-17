@@ -78,6 +78,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
       - name: Promote the accepted paired release
         env:
           PROMOTE_VERSION: ${{ inputs.promote_version }}
