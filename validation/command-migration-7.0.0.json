@@ -1,0 +1,47 @@
+{
+  "published": true,
+  "cli_version": "7.0.0",
+  "harness_version": "0.1.0-alpha.22",
+  "registry": "https://npm.cdot.io",
+  "native_source_commit": "2a787c03d1673b28fe85803c4082dd1a5e85a36e",
+  "harness_manifest": {
+    "name": "airs-harness",
+    "version": "0.1.0-alpha.22",
+    "bin": {
+      "airs": "bin/airs.js",
+      "airs-harness": "bin/airs-harness.js"
+    },
+    "dependencies": {
+      "@cdot65/prisma-airs-cli": "7.0.0"
+    },
+    "dist": {
+      "integrity": "sha512-IEviewrC6GJerKNZ8kZsHidanbubp4uPRWdn0gTwEYCCtcoXsY8fjyON6L6hlFdHkBFF59vdypPmPcKi/lwiyA==",
+      "shasum": "e6f5b4c4afc1c1b484b4b101fd7c2428f560b913",
+      "tarball": "https://npm.cdot.io/airs-harness/-/airs-harness-0.1.0-alpha.22.tgz"
+    }
+  },
+  "installed_platforms": [
+    {
+      "passed": true,
+      "platform": "Linux",
+      "architecture": "x86_64",
+      "anonymous_fresh_install": true,
+      "binary_sha256": "60c1fda9ece4b83cf7fed3415196d460e0b822e0e8334c155b2d2b1638e10275"
+    },
+    {
+      "passed": true,
+      "platform": "Linux",
+      "architecture": "aarch64",
+      "anonymous_fresh_install": true,
+      "binary_sha256": "f161ab0a38dea39b3c7602222b528b52d7b0d3a3d9b935e0241e4d415ccfedef"
+    },
+    {
+      "passed": true,
+      "platform": "Darwin",
+      "architecture": "arm64",
+      "anonymous_fresh_install": true,
+      "binary_sha256": "d0163d8915574cc82874a56d16002ecac3949497114402c7b048c2dee8cd6846"
+    }
+  ],
+  "production_sso_servicenow_acceptance": false
+}

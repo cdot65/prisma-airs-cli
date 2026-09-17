@@ -18,7 +18,26 @@ async function json(url, options) {
 }
 const published = await json(`${registry}/${name}/${version}`);
 assert.deepEqual(published.bin, { 'airs-cli': 'dist/cli/index.js' });
-const harness = await json(`https://npm.cdot.io/airs-harness/${harnessVersion}`);
+// The harness registry is reachable only from the organization's network.
+// Its committed receipt binds anonymous installed acceptance to published bytes.
+const acceptance = JSON.parse(
+  await readFile(
+    new URL(`../validation/command-migration-${version}.json`, import.meta.url),
+    'utf8',
+  ),
+);
+assert.equal(acceptance.published, true);
+assert.equal(acceptance.cli_version, version);
+assert.equal(acceptance.harness_version, harnessVersion);
+assert.deepEqual(
+  acceptance.installed_platforms.map((item) => `${item.platform}/${item.architecture}`).sort(),
+  ['Darwin/arm64', 'Linux/aarch64', 'Linux/x86_64'],
+);
+assert.ok(
+  acceptance.installed_platforms.every((item) => item.passed && item.anonymous_fresh_install),
+);
+const harness = acceptance.harness_manifest;
+assert.equal(harness.version, harnessVersion);
 assert.equal(harness.dependencies?.[manifest.name], version);
 assert.equal(harness.bin?.airs, 'bin/airs.js');
 const requestUrl = new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);
