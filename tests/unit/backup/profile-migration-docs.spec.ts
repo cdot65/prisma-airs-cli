@@ -9,7 +9,7 @@ const paths = [
 ];
 const documents = paths.map((path) => readFileSync(path, 'utf8'));
 
-describe('public migration guides use direct airs commands', () => {
+describe('public migration guides use direct airs-cli commands', () => {
   it.each(paths)('%s contains no capture harness or external scripting', (path) => {
     const doc = readFileSync(path, 'utf8');
     expect(doc).not.toMatch(
@@ -25,7 +25,7 @@ describe('public migration guides use direct airs commands', () => {
         .replace(/\\\n\s*/g, ' ')
         .split('\n')
         .filter(Boolean)) {
-        expect(line).toMatch(/^airs /);
+        expect(line).toMatch(/^airs-cli /);
         expect(line.replace(/"<[A-Z_]+>"/g, 'placeholder')).not.toMatch(/[;|&<>]/);
       }
       expect(spawnSync('bash', ['-n'], { input: block, encoding: 'utf8' }).status).toBe(0);
@@ -35,7 +35,7 @@ describe('public migration guides use direct airs commands', () => {
   it('keeps the destination pin and read-only preview in every restore workflow', () => {
     for (const doc of documents) {
       const calls = [
-        ...doc.replace(/\\\n\s*/g, ' ').matchAll(/^airs runtime profiles restore [^\n]*/gm),
+        ...doc.replace(/\\\n\s*/g, ' ').matchAll(/^airs-cli runtime profiles restore [^\n]*/gm),
       ].map((m) => m[0]);
       expect(calls.length).toBeGreaterThan(0);
       for (const call of calls.filter((call) => !call.includes('--help'))) {
@@ -54,7 +54,7 @@ describe('public migration guides use direct airs commands', () => {
       for (const match of doc.matchAll(/```bash\n([\s\S]*?)```/g)) {
         const result = spawnSync(
           '/bin/bash',
-          ['-c', `airs() { printf '%s\\0' "$@"; printf '\\036'; }\n${match[1]}`],
+          ['-c', `airs-cli() { printf '%s\\0' "$@"; printf '\\036'; }\n${match[1]}`],
           { encoding: 'utf8', env: { PATH: '' }, timeout: 1000 },
         );
         expect(result.status, result.stderr).toBe(0);

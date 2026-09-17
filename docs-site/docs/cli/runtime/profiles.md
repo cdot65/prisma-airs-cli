@@ -7,15 +7,15 @@ sidebar_label: profiles
 ### runtime profiles backup and restore
 
 ```bash
-airs runtime profiles backup --all --output-file ./profiles.json
-airs runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml
-airs runtime profiles restore ./profiles.json --dry-run --output json
-airs runtime profiles restore ./profiles.json --expect-tsg 200 --force
+airs-cli runtime profiles backup --all --output-file ./profiles.json
+airs-cli runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml
+airs-cli runtime profiles restore ./profiles.json --dry-run --output json
+airs-cli runtime profiles restore ./profiles.json --expect-tsg 200 --force
 ```
 
 Backup exports latest policies and exact referenced topic definitions into a private,
 no-overwrite file in the current directory. Restore targets the selected tenant and
-rewrites topic identities. Use `airs tenant switch <name>` to change tenants first.
+rewrites topic identities. Use `airs-cli tenant switch <name>` to change tenants first.
 Replace `200` with your destination TSG.
 
 | Flag | Command | Meaning |
@@ -43,7 +43,7 @@ the full workflow, DLP limitations, partial-failure handling, and actual backup 
 List security profiles
 
 ```text
-airs runtime profiles list [options]
+airs-cli runtime profiles list [options]
 ```
 
 #### Options
@@ -62,7 +62,7 @@ airs runtime profiles list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime profiles list --limit 2
+airs-cli runtime profiles list --limit 2
 ```
 
 ```text
@@ -83,7 +83,7 @@ Next offset: 2
 *JSON output*
 
 ```bash
-airs runtime profiles list --limit 2 --output json
+airs-cli runtime profiles list --limit 2 --output json
 ```
 
 ```text
@@ -106,7 +106,7 @@ airs runtime profiles list --limit 2 --output json
 *YAML output (one sequence containing complete records)*
 
 ```bash
-airs runtime profiles list --limit 2 --output yaml
+airs-cli runtime profiles list --limit 2 --output yaml
 ```
 
 ```text
@@ -127,7 +127,7 @@ airs runtime profiles list --limit 2 --output yaml
 Get a security profile by name or UUID
 
 ```text
-airs runtime profiles get [options] <nameOrId>
+airs-cli runtime profiles get [options] <nameOrId>
 ```
 
 #### Arguments
@@ -147,7 +147,7 @@ airs runtime profiles get [options] <nameOrId>
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime profiles get docs-example-profile
+airs-cli runtime profiles get docs-example-profile
 ```
 
 ```text
@@ -217,7 +217,7 @@ Profile Detail:
 *JSON output (flattens management response — `profileId` / `profileName` keys)*
 
 ```bash
-airs runtime profiles get docs-example-profile --output json
+airs-cli runtime profiles get docs-example-profile --output json
 ```
 
 ```text
@@ -283,7 +283,7 @@ airs runtime profiles get docs-example-profile --output json
 *YAML output (the nested `policy` is emitted as inline JSON, not converted to YAML)*
 
 ```bash
-airs runtime profiles get docs-example-profile --output yaml
+airs-cli runtime profiles get docs-example-profile --output yaml
 ```
 
 ```text
@@ -351,7 +351,7 @@ policy: {
 Create a new security profile
 
 ```text
-airs runtime profiles create [options]
+airs-cli runtime profiles create [options]
 ```
 
 #### Options
@@ -386,7 +386,7 @@ airs runtime profiles create [options]
 *Create with protection flags (no JSON output flag — pretty only)*
 
 ```bash
-airs runtime profiles create \
+airs-cli runtime profiles create \
   --name docs-example-profile \
   --prompt-injection block \
   --toxic-content "high:block, moderate:alert" \
@@ -468,7 +468,7 @@ Profile Detail:
 Update a security profile by name or UUID
 
 ```text
-airs runtime profiles update [options] <nameOrId>
+airs-cli runtime profiles update [options] <nameOrId>
 ```
 
 #### Arguments
@@ -508,7 +508,7 @@ airs runtime profiles update [options] <nameOrId>
 *Read-modify-write — only the flags you pass change; existing protections are preserved. New revision id returned.*
 
 ```bash
-airs runtime profiles update docs-example-profile \
+airs-cli runtime profiles update docs-example-profile \
   --prompt-injection alert
 ```
 
@@ -585,7 +585,7 @@ Profile Detail:
 Delete a security profile by name or UUID
 
 ```text
-airs runtime profiles delete [options] <nameOrId>
+airs-cli runtime profiles delete [options] <nameOrId>
 ```
 
 #### Arguments
@@ -612,7 +612,7 @@ No curated input/output example for this command yet.
 Delete old profile revisions, keeping only the latest per name
 
 ```text
-airs runtime profiles cleanup [options]
+airs-cli runtime profiles cleanup [options]
 ```
 
 #### Options
@@ -628,23 +628,23 @@ airs runtime profiles cleanup [options]
 *Dry run (preview)*
 
 ```bash
-airs runtime profiles cleanup
+airs-cli runtime profiles cleanup
 ```
 
 *Delete old revisions*
 
 ```bash
-airs runtime profiles cleanup --force
+airs-cli runtime profiles cleanup --force
 ```
 
 *Specify email for audit trail*
 
 ```bash
-airs runtime profiles cleanup --force --updated-by user@example.com
+airs-cli runtime profiles cleanup --force --updated-by user@example.com
 ```
 
 *JSON output*
 
 ```bash
-airs runtime profiles cleanup --force --output json
+airs-cli runtime profiles cleanup --force --output json
 ```

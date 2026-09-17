@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterUpdateOverrides
 
-Defined in: src/airs/types.ts:1523
+Defined in: src/airs/types.ts:1571
 
 CLI-side overrides for adapter update. The upstream PUT is a full
 replacement, so the service merges these onto the current record —
@@ -12,7 +12,7 @@ replacement, so the service merges these onto the current record —
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:1527
+Defined in: src/airs/types.ts:1575
 
 ***
 
@@ -20,7 +20,7 @@ Defined in: src/airs/types.ts:1527
 
 > `optional` **name?**: `string`
 
-Defined in: src/airs/types.ts:1525
+Defined in: src/airs/types.ts:1573
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: src/airs/types.ts:1525
 
 > `optional` **networkBrokerChannelUuid?**: `string`
 
-Defined in: src/airs/types.ts:1528
+Defined in: src/airs/types.ts:1576
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: src/airs/types.ts:1528
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:1524
+Defined in: src/airs/types.ts:1572
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: src/airs/types.ts:1524
 
 > `optional` **scriptB64?**: `string`
 
-Defined in: src/airs/types.ts:1526
+Defined in: src/airs/types.ts:1574
 
 ***
 
@@ -52,6 +52,6 @@ Defined in: src/airs/types.ts:1526
 
 > `optional` **variables?**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: src/airs/types.ts:1530
+Defined in: src/airs/types.ts:1578
 
 Replaces the WHOLE variable set when given; omitted keys are deleted upstream.

@@ -29,7 +29,7 @@ describe('debug deliverables in the working directory', () => {
   it('creates a private log in CWD without touching config or pruning previous artifacts', async () => {
     for (let i = 0; i < 12; i++)
       await writeFile(join(directory, `debug-api-old-${i}.jsonl`), 'KEEP');
-    await program().parseAsync(['node', 'airs', '--debug', 'debug-probe']);
+    await program().parseAsync(['node', 'airs-cli', '--debug', 'debug-probe']);
     const files = (await readdir(directory)).filter((name) => name.endsWith('.jsonl'));
     expect(files).toHaveLength(13);
     const created = files.find((name) => !name.includes('-old-'));
@@ -48,7 +48,7 @@ describe('debug deliverables in the working directory', () => {
     });
     const cli = buildProgram();
     cli.command('debug-probe').action(action);
-    await expect(cli.parseAsync(['node', 'airs', '--debug', 'debug-probe'])).rejects.toThrow(
+    await expect(cli.parseAsync(['node', 'airs-cli', '--debug', 'debug-probe'])).rejects.toThrow(
       'exit',
     );
     expect(exit).toHaveBeenCalledWith(1);

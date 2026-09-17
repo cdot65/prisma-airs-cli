@@ -19,14 +19,14 @@ registrations. The [direct CLI migration guide](../prod-dev-migration.md) requir
 shell functions or exported TSG variables.
 
 ```bash
-airs --version
-airs tenant list
-airs tenant read prod
-airs tenant read dev
-airs tenant switch prod
-airs tenant list
-airs runtime dlp patterns list --all --max 0 --output json
-airs runtime dlp profiles list --all --max 0 --output json
+airs-cli --version
+airs-cli tenant list
+airs-cli tenant read prod
+airs-cli tenant read dev
+airs-cli tenant switch prod
+airs-cli tenant list
+airs-cli runtime dlp patterns list --all --max 0 --output json
+airs-cli runtime dlp profiles list --all --max 0 --output json
 ```
 
 Confirm prod's selected TSG. Environment variables, `PRISMA_AIRS_CONFIG_PATH`, and `.env`
@@ -34,8 +34,8 @@ files are ignored; do not export secrets as a workaround. If credentials need
 correction, update one setting at a time using hidden secret entry:
 
 ```bash
-airs tenant set prod mgmtClientId
-airs tenant set prod mgmtClientSecret
+airs-cli tenant set prod mgmtClientId
+airs-cli tenant set prod mgmtClientSecret
 ```
 
 Only run those setters if the registered credentials are wrong. Do not change a correctly
@@ -44,8 +44,8 @@ configured registration to fix an outdated CLI.
 If `dlp-test-pattern` or `dlp-test` already exists, inspect it by its returned ID:
 
 ```bash
-airs runtime dlp patterns get "<PROD_PATTERN_ID>" --output json
-airs runtime dlp profiles get "<PROD_DLP_PROFILE_ID>" --output json
+airs-cli runtime dlp patterns get "<PROD_PATTERN_ID>" --output json
+airs-cli runtime dlp profiles get "<PROD_DLP_PROFILE_ID>" --output json
 ```
 
 Replace the placeholders with the IDs from the lists. Continue from the first missing
@@ -57,9 +57,9 @@ If the Runtime restore was interrupted later, retain the source backup, select d
 and inspect a recovery plan before making more changes:
 
 ```bash
-airs tenant switch dev
-airs tenant list
-airs runtime profiles restore ./prod-runtime-backup.json \
+airs-cli tenant switch dev
+airs-cli tenant list
+airs-cli runtime profiles restore ./prod-runtime-backup.json \
   --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
   --expect-tsg "<DEV_TSG>" --dry-run --output json
 ```

@@ -25,6 +25,7 @@ import {
 import { type Config, ConfigSchema, RETIRED_CONFIG_KEYS } from '../../config/schema.js';
 import { tenantStorePath } from '../../config/tenants.js';
 import { examples } from '../examples.js';
+import { commandHint } from '../invocation.js';
 import { type BulletKind, formatOutput, resolveOutput, ui } from '../renderer/index.js';
 
 /**
@@ -119,8 +120,8 @@ export function checkTenant(context: ConfigContext): DoctorCheck {
       ? `no tenant selected (registered: ${context.registered.join(', ')})`
       : `no tenants registered in ${context.registryPath}`,
     hint: context.registered.length
-      ? "Run 'airs tenant switch <name>'"
-      : "Run 'airs tenant create <name>' (prompts for TSG ID, client ID and secret), then 'airs tenant switch <name>'",
+      ? "Run 'airs-cli tenant switch <name>'"
+      : "Run 'airs-cli tenant create <name>' (prompts for TSG ID, client ID and secret), then 'airs-cli tenant switch <name>'",
   };
 }
 
@@ -152,7 +153,7 @@ export async function checkConfigFile(context: ConfigContext): Promise<DoctorChe
       detail: `not found at ${path}`,
       hint:
         context.selection === 'tenant'
-          ? `Restore the file, or register another with 'airs tenant create <name> --config <path>' and delete '${context.tenant.name}'`
+          ? `Restore the file, or register another with 'airs-cli tenant create <name> --config <path>' and delete '${context.tenant.name}'`
           : 'Create the file or pass an existing one',
     };
   }
@@ -182,7 +183,7 @@ export async function checkConfigFile(context: ConfigContext): Promise<DoctorChe
       name,
       status: 'fail',
       detail: `${path} has invalid values for: ${keys.join(', ')}`,
-      hint: "Fix them with 'airs tenant set <name> <key>' (values are never printed here)",
+      hint: "Fix them with 'airs-cli tenant set <name> <key>' (values are never printed here)",
     };
   }
   if (context.selection === 'tenant') {
@@ -192,7 +193,7 @@ export async function checkConfigFile(context: ConfigContext): Promise<DoctorChe
         name,
         status: 'fail',
         detail: `${path} carries a different mgmtTsgId than the registration (TSG ${context.tenant.tsgId})`,
-        hint: "Register the file under a new tenant name with 'airs tenant create <name> --config <path>'",
+        hint: "Register the file under a new tenant name with 'airs-cli tenant create <name> --config <path>'",
       };
     }
   }
@@ -207,8 +208,8 @@ export async function checkConfigFile(context: ConfigContext): Promise<DoctorChe
       status: 'warn',
       detail: `valid at ${path}; ignored ${plural(ignored.length, 'key')}: ${ignored.join(', ')}`,
       hint: retired.length
-        ? `Every product authenticates through mgmtTokenEndpoint now (${retired.join(', ')} ignored); remove them with 'airs tenant unset <name> <key>'`
-        : "Remove unknown keys with 'airs tenant unset <name> <key>'",
+        ? `Every product authenticates through mgmtTokenEndpoint now (${retired.join(', ')} ignored); remove them with 'airs-cli tenant unset <name> <key>'`
+        : "Remove unknown keys with 'airs-cli tenant unset <name> <key>'",
     };
   }
   return {
@@ -236,7 +237,7 @@ export function checkEnvironment(env: NodeJS.ProcessEnv = process.env): DoctorCh
       name,
       status: 'warn',
       detail: `ignored ${plural(ignored.length, 'variable')}: ${ignored.join(', ')}${suffix}`,
-      hint: "Configuration comes only from tenant files ('airs tenant set <name> <key>'); unset these",
+      hint: "Configuration comes only from tenant files ('airs-cli tenant set <name> <key>'); unset these",
     };
   }
   return { name, status: 'pass', detail: `no configuration variables set${suffix}` };
@@ -676,13 +677,18 @@ export function registerDoctorCommand(program: Command): void {
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
-      examples('airs doctor', `airs doctor --output json | jq '.[] | select(.status != "pass")'`),
+      examples(
+        'airs-cli doctor',
+        `airs-cli doctor --output json | jq '.[] | select(.status != "pass")'`,
+      ),
     )
     .action(async (opts) => {
       // Doctor must run even when the selected config cannot load (that is
       // what it diagnoses), so output resolution never touches the config.
       const fmt = await resolveOutput(doctor, opts, { ignoreConfig: true });
-      const checks = await runDoctor();
+      const checks = (await runDoctor()).map((check) =>
+        check.hint ? { ...check, hint: commandHint(check.hint) } : check,
+      );
 
       if (fmt === 'pretty') {
         renderPretty(checks);

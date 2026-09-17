@@ -10,7 +10,7 @@ export function selectedTenant(name = process.env.AIRS_E2E_TENANT): TenantEntry 
   const entry = store.tenants.find((tenant) => tenant.name === wanted);
   if (!entry)
     throw new Error(
-      "No tenant selected. Run 'airs tenant switch <name>' or set AIRS_E2E_TENANT to a registered tenant",
+      "No tenant selected. Run 'airs-cli tenant switch <name>' or set AIRS_E2E_TENANT to a registered tenant",
     );
   return entry;
 }

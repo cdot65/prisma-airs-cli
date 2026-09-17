@@ -70,9 +70,9 @@ describe('generateBashCompletion', () => {
   const program = buildProgram();
   const script = generateBashCompletion(program);
 
-  it('emits a bash complete registration for airs', () => {
+  it('emits a bash complete registration for airs-cli', () => {
     expect(script).toContain('complete -F');
-    expect(script).toContain('airs');
+    expect(script).toContain('airs-cli');
     expect(script).toContain('COMPREPLY');
   });
 
@@ -83,7 +83,7 @@ describe('generateBashCompletion', () => {
   });
 
   it('contains the install snippet as a comment', () => {
-    expect(script).toContain('# Install: airs completion bash');
+    expect(script).toContain('# Install: airs-cli completion bash');
   });
 });
 
@@ -92,7 +92,7 @@ describe('generateZshCompletion', () => {
   const script = generateZshCompletion(program);
 
   it('emits a zsh compdef script', () => {
-    expect(script).toContain('#compdef airs');
+    expect(script).toContain('#compdef airs-cli');
     expect(script).toContain('compadd');
   });
 
@@ -113,7 +113,7 @@ describe('generateFishCompletion', () => {
   const script = generateFishCompletion(program);
 
   it('emits fish complete statements', () => {
-    expect(script).toContain('complete -c airs');
+    expect(script).toContain('complete -c airs-cli');
   });
 
   it('covers nested command paths', () => {
@@ -122,7 +122,7 @@ describe('generateFishCompletion', () => {
   });
 
   it('contains the install snippet as a comment', () => {
-    expect(script).toContain('# Install: airs completion fish');
-    expect(script).toContain('~/.config/fish/completions/airs.fish');
+    expect(script).toContain('# Install: airs-cli completion fish');
+    expect(script).toContain('~/.config/fish/completions/airs-cli.fish');
   });
 });

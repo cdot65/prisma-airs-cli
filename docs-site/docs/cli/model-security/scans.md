@@ -9,7 +9,7 @@ sidebar_label: scans
 List model security scans
 
 ```text
-airs model-security scans list [options]
+airs-cli model-security scans list [options]
 ```
 
 #### Options
@@ -34,7 +34,7 @@ airs model-security scans list [options]
 *List model security scans*
 
 ```bash
-airs model-security scans list
+airs-cli model-security scans list
 ```
 
 ```text
@@ -57,7 +57,7 @@ ee71b4da-64ce-4d6c-96fb-2bced1154a06
 Get scan details
 
 ```text
-airs model-security scans get [options] <uuid>
+airs-cli model-security scans get [options] <uuid>
 ```
 
 #### Arguments
@@ -69,7 +69,7 @@ airs model-security scans get [options] <uuid>
 *Pretty output (fallback `pretty`; no output override in this example). Re-run after scan completes to see final Outcome + rule counts.*
 
 ```bash
-airs model-security scans get 00000000-0000-0000-0000-000000000002
+airs-cli model-security scans get 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -97,7 +97,7 @@ Scan Detail:
 Create a model security scan
 
 ```text
-airs model-security scans create [options]
+airs-cli model-security scans create [options]
 ```
 
 #### Options
@@ -116,7 +116,7 @@ docs/cli/examples/model-security/scan-create.json.
 *
 
 ```bash
-airs model-security scans create --config docs/cli/examples/model-security/scan-create.json
+airs-cli model-security scans create --config docs/cli/examples/model-security/scan-create.json
 ```
 
 ```text
@@ -145,7 +145,7 @@ Scan Detail:
 List rule evaluations for a scan
 
 ```text
-airs model-security scans evaluations [options] <scanUuid>
+airs-cli model-security scans evaluations [options] <scanUuid>
 ```
 
 #### Arguments
@@ -163,7 +163,7 @@ airs model-security scans evaluations [options] <scanUuid>
 *List rule evaluations for a scan (one row per rule the scan was checked against)*
 
 ```bash
-airs model-security scans evaluations 00000000-0000-0000-0000-000000000002
+airs-cli model-security scans evaluations 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -204,7 +204,7 @@ Rule Evaluations:
 Get evaluation details
 
 ```text
-airs model-security scans evaluation [options] <uuid>
+airs-cli model-security scans evaluation [options] <uuid>
 ```
 
 #### Arguments
@@ -216,7 +216,7 @@ airs model-security scans evaluation [options] <uuid>
 *Get details for a single rule evaluation (UUID from `scans evaluations`)*
 
 ```bash
-airs model-security scans evaluation 00000000-0000-0000-0000-000000000004
+airs-cli model-security scans evaluation 00000000-0000-0000-0000-000000000004
 ```
 
 ```text
@@ -242,7 +242,7 @@ Evaluation Detail:
 List violations for a scan
 
 ```text
-airs model-security scans violations [options] <scanUuid>
+airs-cli model-security scans violations [options] <scanUuid>
 ```
 
 #### Arguments
@@ -260,7 +260,7 @@ airs model-security scans violations [options] <scanUuid>
 *List violations for a scan*
 
 ```bash
-airs model-security scans violations 00000000-0000-0000-0000-000000000002
+airs-cli model-security scans violations 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -311,7 +311,7 @@ Violations:
 Get violation details
 
 ```text
-airs model-security scans violation [options] <uuid>
+airs-cli model-security scans violation [options] <uuid>
 ```
 
 #### Arguments
@@ -323,7 +323,7 @@ airs model-security scans violation [options] <uuid>
 *Get details for a single violation (UUID from `scans violations`)*
 
 ```bash
-airs model-security scans violation 00000000-0000-0000-0000-000000000010
+airs-cli model-security scans violation 00000000-0000-0000-0000-000000000010
 ```
 
 ```text
@@ -349,7 +349,7 @@ Violation Detail:
 List scanned files
 
 ```text
-airs model-security scans files [options] <scanUuid>
+airs-cli model-security scans files [options] <scanUuid>
 ```
 
 #### Arguments
@@ -369,7 +369,7 @@ airs model-security scans files [options] <scanUuid>
 *List files the scanner processed (FAILED rows are the ones with violations)*
 
 ```bash
-airs model-security scans files 00000000-0000-0000-0000-000000000002
+airs-cli model-security scans files 00000000-0000-0000-0000-000000000002
 ```
 
 ```text

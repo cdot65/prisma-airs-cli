@@ -9,7 +9,7 @@ View and analyze model security scan results — evaluations, violations, and sc
 ## List Scans
 
 ```bash
-airs model-security scans list --limit 3
+airs-cli model-security scans list --limit 3
 ```
 
 ```
@@ -29,16 +29,16 @@ airs model-security scans list --limit 3
 
 ```bash
 # By evaluation outcome
-airs model-security scans list --eval-outcome BLOCKED
+airs-cli model-security scans list --eval-outcome BLOCKED
 
 # By source type
-airs model-security scans list --source-type HUGGING_FACE
+airs-cli model-security scans list --source-type HUGGING_FACE
 ```
 
 ## Get Scan Details
 
 ```bash
-airs model-security scans get <scanUuid>
+airs-cli model-security scans get <scanUuid>
 ```
 
 ## View Evaluations
@@ -46,13 +46,13 @@ airs model-security scans get <scanUuid>
 See which rules passed or failed for a specific scan:
 
 ```bash
-airs model-security scans evaluations <scanUuid>
+airs-cli model-security scans evaluations <scanUuid>
 ```
 
 ## View Violations
 
 ```bash
-airs model-security scans violations <scanUuid>
+airs-cli model-security scans violations <scanUuid>
 ```
 
 ```
@@ -67,7 +67,7 @@ airs model-security scans violations <scanUuid>
 ## View Scanned Files
 
 ```bash
-airs model-security scans files <scanUuid>
+airs-cli model-security scans files <scanUuid>
 ```
 
 ---
@@ -76,25 +76,25 @@ airs model-security scans files <scanUuid>
 
 1. Find blocked scans:
    ```bash
-   airs model-security scans list --eval-outcome BLOCKED
+   airs-cli model-security scans list --eval-outcome BLOCKED
    ```
 
 2. View evaluations to find which rule failed:
    ```bash
-   airs model-security scans evaluations <scanUuid>
+   airs-cli model-security scans evaluations <scanUuid>
    ```
 
 3. View specific violations:
    ```bash
-   airs model-security scans violations <scanUuid>
+   airs-cli model-security scans violations <scanUuid>
    ```
 
 4. Check the scanned files:
    ```bash
-   airs model-security scans files <scanUuid>
+   airs-cli model-security scans files <scanUuid>
    ```
 
 5. Look up remediation steps for the failed rule:
    ```bash
-   airs model-security rules get <ruleUuid>
+   airs-cli model-security rules get <ruleUuid>
    ```

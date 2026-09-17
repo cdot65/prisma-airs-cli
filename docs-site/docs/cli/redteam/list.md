@@ -9,7 +9,7 @@ sidebar_label: list
 List recent scans
 
 ```text
-airs redteam list [options]
+airs-cli redteam list [options]
 ```
 
 ### Options
@@ -30,7 +30,7 @@ airs redteam list [options]
 *List recent scans*
 
 ```bash
-airs redteam list
+airs-cli redteam list
 ```
 
 ```text

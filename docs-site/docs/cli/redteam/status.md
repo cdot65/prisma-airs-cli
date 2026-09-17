@@ -9,7 +9,7 @@ sidebar_label: status
 Check scan status
 
 ```text
-airs redteam status [options] <jobId>
+airs-cli redteam status [options] <jobId>
 ```
 
 ### Arguments
@@ -21,7 +21,7 @@ airs redteam status [options] <jobId>
 *Check progress / final score for any scan (STATIC / DYNAMIC / CUSTOM)*
 
 ```bash
-airs redteam status 00000000-0000-0000-0000-000000000001
+airs-cli redteam status 00000000-0000-0000-0000-000000000001
 ```
 
 ```text

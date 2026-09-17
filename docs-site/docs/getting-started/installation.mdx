@@ -33,7 +33,7 @@ pnpm add -g @cdot65/prisma-airs-cli
 ```
 
 :::warning[pnpm global bin PATH]
-pnpm's global bin directory is often not in your `PATH` by default. If `airs` is not found after install, run:
+pnpm's global bin directory is often not in your `PATH` by default. If `airs-cli` is not found after install, run:
 ```bash
 pnpm setup
 ```
@@ -46,11 +46,11 @@ Then restart your terminal. This adds pnpm's global bin to your shell profile.
 Verify the installation:
 
 ```bash
-$ airs --version
+$ airs-cli --version
 4.1.0
 
-$ airs --help
-Usage: airs [options] [command]
+$ airs-cli --help
+Usage: airs-cli [options] [command]
 
 CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red
 teaming, model security scanning, profile audits
@@ -87,10 +87,10 @@ management APIs and, for scanning, a runtime API key. Credentials live only in a
 that the CLI manages; environment variables are not read.
 
 ```bash
-airs tenant create dev          # prompts for TSG ID, client ID, and a hidden client secret
-airs tenant switch dev
-airs tenant set dev airsApiKey  # hidden prompt for the scan API key (optional)
-airs doctor
+airs-cli tenant create dev          # prompts for TSG ID, client ID, and a hidden client secret
+airs-cli tenant switch dev
+airs-cli tenant set dev airsApiKey  # hidden prompt for the scan API key (optional)
+airs-cli doctor
 ```
 
 The same commands work in PowerShell. For automation, pass `--tsg-id`, `--client-id`, and
@@ -129,9 +129,9 @@ The state volume persists the registry and tenant files; the `~/.prisma-airs` mo
 :::tip[Shell alias]
 Add to your `.bashrc` / `.zshrc` for convenience:
 ```bash
-alias airs='docker run --rm -it -v airs-state:/root/.local/state/prisma-airs -v ~/.prisma-airs:/root/.prisma-airs ghcr.io/cdot65/prisma-airs-cli'
+alias airs-cli='docker run --rm -it -v airs-state:/root/.local/state/prisma-airs -v ~/.prisma-airs:/root/.prisma-airs ghcr.io/cdot65/prisma-airs-cli'
 ```
-Then use `airs runtime scan`, `airs runtime topics list`, etc.
+Then use `airs-cli runtime scan`, `airs-cli runtime topics list`, etc.
 :::
 
 ---
@@ -181,16 +181,16 @@ node dist/cli/index.js runtime scan --help
 </TabItem>
 </Tabs>
 
-### Register the `airs` command locally
+### Register the `airs-cli` command locally
 
-To make the `airs` command available in your terminal from a source checkout:
+To make the `airs-cli` command available in your terminal from a source checkout:
 
 ```bash
 pnpm run build
 pnpm link --global
 ```
 
-Then `airs --version`, `airs runtime scan`, etc. work anywhere. Changes require re-running `pnpm run build` to take effect.
+Then `airs-cli --version`, `airs-cli runtime scan`, etc. work anywhere. Changes require re-running `pnpm run build` to take effect.
 
 ### Verify setup
 

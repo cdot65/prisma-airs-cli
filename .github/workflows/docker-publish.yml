@@ -130,6 +130,18 @@ jobs:
             const { execFileSync } = require('node:child_process');
             const { pathToFileURL } = require('node:url');
             const { promotionAliases } = await import(pathToFileURL(`${process.env.GITHUB_WORKSPACE}/.github/scripts/container-release.mjs`).href);
+            // Exact-version images may be tested before a coordinated release.
+            // Only a published, non-prerelease GitHub release may own aliases.
+            let release;
+            try {
+              release = (await github.rest.repos.getReleaseByTag({ ...context.repo, tag: `v${process.env.RELEASE_VERSION}` })).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            if (!release || release.draft || release.prerelease) {
+              core.info('Release is staged; retaining existing container aliases.');
+              return;
+            }
             const tags = await github.paginate(github.rest.git.listMatchingRefs, { ...context.repo, ref: 'tags/v', per_page: 100 });
             const aliases = promotionAliases(process.env.RELEASE_VERSION, tags.map(tag => tag.ref));
             if (!/^sha256:[a-f0-9]{64}$/.test(process.env.IMAGE_DIGEST)) throw new Error('Missing or invalid published image digest.');

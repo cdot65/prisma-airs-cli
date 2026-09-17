@@ -62,9 +62,9 @@ export function registerEvalCommand(parent: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime topics eval --profile prod-guard --prompts eval.csv --topic "Financial Advice"',
-        'airs runtime topics eval --profile prod-guard --prompts eval.csv --output json',
-        'airs runtime topics eval --profile prod-guard --prompts eval.csv --rate 5 --concurrency 3',
+        'airs-cli runtime topics eval --profile prod-guard --prompts eval.csv --topic "Financial Advice"',
+        'airs-cli runtime topics eval --profile prod-guard --prompts eval.csv --output json',
+        'airs-cli runtime topics eval --profile prod-guard --prompts eval.csv --rate 5 --concurrency 3',
       ),
     );
   registerDeprecatedAlias(cmd, {

@@ -1,3 +1,4 @@
+import { commandHint } from '../cli/invocation.js';
 import { type ConfigContext, resolveConfigContext } from './loader.js';
 import type { Config } from './schema.js';
 
@@ -39,10 +40,14 @@ export function settingRemedy(
 ): string {
   const list = keys.join(', ');
   if (context?.selection === 'tenant') {
-    return `Run 'airs tenant set ${context.tenant.name} <key>' for ${list} (secrets prompt hidden, or use --stdin)`;
+    return commandHint(
+      `Run 'airs-cli tenant set ${context.tenant.name} <key>' for ${list} (secrets prompt hidden, or use --stdin)`,
+    );
   }
   if (context?.selection === 'explicit') return `Add ${list} to ${context.path}`;
-  return `Run 'airs tenant create <name>' (prompts for the OAuth credentials), then 'airs tenant switch <name>'`;
+  return commandHint(
+    `Run 'airs-cli tenant create <name>' (prompts for the OAuth credentials), then 'airs-cli tenant switch <name>'`,
+  );
 }
 
 /** Fail before any SDK client is built so the SDK never resolves credentials on its own. */

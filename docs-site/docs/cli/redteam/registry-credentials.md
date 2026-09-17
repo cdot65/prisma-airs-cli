@@ -9,7 +9,7 @@ sidebar_label: registry-credentials
 Get or create registry credentials
 
 ```text
-airs redteam registry-credentials [options]
+airs-cli redteam registry-credentials [options]
 ```
 
 ### Examples
@@ -17,7 +17,7 @@ airs redteam registry-credentials [options]
 *Fetch container-registry credentials for pulling red-team scanner images*
 
 ```bash
-airs redteam registry-credentials
+airs-cli redteam registry-credentials
 ```
 
 ```text

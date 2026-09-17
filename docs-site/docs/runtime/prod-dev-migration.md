@@ -5,7 +5,7 @@ title: Prod to dev — preserve custom DLP
 # Prod to dev — preserve custom DLP
 
 Create a small Runtime configuration in `prod`, back it up, and restore it into `dev`
-using only `airs` commands. No capture helpers, shell variables, or scripts are needed.
+using only `airs-cli` commands. No capture helpers, shell variables, or scripts are needed.
 The example preserves custom DLP; see the separate
 [Basic-fallback migration](profile-migration-workflow.md) if you intentionally want
 to replace unavailable custom DLP with Basic protection.
@@ -27,17 +27,17 @@ configuration, are created privately, and are not overwritten. No Bash-specific 
 is required. Avoid `--debug` when handling credentials or private configuration.
 
 ```bash
-airs --version
-airs runtime profiles restore --help
+airs-cli --version
+airs-cli runtime profiles restore --help
 ```
 
 The restore help must include `--on-conflict` with `verify` and `--on-missing-dlp`.
 Credentials come only from the selected tenant file; `PANW_*` variables,
-`PRISMA_AIRS_CONFIG_PATH`, and `.env` files are ignored (`airs doctor` lists any still set).
+`PRISMA_AIRS_CONFIG_PATH`, and `.env` files are ignored (`airs-cli doctor` lists any still set).
 Do not export secrets to work around an authentication failure. See [tenant authentication recovery](dlp/tenant-auth-recovery.md).
 
 Throughout this guide, replace quoted placeholders such as `"<DEV_TSG>"` with the
-actual value printed by an earlier `airs` command. They are **not environment variables**.
+actual value printed by an earlier `airs-cli` command. They are **not environment variables**.
 
 ## 1. Register and inspect dev and prod
 
@@ -45,11 +45,11 @@ Enter each tenant's TSG ID, OAuth client ID, and hidden client secret when promp
 If already registered, skip creation and inspect the existing entries instead.
 
 ```bash
-airs tenant create dev
-airs tenant create prod
-airs tenant list
-airs tenant read dev
-airs tenant read prod
+airs-cli tenant create dev
+airs-cli tenant create prod
+airs-cli tenant list
+airs-cli tenant read dev
+airs-cli tenant read prod
 ```
 
 Check that `dev` and `prod` have different TSG IDs and the intended credentials/config
@@ -58,14 +58,14 @@ paths. Record the dev TSG ID for `--expect-tsg` later. Credential reads are reda
 Check both inventories before creating anything:
 
 ```bash
-airs tenant switch dev
-airs tenant list
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs tenant switch prod
-airs tenant list
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
+airs-cli tenant switch dev
+airs-cli tenant list
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli tenant switch prod
+airs-cli tenant list
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
 ```
 
 Each profile/topic inventory should be `[]`. Stop if it is not empty; this guide does
@@ -77,7 +77,7 @@ each tenant. Leave `prod` selected for the next three sections.
 Create a synthetic regex pattern. `AIRS-E2E-123456` is an example matching string.
 
 ```bash
-airs runtime dlp patterns create \
+airs-cli runtime dlp patterns create \
   --name dlp-test-pattern --type custom --technique regex \
   --description 'Synthetic Runtime migration acceptance pattern' \
   --confidence-levels high --regex 'AIRS-E2E-[0-9]{6}' --output json
@@ -86,16 +86,16 @@ airs runtime dlp patterns create \
 Copy the returned pattern `id` into the next command:
 
 ```bash
-airs runtime dlp patterns get "<PROD_PATTERN_ID>" --output json
+airs-cli runtime dlp patterns get "<PROD_PATTERN_ID>" --output json
 ```
 
 Verify the name, regex, and detection technique. Substitute that same pattern ID in the
-inline request below. This is JSON passed directly to `airs`, not a shell script or a
+inline request below. This is JSON passed directly to `airs-cli`, not a shell script or a
 request file. The explicit `rule_item` tree avoids the legacy `--pattern-id` shorthand,
 which emits a different leaf shape.
 
 ```bash
-airs runtime dlp profiles create --body '{
+airs-cli runtime dlp profiles create --body '{
   "name": "dlp-test",
   "profile_type": "advanced",
   "description": "Synthetic Runtime migration acceptance DLP profile",
@@ -122,7 +122,7 @@ airs runtime dlp profiles create --body '{
 Copy the DLP profile `id` from the response and read it back:
 
 ```bash
-airs runtime dlp profiles get "<PROD_DLP_PROFILE_ID>" --output json
+airs-cli runtime dlp profiles get "<PROD_DLP_PROFILE_ID>" --output json
 ```
 
 Confirm `dlp-test` is advanced and active. Its `detectionRules` must contain a `ruleItem`
@@ -133,19 +133,19 @@ response as a create body.
 ## 3. Create two custom topics in prod
 
 ```bash
-airs runtime topics create \
+airs-cli runtime topics create \
   --name migration-financial-advice \
   --description 'Requests for personalized financial investment advice' \
   --examples 'Which stocks should I buy with my retirement savings?' \
              'Tell me how to invest my personal savings for maximum profit.'
 
-airs runtime topics create \
+airs-cli runtime topics create \
   --name migration-legal-advice \
   --description 'Requests for personalized legal advice or legal representation' \
   --examples 'Should I sue my landlord over my rental dispute?' \
              'Tell me the legal strategy I should use in my court case.'
 
-airs runtime topics list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
 ```
 
 Confirm both topic names, descriptions, and examples. Topic create/apply acknowledgements
@@ -159,25 +159,25 @@ disabled. The third command explicitly configures latency so the CLI builds a po
 with DLP disabled rather than leaving the entire policy to server defaults.
 
 ```bash
-airs runtime profiles create --name migration-custom-dlp \
+airs-cli runtime profiles create --name migration-custom-dlp \
   --dlp-action block --dlp-profiles dlp-test
 
-airs runtime profiles create --name migration-basic-dlp \
+airs-cli runtime profiles create --name migration-basic-dlp \
   --dlp-action block --dlp-profiles 'sensitive content'
 
-airs runtime profiles create --name migration-topics-only \
+airs-cli runtime profiles create --name migration-topics-only \
   --inline-timeout-action block --max-inline-latency 5
 
-airs runtime topics apply \
+airs-cli runtime topics apply \
   --profile migration-topics-only --name migration-financial-advice --intent block
 
-airs runtime topics apply \
+airs-cli runtime topics apply \
   --profile migration-topics-only --name migration-legal-advice --intent block
 
-airs runtime profiles get migration-custom-dlp --output json
-airs runtime profiles get migration-basic-dlp --output json
-airs runtime profiles get migration-topics-only --output json
-airs runtime profiles list --all --max 0 --output json
+airs-cli runtime profiles get migration-custom-dlp --output json
+airs-cli runtime profiles get migration-basic-dlp --output json
+airs-cli runtime profiles get migration-topics-only --output json
+airs-cli runtime profiles list --all --max 0 --output json
 ```
 
 Inspect the stored policies before backing up. The name-based DLP flags select members
@@ -200,8 +200,8 @@ the profile flags do not reproduce every unrelated field from the historical fix
 Confirm `prod` is still selected, then write a new backup in the current directory:
 
 ```bash
-airs tenant list
-airs runtime profiles backup --all --output-file ./prod-runtime-backup.json --output json
+airs-cli tenant list
+airs-cli runtime profiles backup --all --output-file ./prod-runtime-backup.json --output json
 ```
 
 Captured backup response, with the path normalized and tenant ID redacted:
@@ -227,19 +227,19 @@ applications, or telemetry. Prepare the custom DLP dependency separately in dev 
 ## 6. Switch to dev and prepare its DLP dependency
 
 ```bash
-airs tenant switch dev
-airs tenant list
-airs runtime dlp patterns create \
+airs-cli tenant switch dev
+airs-cli tenant list
+airs-cli runtime dlp patterns create \
   --name dlp-test-pattern --type custom --technique regex \
   --description 'Synthetic Runtime migration acceptance pattern' \
   --confidence-levels high --regex 'AIRS-E2E-[0-9]{6}' --output json
-airs runtime dlp patterns get "<DEV_PATTERN_ID>" --output json
+airs-cli runtime dlp patterns get "<DEV_PATTERN_ID>" --output json
 ```
 
 Copy the **dev** pattern ID from this create response. Do not use the prod pattern ID.
 
 ```bash
-airs runtime dlp profiles create --body '{
+airs-cli runtime dlp profiles create --body '{
   "name": "dlp-test",
   "profile_type": "advanced",
   "description": "Synthetic Runtime migration acceptance DLP profile",
@@ -261,7 +261,7 @@ airs runtime dlp profiles create --body '{
     }
   }]
 }' --output json
-airs runtime dlp profiles get "<DEV_DLP_PROFILE_ID>" --output json
+airs-cli runtime dlp profiles get "<DEV_DLP_PROFILE_ID>" --output json
 ```
 
 Compare the dev read-back with prod: same synthetic regex and matching rules, advanced
@@ -274,14 +274,14 @@ The CLI currently has no supported Enterprise DLP profile DELETE operation.
 
 ## 7. Preview and restore into dev
 
-Replace `"<DEV_TSG>"` with dev's actual numeric TSG ID from `airs tenant list`.
+Replace `"<DEV_TSG>"` with dev's actual numeric TSG ID from `airs-cli tenant list`.
 Check that the destination still has no Runtime profiles or topics:
 
 ```bash
-airs tenant list
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs runtime profiles restore ./prod-runtime-backup.json \
+airs-cli tenant list
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli runtime profiles restore ./prod-runtime-backup.json \
   --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error \
   --expect-tsg "<DEV_TSG>" --dry-run --output json
 ```
@@ -319,9 +319,9 @@ Confirm the dry-run left the inventories empty, then execute and review the conf
 prompt. `--force` is unnecessary for this interactive workflow.
 
 ```bash
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs runtime profiles restore ./prod-runtime-backup.json \
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli runtime profiles restore ./prod-runtime-backup.json \
   --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error \
   --expect-tsg "<DEV_TSG>" --output json
 ```
@@ -334,13 +334,13 @@ recreating resources or choosing `skip`/`update`.
 ## 8. Validate the migrated configuration
 
 ```bash
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs runtime profiles get migration-custom-dlp --output json
-airs runtime profiles get migration-basic-dlp --output json
-airs runtime profiles get migration-topics-only --output json
-airs runtime dlp profiles get "<DEV_DLP_PROFILE_ID>" --output json
-airs runtime dlp patterns get "<DEV_PATTERN_ID>" --output json
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli runtime profiles get migration-custom-dlp --output json
+airs-cli runtime profiles get migration-basic-dlp --output json
+airs-cli runtime profiles get migration-topics-only --output json
+airs-cli runtime dlp profiles get "<DEV_DLP_PROFILE_ID>" --output json
+airs-cli runtime dlp patterns get "<DEV_PATTERN_ID>" --output json
 ```
 
 Check the following before declaring the migration successful:
@@ -357,7 +357,7 @@ Check the following before declaring the migration successful:
 Ask restore to compare the existing profiles with the backup without changing resources:
 
 ```bash
-airs runtime profiles restore ./prod-runtime-backup.json \
+airs-cli runtime profiles restore ./prod-runtime-backup.json \
   --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
   --expect-tsg "<DEV_TSG>" --dry-run --output json
 ```
@@ -369,11 +369,11 @@ missing, investigate rather than assuming the earlier restore completed.
 Once that preview is clean, run the same verification without `--dry-run`:
 
 ```bash
-airs runtime profiles restore ./prod-runtime-backup.json \
+airs-cli runtime profiles restore ./prod-runtime-backup.json \
   --dlp-map 'dlp-test=dlp-test' --on-missing-dlp error --on-conflict verify \
   --expect-tsg "<DEV_TSG>" --output json
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
 ```
 
 Expect `complete: true`, three `verified` profiles and two `reused` topics. IDs/revisions
@@ -383,18 +383,18 @@ can create missing resources, which is why the preceding preview matters.
 Optionally back up dev's restored state, inspect prod again, and leave dev selected:
 
 ```bash
-airs runtime profiles backup --all --output-file ./dev-runtime-backup.json --output json
-airs tenant switch prod
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs tenant switch dev
-airs tenant list
+airs-cli runtime profiles backup --all --output-file ./dev-runtime-backup.json --output json
+airs-cli tenant switch prod
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli tenant switch dev
+airs-cli tenant list
 ```
 
 Compare prod's IDs, revisions, and configuration with the pre-migration state; migration
 should not change the source. Keep both backups private. If your terminal closes, tenant
 registrations and backup files persist: return to the backup directory, inspect
-`airs tenant list`, select the intended tenant, and resume from the last verified step.
+`airs-cli tenant list`, select the intended tenant, and resume from the last verified step.
 
 ## Validated results — 2026-09-09
 

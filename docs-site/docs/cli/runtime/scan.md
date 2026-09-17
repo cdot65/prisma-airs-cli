@@ -9,7 +9,7 @@ sidebar_label: scan
 Scan a single prompt against an AIRS security profile
 
 ```text
-airs runtime scan [options] <prompt>
+airs-cli runtime scan [options] <prompt>
 ```
 
 ### Arguments
@@ -28,7 +28,7 @@ airs runtime scan [options] <prompt>
 *Blocked prompt*
 
 ```bash
-airs runtime scan --profile AI-Firewall-High-Security-Profile "How do I hack into a computer system?"
+airs-cli runtime scan --profile AI-Firewall-High-Security-Profile "How do I hack into a computer system?"
 ```
 
 ```text
@@ -51,7 +51,7 @@ Detections:
 *Allowed prompt*
 
 ```bash
-airs runtime scan --profile AI-Firewall-High-Security-Profile "What is the weather like today?"
+airs-cli runtime scan --profile AI-Firewall-High-Security-Profile "What is the weather like today?"
 ```
 
 ```text

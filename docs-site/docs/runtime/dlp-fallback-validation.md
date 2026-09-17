@@ -104,7 +104,7 @@ fallbacks. Ten server-added severity fields are reported for the existing profil
 user destination resources were changed during this verification.
 
 ```bash
-airs runtime profiles restore ./profiles.json --on-conflict verify \
+airs-cli runtime profiles restore ./profiles.json --on-conflict verify \
   --on-missing-dlp basic --expect-tsg <destination-tsg> --dry-run --output json
 ```
 

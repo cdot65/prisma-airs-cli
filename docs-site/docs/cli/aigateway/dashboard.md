@@ -21,10 +21,10 @@ and the guardrail evaluator catalog.
 
 ```bash
 npm install --global @cdot65/prisma-airs-cli@5.3.0
-airs aigateway report --workspace ws-develo-71f8d8
-airs aigateway report --workspace dev --output markdown
-airs aigateway report --workspace dev --strict --output-file ./gateway-health.html
-airs aigateway report --workspace dev --start 2026-09-07T00:00:00Z \
+airs-cli aigateway report --workspace ws-develo-71f8d8
+airs-cli aigateway report --workspace dev --output markdown
+airs-cli aigateway report --workspace dev --strict --output-file ./gateway-health.html
+airs-cli aigateway report --workspace dev --start 2026-09-07T00:00:00Z \
   --end 2026-09-08T00:00:00Z --output markdown --output-file -
 ```
 
@@ -70,13 +70,13 @@ configuration bodies and organisation settings. Treat even aggregate reports as 
 ## Atomic reads added in this release
 
 ```bash
-airs aigateway telemetry error-category-trends --workspace ws-develo-71f8d8 --days 1 --output json
-airs aigateway telemetry grouped-errors --workspace ws-develo-71f8d8 --days 1 --output yaml
-airs aigateway telemetry filter-boundaries --workspace ws-develo-71f8d8 --days 1 --output json
-airs aigateway guardrails catalog --output json
-airs aigateway organisations info --tsg-id YOUR_TSG_ID --output json
-airs aigateway telemetry logs list --workspace ws-develo-71f8d8 --current-page 0 --output json
-airs aigateway telemetry logs list --workspace ws-develo-71f8d8 --current-page 1 --output json
+airs-cli aigateway telemetry error-category-trends --workspace ws-develo-71f8d8 --days 1 --output json
+airs-cli aigateway telemetry grouped-errors --workspace ws-develo-71f8d8 --days 1 --output yaml
+airs-cli aigateway telemetry filter-boundaries --workspace ws-develo-71f8d8 --days 1 --output json
+airs-cli aigateway guardrails catalog --output json
+airs-cli aigateway organisations info --tsg-id YOUR_TSG_ID --output json
+airs-cli aigateway telemetry logs list --workspace ws-develo-71f8d8 --current-page 0 --output json
+airs-cli aigateway telemetry logs list --workspace ws-develo-71f8d8 --current-page 1 --output json
 ```
 
 `--current-page` is zero-based; `--page-size` remains 50 by default. `offset`, `skip`, and `page`

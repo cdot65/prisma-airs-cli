@@ -9,7 +9,7 @@ sidebar_label: instances
 Create an instance
 
 ```text
-airs redteam instances create [options]
+airs-cli redteam instances create [options]
 ```
 
 #### Options
@@ -34,7 +34,7 @@ No curated input/output example for this command yet.
 Get instance details
 
 ```text
-airs redteam instances get [options] <tenantId>
+airs-cli redteam instances get [options] <tenantId>
 ```
 
 #### Arguments
@@ -54,7 +54,7 @@ No curated input/output example for this command yet.
 Update an instance
 
 ```text
-airs redteam instances update [options] <tenantId>
+airs-cli redteam instances update [options] <tenantId>
 ```
 
 #### Arguments
@@ -82,7 +82,7 @@ No curated input/output example for this command yet.
 Delete an instance
 
 ```text
-airs redteam instances delete [options] <tenantId>
+airs-cli redteam instances delete [options] <tenantId>
 ```
 
 #### Arguments

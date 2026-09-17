@@ -8,7 +8,7 @@ Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files a
 
 :::
 
-`airs runtime dlp generate` generates **DLP test corpora** — clean carrier files plus "dirty"
+`airs-cli runtime dlp generate` generates **DLP test corpora** — clean carrier files plus "dirty"
 copies with **synthetic** sensitive data embedded via multiple hiding techniques. Use it to
 measure how well a content scanner detects sensitive data across file formats and channels.
 
@@ -21,7 +21,7 @@ real PII is ever produced.
 ## Usage
 
 ```bash
-airs runtime dlp generate [options]
+airs-cli runtime dlp generate [options]
 ```
 
 | Option | Default | Meaning |
@@ -37,7 +37,7 @@ airs runtime dlp generate [options]
 
 :::note[Optional dependencies]
 File generation relies on `sharp`, `pdf-lib`, `docx`, and `piexifjs`, which ship as
-**optionalDependencies** — every other `airs` command works without them. If your install
+**optionalDependencies** — every other `airs-cli` command works without them. If your install
 skipped optional deps (`--no-optional`), this command exits with an install hint:
 
 ```bash
@@ -79,11 +79,11 @@ background** — present and extractable, but camouflaged from the eye.
 
 ```bash
 # Full corpus into ./temp
-airs runtime dlp generate
+airs-cli runtime dlp generate
 
 # Images only, 3 each, reproducible
-airs runtime dlp generate --types png,jpeg,svg --count 3 --seed 42
+airs-cli runtime dlp generate --types png,jpeg,svg --count 3 --seed 42
 
 # Just PNG LSB steganography, JSON summary
-airs runtime dlp generate --types png --techniques stego-lsb --output json
+airs-cli runtime dlp generate --types png --techniques stego-lsb --output json
 ```

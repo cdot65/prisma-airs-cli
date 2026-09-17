@@ -14,7 +14,7 @@ vi.mock('@cdot65/prisma-airs-sdk', async (original) => ({
 import { buildProgram } from '../../../src/cli/program.js';
 import { setQuiet } from '../../../src/cli/renderer/ui.js';
 
-describe('airs aigateway report command', () => {
+describe('airs-cli aigateway report command', () => {
   let directory: string;
   let tenant: Awaited<ReturnType<typeof useTestTenant>>;
   let client: ReturnType<typeof gatewayReportFixtures>;
@@ -38,7 +38,7 @@ describe('airs aigateway report command', () => {
   const run = (args: string[] = []) =>
     buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'aigateway',
       'report',
@@ -59,7 +59,7 @@ describe('airs aigateway report command', () => {
     const destination = join(directory, 'alias.html');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'aigateway',
       'dashboard',
@@ -78,7 +78,7 @@ describe('airs aigateway report command', () => {
       throw new Error('exit');
     });
     await expect(
-      buildProgram().parseAsync(['node', 'airs', 'aigateway', name, '--workspace', 'dev']),
+      buildProgram().parseAsync(['node', 'airs-cli', 'aigateway', name, '--workspace', 'dev']),
     ).rejects.toThrow('exit');
     expect(exit).toHaveBeenCalledWith(2);
     expect(factory.AIGatewayClient).not.toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('airs aigateway report command', () => {
     const first = join(directory, 'first.md');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--output',
       'markdown',
       'aigateway',
@@ -102,7 +102,7 @@ describe('airs aigateway report command', () => {
     const second = join(directory, 'second.html');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--output',
       'markdown',
       'aigateway',

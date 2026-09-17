@@ -6,8 +6,8 @@ sidebar_label: Backup & restore
 # Back up and restore DLP config
 
 Copy custom DLP dictionaries, data patterns, and data profiles from one tenant to
-another. `airs runtime dlp backup` writes your custom config to a file, and
-`airs runtime dlp restore` recreates it in whichever tenant you have selected.
+another. `airs-cli runtime dlp backup` writes your custom config to a file, and
+`airs-cli runtime dlp restore` recreates it in whichever tenant you have selected.
 
 Predefined (PANW-shipped) resources are never copied — every tenant already has them, so
 restore just re-links your profiles to the destination's own copies.
@@ -17,8 +17,8 @@ restore just re-links your profiles to the destination's own copies.
 Select the source tenant and write its custom config to a file:
 
 ```bash
-airs tenant switch prod
-airs runtime dlp backup --output-file ./dlp-backup.json
+airs-cli tenant switch prod
+airs-cli runtime dlp backup --output-file ./dlp-backup.json
 ```
 
 That captures every custom dictionary (with its keywords), pattern, and profile, and
@@ -29,7 +29,7 @@ Back up a single kind with `--resources` (comma-separated: `dictionaries`, `patt
 `profiles`):
 
 ```bash
-airs runtime dlp backup --resources patterns --output-file ./patterns.json
+airs-cli runtime dlp backup --resources patterns --output-file ./patterns.json
 ```
 
 ## Restore
@@ -38,8 +38,8 @@ Switch to the destination tenant and preview first — a dry run reads the desti
 writes nothing:
 
 ```bash
-airs tenant switch dev
-airs runtime dlp restore ./dlp-backup.json --dry-run
+airs-cli tenant switch dev
+airs-cli runtime dlp restore ./dlp-backup.json --dry-run
 ```
 
 The plan shows what will happen to each resource:
@@ -56,7 +56,7 @@ The plan shows what will happen to each resource:
 When the plan looks right, run it for real:
 
 ```bash
-airs runtime dlp restore ./dlp-backup.json
+airs-cli runtime dlp restore ./dlp-backup.json
 ```
 
 You confirm the source and destination TSGs, then the restore writes in order —
@@ -65,7 +65,7 @@ destination's own ids as it goes, and reading back every resource it creates to 
 it landed. To run unattended, assert the destination and skip the prompt:
 
 ```bash
-airs runtime dlp restore ./dlp-backup.json --expect-tsg <destination-tsg> --force
+airs-cli runtime dlp restore ./dlp-backup.json --expect-tsg <destination-tsg> --force
 ```
 
 ## Re-running is safe
@@ -84,19 +84,19 @@ pattern.
 
 ```bash
 # 1. Register both tenants once.
-airs tenant create prod --config /secure/prod.json
-airs tenant create dev  --config /secure/dev.json
+airs-cli tenant create prod --config /secure/prod.json
+airs-cli tenant create dev  --config /secure/dev.json
 
 # 2. Back up the source.
-airs tenant switch prod
-airs runtime dlp backup --output-file ./dlp-backup.json
+airs-cli tenant switch prod
+airs-cli runtime dlp backup --output-file ./dlp-backup.json
 
 # 3. Preview against the destination.
-airs tenant switch dev
-airs runtime dlp restore ./dlp-backup.json --dry-run --output json
+airs-cli tenant switch dev
+airs-cli runtime dlp restore ./dlp-backup.json --dry-run --output json
 
 # 4. Restore.
-airs runtime dlp restore ./dlp-backup.json --expect-tsg 2020202020 --force
+airs-cli runtime dlp restore ./dlp-backup.json --expect-tsg 2020202020 --force
 ```
 
 The dry run in step 3 prints the plan as JSON:
@@ -122,7 +122,7 @@ own copy, and the profile is created with its references pointed at the new dev 
 
 ## Command reference
 
-### `airs runtime dlp backup`
+### `airs-cli runtime dlp backup`
 
 | Flag                     | Purpose                                                        |
 | ------------------------ | ------------------------------------------------------------- |
@@ -131,7 +131,7 @@ own copy, and the profile is created with its references pointed at the new dev 
 | `--file-format <fmt>`    | `json` (default) or `yaml`.                                    |
 | `--skip-unsupported`     | Exclude profiles that can't be backed up, instead of failing. |
 
-### `airs runtime dlp restore`
+### `airs-cli runtime dlp restore`
 
 | Flag                          | Purpose                                                       |
 | ----------------------------- | ------------------------------------------------------------ |
@@ -178,7 +178,7 @@ List the destination catalog to find the right one (predefined records are hidde
 default):
 
 ```bash
-airs runtime dlp patterns list --all --include-predefined --output json
+airs-cli runtime dlp patterns list --all --include-predefined --output json
 ```
 
 Then bind it: `--pattern-map "Internet - ipv4=Internet - IPv4"`. The CLI never guesses a

@@ -9,7 +9,7 @@ sidebar_label: resume-poll
 Safely continue a bulk scan from item-level state
 
 ```text
-airs runtime resume-poll [options] <stateFile>
+airs-cli runtime resume-poll [options] <stateFile>
 ```
 
 ### Arguments
@@ -27,7 +27,7 @@ airs runtime resume-poll [options] <stateFile>
 *Resume polling from a state file written by a prior `runtime bulk-scan` invocation. Output is text-only — there is no JSON/YAML mode. The CSV output path is controlled by `--output-file`.*
 
 ```bash
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json --output-file resume-out.csv
+airs-cli runtime resume-poll ~/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json --output-file resume-out.csv
 ```
 
 ```text

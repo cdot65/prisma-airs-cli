@@ -9,7 +9,7 @@ src/
 ├── cli/              Commands, interactive prompts, terminal rendering
 ├── config/           Zod-validated config schema + cascade loader
 ├── core/             Prompt loader, efficacy metrics, AIRS constraints
-├── airs/             Scanner, Runtime, Management, Red Team, Prompt Sets, Model Security
+├── airs-cli/             Scanner, Runtime, Management, Red Team, Prompt Sets, Model Security
 ├── backup/           Backup/restore envelope + file I/O
 └── index.ts          Library re-exports
 ```
@@ -75,7 +75,7 @@ graph TD
 | **`cli/`** | Commander CLI with 3 top-level command groups (`runtime`, `redteam`, `model-security`), Inquirer prompts, and Chalk terminal output |
 | **`config/`** | Zod schema with coercion and defaults; cascade loader merges CLI flags, env vars, config file, and defaults |
 | **`core/`** | CSV prompt loader, metric computation (TPR/TNR/F1), and AIRS constraint validation |
-| **`airs/`** | Scanner (sync scan + batched concurrency), Runtime (sync + async bulk scan with polling), Management (topic CRUD, profile CRUD, API keys, customer apps, deployment/DLP profiles, scan logs), Red Team (scan CRUD/polling/reports), Prompt Sets (custom prompt set management), Model Security (groups/rules/scans) |
+| **`airs-cli/`** | Scanner (sync scan + batched concurrency), Runtime (sync + async bulk scan with polling), Management (topic CRUD, profile CRUD, API keys, customer apps, deployment/DLP profiles, scan logs), Red Team (scan CRUD/polling/reports), Prompt Sets (custom prompt set management), Model Security (groups/rules/scans) |
 | **`backup/`** | Backup/restore envelope, file I/O, and filename sanitization |
 
 ## Tech Stack

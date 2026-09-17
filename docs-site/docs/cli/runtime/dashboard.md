@@ -18,12 +18,12 @@ only the supplied and live-tested windows are claimed verified.
 | `apps-list` | None | 30 days | `applications` identity pairs; no verified pagination |
 
 ```bash
-airs runtime dashboard applications --interval 1 --unit day --output json
-airs runtime dashboard apps-list --output yaml
-airs runtime dashboard application --app-id APPLICATION_ID --app-name 'Exact name'
-airs runtime dashboard application-violations --app-id APPLICATION_ID --app-name 'Exact name'
-airs runtime dashboard top-applications --output json
-airs runtime dashboard violations-trend --output json
+airs-cli runtime dashboard applications --interval 1 --unit day --output json
+airs-cli runtime dashboard apps-list --output yaml
+airs-cli runtime dashboard application --app-id APPLICATION_ID --app-name 'Exact name'
+airs-cli runtime dashboard application-violations --app-id APPLICATION_ID --app-name 'Exact name'
+airs-cli runtime dashboard top-applications --output json
+airs-cli runtime dashboard violations-trend --output json
 ```
 
 All support `--interval`, `--unit`, and `--output pretty|json|yaml`. Pretty output is readable

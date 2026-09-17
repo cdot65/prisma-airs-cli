@@ -8,32 +8,32 @@ Available in CLI **5.0.0**, backed by SDK **0.26.0**. The exported report model 
 
 :::danger Legacy scan-logs is broken and under refactor
 
-`ScanLogsClient` and `airs runtime scan-logs query` are not reliable historical retrieval paths.
+`ScanLogsClient` and `airs-cli runtime scan-logs query` are not reliable historical retrieval paths.
 Empty HTTP 200 responses are not evidence of zero activity. CLI 5.0.0 disables that command
 with an explicit exit-1 migration message. This report now uses the verified SCM
 [session workflow](../cli/runtime/sessions.md); it does not call the broken route.
 
 :::
 
-`airs runtime report` retrieves **AI Runtime Security** activity and configuration through the
+`airs-cli runtime report` retrieves **AI Runtime Security** activity and configuration through the
 SDK and produces a deliverable for a human review. It does not submit scans, change profiles,
 rotate keys, or modify your credential file.
 
 ```bash
 # Self-contained HTML in your current working directory (default)
-airs runtime report
+airs-cli runtime report
 
 # Markdown in your current working directory
-airs runtime report --output markdown
+airs-cli runtime report --output markdown
 
 # Choose a new destination and a title
-airs runtime report --title "Production daily review" --output-file ./production-daily.html
+airs-cli runtime report --title "Production daily review" --output-file ./production-daily.html
 
 # Explicitly stream the deliverable for a pipeline
-airs runtime report --output markdown --output-file - > daily.md
+airs-cli runtime report --output markdown --output-file - > daily.md
 
 # Generate the report, but return exit 1 if any evidence source is incomplete
-airs runtime report --strict --max-pages 20
+airs-cli runtime report --strict --max-pages 20
 ```
 
 Default files are named `airs-runtime-report-<UTC timestamp>-<unique suffix>.html` or `.md`.
@@ -141,7 +141,7 @@ command-local `--output` wins.
 ## Validated live output
 
 **Latest installed verification — CLI 5.0.1 / SDK 0.26.0, 2026-09-07 at 19:32 UTC:**
-the complete live suite passed **8/8** against the published package installed as `airs`.
+the complete live suite passed **8/8** against the published package installed as `airs-cli`.
 All seven sources were complete: **6 application buckets, 19 profiles, 17 registered
 applications, 822 sessions across 33 pages, 10 chart buckets, 3 ranked applications, and
 10 severity-trend buckets**. Application activity reported **822 sessions / 79 violating**.

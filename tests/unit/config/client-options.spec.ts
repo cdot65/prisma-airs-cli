@@ -173,7 +173,7 @@ describe('endpoints default to SDK constants and honor file-only base-URL overri
 });
 
 describe('runtimeInitOptions', () => {
-  it('maps airs* keys to SDK init options with an explicit endpoint', () => {
+  it('maps airs-cli* keys to SDK init options with an explicit endpoint', () => {
     const config = ConfigSchema.parse({
       airsApiKey: 'key-1',
       airsApiToken: 'tok-1',

@@ -9,7 +9,7 @@ sidebar_label: install
 Install the model-security-client Python package from AIRS PyPI
 
 ```text
-airs model-security install [options]
+airs-cli model-security install [options]
 ```
 
 ### Options
@@ -25,23 +25,23 @@ airs model-security install [options]
 *Install with all extras (auto-detects uv or pip)*
 
 ```bash
-airs model-security install
+airs-cli model-security install
 ```
 
 *Install with AWS support only*
 
 ```bash
-airs model-security install --extras aws
+airs-cli model-security install --extras aws
 ```
 
 *Preview commands without executing*
 
 ```bash
-airs model-security install --dry-run
+airs-cli model-security install --dry-run
 ```
 
 *Install into a custom directory*
 
 ```bash
-airs model-security install --dir my-scanner
+airs-cli model-security install --dir my-scanner
 ```

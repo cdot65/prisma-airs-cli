@@ -7,7 +7,7 @@ title: Security Groups
 ### List groups
 
 ```bash
-airs model-security groups list
+airs-cli model-security groups list
 ```
 
 ```
@@ -31,7 +31,7 @@ airs model-security groups list
 ### Filter groups by source type
 
 ```bash
-airs model-security groups list --source-types LOCAL,S3
+airs-cli model-security groups list --source-types LOCAL,S3
 ```
 
 ```
@@ -46,7 +46,7 @@ airs model-security groups list --source-types LOCAL,S3
 ### Get group details
 
 ```bash
-airs model-security groups get bb1d038a-0506-4b07-8f16-a723b8c1a1c7
+airs-cli model-security groups get bb1d038a-0506-4b07-8f16-a723b8c1a1c7
 ```
 
 ```
@@ -72,12 +72,12 @@ airs model-security groups get bb1d038a-0506-4b07-8f16-a723b8c1a1c7
 ```
 
 ```bash
-airs model-security groups create --config group-config.json
+airs-cli model-security groups create --config group-config.json
 ```
 
 ### Update and delete
 
 ```bash
-airs model-security groups update <uuid> --name "Renamed Group"
-airs model-security groups delete <uuid>
+airs-cli model-security groups update <uuid> --name "Renamed Group"
+airs-cli model-security groups delete <uuid>
 ```

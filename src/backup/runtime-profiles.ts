@@ -444,7 +444,7 @@ export async function planRuntimeProfilesRestore(
   for (const name of names) {
     if (!targetFor(name) && missingDlp === 'error')
       throw new Error(
-        `Cross-tenant DLP reference requires explicit --dlp-map "${name}=<destination-name>"; DLP resources are not cloned. Inspect destination resources with airs runtime dlp profiles list --all --output json, or explicitly accept --on-missing-dlp basic.`,
+        `Cross-tenant DLP reference requires explicit --dlp-map "${name}=<destination-name>"; DLP resources are not cloned. Inspect destination resources with airs-cli runtime dlp profiles list --all --output json, or explicitly accept --on-missing-dlp basic.`,
       );
     if (!targetFor(name)) unresolved.add(name);
   }

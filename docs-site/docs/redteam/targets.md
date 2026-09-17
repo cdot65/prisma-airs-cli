@@ -4,7 +4,7 @@ title: Managing Targets
 
 # Managing Targets
 
-Red team targets represent the AI applications you want to test. Full CRUD operations are available via `airs redteam targets`.
+Red team targets represent the AI applications you want to test. Full CRUD operations are available via `airs-cli redteam targets`.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Red team targets represent the AI applications you want to test. Full CRUD opera
 ## List Targets
 
 ```bash
-airs redteam targets list
+airs-cli redteam targets list
 ```
 
 Each target shows its UUID, name, status (`active`/`inactive`), and type (`APPLICATION`, `MODEL`, `AGENT`).
@@ -24,7 +24,7 @@ Each target shows its UUID, name, status (`active`/`inactive`), and type (`APPLI
 Instead of writing a JSON config from scratch, scaffold one from a provider template:
 
 ```bash
-airs redteam targets init <provider>
+airs-cli redteam targets init <provider>
 ```
 
 Available providers: `OPENAI`, `HUGGING_FACE`, `DATABRICKS`, `BEDROCK`, `REST`, `STREAMING`,
@@ -34,10 +34,10 @@ This fetches the provider's template from AIRS and writes a ready-to-edit JSON f
 
 ```bash
 # Scaffold an OpenAI target config
-airs redteam targets init openai
+airs-cli redteam targets init openai
 
 # Custom output path
-airs redteam targets init bedrock --output-file my-bedrock-target.json
+airs-cli redteam targets init bedrock --output-file my-bedrock-target.json
 ```
 
 The scaffolded file contains the provider's connection template with the correct request/response structure. Edit it to fill in your `name` and credentials, then create the target:
@@ -47,7 +47,7 @@ The scaffolded file contains the provider's connection template with the correct
 vim openai-target.json
 
 # Create the target (with connection validation)
-airs redteam targets create --config openai-target.json --validate
+airs-cli redteam targets create --config openai-target.json --validate
 ```
 
 The scaffold shape depends on the provider family:
@@ -99,19 +99,19 @@ Targets are created from a JSON configuration file with `name`, `target_type`, a
 :::
 
 ```bash
-airs redteam targets create --config target.json
+airs-cli redteam targets create --config target.json
 ```
 
 The target starts as `inactive` until validated. Use `--validate` to test the connection on creation:
 
 ```bash
-airs redteam targets create --config target.json --validate
+airs-cli redteam targets create --config target.json --validate
 ```
 
 ## Get Target Details
 
 ```bash
-airs redteam targets get <uuid>
+airs-cli redteam targets get <uuid>
 ```
 
 Shows full configuration including connection parameters and a ready-to-use `curl` command (credentials masked).
@@ -121,7 +121,7 @@ Shows full configuration including connection parameters and a ready-to-use `cur
 Targets that have been profiled contain detailed context about the AI application:
 
 ```bash
-airs redteam targets profile <uuid>
+airs-cli redteam targets profile <uuid>
 ```
 
 The profile includes target background (industry, use case), additional context (system prompt, base model, tools), and profiling status.
@@ -133,13 +133,13 @@ Profiling is initiated from the AIRS console. Prisma AIRS CLI can read the profi
 ## Update a Target
 
 ```bash
-airs redteam targets update <uuid> --config updates.json
+airs-cli redteam targets update <uuid> --config updates.json
 ```
 
 The AIRS API requires `target_type` and full `connection_params` on every update. Add `--validate` to re-test connectivity:
 
 ```bash
-airs redteam targets update <uuid> --config updates.json --validate
+airs-cli redteam targets update <uuid> --config updates.json --validate
 ```
 
 ## Probe a Connection
@@ -147,13 +147,13 @@ airs redteam targets update <uuid> --config updates.json --validate
 Test a target connection without saving it:
 
 ```bash
-airs redteam targets probe --config connection.json
+airs-cli redteam targets probe --config connection.json
 ```
 
 ## Delete a Target
 
 ```bash
-airs redteam targets delete <uuid>
+airs-cli redteam targets delete <uuid>
 ```
 
 :::warning
@@ -165,7 +165,7 @@ Deleting a target is permanent. Existing scan results are retained, but no new s
 Test authentication credentials against a target without creating or modifying it:
 
 ```bash
-airs redteam targets validate-auth --config auth.json
+airs-cli redteam targets validate-auth --config auth.json
 ```
 
 **Example `auth.json`:**
@@ -190,7 +190,7 @@ Supported auth types: `HEADERS`, `BASIC_AUTH`, `OAUTH2`.
 Retrieve field metadata describing valid target configuration options:
 
 ```bash
-airs redteam targets metadata
+airs-cli redteam targets metadata
 ```
 
 Returns JSON describing available target types, connection parameter fields, and their validation rules.
@@ -200,7 +200,7 @@ Returns JSON describing available target types, connection parameter fields, and
 Retrieve provider-specific target configuration templates:
 
 ```bash
-airs redteam targets templates
+airs-cli redteam targets templates
 ```
 
 Returns pre-built JSON templates for common AI providers (OpenAI, Azure OpenAI, AWS Bedrock, etc.) that can be used as starting points for `targets create --config`.

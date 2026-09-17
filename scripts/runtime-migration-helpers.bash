@@ -42,7 +42,7 @@ assert_empty() {
 
 load_tenant_ids() {
   local ids
-  ids=$(airs tenant list --output json | node -e '
+  ids=$(airs-cli tenant list --output json | node -e '
     const fs = require("node:fs");
     const tenants = JSON.parse(fs.readFileSync(0, "utf8"));
     const prod = tenants.find(t => t.name === "prod"), dev = tenants.find(t => t.name === "dev");
@@ -56,12 +56,12 @@ load_tenant_ids() {
 
 create_test_dlp() {
   local prefix="$1" pattern_id dlp_id
-  capture "$prefix-pattern-create.json" airs runtime dlp patterns create \
+  capture "$prefix-pattern-create.json" airs-cli runtime dlp patterns create \
     --name dlp-test-pattern --type custom --technique regex \
     --description 'Synthetic Runtime migration acceptance pattern' \
     --confidence-levels high --regex 'AIRS-E2E-[0-9]{6}' --output json
   pattern_id=$(json_id "$prefix-pattern-create.json")
-  capture "$prefix-pattern.json" airs runtime dlp patterns get "$pattern_id" --output json
+  capture "$prefix-pattern.json" airs-cli runtime dlp patterns get "$pattern_id" --output json
 
   node - "$prefix" <<'NODE'
 const fs = require('node:fs');
@@ -85,10 +85,10 @@ fs.writeFileSync(`${prefix}-dlp-test-request.json`, JSON.stringify(body, null, 2
   {flag: 'wx', mode: 0o600});
 NODE
 
-  capture "$prefix-dlp-create.json" airs runtime dlp profiles create \
+  capture "$prefix-dlp-create.json" airs-cli runtime dlp profiles create \
     --body-file "$prefix-dlp-test-request.json" --output json
   dlp_id=$(json_id "$prefix-dlp-create.json")
-  capture "$prefix-dlp-test.json" airs runtime dlp profiles get "$dlp_id" --output json
+  capture "$prefix-dlp-test.json" airs-cli runtime dlp profiles get "$dlp_id" --output json
 
   # A create acknowledgement alone is not sufficient: check the stored rule and pattern.
   node - "$prefix" <<'NODE'

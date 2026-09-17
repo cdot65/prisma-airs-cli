@@ -9,7 +9,7 @@ sidebar_label: labels
 Add labels to a scan
 
 ```text
-airs model-security labels add [options] <scanUuid>
+airs-cli model-security labels add [options] <scanUuid>
 ```
 
 #### Arguments
@@ -27,7 +27,7 @@ airs model-security labels add [options] <scanUuid>
 *Append labels to a scan (preserves existing keys)*
 
 ```bash
-airs model-security labels add 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"docs-test"},{"key":"capture","value":"true"}]'
+airs-cli model-security labels add 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"docs-test"},{"key":"capture","value":"true"}]'
 ```
 
 ```text
@@ -44,7 +44,7 @@ Labels added.
 Replace all labels on a scan
 
 ```text
-airs model-security labels set [options] <scanUuid>
+airs-cli model-security labels set [options] <scanUuid>
 ```
 
 #### Arguments
@@ -62,7 +62,7 @@ airs model-security labels set [options] <scanUuid>
 *Replace all labels on a scan (drops keys not in the request)*
 
 ```bash
-airs model-security labels set 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"updated"}]'
+airs-cli model-security labels set 00000000-0000-0000-0000-000000000002 --labels '[{"key":"env","value":"updated"}]'
 ```
 
 ```text
@@ -79,7 +79,7 @@ Labels set.
 Delete labels from a scan by key
 
 ```text
-airs model-security labels delete [options] <scanUuid>
+airs-cli model-security labels delete [options] <scanUuid>
 ```
 
 #### Arguments
@@ -97,7 +97,7 @@ airs model-security labels delete [options] <scanUuid>
 *Delete one or more labels by comma-separated key list*
 
 ```bash
-airs model-security labels delete 00000000-0000-0000-0000-000000000002 --keys env
+airs-cli model-security labels delete 00000000-0000-0000-0000-000000000002 --keys env
 ```
 
 ```text
@@ -114,7 +114,7 @@ Labels deleted.
 List available label keys
 
 ```text
-airs model-security labels keys [options]
+airs-cli model-security labels keys [options]
 ```
 
 #### Options
@@ -128,7 +128,7 @@ airs model-security labels keys [options]
 *Empty result — no scan labels have been created yet*
 
 ```bash
-airs model-security labels keys
+airs-cli model-security labels keys
 ```
 
 ```text
@@ -145,7 +145,7 @@ No label keys found.
 List values for a label key
 
 ```text
-airs model-security labels values [options] <key>
+airs-cli model-security labels values [options] <key>
 ```
 
 #### Arguments
@@ -163,7 +163,7 @@ airs model-security labels values [options] <key>
 *Empty result — no values for an unknown key*
 
 ```bash
-airs model-security labels values example-key
+airs-cli model-security labels values example-key
 ```
 
 ```text

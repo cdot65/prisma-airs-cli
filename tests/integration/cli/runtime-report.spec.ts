@@ -14,7 +14,7 @@ vi.mock('../../../src/airs/management.js', async (original) => ({
 import { buildProgram } from '../../../src/cli/program.js';
 import { setQuiet } from '../../../src/cli/renderer/ui.js';
 
-describe('airs runtime report command', () => {
+describe('airs-cli runtime report command', () => {
   let directory: string;
   let tenant: Awaited<ReturnType<typeof useTestTenant>>;
   let client: ReturnType<typeof reportClient>;
@@ -36,7 +36,7 @@ describe('airs runtime report command', () => {
     await rm(directory, { recursive: true, force: true });
   });
   const run = (args: string[] = []) =>
-    buildProgram().parseAsync(['node', 'airs', '--quiet', 'runtime', 'report', ...args]);
+    buildProgram().parseAsync(['node', 'airs-cli', '--quiet', 'runtime', 'report', ...args]);
 
   it('writes HTML by default despite a general JSON output preference', async () => {
     const destination = join(directory, 'daily.html');
@@ -50,7 +50,7 @@ describe('airs runtime report command', () => {
     const first = join(directory, 'first.md');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--output',
       'markdown',
       'runtime',
@@ -62,7 +62,7 @@ describe('airs runtime report command', () => {
     const second = join(directory, 'second.html');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--output',
       'markdown',
       'runtime',

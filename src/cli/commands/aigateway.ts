@@ -150,10 +150,10 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspaces list',
-        'airs aigateway workspaces list --plane admin',
-        'airs aigateway workspaces list --plane admin --status archived',
-        'airs aigateway workspaces list --all --output json',
+        'airs-cli aigateway workspaces list',
+        'airs-cli aigateway workspaces list --plane admin',
+        'airs-cli aigateway workspaces list --plane admin --status archived',
+        'airs-cli aigateway workspaces list --all --output json',
       ),
     )
     .action(async (opts) => {
@@ -190,8 +190,8 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspaces get ws-main-a-349e0e',
-        'airs aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json',
+        'airs-cli aigateway workspaces get ws-main-a-349e0e',
+        'airs-cli aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json',
       ),
     )
     .action(async (ref: string, opts) => {
@@ -233,10 +233,10 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspaces create --name truffles --description "Online recipe generation application"',
-        'airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0',
-        'airs aigateway workspaces create --name Staging --scope-name ws_staging_q1x8mz --existing-scope',
-        `airs aigateway workspaces create --name Production --metadata '{"env":"production"}' --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'`,
+        'airs-cli aigateway workspaces create --name truffles --description "Online recipe generation application"',
+        'airs-cli aigateway workspaces create --name Production --scope-name ws_production_bx7qw0',
+        'airs-cli aigateway workspaces create --name Staging --scope-name ws_staging_q1x8mz --existing-scope',
+        `airs-cli aigateway workspaces create --name Production --metadata '{"env":"production"}' --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'`,
       ),
     )
     .action(async (opts) => {
@@ -288,7 +288,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'`,
+        `airs-cli aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'`,
       ),
     )
     .action(async (ref: string, opts) => {
@@ -340,7 +340,10 @@ export function registerAiGatewayCommand(program: Command): void {
     .command('archive <ref>')
     .description('Archive a workspace (soft delete — there is no hard delete)')
     .option('--force', 'Skip confirmation prompt')
-    .addHelpText('after', examples('airs aigateway workspaces archive ws-produc-985697 --force'))
+    .addHelpText(
+      'after',
+      examples('airs-cli aigateway workspaces archive ws-produc-985697 --force'),
+    )
     .action((ref: string, opts) => archiveWorkspace(ref, opts, false));
 
   workspace
@@ -360,7 +363,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
-      examples('airs aigateway scopes list', 'airs aigateway scopes list --output json'),
+      examples('airs-cli aigateway scopes list', 'airs-cli aigateway scopes list --output json'),
     )
     .action(async (opts) => {
       try {
@@ -377,7 +380,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .command('get <name>')
     .description('Get one IAM scope by name')
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
-    .addHelpText('after', examples('airs aigateway scopes get ws_production_bx7qw0'))
+    .addHelpText('after', examples('airs-cli aigateway scopes get ws_production_bx7qw0'))
     .action(async (name: string, opts) => {
       try {
         const fmt = await resolveOutput(scopeGet, opts);
@@ -398,7 +401,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs aigateway scopes create --name ws_production_bx7qw0 --description 'All production applications'`,
+        `airs-cli aigateway scopes create --name ws_production_bx7qw0 --description 'All production applications'`,
       ),
     )
     .action(async (opts) => {
@@ -427,7 +430,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
     .addHelpText(
       'after',
-      examples('airs aigateway scopes bind ws_production_bx7qw0 --workspace ws-produc-985697'),
+      examples('airs-cli aigateway scopes bind ws_production_bx7qw0 --workspace ws-produc-985697'),
     )
     .action(async (name: string, opts) => {
       try {
@@ -447,7 +450,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .alias('rm')
     .description('Delete an IAM scope by name (not live-verified upstream; the API may decline)')
     .option('--force', 'Skip confirmation prompt')
-    .addHelpText('after', examples('airs aigateway scopes delete ws_truffles_ggolfu --force'))
+    .addHelpText('after', examples('airs-cli aigateway scopes delete ws_truffles_ggolfu --force'))
     .action(async (name: string, opts) => {
       try {
         renderAiGatewayHeader();
@@ -483,8 +486,8 @@ export function registerAiGatewayCommand(program: Command): void {
       .addHelpText(
         'after',
         examples(
-          'airs aigateway telemetry cost --workspace ws-main-a-349e0e',
-          'airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
+          'airs-cli aigateway telemetry cost --workspace ws-main-a-349e0e',
+          'airs-cli aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
         ),
       ),
   ).action(async (opts) => {

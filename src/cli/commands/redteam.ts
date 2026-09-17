@@ -902,9 +902,9 @@ export function registerRedteamCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs redteam scan --target <target-uuid> --name "nightly-static"',
-        'airs redteam scan --target <target-uuid> --name "custom-run" --type CUSTOM --prompt-sets <set-uuid>',
-        'airs redteam scan --target <target-uuid> --name "agent-probe" --type DYNAMIC --goals goals.json --no-wait',
+        'airs-cli redteam scan --target <target-uuid> --name "nightly-static"',
+        'airs-cli redteam scan --target <target-uuid> --name "custom-run" --type CUSTOM --prompt-sets <set-uuid>',
+        'airs-cli redteam scan --target <target-uuid> --name "agent-probe" --type DYNAMIC --goals goals.json --no-wait',
       ),
     )
     .action(async (opts) => {
@@ -965,10 +965,10 @@ export function registerRedteamCommand(program: Command): void {
           console.log('\n');
           renderScanStatus(completed);
           ui.keyValue([['Job ID', completed.uuid]]);
-          ui.dim('Run `airs redteam report <jobId>` to view results.');
+          ui.dim('Run `airs-cli redteam report <jobId>` to view results.');
         } else {
           ui.keyValue([['Job ID', job.uuid]]);
-          ui.dim('Run `airs redteam status <jobId>` to check progress.');
+          ui.dim('Run `airs-cli redteam status <jobId>` to check progress.');
         }
       } catch (err) {
         fail(err);
@@ -1006,9 +1006,9 @@ export function registerRedteamCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs redteam targets list',
-        'airs redteam targets list --output json',
-        'airs redteam targets ls --limit 5',
+        'airs-cli redteam targets list',
+        'airs-cli redteam targets list --output json',
+        'airs-cli redteam targets ls --limit 5',
       ),
     )
     .action(async (opts) => {
@@ -1224,7 +1224,7 @@ export function registerRedteamCommand(program: Command): void {
         ['Provider', provider.toUpperCase()],
       ]);
       ui.dim('Next steps: edit the file to fill in name and credentials, then run:');
-      ui.dim(`  airs redteam targets create --config ${filename} --validate`);
+      ui.dim(`  airs-cli redteam targets create --config ${filename} --validate`);
     } catch (err) {
       fail(err);
     }
@@ -1314,7 +1314,7 @@ export function registerRedteamCommand(program: Command): void {
     .option('--offset <n>', 'Starting offset')
     .option('--search <text>', 'Filter by search text')
     .option('--output <format>', 'Output format: pretty, table, csv, json, yaml', 'pretty')
-    .addHelpText('after', examples('airs redteam targets error-logs <targetId>'))
+    .addHelpText('after', examples('airs-cli redteam targets error-logs <targetId>'))
     .action(async (targetId: string, opts) => {
       try {
         const fmt = opts.output as OutputFormat;
@@ -1355,7 +1355,7 @@ export function registerRedteamCommand(program: Command): void {
     if (status && status !== 'ONLINE') {
       fail(
         new Error(
-          `network broker channel ${channelUuid} is ${status} — adapter validation requires an ONLINE channel (network broker v1.4.0+). Check 'airs redteam network-broker channels list'.`,
+          `network broker channel ${channelUuid} is ${status} — adapter validation requires an ONLINE channel (network broker v1.4.0+). Check 'airs-cli redteam network-broker channels list'.`,
         ),
       );
     }
@@ -1421,8 +1421,8 @@ export function registerRedteamCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs redteam adapter create --name my-adapter --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'`,
-        'airs redteam adapter create --name my-adapter --script-file ./adapter.py --prompt Hello --draft',
+        `airs-cli redteam adapter create --name my-adapter --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'`,
+        'airs-cli redteam adapter create --name my-adapter --script-file ./adapter.py --prompt Hello --draft',
       ),
     )
     .action(async (opts) => {
@@ -1474,7 +1474,7 @@ export function registerRedteamCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs redteam adapter update 550e8400-... --description 'new description' --prompt 'Hello'`,
+        `airs-cli redteam adapter update 550e8400-... --description 'new description' --prompt 'Hello'`,
       ),
     )
     .action(async (uuid: string, opts) => {
@@ -1544,8 +1544,8 @@ export function registerRedteamCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs redteam adapter validate --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'`,
-        `airs redteam adapter validate --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --adapter 660e8400-...`,
+        `airs-cli redteam adapter validate --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'`,
+        `airs-cli redteam adapter validate --script-file ./adapter.py --channel 550e8400-... --prompt 'Hello' --adapter 660e8400-...`,
       ),
     )
     .action(async (opts) => {

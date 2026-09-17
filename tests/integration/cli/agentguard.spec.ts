@@ -39,7 +39,7 @@ describe('AgentGuard CLI', () => {
     await rm(directory, { recursive: true, force: true });
   });
   const run = (args: string[]) =>
-    buildProgram().parseAsync(['node', 'airs', '--quiet', 'agentguard', ...args]);
+    buildProgram().parseAsync(['node', 'airs-cli', '--quiet', 'agentguard', ...args]);
 
   it.each([
     'json',

@@ -9,7 +9,7 @@ sidebar_label: categories
 List available attack categories
 
 ```text
-airs redteam categories [options]
+airs-cli redteam categories [options]
 ```
 
 ### Examples
@@ -19,7 +19,7 @@ e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`.
 *
 
 ```bash
-airs redteam categories
+airs-cli redteam categories
 ```
 
 ```text

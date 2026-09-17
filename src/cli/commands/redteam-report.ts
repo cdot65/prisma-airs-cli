@@ -36,10 +36,10 @@ export function registerRedTeamReportCommand(
     .addHelpText(
       'after',
       examples(
-        'airs redteam report --output-file ./airs-daily.html',
-        'airs redteam report --output markdown --output-file ./airs-daily.md',
-        'airs redteam report',
-        'airs redteam report --strict --max-pages 20 --output-file - > daily.html',
+        'airs-cli redteam report --output-file ./airs-daily.html',
+        'airs-cli redteam report --output markdown --output-file ./airs-daily.md',
+        'airs-cli redteam report',
+        'airs-cli redteam report --strict --max-pages 20 --output-file - > daily.html',
       ),
     )
     .action(async (jobId: string | undefined, opts) => {

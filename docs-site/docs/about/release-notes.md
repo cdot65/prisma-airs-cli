@@ -2,13 +2,13 @@
 
 ## v6.1.1 (2026-09-12) — Prompt for the provider key in a terminal
 
-- `airs aigateway integrations create` now prompts for the provider key with hidden input when
+- `airs-cli aigateway integrations create` now prompts for the provider key with hidden input when
   it runs in a terminal and no credential flag is given, and `--key-stdin` without piped input
   falls back to the same prompt. Outside a terminal the `--key-stdin` error shows the pipe form.
 
 ## v6.1.0 (2026-09-12) — Provider slugs, credential inputs, and self-hosted endpoints for integrations
 
-- `airs aigateway integrations providers` lists the provider catalog, and `integrations create`
+- `airs-cli aigateway integrations providers` lists the provider catalog, and `integrations create`
   accepts `--ai-provider <slug-or-uuid>` (`x-ai`, `open-ai`, …) next to `--ai-provider-id`.
 - Credentials no longer have to sit in `argv`: `--key-file <path>` and `--key-stdin` join
   `--secret-mappings`; inline `--key` still works but warns. A create with no credential now
@@ -20,15 +20,15 @@
 
 ## v6.0.0 (2026-09-12) — Tenant files are the only configuration source
 
-- **Breaking:** `airs config` is removed and no environment variable configures the CLI any
+- **Breaking:** `airs-cli config` is removed and no environment variable configures the CLI any
   more. `dotenv` and `.env` loading are gone, `PRISMA_AIRS_CONFIG_PATH` is ignored, and the
   `~/.prisma-airs/config.json` "default" tenant no longer exists. Register a tenant with
-  `airs tenant create <name>` (or `--config <path>` for an existing file) and select it with
-  `airs tenant switch <name>`; with no selection every API command stops with
+  `airs-cli tenant create <name>` (or `--config <path>` for an existing file) and select it with
+  `airs-cli tenant switch <name>`; with no selection every API command stops with
   `No tenant selected` and lists the registered names. Only `PRISMA_AIRS_TENANTS_PATH` and
   `XDG_STATE_HOME` (registry location) and the SDK diagnostics `PANW_AI_SEC_DEBUG`,
   `PANW_AI_SEC_DEBUG_BODY`, `PANW_AI_SEC_TIMEOUT_MS` are still honored.
-- `airs tenant` now covers everything `airs config` did: `get <name> <key>`,
+- `airs-cli tenant` now covers everything `airs-cli config` did: `get <name> <key>`,
   `unset <name> <key>` (credentials cannot be cleared), and `path [name]` join `create`,
   `switch`, `set`, `list`, `read`, and `delete`. Deleting the selected tenant clears the
   selection instead of being refused.
@@ -40,10 +40,10 @@
   per-product credential variables are never consulted because the CLI now passes every
   credential and endpoint explicitly. Product base-URL overrides remain file-only keys with
   SDK defaults.
-- `airs doctor` is tenant-first: it fails clearly when no tenant is selected, validates the
+- `airs-cli doctor` is tenant-first: it fails clearly when no tenant is selected, validates the
   tenant file against its pinned TSG, warns about retired keys in the file and about
   `PANW_*` / `PRISMA_AIRS_CONFIG_PATH` variables still set in the shell (names only), treats
-  a missing scanner key as skipped, and phrases every remedy as `airs tenant set`.
+  a missing scanner key as skipped, and phrases every remedy as `airs-cli tenant set`.
 - Every product base URL now defaults to `api.apps.paloaltonetworks.com` (AISEC management,
   Red Team, Model Security, AgentGuard, AI Gateway, IAM); only DLP stays on
   `api.dlp.paloaltonetworks.com`. The values come from the SDK constants, so this lands with
@@ -58,7 +58,7 @@
 
 ## v5.11.0 (2026-09-11) — Scope-first AI Gateway workspace provisioning
 
-- `airs aigateway workspaces create` now provisions a workspace the way Strata Cloud
+- `airs-cli aigateway workspaces create` now provisions a workspace the way Strata Cloud
   Manager's UI does (captured 2026-09-11): create the SCM IAM scope, create the
   workspace with that `scope_name`, then PUT the scope back with the new workspace slug
   bound as a resource. That last step is what grants data-plane access. A bare create
@@ -66,7 +66,7 @@
 - `--scope-name` is optional and defaults to SCM's `ws_<name>_<suffix>` convention;
   `--existing-scope` binds a scope created earlier and preserves its other bindings.
   Partial failures are reported with the created slug and scope, never hidden.
-- New `airs aigateway scopes {list, get, create, bind, delete}` expose each step on its
+- New `airs-cli aigateway scopes {list, get, create, bind, delete}` expose each step on its
   own and list unbound scopes. `list`/`get` were verified live; `create`/`bind` send the
   captured SCM bodies; `delete` is not live-verified. `PANW_IAM_ENDPOINT` / `iamEndpoint`
   override the IAM base URL.
@@ -98,7 +98,7 @@ See [workspaces](../cli/aigateway/workspaces.md) and the
 
 ## v5.9.0 (2026-09-11) — Tenant-first DLP listings and live-verified transfer
 
-- `airs runtime dlp {patterns, profiles, dictionaries} list` now shows only
+- `airs-cli runtime dlp {patterns, profiles, dictionaries} list` now shows only
   tenant-created records by default; predefined (PANW-shipped) catalog content is
   hidden until requested with `--include-predefined`.
 - Backup refuses profiles referencing retired patterns instead of resurrecting
@@ -120,7 +120,7 @@ See [workspaces](../cli/aigateway/workspaces.md) and the
 
 ## v5.8.0 (2026-09-10) — DLP backup and restore
 
-- Add `airs runtime dlp backup` and `airs runtime dlp restore`: staged transfer of
+- Add `airs-cli runtime dlp backup` and `airs-cli runtime dlp restore`: staged transfer of
   custom DLP dictionaries (with keyword payloads), data patterns, and data profiles
   between tenants through a private, size-capped, no-clobber file.
 - Restore stages dictionaries → patterns → profiles, remapping profile expression-tree
@@ -168,9 +168,9 @@ See [workspaces](../cli/aigateway/workspaces.md) and the
 
 ## v5.6.0 (2026-09-08) — guided tenant configuration
 
-- `airs tenant create <name>` now prompts for TSG ID, OAuth client ID, and a hidden
+- `airs-cli tenant create <name>` now prompts for TSG ID, OAuth client ID, and a hidden
   client secret, one field at a time. Existing `--config <path>` registration remains supported.
-- `airs tenant set <name> <key> [value]` changes individual settings without switching
+- `airs-cli tenant set <name> <key> [value]` changes individual settings without switching
   tenants. Omit the value to prompt; credentials require hidden input or `--stdin`.
 - Automation can create a config using `--tsg-id`, `--client-id`, and
   `--client-secret-stdin`. No secret argument is needed.
@@ -181,11 +181,11 @@ See [workspaces](../cli/aigateway/workspaces.md) and the
 
 ## v5.5.0 (2026-09-08) — tenant selection and Runtime profile migration
 
-- Add `airs tenant create`, `switch`, `list`, `read`, and `delete`, registering existing
+- Add `airs-cli tenant create`, `switch`, `list`, `read`, and `delete`, registering existing
   read-only config files by path. Store the selection separately without copying secrets.
 - Pin each registration's TSG identity, redact credential values fully, reject mixed
   tenant/environment authentication, and retain legacy `default` behavior.
-- Add `airs runtime profiles backup` and `restore`: private JSON/YAML files, exact topic
+- Add `airs-cli runtime profiles backup` and `restore`: private JSON/YAML files, exact topic
   dependencies, dry-run plans, destination assertions, explicit conflict handling,
   destination ID rewriting, and read-back verification.
 - Require explicit mapping to existing destination DLP data profiles for cross-tenant
@@ -203,7 +203,7 @@ Version 5.4.0 was withheld from npm after the release gate found a test-only dep
 on the separately installed Docusaurus toolchain. Version 5.4.1 isolates that sidebar
 regression test; no release tag was rewritten.
 
-- Add `airs agentguard scans list`, `scans vulnerabilities`, `stats`, `rules list`
+- Add `airs-cli agentguard scans list`, `scans vulnerabilities`, `stats`, `rules list`
   and `report`, backed by SDK 0.29.0 and the existing Management OAuth credentials.
 - Deliver private, no-clobber HTML or Markdown reports in the current directory. Reports
   contain aggregates only; raw finding content requires explicit opt-in.
@@ -218,11 +218,11 @@ from the 26-check read-only acceptance workflow and documents data limitations.
 
 ## v5.3.0 (2026-09-08) — consistent report commands
 
-- Use `airs runtime report`, `airs redteam report`, and `airs aigateway report --workspace dev`
+- Use `airs-cli runtime report`, `airs-cli redteam report`, and `airs-cli aigateway report --workspace dev`
   for HTML (default) or Markdown environment deliverables.
 - Keep `dashboard` as a compatibility alias for Red Team and AI Gateway. Runtime's
   `dashboard` API-query group is unchanged.
-- Preserve `airs redteam report <jobId>` for individual scan results. Scan-only and
+- Preserve `airs-cli redteam report <jobId>` for individual scan results. Scan-only and
   environment-only options cannot be mixed.
 
 Verified against the npm-installed CLI: **16/16 live E2E tests** across Runtime, Red Team
@@ -234,7 +234,7 @@ SDK remains the published **0.28.0**; no SDK change was required.
 
 ## v5.1.0 (2026-09-07) — Red Team environment dashboard
 
-- Add `airs redteam dashboard` with HTML (default) and Markdown deliverables. Preserve
+- Add `airs-cli redteam dashboard` with HTML (default) and Markdown deliverables. Preserve
   `redteam report <jobId>` for individual scans.
 - Pin SDK 0.27.0 and collect seven read-only Red Team feeds, including GET quota. Explicit
   pagination budgets and source completeness prevent missing evidence from becoming zero activity.
@@ -300,7 +300,7 @@ a passing latest E2E run.
 
 ## v4.5.0 (2026-09-07)
 
-- Add `airs runtime report`: read-only daily AI Runtime Security activity and current configuration, with evidence-backed attention/review findings and explicit complete/partial/unavailable sources. Self-contained HTML is the default; Markdown is also supported. No numeric health score or unsupported daily severity/token metrics are invented.
+- Add `airs-cli runtime report`: read-only daily AI Runtime Security activity and current configuration, with evidence-backed attention/review findings and explicit complete/partial/unavailable sources. Self-contained HTML is the default; Markdown is also supported. No numeric health score or unsupported daily severity/token metrics are invented.
 - Deliver dashboards and `--debug` logs in the current working directory, not beside read-only credentials. Unique default names, private permissions, no overwriting, no automatic pruning. Reports support `--output-file -` for stdout and `--strict` for completeness-sensitive automation.
 - Add offline application search, priority filtering, mobile/print layouts, CSP-pinned inline assets and hostile-metadata escaping. Raw prompts, responses, credentials, tenant/user identifiers and upstream errors are excluded from report artifacts.
 - Handle debug-log initialization failures with a friendly error. Mask OAuth form secrets and auth codes; omit non-JSON debug bodies. A live 128-hour scan-log query now writes its log successfully, but the service still rejects that interval with HTTP 400.
@@ -333,7 +333,7 @@ The published npm package passes 103/103 grouped-filter checks, 54/54 chart cont
 
 - Fix `runtime dlp generate --output json`, including global, config-file and environment selection. Unsupported formats and malformed or unsafe integer counts/seeds now exit 2 before generating files. Quiet pretty output preserves per-format counts.
 - Upgrade production `js-yaml` to 4.3.2, `nanoid` to 5.1.16 (including the DOCX dependency), and optional `sharp` to 0.35.4. The frozen production audit reports zero known advisories; CI, npm publication and container publication now enforce that audit instead of treating functional tests as security verification.
-- Correct Node engine metadata and `airs doctor` to the actual existing dependency intersection: `^20.17.0 || ^22.13.0 || >=23.5.0`. Add native CLI smoke checks at Node 20.17, 22.13 and 24; SDK Node 18 support is unchanged.
+- Correct Node engine metadata and `airs-cli doctor` to the actual existing dependency intersection: `^20.17.0 || ^22.13.0 || >=23.5.0`. Add native CLI smoke checks at Node 20.17, 22.13 and 24; SDK Node 18 support is unchanged.
 - Publish exact container version tags first, verify the digest on amd64 and arm64 without runtime network access, then serialize and guard minor/`latest` promotion against the current stable tag list. Older tagged builds cannot advance aliases owned by newer versions. Branch/prerelease dispatches are rejected; do not rerun legacy workflows from tags predating this safeguard.
 - Include fontconfig/DejaVu in the minimal Alpine runtime and allow only required build inputs into the Docker context. The native smoke verifies all five DLP formats, 26 file signatures, manifest counts and structured-output/validation behavior. Local validation uses an existing process-only font configuration because this host has no system fonts.
 - Keep SDK 0.24.0 pinned. The full-spec assessment remains 5/10: direct AI Gateway coverage is still 138/242 (57.02%), and the documented upstream service/model limitations are not fixed by this patch.
@@ -364,7 +364,7 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### New
 
-- Add `airs aigateway inference chat`, `responses` and `embeddings`, with explicit runtime endpoint/key configuration separate from SCM OAuth.
+- Add `airs-cli aigateway inference chat`, `responses` and `embeddings`, with explicit runtime endpoint/key configuration separate from SCM OAuth.
 - Support streamed text and JSONL, stdout backpressure, signal cancellation and secret-safe diagnostics. Runtime requests default to zero automatic retries.
 - Pin SDK `0.21.0` for the typed runtime API, expanded AIRS contracts, OAuth deadline recovery and transport hardening.
 
@@ -396,7 +396,7 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### New
 
-- Expanded `airs aigateway` to the SDK 0.20.0 resource surface: API keys, audit logs, configs,
+- Expanded `airs-cli aigateway` to the SDK 0.20.0 resource surface: API keys, audit logs, configs,
   deployments, guardrails, provider integrations, MCP integrations, organisations, plugins,
   providers, complete telemetry reads, and canonical plural `workspaces` commands.
 - Added SDK-schema-validated named mutation flags plus repeatable `--set` / `--set-string` dotted
@@ -408,7 +408,7 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### Changed
 
-- Workspace soft removal is canonically `airs aigateway workspaces archive`; the legacy singular
+- Workspace soft removal is canonically `airs-cli aigateway workspaces archive`; the legacy singular
   `workspace delete` spelling remains as a warning-emitting compatibility path and has no `rm`
   alias.
 - Pinned `@cdot65/prisma-airs-sdk` to `0.20.0`, using its exported write schemas, known-value
@@ -443,7 +443,7 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 - Markdown output for read commands, RFC 4180-safe CSV quoting, and camelCase normalized DLP JSON/YAML records.
 - AI Gateway cost telemetry retains explicit cent values and adds `totalUsd`, `avgUsd`, and per-record `costUsd` values.
-- `airs config get|list` and `airs doctor` participate in the same structured output system.
+- `airs-cli config get|list` and `airs-cli doctor` participate in the same structured output system.
 
 ### Dependencies
 
@@ -453,9 +453,9 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### New
 
-- **AI Gateway workspace management** — new `airs aigateway workspace` commands cover scoped and tenant-wide listing, detail reads, creation, partial updates, and confirmation-gated archival. Data-plane reads show active workspaces in the caller's SCM role scope; `--plane admin` and `--all` expose tenant-wide active/archived state when the caller has the tenant-root grant.
-- **AI Gateway cost telemetry** — `airs aigateway telemetry cost --workspace <slug> [--days 7]` reports total, average, and per-day spend. Pretty output converts AIRS cents to dollars; JSON/YAML keep explicit `*Cents` fields.
-- **Red Team custom target adapters** — `airs redteam adapter {list,get,create,update,delete,validate}` manages user-supplied scripts for network-broker targets. Updates preserve omitted variables and stored secrets, validation checks for an ONLINE broker channel, and failed scripts surface `stderr`/`traceback` with exit code 1.
+- **AI Gateway workspace management** — new `airs-cli aigateway workspace` commands cover scoped and tenant-wide listing, detail reads, creation, partial updates, and confirmation-gated archival. Data-plane reads show active workspaces in the caller's SCM role scope; `--plane admin` and `--all` expose tenant-wide active/archived state when the caller has the tenant-root grant.
+- **AI Gateway cost telemetry** — `airs-cli aigateway telemetry cost --workspace <slug> [--days 7]` reports total, average, and per-day spend. Pretty output converts AIRS cents to dollars; JSON/YAML keep explicit `*Cents` fields.
+- **Red Team custom target adapters** — `airs-cli redteam adapter {list,get,create,update,delete,validate}` manages user-supplied scripts for network-broker targets. Updates preserve omitted variables and stored secrets, validation checks for an ONLINE broker channel, and failed scripts surface `stderr`/`traceback` with exit code 1.
 
 ### Fixed
 
@@ -474,7 +474,7 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### New
 
-- **Reliable, configurable bulk scanning** — `airs runtime bulk-scan` now accepts `--batch-size <n>` (default `25`, validated as a positive safe integer). Logical batches run sequentially, while each AIRS SDK 0.13.2 call is capped at 20 prompts.
+- **Reliable, configurable bulk scanning** — `airs-cli runtime bulk-scan` now accepts `--batch-size <n>` (default `25`, validated as a positive safe integer). Logical batches run sequentially, while each AIRS SDK 0.13.2 call is capped at 20 prompts.
 - **Item-level resumable state** — every prompt retains its input index, AIRS `req_id`, status, accepted receipt, and result. State is written before submission and checkpointed throughout the job. Because state contains prompt text, the default directory and files are restricted to modes `0700` and `0600` respectively.
 
 ### Fixed
@@ -494,10 +494,10 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### New
 
-- **Red Team Network Broker** — manage the data-plane relays that connect red team clients to targets behind a private network. `airs redteam network-broker channels {list,get,create,update}` plus `airs redteam network-broker stats` (server domain, container image/registry, helm chart, client version, online/total channel counts). Channels live on a distinct endpoint, overridable via `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` (config key `redTeamNetworkBrokerEndpoint`); OAuth credentials are shared with the other Red Team commands.
-- **`airs redteam languages`** — list the tenant's supported languages and job types for multilingual scans. `--management` queries the management plane instead of the data plane.
-- **`airs redteam targets error-logs <targetId>`** — list target-profile error logs (timeouts, auth failures, malformed responses captured while a target was exercised).
-- **`airs model-security models {list,get,versions,version,files}`** — read-only browsing of the scanned model catalog: models, their versions, and the files within each version, with latest eval outcome, detected formats, source type, and per-file results.
+- **Red Team Network Broker** — manage the data-plane relays that connect red team clients to targets behind a private network. `airs-cli redteam network-broker channels {list,get,create,update}` plus `airs-cli redteam network-broker stats` (server domain, container image/registry, helm chart, client version, online/total channel counts). Channels live on a distinct endpoint, overridable via `PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT` (config key `redTeamNetworkBrokerEndpoint`); OAuth credentials are shared with the other Red Team commands.
+- **`airs-cli redteam languages`** — list the tenant's supported languages and job types for multilingual scans. `--management` queries the management plane instead of the data plane.
+- **`airs-cli redteam targets error-logs <targetId>`** — list target-profile error logs (timeouts, auth failures, malformed responses captured while a target was exercised).
+- **`airs-cli model-security models {list,get,versions,version,files}`** — read-only browsing of the scanned model catalog: models, their versions, and the files within each version, with latest eval outcome, detected formats, source type, and per-file results.
 
 ### Changed
 
@@ -511,9 +511,9 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 
 ### New
 
-- **`airs doctor`** — credential and connectivity preflight. Checks Node.js version, config file presence/validity, which scanner and management credentials are set (and from which source), scanner API reachability, and management OAuth. Network checks are time-boxed at 5s; prints a pass/warn/fail report with fix hints. Supports `--output json|yaml`. Exits 0 when healthy (warnings OK), 1 on any failure.
-- **`airs config {list,get,set,unset,path}`** — manage `~/.prisma-airs/config.json` from the CLI: effective-config listing with per-key source (env/file/default), schema-validated `set`, round-trip-safe `unset` that preserves unknown file keys, secret masking with `--reveal` opt-out, and a `PRISMA_AIRS_CONFIG_PATH` env override for the config file location.
-- **`airs completion <bash|zsh|fish>`** — shell completion scripts with install snippets.
+- **`airs-cli doctor`** — credential and connectivity preflight. Checks Node.js version, config file presence/validity, which scanner and management credentials are set (and from which source), scanner API reachability, and management OAuth. Network checks are time-boxed at 5s; prints a pass/warn/fail report with fix hints. Supports `--output json|yaml`. Exits 0 when healthy (warnings OK), 1 on any failure.
+- **`airs-cli config {list,get,set,unset,path}`** — manage `~/.prisma-airs/config.json` from the CLI: effective-config listing with per-key source (env/file/default), schema-validated `set`, round-trip-safe `unset` that preserves unknown file keys, secret masking with `--reveal` opt-out, and a `PRISMA_AIRS_CONFIG_PATH` env override for the config file location.
+- **`airs-cli completion <bash|zsh|fish>`** — shell completion scripts with install snippets.
 - **Global `--quiet` flag** — suppresses status and decorative output while keeping data, results, and errors.
 - **Confirmation prompts on destructive operations** — profiles/topics/targets delete, topics revert, and profiles cleanup now ask Y/N before proceeding. `--force` bypasses; non-interactive runs without `--force` exit 2.
 - **`ls`/`rm` aliases** on every `list`/`delete` subcommand, and usage examples in `--help` for the most-used commands.
@@ -524,22 +524,22 @@ The [release CI](https://github.com/cdot65/prisma-airs-cli/actions/runs/34110678
 - **Flag standardization** — `--output` always means format; file destinations are `--output-file`; input files are `--file`; pagination is `--limit`/`--offset`; destructive bypass is `--force`. Old spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) keep working throughout v3 as hidden aliases with a stderr deprecation notice and will be removed in v4 — see the [Flag Migration guide](flag-migration.md). Also new: `--output pretty|json|yaml` on `redteam prompts list|get`, `redteam instances get`, `redteam registry-credentials`, and client-side `--limit`/`--offset` on redteam list commands.
 - **Pipe-safe machine-readable output** — `--output json|yaml|csv` emits only the payload on stdout; progress, banners, and rate-limit warnings moved to stderr, so `--output json | jq` always parses. Exit codes standardized across every command group: 0 success, 1 runtime/API failure, 2 usage error. API errors show the HTTP status and a `--debug` hint.
 - **CLI output design system** — all renderers (backup, eval, redteam, runtime, dlp, model-security) migrated to shared `ui` primitives: uniform bold headers, semantic glyphs (✓ ✗ ⚠ ○ ● •), aligned key/value blocks, canonical box-drawing tables, and standardized `No <resource> found` empty-list phrasing.
-- **~6x faster startup** (≈0.4s → ≈0.06s) — the DLP test-file generator dependencies (sharp, pdf-lib, docx, piexifjs) now load lazily, only when `airs runtime dlp generate` runs, and moved to optionalDependencies. Installs with `--no-optional` skip ~50MB of native binaries; `dlp generate` prints an install hint if they are absent.
+- **~6x faster startup** (≈0.4s → ≈0.06s) — the DLP test-file generator dependencies (sharp, pdf-lib, docx, piexifjs) now load lazily, only when `airs-cli runtime dlp generate` runs, and moved to optionalDependencies. Installs with `--no-optional` skip ~50MB of native binaries; `dlp generate` prints an install hint if they are absent.
 - **Bundled build (tsup)** — dist/ went from ~200 files (2.5MB) to 5 files (355KB unpacked), with the DLP generator split into a lazy chunk. No API changes — library entry, types, and CLI bin paths are unchanged.
 - **Hardened `--debug` logging** — sensitive request/response body fields, query parameters, and headers are fully masked before hitting the debug JSONL file (previously only two headers were partially masked). Debug logs rotate automatically, keeping the 10 newest. Unhandled promise rejections print a friendly error instead of a raw crash.
 
 ### Changed (breaking)
 
-- **`airs runtime dlp-gen` moved to `airs runtime dlp generate`.** The DLP test-file generator now lives under the `dlp` namespace alongside `dictionaries`, `filtering-profiles`, `patterns`, and `profiles`. Flags and behavior are unchanged — `--types`, `--count`, `--out`, `--techniques`, `--seed`, `--output` work identically. Update any scripts or aliases that called `airs runtime dlp-gen`.
+- **`airs-cli runtime dlp-gen` moved to `airs-cli runtime dlp generate`.** The DLP test-file generator now lives under the `dlp` namespace alongside `dictionaries`, `filtering-profiles`, `patterns`, and `profiles`. Flags and behavior are unchanged — `--types`, `--count`, `--out`, `--techniques`, `--seed`, `--output` work identically. Update any scripts or aliases that called `airs-cli runtime dlp-gen`.
 
 ### Removed (breaking)
 
 - **External LLM functionality removed.** Custom topic guardrail generation is now fully agent-driven (see `AGENTS.md` / `CLAUDE.md`), so the LLM provider layer is no longer needed.
-  - Removed the `airs runtime profiles audit` command (it used an LLM to generate test prompts).
+  - Removed the `airs-cli runtime profiles audit` command (it used an LLM to generate test prompts).
   - Removed the LLM provider configuration: `--provider` / `--model` flags, the `llmProvider` / `llmModel` config fields, and the `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `GOOGLE_CLOUD_*`, `AWS_*`, `LLM_PROVIDER`, `LLM_MODEL` environment variables. AIRS scanner + management credentials are unchanged.
   - Removed the **LLM Providers** documentation section.
   - Library: removed the `audit` exports (`runAudit`, `computeTopicAuditResults`, `computeCompositeMetrics`, `detectConflicts`, `buildAuditReportJson`, `buildAuditReportHtml`) and the orphaned run-report exports (`buildReportJson`, `buildReportHtml`). `ProfileTopic` is retained.
-- **`airs runtime dlp-profiles list` removed.** Use `airs runtime dlp profiles list` (DLP namespace) instead — it is now the canonical listing and returns populated profile IDs plus `type`, `profile_type`, `status`, and `version` fields, paginated as `{items, page:{number,size,total,returned}}`.
+- **`airs-cli runtime dlp-profiles list` removed.** Use `airs-cli runtime dlp profiles list` (DLP namespace) instead — it is now the canonical listing and returns populated profile IDs plus `type`, `profile_type`, `status`, and `version` fields, paginated as `{items, page:{number,size,total,returned}}`.
 
 #### Migration note
 
@@ -571,7 +571,7 @@ See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the diverge
 
 ### New
 
-- **DLP command group** — `airs runtime dlp` adds full CRUD across four DLP subclients:
+- **DLP command group** — `airs-cli runtime dlp` adds full CRUD across four DLP subclients:
   - `filtering-profiles` (list/get/replace)
   - `patterns` (list/create/get/replace/patch/soft-delete)
   - `profiles` (list/create/get/replace/patch — no delete; archive via patching `profile_status`)
@@ -592,7 +592,7 @@ See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the diverge
 
 ### New
 
-- **Profile cleanup** -- `airs runtime profiles cleanup` deletes old profile revisions, keeping only the latest revision per profile name. AIRS creates a new revision (with a new UUID) on every profile update; this command prunes the accumulated duplicates. Supports `--force` to skip confirmation, `--updated-by <email>` (defaults to `git config user.email`), and `--output json` for structured output.
+- **Profile cleanup** -- `airs-cli runtime profiles cleanup` deletes old profile revisions, keeping only the latest revision per profile name. AIRS creates a new revision (with a new UUID) on every profile update; this command prunes the accumulated duplicates. Supports `--force` to skip confirmation, `--updated-by <email>` (defaults to `git config user.email`), and `--output json` for structured output.
 
 ---
 
@@ -600,7 +600,7 @@ See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the diverge
 
 ### New
 
-- **Target init from templates** -- `airs redteam targets init <provider>` scaffolds a target config JSON from provider templates (OPENAI, HUGGING_FACE, DATABRICKS, BEDROCK, REST, STREAMING). Supports `--output <file>` for custom paths.
+- **Target init from templates** -- `airs-cli redteam targets init <provider>` scaffolds a target config JSON from provider templates (OPENAI, HUGGING_FACE, DATABRICKS, BEDROCK, REST, STREAMING). Supports `--output <file>` for custom paths.
 
 ---
 
@@ -608,13 +608,13 @@ See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the diverge
 
 ### New
 
-- **EULA management** -- `airs redteam eula {status,content,accept}` for checking, viewing, and accepting the Red Team end-user license agreement
-- **Instance management** -- `airs redteam instances {create,get,update,delete}` for managing Red Team compute instances
-- **Device management** -- `airs redteam devices {create,update,delete}` for managing devices attached to instances
-- **Registry credentials** -- `airs redteam registry-credentials` for fetching container registry tokens
-- **Target auth validation** -- `airs redteam targets validate-auth` to test auth credentials without modifying targets
-- **Target metadata** -- `airs redteam targets metadata` to retrieve field metadata and validation rules
-- **Target templates** -- `airs redteam targets templates` to get provider-specific configuration templates
+- **EULA management** -- `airs-cli redteam eula {status,content,accept}` for checking, viewing, and accepting the Red Team end-user license agreement
+- **Instance management** -- `airs-cli redteam instances {create,get,update,delete}` for managing Red Team compute instances
+- **Device management** -- `airs-cli redteam devices {create,update,delete}` for managing devices attached to instances
+- **Registry credentials** -- `airs-cli redteam registry-credentials` for fetching container registry tokens
+- **Target auth validation** -- `airs-cli redteam targets validate-auth` to test auth credentials without modifying targets
+- **Target metadata** -- `airs-cli redteam targets metadata` to retrieve field metadata and validation rules
+- **Target templates** -- `airs-cli redteam targets templates` to get provider-specific configuration templates
 
 ### Fixed
 
@@ -631,7 +631,7 @@ See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the diverge
 ### New
 
 - **Intent-aware eval CSV format** — eval CSV now requires three columns: `prompt`, `expected`, `intent` (block/allow). The `expected` column is intuitive (belongs to topic category: true/false) and `intent` controls the trigger mapping.
-- **`airs runtime topics sample` command** — prints a template CSV showing the three-column format with both block and allow intent examples. Supports `--output <path>` to write to file.
+- **`airs-cli runtime topics sample` command** — prints a template CSV showing the three-column format with both block and allow intent examples. Supports `--output <path>` to write to file.
 - **Agent instruction ecosystem** — rewritten `program.md` with battle-tested optimization protocol. New agent entrypoints: `GEMINI.md`, `.github/copilot-instructions.md`. Any AI coding agent can now pick up the guardrail optimization loop.
 - **JSON eval output includes intent** — `--format json` output now includes an `intent` field at the top level.
 
@@ -764,7 +764,7 @@ See [#226](https://github.com/cdot65/prisma-airs-cli/issues/226) for the diverge
 
 ### New
 
-- **`airs model-security install`** — one-command setup of the `model-security-client` Python package from AIRS private PyPI
+- **`airs-cli model-security install`** — one-command setup of the `model-security-client` Python package from AIRS private PyPI
     - Auto-detects `uv` (uses `uv init` + `uv add`) or falls back to `python3 -m venv` + `pip install`
     - `--extras` for source type selection: `all`, `aws`, `gcp`, `azure`, `artifactory`, `gitlab`
     - `--dir` to specify project directory
@@ -796,33 +796,33 @@ First release of Prisma AIRS CLI (renamed from `daystrom`). See [MIGRATION.md](h
 ### CLI Structure
 
 ```
-airs runtime scan            # Sync scan
-airs runtime bulk-scan       # Async bulk scan
-airs runtime resume-poll     # Resume polling
-airs runtime profiles ...    # Security profile CRUD
-airs runtime topics ...      # Custom topic CRUD + guardrail generation
-airs runtime api-keys ...    # API key management
-airs runtime customer-apps   # Customer app CRUD
-airs runtime deployment-profiles  # Deployment profile listing
-airs runtime dlp-profiles    # DLP profile listing
-airs runtime scan-logs       # Scan log querying
-airs redteam scan            # Launch red team scan
-airs redteam targets ...     # Target CRUD
-airs redteam prompt-sets ... # Prompt set CRUD
-airs redteam prompts ...     # Individual prompt CRUD
-airs redteam properties ...  # Property management
-airs model-security groups    # Security group CRUD
-airs model-security install   # Install model-security-client Python package
-airs model-security labels    # Label management
-airs model-security rules     # Rule browsing
-airs model-security scans     # Scan operations
+airs-cli runtime scan            # Sync scan
+airs-cli runtime bulk-scan       # Async bulk scan
+airs-cli runtime resume-poll     # Resume polling
+airs-cli runtime profiles ...    # Security profile CRUD
+airs-cli runtime topics ...      # Custom topic CRUD + guardrail generation
+airs-cli runtime api-keys ...    # API key management
+airs-cli runtime customer-apps   # Customer app CRUD
+airs-cli runtime deployment-profiles  # Deployment profile listing
+airs-cli runtime dlp-profiles    # DLP profile listing
+airs-cli runtime scan-logs       # Scan log querying
+airs-cli redteam scan            # Launch red team scan
+airs-cli redteam targets ...     # Target CRUD
+airs-cli redteam prompt-sets ... # Prompt set CRUD
+airs-cli redteam prompts ...     # Individual prompt CRUD
+airs-cli redteam properties ...  # Property management
+airs-cli model-security groups    # Security group CRUD
+airs-cli model-security install   # Install model-security-client Python package
+airs-cli model-security labels    # Label management
+airs-cli model-security rules     # Rule browsing
+airs-cli model-security scans     # Scan operations
 ```
 
 ### Breaking Changes (from daystrom)
 
-- CLI binary renamed: `daystrom` → `airs`
+- CLI binary renamed: `daystrom` → `airs-cli`
 - Package renamed: `@cdot65/daystrom` → `@cdot65/prisma-airs-cli`
 - Data directory: `~/.daystrom/` → `~/.prisma-airs/`
-- Guardrail commands moved under `airs runtime topics`
-- Audit command moved under `airs runtime profiles audit`
-- Deprecated top-level aliases removed — use `airs runtime topics` and `airs runtime profiles` subcommands
+- Guardrail commands moved under `airs-cli runtime topics`
+- Audit command moved under `airs-cli runtime profiles audit`
+- Deprecated top-level aliases removed — use `airs-cli runtime topics` and `airs-cli runtime profiles` subcommands

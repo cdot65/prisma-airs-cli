@@ -3,7 +3,7 @@ title: AgentGuard — AI Supply Chain
 sidebar_label: Overview and examples
 ---
 
-# airs agentguard
+# airs-cli agentguard
 
 :::warning Experimental browser APIs — CLI 5.4.1 / SDK 0.29.0
 AgentGuard reads undocumented browser APIs for agent and skill scanning. These commands are introduced in CLI 5.4.1 with an exact dependency on SDK 0.29.0. These commands do not create scans, upload skills or modify policies.
@@ -14,12 +14,12 @@ Uses the selected tenant's Management credentials. No pasted browser bearer toke
 ## Read commands
 
 ```bash
-airs agentguard scans list --output json
-airs agentguard scans list --all --limit 3 --output yaml
-airs agentguard scans list --start 2026-08-09T00:00:00Z --end 2026-09-08T00:00:00Z --output table
-airs agentguard scans vulnerabilities <scan-uuid> --output json
-airs agentguard stats --time-period 30_DAYS --output json
-airs agentguard rules list --all --limit 3 --output yaml
+airs-cli agentguard scans list --output json
+airs-cli agentguard scans list --all --limit 3 --output yaml
+airs-cli agentguard scans list --start 2026-08-09T00:00:00Z --end 2026-09-08T00:00:00Z --output table
+airs-cli agentguard scans vulnerabilities <scan-uuid> --output json
+airs-cli agentguard stats --time-period 30_DAYS --output json
+airs-cli agentguard rules list --all --limit 3 --output yaml
 ```
 
 All reads support `pretty`, `table`, `markdown`, `csv`, `json`, and `yaml`. Scans and rules lists support `--offset` (default 0), `--limit` (default 10), `--all`, and `--max` (default 10000; 0 removes the item cap, but a 1000-page safety bound remains). JSON/YAML include pagination metadata; `truncated: true` means more records may remain. The `ls` alias works for list commands.
@@ -33,10 +33,10 @@ Only the captured/live-verified `30_DAYS` statistics period is supported. Unsupp
 ## Generate a report
 
 ```bash
-airs agentguard report
-airs agentguard report --strict --output markdown
-airs agentguard report --strict --output-file ./agentguard-review.html
-airs agentguard report --output markdown --output-file - > agentguard-review.md
+airs-cli agentguard report
+airs-cli agentguard report --strict --output markdown
+airs-cli agentguard report --strict --output-file ./agentguard-review.html
+airs-cli agentguard report --output markdown --output-file - > agentguard-review.md
 ```
 
 HTML is the default regardless of terminal output preferences. The default destination is a new `airs-agentguard-report-<timestamp>-<random>.html` file in the current directory (or `.md` for Markdown). Files are mode 0600, created atomically without overwriting existing files or symlinks. `--output-file -` writes only the report to stdout; status messages use stderr. HTML is self-contained with inline CSS/JavaScript, no external assets, and supports offline filtering and printing.
@@ -52,7 +52,7 @@ These results came from CLI 5.4.1's release build with registry-installed SDK 0.
 The **npm-installed CLI 5.4.1** repeated all **26/26** checks at 18:57 UTC with the same aggregate results. Its seven packaged files match the independently packed release build byte-for-byte, and all 11 native DLP consumer checks passed. Both container architectures and the deployed AI Gateway sidebar expansion were verified.
 
 ```bash
-airs agentguard stats --output json
+airs-cli agentguard stats --output json
 ```
 
 ```json

@@ -34,7 +34,7 @@ Run these in order. They confirm the binary on your `PATH` is the latest CLI and
 npm install -g @cdot65/prisma-airs-cli@latest
 
 # 2. Confirm the CLI is on PATH and report its version
-which airs && airs --version
+which airs-cli && airs-cli --version
 
 # 3. Confirm the SDK that the CLI bundled is 0.8.0 or newer
 #    Works whether the CLI is installed globally or locally; reads the package.json directly
@@ -42,11 +42,11 @@ which airs && airs --version
 npm ls -g @cdot65/prisma-airs-sdk 2>/dev/null || cat "$(npm root -g)/@cdot65/prisma-airs-cli/node_modules/@cdot65/prisma-airs-sdk/package.json" | grep '"version"'
 
 # 4. Confirm credentials work end-to-end (lists profiles via OAuth2 — fails fast if creds are wrong)
-airs runtime profiles list
+airs-cli runtime profiles list
 ```
 
 :::tip[Running from source]
-If you're testing an unpublished change, run `pnpm install && pnpm run build && npm link` from the repo root, then use `airs` as normal.
+If you're testing an unpublished change, run `pnpm install && pnpm run build && npm link` from the repo root, then use `airs-cli` as normal.
 :::
 
 ---
@@ -57,16 +57,16 @@ Each command exercises a different Zod schema in the SDK. Replace `<profile>` wi
 
 ```bash
 # 1. List all profiles — exercises Policy + ProfileList schemas; biggest payload, most likely to surface drift
-airs runtime profiles list
+airs-cli runtime profiles list
 
 # 2. Get one profile in JSON — exercises full single-profile shape including topic-list with revision pinning
-airs runtime profiles get <profile> --output json
+airs-cli runtime profiles get <profile> --output json
 
 # 3. List custom topics — exercises CustomTopic schema (revision/description/examples now required in 0.8.0)
-airs runtime topics list
+airs-cli runtime topics list
 
 # 4. Sync scan a benign prompt — exercises ScanResponse schema (timeout/error/errors now required in 0.8.0)
-airs runtime scan --profile <profile> "What is the capital of France?"
+airs-cli runtime scan --profile <profile> "What is the capital of France?"
 ```
 
 ---
@@ -75,16 +75,16 @@ airs runtime scan --profile <profile> "What is the capital of France?"
 
 ```bash
 # 1. List attack categories — small read, fast Zod sanity check on the catalog endpoint
-airs redteam categories
+airs-cli redteam categories
 
 # 2. List all targets — exercises target list shape (target_background, target_metadata field names)
-airs redteam targets list
+airs-cli redteam targets list
 
 # 3. List custom prompt sets — exercises customAttacks list (CUSTOM scan source-of-truth)
-airs redteam prompt-sets list
+airs-cli redteam prompt-sets list
 
 # 4. List recent scan jobs — exercises scan job shape (ASR/score/threatRate fields)
-airs redteam list
+airs-cli redteam list
 ```
 
 ---
@@ -93,18 +93,18 @@ airs redteam list
 
 ```bash
 # 1. List security groups — exercises group shape across all source types (LOCAL, S3, GCS, AZURE, HUGGING_FACE)
-airs model-security groups list
+airs-cli model-security groups list
 
 # 2. List rules — exercises rule shape (snake_case → camelCase normalization path)
-airs model-security rules list
+airs-cli model-security rules list
 
 # 3. List rule instances for one of the groups from command 1 — exercises state enum
 #    (BLOCKING | ALLOWING | DISABLED). Replace <groupUuid> with the UUID of any
 #    group from the previous command's output.
-airs model-security rule-instances list <groupUuid>
+airs-cli model-security rule-instances list <groupUuid>
 
 # 4. List recent scans — exercises scan summary shape (evaluations/violations/files counts)
-airs model-security scans list
+airs-cli model-security scans list
 ```
 
 ---

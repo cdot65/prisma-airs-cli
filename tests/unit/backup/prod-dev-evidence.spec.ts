@@ -183,7 +183,7 @@ function fixture() {
   for (let i = 0; i < 5; i++) put(`synthetic-create-${i}.json`, { action: 'created' });
   for (const name of Object.keys(files)) {
     files[`${name}.exit-code.txt`] = '0\n';
-    files[`${name}.command.txt`] = 'airs runtime synthetic-fixture\n';
+    files[`${name}.command.txt`] = 'airs-cli runtime synthetic-fixture\n';
     files[`${name}.stderr`] = '';
   }
   return files;

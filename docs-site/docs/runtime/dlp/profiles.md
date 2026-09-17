@@ -28,8 +28,8 @@ List tenant-created profiles with optional pagination and sorting. Predefined
 them.
 
 ```bash
-airs runtime dlp profiles list
-airs runtime dlp profiles list --limit 50 --offset 0 --sort name,asc --output json
+airs-cli runtime dlp profiles list
+airs-cli runtime dlp profiles list --limit 50 --offset 0 --sort name,asc --output json
 ```
 
 **Output (`--output json`)** — a bare array of complete camelCase records:
@@ -60,7 +60,7 @@ Underlying API `expression_tree` responses are recursive — many nodes carry `n
 `--name` is required. `--profile-type` defaults to `advanced`. Basic writes are rejected before any API call: on September 11, the API returned an advanced profile when a basic profile was requested. This guard applies to create, replace, and patch, including raw JSON bodies. For the common case — a flat boolean of pattern IDs — pass `--pattern-id <id>` repeatedly and (optionally) `--combinator and|or|not|and_not|or_not` (default `or`):
 
 ```bash
-airs runtime dlp profiles create \
+airs-cli runtime dlp profiles create \
   --name "High-risk PII (SSN OR CC)" \
   --description "Fires on SSN or CC pattern leaves" \
   --pattern-id 6990111aaa \
@@ -140,7 +140,7 @@ cat > profile-expr.json <<'EOF'
   ]
 }
 EOF
-airs runtime dlp profiles create --body-file profile-expr.json --output json
+airs-cli runtime dlp profiles create --body-file profile-expr.json --output json
 
 # multi_profile composition
 cat > profile-multi.json <<'EOF'
@@ -154,7 +154,7 @@ cat > profile-multi.json <<'EOF'
   ]
 }
 EOF
-airs runtime dlp profiles create --body-file profile-multi.json --output json
+airs-cli runtime dlp profiles create --body-file profile-multi.json --output json
 ```
 
 Multi-profile compositions auto-promote `profile_type` to `advanced`.
@@ -164,8 +164,8 @@ Multi-profile compositions auto-promote `profile_type` to `advanced`.
 Retrieve a single profile by ID. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0`.
 
 ```bash
-airs runtime dlp profiles get 11995028
-airs runtime dlp profiles get 11995028 --output json
+airs-cli runtime dlp profiles get 11995028
+airs-cli runtime dlp profiles get 11995028 --output json
 ```
 
 **Pretty output:**
@@ -204,14 +204,14 @@ Full PUT. Same flags as `create`, plus `--body-file` for complex rule trees:
 
 ```bash
 # Simple flat pattern boolean
-airs runtime dlp profiles replace 1234567890 \
+airs-cli runtime dlp profiles replace 1234567890 \
   --name "High-risk PII (SSN OR CC)" \
   --pattern-id 6990111aaa --pattern-id 6990222bbb \
   --combinator or --confidence high \
   --output json
 
 # Complex tree
-airs runtime dlp profiles replace 1234567890 --body-file profile-update.json --output json
+airs-cli runtime dlp profiles replace 1234567890 --body-file profile-update.json --output json
 ```
 
 **Output (`--output json`)** — curated ack `{action: "replaced", id, name, type, status, version}` with incremented version.
@@ -222,14 +222,14 @@ JSON Merge Patch. Required fields even on patch: `name` and `profile_type` — i
 
 ```bash
 # Patch description without touching detection_rules
-airs runtime dlp profiles patch 1234567890 \
+airs-cli runtime dlp profiles patch 1234567890 \
   --set name='"High-risk PII (SSN AND CC)"' \
   --set profile_type='"advanced"' \
   --set description='"Patched description"'
 
 # Attempt lifecycle retirement only after verifying support in your environment.
 # The latest live test returned HTTP 500; this is not a verified cleanup workflow.
-airs runtime dlp profiles patch 1234567890 \
+airs-cli runtime dlp profiles patch 1234567890 \
   --set name='"High-risk PII"' \
   --set profile_type='"advanced"' \
   --set profile_status='"deleted"'
@@ -244,15 +244,15 @@ airs runtime dlp profiles patch 1234567890 \
 Stub command — the supplied DLP contract does not expose DELETE. It explains the cleanup limitation, sends no API request, and exits **2**, which is not a successful deletion:
 
 ```bash
-airs runtime dlp profiles delete 1234567890
+airs-cli runtime dlp profiles delete 1234567890
 # exit code: 2
 ```
 
 The following historical status-patch idiom is **not live-verified**. The September 6 check returned HTTP 500 and left the owned profile active. Inspect the current state before any environment-specific investigation:
 
 ```bash
-airs runtime dlp profiles get 1234567890 --output json
-airs runtime dlp profiles patch 1234567890 \
+airs-cli runtime dlp profiles get 1234567890 --output json
+airs-cli runtime dlp profiles patch 1234567890 \
   --set name='"<existing-name>"' \
   --set profile_type='"<existing-type>"' \
   --set profile_status='"deleted"'
@@ -261,7 +261,7 @@ airs runtime dlp profiles patch 1234567890 \
 The `--body-file` shorthand if you prefer heredoc:
 
 ```bash
-airs runtime dlp profiles patch 1234567890 --body-file - <<'EOF'
+airs-cli runtime dlp profiles patch 1234567890 --body-file - <<'EOF'
 { "name": "my-profile", "profile_type": "advanced", "profile_status": "deleted" }
 EOF
 ```

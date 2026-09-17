@@ -64,7 +64,7 @@ describe('loadConfig', () => {
   });
 
   it('fails clearly when no tenant is selected', async () => {
-    await expect(loadConfig()).rejects.toThrow("No tenant selected. Run 'airs tenant create");
+    await expect(loadConfig()).rejects.toThrow("No tenant selected. Run 'airs-cli tenant create");
     expect(() => resolveConfigFilePath()).toThrow('No tenant selected');
     expect(resolveConfigContext()).toMatchObject({ selection: 'none', registered: [] });
   });
@@ -76,7 +76,7 @@ describe('loadConfig', () => {
     );
     store.active = null;
     await writeFile(registryPath, JSON.stringify(store));
-    await expect(loadConfig()).rejects.toThrow("'airs tenant switch <name>' (registered: dev)");
+    await expect(loadConfig()).rejects.toThrow("'airs-cli tenant switch <name>' (registered: dev)");
   });
 
   it('silently ignores retired per-product token endpoint keys in a file', async () => {

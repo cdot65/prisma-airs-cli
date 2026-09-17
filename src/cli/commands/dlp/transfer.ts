@@ -224,8 +224,8 @@ export function register(dlp: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime dlp backup --output-file ./dlp-backup.json',
-        'airs runtime dlp backup --resources profiles --skip-unsupported --output-file ./profiles.yaml --file-format yaml',
+        'airs-cli runtime dlp backup --output-file ./dlp-backup.json',
+        'airs-cli runtime dlp backup --resources profiles --skip-unsupported --output-file ./profiles.yaml --file-format yaml',
       ),
     )
     .action(async (opts) => {
@@ -329,9 +329,9 @@ export function register(dlp: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime dlp restore ./dlp-backup.json --dry-run --output json',
-        'airs runtime dlp restore ./dlp-backup.json --pattern-map "EDM SSN=Dest SSN" --dry-run',
-        'airs runtime dlp restore ./dlp-backup.json --name-prefix migrated- --expect-tsg <destination-tsg> --force',
+        'airs-cli runtime dlp restore ./dlp-backup.json --dry-run --output json',
+        'airs-cli runtime dlp restore ./dlp-backup.json --pattern-map "EDM SSN=Dest SSN" --dry-run',
+        'airs-cli runtime dlp restore ./dlp-backup.json --name-prefix migrated- --expect-tsg <destination-tsg> --force',
       ),
     )
     .action(async (file: string, opts) => {

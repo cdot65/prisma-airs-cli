@@ -9,7 +9,7 @@ sidebar_label: dictionaries
 List dictionaries
 
 ```text
-airs runtime dlp dictionaries list [options]
+airs-cli runtime dlp dictionaries list [options]
 ```
 
 #### Options
@@ -30,7 +30,7 @@ airs runtime dlp dictionaries list [options]
 *Pretty output (fallback `pretty` — JSON envelope)*
 
 ```bash
-airs runtime dlp dictionaries list --limit 2 --sort name,asc
+airs-cli runtime dlp dictionaries list --limit 2 --sort name,asc
 ```
 
 ```text
@@ -128,7 +128,7 @@ airs runtime dlp dictionaries list --limit 2 --sort name,asc
 *JSON output (explicit)*
 
 ```bash
-airs runtime dlp dictionaries list --limit 2 --sort name,asc --output json
+airs-cli runtime dlp dictionaries list --limit 2 --sort name,asc --output json
 ```
 
 ```text
@@ -226,7 +226,7 @@ airs runtime dlp dictionaries list --limit 2 --sort name,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp dictionaries list --limit 2 --sort name,asc --output yaml
+airs-cli runtime dlp dictionaries list --limit 2 --sort name,asc --output yaml
 ```
 
 ```text
@@ -310,7 +310,7 @@ total_elements: 31
 Create dictionary via multipart upload
 
 ```text
-airs runtime dlp dictionaries create [options]
+airs-cli runtime dlp dictionaries create [options]
 ```
 
 #### Options
@@ -338,7 +338,7 @@ No curated input/output example for this command yet.
 ### runtime dlp dictionaries get
 
 ```text
-airs runtime dlp dictionaries get [options] <id>
+airs-cli runtime dlp dictionaries get [options] <id>
 ```
 
 #### Arguments
@@ -358,7 +358,7 @@ airs runtime dlp dictionaries get [options] <id>
 *Pretty output (fallback `pretty` — JSON object)*
 
 ```bash
-airs runtime dlp dictionaries get 000000000000000000000001
+airs-cli runtime dlp dictionaries get 000000000000000000000001
 ```
 
 ```text
@@ -397,7 +397,7 @@ airs runtime dlp dictionaries get 000000000000000000000001
 *JSON output (explicit)*
 
 ```bash
-airs runtime dlp dictionaries get 000000000000000000000001 --output json
+airs-cli runtime dlp dictionaries get 000000000000000000000001 --output json
 ```
 
 ```text
@@ -436,7 +436,7 @@ airs runtime dlp dictionaries get 000000000000000000000001 --output json
 *YAML output*
 
 ```bash
-airs runtime dlp dictionaries get 000000000000000000000001 --output yaml
+airs-cli runtime dlp dictionaries get 000000000000000000000001 --output yaml
 ```
 
 ```text
@@ -473,7 +473,7 @@ audit_metadata:
 Full-replace via multipart upload. --file required. May return 200 (body) or 204 (re-get; falls back to "(state not echoed)" on transient failure).
 
 ```text
-airs runtime dlp dictionaries replace [options] <id>
+airs-cli runtime dlp dictionaries replace [options] <id>
 ```
 
 #### Arguments
@@ -505,7 +505,7 @@ No curated input/output example for this command yet.
 ### runtime dlp dictionaries patch
 
 ```text
-airs runtime dlp dictionaries patch [options] <id>
+airs-cli runtime dlp dictionaries patch [options] <id>
 ```
 
 #### Arguments
@@ -534,7 +534,7 @@ No curated input/output example for this command yet.
 Delete a dictionary
 
 ```text
-airs runtime dlp dictionaries delete [options] <id>
+airs-cli runtime dlp dictionaries delete [options] <id>
 ```
 
 #### Arguments
@@ -546,7 +546,7 @@ airs runtime dlp dictionaries delete [options] <id>
 *Soft-delete a dictionary by id (API returns 204; CLI prints confirmation)*
 
 ```bash
-airs runtime dlp dictionaries delete 000000000000000000000001
+airs-cli runtime dlp dictionaries delete 000000000000000000000001
 ```
 
 ```text

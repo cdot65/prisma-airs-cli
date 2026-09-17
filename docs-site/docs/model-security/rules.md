@@ -9,7 +9,7 @@ Rules define the security checks applied to models. They are read-only — manag
 ### List rules
 
 ```bash
-airs model-security rules list --limit 5
+airs-cli model-security rules list --limit 5
 ```
 
 ```
@@ -40,7 +40,7 @@ airs model-security rules list --limit 5
 ### Search rules
 
 ```bash
-airs model-security rules list --search "License"
+airs-cli model-security rules list --search "License"
 ```
 
 ```
@@ -59,7 +59,7 @@ airs model-security rules list --search "License"
 ### Get rule details
 
 ```bash
-airs model-security rules get 550e8400-e29b-41d4-a716-44665544000b
+airs-cli model-security rules get 550e8400-e29b-41d4-a716-44665544000b
 ```
 
 ```
@@ -86,7 +86,7 @@ Rule instances are the per-group configuration of security rules.
 ### List rule instances
 
 ```bash
-airs model-security rule-instances list 020d546d-3920-4ef3-9183-00f37f33f566
+airs-cli model-security rule-instances list 020d546d-3920-4ef3-9183-00f37f33f566
 ```
 
 ```
@@ -111,7 +111,7 @@ airs model-security rule-instances list 020d546d-3920-4ef3-9183-00f37f33f566
 ### Filter by state
 
 ```bash
-airs model-security rule-instances list 020d546d-3920-4ef3-9183-00f37f33f566 --state BLOCKING
+airs-cli model-security rule-instances list 020d546d-3920-4ef3-9183-00f37f33f566 --state BLOCKING
 ```
 
 ```
@@ -134,7 +134,7 @@ airs model-security rule-instances list 020d546d-3920-4ef3-9183-00f37f33f566 --s
 ### Get rule instance details
 
 ```bash
-airs model-security rule-instances get 020d546d-3920-4ef3-9183-00f37f33f566 67185c67-020a-4625-816f-9a2137e3d6b3
+airs-cli model-security rule-instances get 020d546d-3920-4ef3-9183-00f37f33f566 67185c67-020a-4625-816f-9a2137e3d6b3
 ```
 
 ```
@@ -161,5 +161,5 @@ airs model-security rule-instances get 020d546d-3920-4ef3-9183-00f37f33f566 6718
 ```
 
 ```bash
-airs model-security rule-instances update <groupUuid> <instanceUuid> --config rule-instance-update.json
+airs-cli model-security rule-instances update <groupUuid> <instanceUuid> --config rule-instance-update.json
 ```

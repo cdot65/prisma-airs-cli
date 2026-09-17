@@ -9,7 +9,7 @@ sidebar_label: profiles
 List data profiles
 
 ```text
-airs runtime dlp profiles list [options]
+airs-cli runtime dlp profiles list [options]
 ```
 
 #### Options
@@ -28,7 +28,7 @@ airs runtime dlp profiles list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime dlp profiles list --limit 2 --sort id,asc
+airs-cli runtime dlp profiles list --limit 2 --sort id,asc
 ```
 
 ```text
@@ -93,7 +93,7 @@ airs runtime dlp profiles list --limit 2 --sort id,asc
 *JSON output*
 
 ```bash
-airs runtime dlp profiles list --limit 2 --sort id,asc --output json
+airs-cli runtime dlp profiles list --limit 2 --sort id,asc --output json
 ```
 
 ```text
@@ -158,7 +158,7 @@ airs runtime dlp profiles list --limit 2 --sort id,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp profiles list --limit 2 --sort id,asc --output yaml
+airs-cli runtime dlp profiles list --limit 2 --sort id,asc --output yaml
 ```
 
 ```text
@@ -220,7 +220,7 @@ page:
 Create a data profile
 
 ```text
-airs runtime dlp profiles create [options]
+airs-cli runtime dlp profiles create [options]
 ```
 
 #### Options
@@ -243,7 +243,7 @@ airs runtime dlp profiles create [options]
 *Create a custom advanced profile from a body fixture (see docs/cli/examples/dlp/profiles/create.json). Body uses the discriminated-union detection_rules shape (rule_type=expression_tree).*
 
 ```bash
-airs runtime dlp profiles create --body-file docs/cli/examples/dlp/profiles/create.json --output json
+airs-cli runtime dlp profiles create --body-file docs/cli/examples/dlp/profiles/create.json --output json
 ```
 
 ```text
@@ -264,7 +264,7 @@ airs runtime dlp profiles create --body-file docs/cli/examples/dlp/profiles/crea
 Get a data profile by id
 
 ```text
-airs runtime dlp profiles get [options] <id>
+airs-cli runtime dlp profiles get [options] <id>
 ```
 
 #### Arguments
@@ -282,7 +282,7 @@ airs runtime dlp profiles get [options] <id>
 *Pretty output (fallback `pretty` — predefined profile)*
 
 ```bash
-airs runtime dlp profiles get 00000001
+airs-cli runtime dlp profiles get 00000001
 ```
 
 ```text
@@ -301,7 +301,7 @@ Data Profile:
 *JSON output*
 
 ```bash
-airs runtime dlp profiles get 00000001 --output json
+airs-cli runtime dlp profiles get 00000001 --output json
 ```
 
 ```text
@@ -320,7 +320,7 @@ airs runtime dlp profiles get 00000001 --output json
 *YAML output*
 
 ```bash
-airs runtime dlp profiles get 00000001 --output yaml
+airs-cli runtime dlp profiles get 00000001 --output yaml
 ```
 
 ```text
@@ -341,7 +341,7 @@ updated: '2026-05-15T08:05:35.599Z'
 Full-replace a data profile (PUT)
 
 ```text
-airs runtime dlp profiles replace [options] <id>
+airs-cli runtime dlp profiles replace [options] <id>
 ```
 
 #### Arguments
@@ -376,7 +376,7 @@ No curated input/output example for this command yet.
 JSON Merge Patch. body must include name + profile_type. Use --body-file for nested fields. --set/--clear coerce values: numbers/booleans/JSON literals. To force a string, quote: --set count='"5"'.
 
 ```text
-airs runtime dlp profiles patch [options] <id>
+airs-cli runtime dlp profiles patch [options] <id>
 ```
 
 #### Arguments
@@ -405,7 +405,7 @@ No curated input/output example for this command yet.
 Not supported — prints the patch idiom and exits 2
 
 ```text
-airs runtime dlp profiles delete [options] <id>
+airs-cli runtime dlp profiles delete [options] <id>
 ```
 
 #### Arguments
@@ -417,7 +417,7 @@ airs runtime dlp profiles delete [options] <id>
 *Stub — no supported DELETE or verified status-based retirement; exits 2 without API traffic*
 
 ```bash
-airs runtime dlp profiles delete 00000001
+airs-cli runtime dlp profiles delete 00000001
 ```
 
 ```text
@@ -425,5 +425,5 @@ This DLP API has no DELETE for data profiles.
 Status-based retirement is not live-verified: the latest owned-fixture
 PATCH/PUT returned HTTP 500; an advertised DELETE returned HTTP 501.
 No API request was sent by this command. Do not assume the profile was removed.
-Inspect current state with: airs runtime dlp profiles get 00000001 --output json
+Inspect current state with: airs-cli runtime dlp profiles get 00000001 --output json
 ```

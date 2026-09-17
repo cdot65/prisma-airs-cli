@@ -7,7 +7,7 @@ title: Backup & Restore
 Export and import AIRS configuration to local JSON or YAML files. Runtime security
 profiles (including their referenced custom topics) and Red Team targets are supported.
 
-For `airs runtime profiles backup` / `restore`, including cross-tenant migration, use the
+For `airs-cli runtime profiles backup` / `restore`, including cross-tenant migration, use the
 [Runtime profile migration guide](../runtime/profile-transfer.md). The target commands
 below retain their existing behavior and file format.
 
@@ -25,7 +25,7 @@ below retain their existing behavior and file format.
 Export every red team target to a directory, one file per target:
 
 ```bash
-airs redteam targets backup
+airs-cli redteam targets backup
 ```
 
 Default output directory is `./airs-backup/targets/`. Each file is named after the target (sanitized to filesystem-safe characters).
@@ -53,7 +53,7 @@ Default output directory is `./airs-backup/targets/`. Each file is named after t
 Export a specific target by name:
 
 ```bash
-airs redteam targets backup --name "truffles - dev - langgraph agent"
+airs-cli redteam targets backup --name "truffles - dev - langgraph agent"
 ```
 
 ### Options
@@ -67,7 +67,7 @@ airs redteam targets backup --name "truffles - dev - langgraph agent"
 ### YAML Format
 
 ```bash
-airs redteam targets backup --file-format yaml --output-dir ./my-backups
+airs-cli redteam targets backup --file-format yaml --output-dir ./my-backups
 ```
 
 ---
@@ -77,7 +77,7 @@ airs redteam targets backup --file-format yaml --output-dir ./my-backups
 ### From a Single File
 
 ```bash
-airs redteam targets restore --file ./airs-backup/targets/my-target.json
+airs-cli redteam targets restore --file ./airs-backup/targets/my-target.json
 ```
 
 ### From a Directory
@@ -85,7 +85,7 @@ airs redteam targets restore --file ./airs-backup/targets/my-target.json
 Restore all backup files in a directory:
 
 ```bash
-airs redteam targets restore --input-dir ./airs-backup/targets/
+airs-cli redteam targets restore --input-dir ./airs-backup/targets/
 ```
 
 ### Handling Collisions
@@ -93,7 +93,7 @@ airs redteam targets restore --input-dir ./airs-backup/targets/
 By default, targets with matching names are **skipped** with a warning. Use `--overwrite` to update existing targets:
 
 ```bash
-airs redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
+airs-cli redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
 ```
 
 **Example output:**
@@ -113,7 +113,7 @@ airs redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
 Test each target's connection before saving:
 
 ```bash
-airs redteam targets restore --file ./my-target.json --validate
+airs-cli redteam targets restore --file ./my-target.json --validate
 ```
 
 ### Options
@@ -174,10 +174,10 @@ Back up all targets before making changes:
 
 ```bash
 # Before changes
-airs redteam targets backup --output-dir ./pre-change-backup/
+airs-cli redteam targets backup --output-dir ./pre-change-backup/
 
 # After testing, if something went wrong
-airs redteam targets restore --input-dir ./pre-change-backup/ --overwrite
+airs-cli redteam targets restore --input-dir ./pre-change-backup/ --overwrite
 ```
 
 ### Environment Migration
@@ -186,12 +186,12 @@ Move targets between AIRS tenants:
 
 ```bash
 # Export from source tenant
-airs tenant switch source
-airs redteam targets backup
+airs-cli tenant switch source
+airs-cli redteam targets backup
 
 # Import to destination tenant
-airs tenant switch destination
-airs redteam targets restore --input-dir ./airs-backup/targets/
+airs-cli tenant switch destination
+airs-cli redteam targets restore --input-dir ./airs-backup/targets/
 ```
 
 ### Version Control
@@ -199,7 +199,7 @@ airs redteam targets restore --input-dir ./airs-backup/targets/
 Store target configurations in git for audit trails:
 
 ```bash
-airs redteam targets backup --output-dir ./infra/airs-targets/ --file-format yaml
+airs-cli redteam targets backup --output-dir ./infra/airs-targets/ --file-format yaml
 git add infra/airs-targets/
 git commit -m "snapshot: AIRS red team targets"
 ```

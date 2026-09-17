@@ -31,12 +31,12 @@ the legacy `cost` command currently accepts only a rolling-day window, as listed
 ### aigateway telemetry cost
 
 For a private, self-contained HTML or Markdown deliverable spanning these feeds, use
-[`airs aigateway report`](./dashboard.md). It paginates transactions and reports completeness.
+[`airs-cli aigateway report`](./dashboard.md). It paginates transactions and reports completeness.
 
 Total and per-day spend for a workspace.
 
 ```text
-airs aigateway telemetry cost --workspace <slug> [--days <n>] [--output <format>]
+airs-cli aigateway telemetry cost --workspace <slug> [--days <n>] [--output <format>]
 ```
 
 #### Options
@@ -59,17 +59,17 @@ No consumer needs to infer a unit or silently rescale a value.
 #### Examples
 
 ```bash
-airs aigateway telemetry cost --workspace ws-main-a-349e0e
-airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json
+airs-cli aigateway telemetry cost --workspace ws-main-a-349e0e
+airs-cli aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json
 ```
 
 Additional examples:
 
 ```bash
-airs aigateway telemetry requests --workspace ws-main-a-349e0e --days 30 --output json
-airs aigateway telemetry group-by model --workspace ws-main-a-349e0e --columns cost,total_tokens
-airs aigateway telemetry logs list --workspace ws-main-a-349e0e --status-code 446 --output json
-airs aigateway telemetry feedback distribution --workspace ws-main-a-349e0e --days 7
+airs-cli aigateway telemetry requests --workspace ws-main-a-349e0e --days 30 --output json
+airs-cli aigateway telemetry group-by model --workspace ws-main-a-349e0e --columns cost,total_tokens
+airs-cli aigateway telemetry logs list --workspace ws-main-a-349e0e --status-code 446 --output json
+airs-cli aigateway telemetry feedback distribution --workspace ws-main-a-349e0e --days 7
 ```
 
 SCM returns `null` mean/percentile aggregates for an empty latency window. SDK 0.23.0 and later
@@ -88,11 +88,11 @@ columns and filters are validated before client creation. The SDK remains the so
 column names and filter semantics; malformed arguments exit 2 without authentication or a request.
 
 ```bash
-airs aigateway telemetry group-by model --workspace ws-develo-71f8d8 --days 7 \
+airs-cli aigateway telemetry group-by model --workspace ws-develo-71f8d8 --days 7 \
   --status-codes 200,446 --cost-max 0.125 --columns cost,total_tokens --output json
-airs aigateway telemetry group-by status_code --workspace ws-develo-71f8d8 --days 7 \
+airs-cli aigateway telemetry group-by status_code --workspace ws-develo-71f8d8 --days 7 \
   --ai-org-models openai__gpt-5.6-terra --output yaml
-airs aigateway telemetry group-by users --workspace ws-develo-71f8d8 --days 7 \
+airs-cli aigateway telemetry group-by users --workspace ws-develo-71f8d8 --days 7 \
   --metadata '{"environment":"dev"}' --output json
 ```
 
@@ -122,11 +122,11 @@ The SDK supplies the shared semantic validation; the CLI only parses argument sy
 not the runtime inference routing syntax `@provider/model`.
 
 ```bash
-airs aigateway telemetry requests --workspace ws-develo-71f8d8 --days 7 \
+airs-cli aigateway telemetry requests --workspace ws-develo-71f8d8 --days 7 \
   --status-codes 200,446 --metadata '{"environment":"dev"}' --output json
-airs aigateway telemetry cost --workspace dev --days 7 \
+airs-cli aigateway telemetry cost --workspace dev --days 7 \
   --ai-org-models openai__gpt-5.6-terra --cost-min 0 --cost-max 0.125 --output json
-airs aigateway telemetry tokens --workspace ws-develo-71f8d8 --days 7 \
+airs-cli aigateway telemetry tokens --workspace ws-develo-71f8d8 --days 7 \
   --total-units-min 0 --total-units-max 128 --output yaml
 ```
 
@@ -1329,7 +1329,7 @@ Actual installed CLI JSON/YAML output projected to exit status, period aggregate
 Reproduce the empty-window read with:
 
 ```bash
-airs aigateway telemetry latency --workspace ws-develo-71f8d8 --start 2020-01-01T00:00:00Z --end 2020-01-01T00:00:01Z --output json
+airs-cli aigateway telemetry latency --workspace ws-develo-71f8d8 --start 2020-01-01T00:00:00Z --end 2020-01-01T00:00:01Z --output json
 ```
 
 This uses the disclosed TLS-verified LAN path and unchanged read-only SCM credentials. It is not certification of every gateway operation or public WAN access.

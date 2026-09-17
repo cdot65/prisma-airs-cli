@@ -19,9 +19,9 @@ Manage Data Filtering Profiles on the DLP service. Filtering profiles define sca
 List all filtering profiles. Supports pagination and sorting.
 
 ```bash
-airs runtime dlp filtering-profiles list
-airs runtime dlp filtering-profiles list --limit 20 --offset 0
-airs runtime dlp filtering-profiles list --sort name,asc --output json
+airs-cli runtime dlp filtering-profiles list
+airs-cli runtime dlp filtering-profiles list --limit 20 --offset 0
+airs-cli runtime dlp filtering-profiles list --sort name,asc --output json
 ```
 
 **Output (`--output json`)** — a bare array of complete camelCase records:
@@ -51,8 +51,8 @@ Underlying API responses return `null` for several fields on real tenants — in
 Retrieve a single filtering profile by ID.
 
 ```bash
-airs runtime dlp filtering-profiles get 6a146fe17e175b786523c03a
-airs runtime dlp filtering-profiles get 6a146fe17e175b786523c03a --output json
+airs-cli runtime dlp filtering-profiles get 6a146fe17e175b786523c03a
+airs-cli runtime dlp filtering-profiles get 6a146fe17e175b786523c03a --output json
 ```
 
 **Pretty output:**
@@ -98,7 +98,7 @@ airs runtime dlp filtering-profiles get 6a146fe17e175b786523c03a --output json
 Full PUT. `--file-based` and `--non-file-based` are required (both booleans); everything else is optional flat-field flags. For nested `exception_rules` or `exclusions`, use `--body-file`.
 
 ```bash
-airs runtime dlp filtering-profiles replace 6a10... \
+airs-cli runtime dlp filtering-profiles replace 6a10... \
   --file-based --non-file-based \
   --description "Updated HR data filtering" \
   --direction UPLOAD \
@@ -144,7 +144,7 @@ cat > dfp-update.json <<'EOF'
   ]
 }
 EOF
-airs runtime dlp filtering-profiles replace 6a10... --body-file dfp-update.json --output json
+airs-cli runtime dlp filtering-profiles replace 6a10... --body-file dfp-update.json --output json
 ```
 
 **Output (`--output json`)** — curated ack `{action: "replaced", id, name, type, status, version}`.

@@ -5,14 +5,14 @@ sidebar_position: 8
 
 # AI Gateway CLI command plan
 
-This document maps `@cdot65/prisma-airs-sdk` 0.20.0 onto a stable `airs aigateway` command tree.
+This document maps `@cdot65/prisma-airs-sdk` 0.20.0 onto a stable `airs-cli aigateway` command tree.
 The command surface described here is implemented. It remains the design contract for future AI
 Gateway additions and records the test-first delivery phases used for the SDK 0.20.0 expansion.
 
 ## Design rules
 
 - Keep every command group and help listing alphabetically sorted.
-- Use one predictable grammar: `airs aigateway <resource> <verb> [ref]`. Relationship resources
+- Use one predictable grammar: `airs-cli aigateway <resource> <verb> [ref]`. Relationship resources
   add one level: `<resource> <relationship> <verb>`.
 - Use plural collection nouns. Make `workspaces` canonical and retain the existing `workspace`
   spelling as a hidden compatibility alias.
@@ -53,7 +53,7 @@ deprecated compatibility path, but help presents `workspaces archive` as canonic
 ## Proposed hierarchy
 
 ```text
-airs aigateway
+airs-cli aigateway
 ├── api-keys
 │   ├── service  list · get · create · update · delete · rotate
 │   └── user     list · get · create · update · delete · rotate
@@ -104,11 +104,11 @@ without adding capability.
 Every level must be useful without prior documentation:
 
 ```bash
-airs aigateway --help
-airs aigateway help mcp
-airs aigateway mcp --help
-airs aigateway mcp integrations --help
-airs aigateway mcp integrations workspaces set --help
+airs-cli aigateway --help
+airs-cli aigateway help mcp
+airs-cli aigateway mcp --help
+airs-cli aigateway mcp integrations --help
+airs-cli aigateway mcp integrations workspaces set --help
 ```
 
 Invoking a group without a leaf action prints that group's help and exits `0`. Unknown commands
@@ -130,7 +130,7 @@ Descriptions begin with a verb and avoid repeating “AI Gateway.”
 ### Suggested top-level help
 
 ```text
-Usage: airs aigateway [options] [command]
+Usage: airs-cli aigateway [options] [command]
 
 Manage and observe Prisma AIRS AI Gateway resources
 
@@ -210,11 +210,11 @@ Shared helpers own these cross-cutting contracts:
 ### Read conventions
 
 ```bash
-airs aigateway configs list --workspace <uuid> --output json
-airs aigateway configs get <config-id> --output yaml
-airs aigateway configs versions <config-id> --output table
-airs aigateway mcp integrations capabilities list <integration-id> --output json
-airs aigateway deployments ping <deployment-id> --output json
+airs-cli aigateway configs list --workspace <uuid> --output json
+airs-cli aigateway configs get <config-id> --output yaml
+airs-cli aigateway configs versions <config-id> --output table
+airs-cli aigateway mcp integrations capabilities list <integration-id> --output json
+airs-cli aigateway deployments ping <deployment-id> --output json
 ```
 
 Workspace-scoped configuration lists take the workspace UUID. Telemetry takes the workspace slug.
@@ -224,14 +224,14 @@ used.
 ### Mutation conventions
 
 ```bash
-airs aigateway configs create --name primary --workspace <uuid> \
+airs-cli aigateway configs create --name primary --workspace <uuid> \
   --set config.retry.attempts=3 --output json
-airs aigateway providers update <provider-id> --name vertex-primary
-airs aigateway mcp integrations workspaces set <integration-id> \
+airs-cli aigateway providers update <provider-id> --name vertex-primary
+airs-cli aigateway mcp integrations workspaces set <integration-id> \
   --workspace-binding ws-development=false --preserve-existing --force
-airs aigateway api-keys service rotate <key-id> \
+airs-cli aigateway api-keys service rotate <key-id> \
   --transition-ms 1800000 --secret-output ./rotated-key.json --force
-airs aigateway deployments archive <deployment-id> --organisation-id <tsg> --force
+airs-cli aigateway deployments archive <deployment-id> --organisation-id <tsg> --force
 ```
 
 `--preserve-existing` maps to `override_existing_workspace_access: false`; replacement must be an

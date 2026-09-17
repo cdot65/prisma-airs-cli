@@ -14,6 +14,7 @@ const sidebars: SidebarsConfig = {
       label: 'Getting Started',
       items: [
         'getting-started/installation',
+        'getting-started/command-migration',
         'getting-started/configuration',
         'cli/tenant',
         'getting-started/quick-start',

@@ -48,8 +48,8 @@ function resolveEntry(name: string | undefined): TenantEntry {
   if (!selected)
     throw new Error(
       store.tenants.length
-        ? `No tenant selected; pass a name or run 'airs tenant switch <name>' (registered: ${store.tenants.map((entry) => entry.name).join(', ')})`
-        : "No tenant selected; run 'airs tenant create <name>' first",
+        ? `No tenant selected; pass a name or run 'airs-cli tenant switch <name>' (registered: ${store.tenants.map((entry) => entry.name).join(', ')})`
+        : "No tenant selected; run 'airs-cli tenant create <name>' first",
     );
   const entry = store.tenants.find((value) => value.name === selected);
   if (!entry) throw new Error('Tenant not found');
@@ -67,15 +67,15 @@ export function registerTenantCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs tenant create development',
-        'airs tenant switch development',
-        'airs tenant set development defaultOutput yaml',
-        'airs tenant set development airsApiKey',
-        'airs tenant unset development defaultOutput',
-        'airs tenant get development mgmtTsgId',
-        'airs tenant create production --config /secure/production.json',
-        'airs tenant read',
-        'airs tenant path',
+        'airs-cli tenant create development',
+        'airs-cli tenant switch development',
+        'airs-cli tenant set development defaultOutput yaml',
+        'airs-cli tenant set development airsApiKey',
+        'airs-cli tenant unset development defaultOutput',
+        'airs-cli tenant get development mgmtTsgId',
+        'airs-cli tenant create production --config /secure/production.json',
+        'airs-cli tenant read',
+        'airs-cli tenant path',
       ),
     );
 
@@ -114,7 +114,7 @@ export function registerTenantCommand(program: Command): void {
                   : await promptTenantValue('OAuth client secret (mgmtClientSecret):', true),
               });
           ui.success(
-            `Registered ${entry.name} (TSG ${entry.tsgId}); ${opts.config ? 'config file unchanged' : 'private config created'}. Use airs tenant switch ${entry.name}.`,
+            `Registered ${entry.name} (TSG ${entry.tsgId}); ${opts.config ? 'config file unchanged' : 'private config created'}. Use airs-cli tenant switch ${entry.name}.`,
           );
         } catch (error) {
           tenantInputFailure(error);
@@ -202,11 +202,11 @@ export function registerTenantCommand(program: Command): void {
         const store = readTenantStore();
         if (store.tenants.length === 0 && format === 'pretty') {
           ui.emptyList('tenants');
-          ui.status("Run 'airs tenant create <name>' to register one.");
+          ui.status("Run 'airs-cli tenant create <name>' to register one.");
           return;
         }
         if (store.active === null && store.tenants.length)
-          ui.status("No tenant selected; run 'airs tenant switch <name>'.");
+          ui.status("No tenant selected; run 'airs-cli tenant switch <name>'.");
         const rows = store.tenants.map((entry) => ({
           ...entry,
           active: entry.name === store.active,

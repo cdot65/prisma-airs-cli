@@ -10,7 +10,7 @@ is bypassed.
 | | |
 | --- | --- |
 | **Product** | Palo Alto Prisma AIRS (AI Runtime Security), AI-Runtime-API |
-| **Tested via** | `airs` CLI v2.7.0 (`airs runtime scan`) |
+| **Tested via** | `airs-cli` CLI v2.7.0 (`airs-cli runtime scan`) |
 | **Profile** | `AI Gateway - Dev - Strict` (DLP policy `data-leak-detection.action = block`) |
 | **Date** | 2026-05-21 |
 | **Severity** | High — undetected exfiltration of sensitive data |
@@ -40,11 +40,11 @@ data-protection → data-leak-detection → action: "block"`.
 
 ```bash
 # blocked (dlp)
-airs runtime scan --profile "AI Gateway - Dev - Strict" \
+airs-cli runtime scan --profile "AI Gateway - Dev - Strict" \
   "SSN 078-05-1120 Visa 4111 1111 1111 1111"
 
 # allowed (bypass) — identical data wrapped in a namespaced SVG
-airs runtime scan --profile "AI Gateway - Dev - Strict" \
+airs-cli runtime scan --profile "AI Gateway - Dev - Strict" \
   '<svg xmlns="http://www.w3.org/2000/svg">SSN 078-05-1120 Visa 4111 1111 1111 1111</svg>'
 ```
 

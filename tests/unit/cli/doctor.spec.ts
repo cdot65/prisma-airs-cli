@@ -127,14 +127,14 @@ describe('doctor command', () => {
       const check = checkTenant(noneContext(['a', 'b']));
       expect(check.status).toBe('fail');
       expect(check.detail).toContain('registered: a, b');
-      expect(check.hint).toContain('airs tenant switch <name>');
+      expect(check.hint).toContain('airs-cli tenant switch <name>');
     });
 
     it('fails and explains creation when nothing is registered', () => {
       const check = checkTenant(noneContext());
       expect(check.status).toBe('fail');
       expect(check.detail).toContain(registryPath);
-      expect(check.hint).toContain('airs tenant create <name>');
+      expect(check.hint).toContain('airs-cli tenant create <name>');
     });
   });
 
@@ -143,7 +143,7 @@ describe('doctor command', () => {
       const check = await checkConfigFile(namedContext(join(tempDir, 'nope.json')));
       expect(check.status).toBe('fail');
       expect(check.detail).toContain('not found');
-      expect(check.hint).toContain('airs tenant create');
+      expect(check.hint).toContain('airs-cli tenant create');
     });
 
     it('passes on a valid JSON object at an explicit path', async () => {
@@ -168,7 +168,7 @@ describe('doctor command', () => {
       const check = await checkConfigFile(explicitContext(p));
       expect(check.status).toBe('fail');
       expect(check.detail).toContain('scanConcurrency');
-      expect(check.hint).toContain('airs tenant set');
+      expect(check.hint).toContain('airs-cli tenant set');
       expect(`${check.detail}${check.hint}`).not.toContain('99');
       expect(`${check.detail}${check.hint}`).not.toContain('SUPER-SECRET');
     });
@@ -205,7 +205,7 @@ describe('doctor command', () => {
       const check = await checkConfigFile(namedContext(p));
       expect(check.status).toBe('warn');
       expect(check.detail).toContain('ignored 2 keys: redTeamTokenEndpoint, custom');
-      expect(check.hint).toContain('airs tenant unset <name> <key>');
+      expect(check.hint).toContain('airs-cli tenant unset <name> <key>');
       expect(check.hint).toContain('redTeamTokenEndpoint');
     });
 
@@ -226,7 +226,7 @@ describe('doctor command', () => {
         'ignored 3 variables: PANW_MGMT_CLIENT_SECRET, PRISMA_AIRS_CONFIG_PATH, SCAN_CONCURRENCY',
       );
       expect(check.detail).not.toContain('SUPER-SECRET');
-      expect(check.hint).toContain('airs tenant set <name> <key>');
+      expect(check.hint).toContain('airs-cli tenant set <name> <key>');
     });
 
     it('passes a clean environment and mentions active SDK diagnostics', () => {
@@ -254,7 +254,7 @@ describe('doctor command', () => {
     it('skips (not fails) when unset, with the tenant remedy', () => {
       const check = checkScannerCredentials(inspected(), namedContext('/cfg/dev.json'));
       expect(check.status).toBe('skip');
-      expect(check.hint).toContain('airs tenant set dev <key>');
+      expect(check.hint).toContain('airs-cli tenant set dev <key>');
       expect(check.hint).not.toContain('PANW_');
     });
 
@@ -284,7 +284,7 @@ describe('doctor command', () => {
       );
       expect(check.status).toBe('fail');
       expect(check.detail).toContain('missing: mgmtClientSecret, mgmtTsgId');
-      expect(check.hint).toContain('airs tenant set dev <key>');
+      expect(check.hint).toContain('airs-cli tenant set dev <key>');
     });
 
     it('only warns for a scanner-only setup', () => {

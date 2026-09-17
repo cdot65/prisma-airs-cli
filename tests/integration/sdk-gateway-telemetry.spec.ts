@@ -47,7 +47,7 @@ describe('published SDK empty latency through the public CLI', () => {
     });
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       'aigateway',
       'telemetry',
       'latency',

@@ -18,7 +18,7 @@ Unit tests never instantiate the `@cdot65/prisma-airs-sdk` clients. They inject 
 ```
 tests/
 ├── unit/                  spec files
-│   ├── airs/              management.spec.ts, modelsecurity.spec.ts, promptsets.spec.ts,
+│   ├── airs-cli/              management.spec.ts, modelsecurity.spec.ts, promptsets.spec.ts,
 │   │                      redteam.spec.ts, runtime.spec.ts, scanner.spec.ts
 │   ├── backup/            io.spec.ts
 │   ├── cli/               backup-renderer.spec.ts, backup.spec.ts, bulk-scan-state.spec.ts,

@@ -23,8 +23,8 @@ environment or retry".
 This means machine-readable output always pipes cleanly:
 
 ```bash
-airs runtime profiles list --all --output json | jq '.[].profileName'
-airs runtime bulk-scan --profile demo --file prompts.txt --output-file results.csv
+airs-cli runtime profiles list --all --output json | jq '.[].profileName'
+airs-cli runtime bulk-scan --profile demo --file prompts.txt --output-file results.csv
 # progress lines appear on the terminal (stderr) without corrupting the CSV
 ```
 
@@ -51,8 +51,8 @@ structured boundary.
 Output selection uses this precedence, from highest to lowest:
 
 1. The read command's `--output <format>`.
-2. The global `airs --output <format>` option.
-3. `defaultOutput` in the selected tenant file (`airs tenant set <name> defaultOutput json`).
+2. The global `airs-cli --output <format>` option.
+3. `defaultOutput` in the selected tenant file (`airs-cli tenant set <name> defaultOutput json`).
 4. `pretty`.
 
 ## Pagination and revisions

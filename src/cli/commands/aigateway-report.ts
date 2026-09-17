@@ -35,10 +35,10 @@ export function registerAiGatewayReportCommand(aigateway: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway report --workspace ws-develo-71f8d8 --output-file ./airs-daily.html',
-        'airs aigateway report --workspace ws-develo-71f8d8 --output markdown --output-file ./airs-daily.md',
-        'airs aigateway report --workspace ws-develo-71f8d8',
-        'airs aigateway report --workspace ws-develo-71f8d8 --strict --max-pages 20 --output-file - > daily.html',
+        'airs-cli aigateway report --workspace ws-develo-71f8d8 --output-file ./airs-daily.html',
+        'airs-cli aigateway report --workspace ws-develo-71f8d8 --output markdown --output-file ./airs-daily.md',
+        'airs-cli aigateway report --workspace ws-develo-71f8d8',
+        'airs-cli aigateway report --workspace ws-develo-71f8d8 --strict --max-pages 20 --output-file - > daily.html',
       ),
     )
     .action(async (opts) => {

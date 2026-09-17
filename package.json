@@ -1,8 +1,8 @@
 {
   "name": "@cdot65/prisma-airs-cli",
   "packageManager": "pnpm@10.6.5",
-  "version": "6.1.1",
-  "description": "CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits",
+  "version": "7.0.0",
+  "description": "CLI and library for Palo Alto Prisma AIRS \u2014 guardrail refinement, AI red teaming, model security scanning, profile audits",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
     "dist"
   ],
   "bin": {
-    "airs": "dist/cli/index.js"
+    "airs-cli": "dist/cli/index.js"
   },
   "scripts": {
     "build": "tsup",
@@ -47,7 +47,7 @@
     "local:dev:topics": "tsx src/cli/index.ts runtime topics list --all --output yaml",
     "local:dev:doctor": "tsx src/cli/index.ts doctor --output markdown",
     "local:link": "pnpm run build && pnpm link --global",
-    "local:link:check": "airs --version",
+    "local:link:check": "airs-cli --version",
     "local:unlink": "pnpm uninstall --global @cdot65/prisma-airs-cli"
   },
   "engines": {

@@ -4,7 +4,7 @@ title: AI Agent Instructions
 
 # AI Agent Instructions
 
-Instructions for AI coding agents (Claude Code, Cursor, etc.) to use the `airs` CLI programmatically.
+Instructions for AI coding agents (Claude Code, Cursor, etc.) to use the `airs-cli` CLI programmatically.
 
 The canonical file lives at [`AGENTS.md`](https://github.com/cdot65/prisma-airs-cli/blob/main/AGENTS.md) in the repository root. It is designed to be loaded into an AI agent's context window so the agent can operate the CLI autonomously.
 
@@ -15,7 +15,7 @@ The canonical file lives at [`AGENTS.md`](https://github.com/cdot65/prisma-airs-
 Add to your project's `CLAUDE.md`:
 
 ```markdown
-See AGENTS.md for instructions on using the `airs` CLI.
+See AGENTS.md for instructions on using the `airs-cli` CLI.
 ```
 
 Or reference it directly — Claude Code automatically reads `CLAUDE.md` and can be pointed to `AGENTS.md`.

@@ -24,8 +24,8 @@ List tenant-created patterns with optional pagination and sorting. Predefined
 them.
 
 ```bash
-airs runtime dlp patterns list
-airs runtime dlp patterns list --limit 50 --offset 0 --sort name,asc --output json
+airs-cli runtime dlp patterns list
+airs-cli runtime dlp patterns list --limit 50 --offset 0 --sort name,asc --output json
 ```
 
 **Output (`--output json`)** — a bare array of complete camelCase records (not
@@ -65,7 +65,7 @@ Underlying API responses include `null` values on `matching_rules` nested fields
 Create a new data pattern using structured CLI flags (`--name` is the only required flag; `--type` defaults to `custom`, `--technique` defaults to `regex`):
 
 ```bash
-airs runtime dlp patterns create \
+airs-cli runtime dlp patterns create \
   --name "cc-numbers-weighted" \
   --description "Credit-card numbers, weighted by proximity to card-related keywords" \
   --technique weighted_regex \
@@ -115,7 +115,7 @@ Flag reference:
 For shapes the flags don't cover (e.g. unusual `metadata_criteria` on `matching_rules`), pass a JSON file:
 
 ```bash
-airs runtime dlp patterns create --body-file pattern.json --output json
+airs-cli runtime dlp patterns create --body-file pattern.json --output json
 ```
 
 Body shape matches the API request — `{ name, type, detection_config, matching_rules, tags }`.
@@ -125,8 +125,8 @@ Body shape matches the API request — `{ name, type, detection_config, matching
 Retrieve a single pattern by ID. CLI v4 uses `@cdot65/prisma-airs-sdk@^0.18.0`.
 
 ```bash
-airs runtime dlp patterns get 6a06d3cf7e175b786523b8e5
-airs runtime dlp patterns get 6a06d3cf7e175b786523b8e5 --output json
+airs-cli runtime dlp patterns get 6a06d3cf7e175b786523b8e5
+airs-cli runtime dlp patterns get 6a06d3cf7e175b786523b8e5 --output json
 ```
 
 **Pretty output:**
@@ -166,7 +166,7 @@ airs runtime dlp patterns get 6a06d3cf7e175b786523b8e5 --output json
 Full PUT — the entire body becomes the desired state. Uses the same `writeFlags` as `create`:
 
 ```bash
-airs runtime dlp patterns replace 6990... \
+airs-cli runtime dlp patterns replace 6990... \
   --name "cc-numbers-weighted" \
   --technique weighted_regex \
   --confidence-levels "low,medium,high" \
@@ -191,13 +191,13 @@ JSON Merge Patch. Use `--set k=v` and `--clear k` for scalar tweaks; `--body-fil
 
 ```bash
 # Scalar tweaks
-airs runtime dlp patterns patch 6990... \
+airs-cli runtime dlp patterns patch 6990... \
   --set name='"cc-numbers-weighted"' \
   --set type='"custom"' \
   --clear description
 
 # Nested fields via JSON file
-airs runtime dlp patterns patch 6990... --body-file pattern-patch.json --output json
+airs-cli runtime dlp patterns patch 6990... --body-file pattern-patch.json --output json
 ```
 
 `--body-file` is mutually exclusive with `--set/--clear`.
@@ -209,7 +209,7 @@ airs runtime dlp patterns patch 6990... --body-file pattern-patch.json --output 
 Soft-delete a pattern. The pattern becomes invisible to `list` but remains resolvable via `get` with `status: 'deleted'`.
 
 ```bash
-airs runtime dlp patterns delete 6990...
+airs-cli runtime dlp patterns delete 6990...
 ```
 
 **Exit code** — 0 on success, 1 on error.

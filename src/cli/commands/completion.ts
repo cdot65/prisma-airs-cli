@@ -43,7 +43,8 @@ export function collectCompletionNodes(root: Command, path: string[] = []): Comp
 }
 
 function programName(root: Command): string {
-  return root.name() || 'airs';
+  // The harness composes these standalone completions with its own command tree.
+  return root.name() === 'airs cli' ? 'airs-cli' : root.name() || 'airs-cli';
 }
 
 export function generateBashCompletion(root: Command): string {
@@ -148,9 +149,9 @@ export function registerCompletionCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs completion bash > ~/.local/share/bash-completion/completions/airs',
-        'mkdir -p ~/.zfunc && airs completion zsh > ~/.zfunc/_airs',
-        'airs completion fish > ~/.config/fish/completions/airs.fish',
+        'airs-cli completion bash > ~/.local/share/bash-completion/completions/airs-cli',
+        'mkdir -p ~/.zfunc && airs-cli completion zsh > ~/.zfunc/_airs-cli',
+        'airs-cli completion fish > ~/.config/fish/completions/airs-cli.fish',
       ),
     )
     .action((shell: string) => {

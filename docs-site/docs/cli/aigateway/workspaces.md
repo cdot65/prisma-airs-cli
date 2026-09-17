@@ -40,7 +40,7 @@ SCM's Access Management UI *edits* the existing role row by default — click
 List workspaces.
 
 ```text
-airs aigateway workspaces list [options]
+airs-cli aigateway workspaces list [options]
 ```
 
 #### Options
@@ -58,10 +58,10 @@ single call returning both states, so `--all` merges two admin-plane reads.
 #### Examples
 
 ```bash
-airs aigateway workspaces list
-airs aigateway workspaces list --plane admin
-airs aigateway workspaces list --plane admin --status archived
-airs aigateway workspaces list --all --output json
+airs-cli aigateway workspaces list
+airs-cli aigateway workspaces list --plane admin
+airs-cli aigateway workspaces list --plane admin --status archived
+airs-cli aigateway workspaces list --all --output json
 ```
 
 ### aigateway workspaces get
@@ -72,7 +72,7 @@ resolves display names against the workspace list — an ambiguous name errors
 with the matching slugs.)
 
 ```text
-airs aigateway workspaces get <ref> [options]
+airs-cli aigateway workspaces get <ref> [options]
 ```
 
 #### Options
@@ -98,8 +98,8 @@ and prefer the list value.
 #### Examples
 
 ```bash
-airs aigateway workspaces get ws-main-a-349e0e
-airs aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json
+airs-cli aigateway workspaces get ws-main-a-349e0e
+airs-cli aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json
 ```
 
 ### aigateway workspaces create
@@ -107,7 +107,7 @@ airs aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin
 Create a workspace. **Admin plane** — needs a tenant-root admin role.
 
 ```text
-airs aigateway workspaces create --name <name> [--scope-name <scope>] [--existing-scope] [options]
+airs-cli aigateway workspaces create --name <name> [--scope-name <scope>] [--existing-scope] [options]
 ```
 
 :::info Three API calls, in SCM's own order
@@ -152,15 +152,15 @@ that should reach the workspace is still an SCM Access Management step.
 Partial failures are reported, never hidden. If the workspace step fails after the scope was
 created, the scope is deleted again and the error says whether that rollback worked. If the bind
 step fails, the workspace exists but is unbound; the error names the slug and scope so
-`airs aigateway scopes bind <scope> --workspace <slug>` can finish the job.
+`airs-cli aigateway scopes bind <scope> --workspace <slug>` can finish the job.
 
 #### Examples
 
 ```bash
-airs aigateway workspaces create --name truffles --description 'Online recipe generation application'
-airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0
-airs aigateway workspaces create --name Staging --scope-name ws_staging_q1x8mz --existing-scope
-airs aigateway workspaces create --name Production \
+airs-cli aigateway workspaces create --name truffles --description 'Online recipe generation application'
+airs-cli aigateway workspaces create --name Production --scope-name ws_production_bx7qw0
+airs-cli aigateway workspaces create --name Staging --scope-name ws_staging_q1x8mz --existing-scope
+airs-cli aigateway workspaces create --name Production \
   --metadata '{"env":"production"}' \
   --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'
 ```
@@ -172,7 +172,7 @@ UUID, slug, or display name (a raw name sent to the API yields a misleading
 `400 AB01 "No update fields provided"` — the CLI resolves it for you).
 
 ```text
-airs aigateway workspaces update <ref> [options]
+airs-cli aigateway workspaces update <ref> [options]
 ```
 
 Takes the same writable flags as `create` (minus `--scope-name`, plus no
@@ -182,8 +182,8 @@ with an empty body, so the CLI re-reads the workspace and renders that.
 #### Examples
 
 ```bash
-airs aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'
-airs aigateway workspaces update ws-produc-985697 --rate-limits '[{"type":"requests","unit":"rpm","value":50}]'
+airs-cli aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'
+airs-cli aigateway workspaces update ws-produc-985697 --rate-limits '[{"type":"requests","unit":"rpm","value":50}]'
 ```
 
 ### aigateway workspaces archive
@@ -192,7 +192,7 @@ Archive a workspace. **Admin plane.** This intentionally has no `rm` alias becau
 delete.
 
 ```text
-airs aigateway workspaces archive <ref> [--force]
+airs-cli aigateway workspaces archive <ref> [--force]
 ```
 
 :::warning archive does not destroy
@@ -209,11 +209,11 @@ Prompts for confirmation unless `--force`; non-TTY runs require `--force`.
 #### Examples
 
 ```bash
-airs aigateway workspaces archive ws-produc-985697
-airs aigateway workspaces archive ws-produc-985697 --force
+airs-cli aigateway workspaces archive ws-produc-985697
+airs-cli aigateway workspaces archive ws-produc-985697 --force
 ```
 
-The deprecated `airs aigateway workspace delete <ref>` compatibility spelling performs the same
+The deprecated `airs-cli aigateway workspace delete <ref>` compatibility spelling performs the same
 archive, prints a warning, and deliberately does not receive the `rm` alias.
 
 ## aigateway scopes
@@ -237,9 +237,9 @@ from SCM's own workspace-creation flow.
 #### Examples
 
 ```bash
-airs aigateway scopes list --output json | jq '.[] | select(.resources == "")'   # unbound scopes
-airs aigateway scopes get ws_production_bx7qw0
-airs aigateway scopes create --name ws_production_bx7qw0 --description 'All production applications'
-airs aigateway scopes bind ws_production_bx7qw0 --workspace ws-produc-985697
-airs aigateway scopes delete ws_truffles_ggolfu --force
+airs-cli aigateway scopes list --output json | jq '.[] | select(.resources == "")'   # unbound scopes
+airs-cli aigateway scopes get ws_production_bx7qw0
+airs-cli aigateway scopes create --name ws_production_bx7qw0 --description 'All production applications'
+airs-cli aigateway scopes bind ws_production_bx7qw0 --workspace ws-produc-985697
+airs-cli aigateway scopes delete ws_truffles_ggolfu --force
 ```

@@ -18,8 +18,8 @@ independent policy/read-back checks and saved shell helpers for recovery.
 ## Back up
 
 ```bash
-airs runtime profiles backup --all --output-file ./profiles.json
-airs runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml
+airs-cli runtime profiles backup --all --output-file ./profiles.json
+airs-cli runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml
 ```
 
 Without a selector, all latest profiles are exported. A selector matches an exact profile
@@ -40,12 +40,12 @@ Incomplete or nonadvancing pagination fails instead of producing a partial backu
 ## Switch and preview
 
 ```bash
-airs tenant create source --config /secure/source.json
-airs tenant create destination --config /secure/destination.json
-airs tenant switch source
-airs runtime profiles backup --all --output-file ./profiles.json
-airs tenant switch destination
-airs runtime profiles restore ./profiles.json --dry-run --output json
+airs-cli tenant create source --config /secure/source.json
+airs-cli tenant create destination --config /secure/destination.json
+airs-cli tenant switch source
+airs-cli runtime profiles backup --all --output-file ./profiles.json
+airs-cli tenant switch destination
+airs-cli runtime profiles restore ./profiles.json --dry-run --output json
 ```
 
 The dry run authenticates and reads destination inventories, but creates/updates nothing.
@@ -57,20 +57,20 @@ unrecognized tenant-bound ID fields, and incomplete inventories fail safely.
 
 ```bash
 # Interactive confirmation identifies the source and destination TSGs.
-airs runtime profiles restore ./profiles.json
+airs-cli runtime profiles restore ./profiles.json
 
 # Noninteractive restore requires an explicit destination assertion.
-airs runtime profiles restore ./profiles.json --expect-tsg 200 --force --output json
+airs-cli runtime profiles restore ./profiles.json --expect-tsg 200 --force --output json
 
 # Keep existing profiles untouched, or explicitly update them.
-airs runtime profiles restore ./profiles.json --on-conflict skip --dry-run
-airs runtime profiles restore ./profiles.json --on-conflict update --expect-tsg 200 --force
+airs-cli runtime profiles restore ./profiles.json --on-conflict skip --dry-run
+airs-cli runtime profiles restore ./profiles.json --on-conflict update --expect-tsg 200 --force
 
 # Recover a partial restore: verify existing profiles, create only missing profiles.
-airs runtime profiles restore ./profiles.json --on-conflict verify --on-missing-dlp basic --dry-run
+airs-cli runtime profiles restore ./profiles.json --on-conflict verify --on-missing-dlp basic --dry-run
 
 # Create separately named profiles and topics.
-airs runtime profiles restore ./profiles.json --name-prefix imported- --dry-run
+airs-cli runtime profiles restore ./profiles.json --name-prefix imported- --dry-run
 ```
 
 Replace `200` with the destination TSG. A mismatched `--expect-tsg` fails before any API
@@ -101,7 +101,7 @@ must already exist at the destination to preserve their bindings. Map each custo
 name explicitly (repeat the flag for multiple dependencies):
 
 ```bash
-airs runtime profiles restore ./profiles.json --dry-run \
+airs-cli runtime profiles restore ./profiles.json --dry-run \
   --dlp-map 'Source PII=Destination PII' \
   --dlp-map 'Source Financial=Destination Financial'
 ```
@@ -117,13 +117,13 @@ Use `--on-missing-dlp basic` to accept Basic detection for unresolved custom dep
 The default remains `error`, preventing an unattended protection downgrade.
 
 ```bash
-airs runtime profiles restore ./profiles.json --on-missing-dlp basic --dry-run --output json
+airs-cli runtime profiles restore ./profiles.json --on-missing-dlp basic --dry-run --output json
 
 # After reviewing every protection change, restore with confirmation.
-airs runtime profiles restore ./profiles.json --on-missing-dlp basic --expect-tsg 200
+airs-cli runtime profiles restore ./profiles.json --on-missing-dlp basic --expect-tsg 200
 
 # Preserve a known destination binding; other unresolved dependencies may fall back.
-airs runtime profiles restore ./profiles.json --on-missing-dlp basic \
+airs-cli runtime profiles restore ./profiles.json --on-missing-dlp basic \
   --dlp-map 'Source PII=Destination PII' --dry-run
 ```
 
@@ -144,8 +144,8 @@ Fallback refuses inline masking without a block action or an unsupported action,
 than changing enforcement silently. Custom patterns, exceptions, thresholds and dictionaries
 are **not** reproduced by Basic. Keep the original backup to restore Advanced settings later.
 
-To investigate dependencies before retrying, use `airs runtime dlp profiles list --all --output json`
-and `airs runtime dlp profiles get <id> --output json` in each tenant, plus the `patterns`
+To investigate dependencies before retrying, use `airs-cli runtime dlp profiles list --all --output json`
+and `airs-cli runtime dlp profiles get <id> --output json` in each tenant, plus the `patterns`
 and `dictionaries` commands for their referenced resources. These inspection/CRUD commands
 are not a dependency-complete DLP backup/restore workflow. Automatic recursive migration
 of those shared resources remains future work.
@@ -195,7 +195,7 @@ The installed package's seven files match the independent release build byte-for
 Actual live backup summary (private artifact directory and TSG replaced with placeholders):
 
 ```bash
-airs runtime profiles backup --all --output-file ./all-profiles.json --output json
+airs-cli runtime profiles backup --all --output-file ./all-profiles.json --output json
 ```
 
 ```json

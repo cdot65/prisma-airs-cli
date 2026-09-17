@@ -4,7 +4,7 @@ title: DLP
 
 # DLP
 
-`airs runtime dlp` is full CRUD over the four configuration surfaces of the Palo Alto Networks DLP service: data **filtering profiles**, **patterns**, **profiles**, and **dictionaries**. Twenty commands, one shared OAuth token cache, one merge-patch UX across every resource that supports PATCH.
+`airs-cli runtime dlp` is full CRUD over the four configuration surfaces of the Palo Alto Networks DLP service: data **filtering profiles**, **patterns**, **profiles**, and **dictionaries**. Twenty commands, one shared OAuth token cache, one merge-patch UX across every resource that supports PATCH.
 
 - **[Filtering Profiles](filtering-profiles.md)** — Bind data profiles to scan policy (file vs non-file, log severity, direction). Read + full-replace only; no create or delete.
 - **[Patterns](patterns.md)** — Detection primitives: regex, weighted_regex, dictionary, EDM, classifier. Full CRUD; `delete` is soft (archive).
@@ -28,9 +28,9 @@ If a migration stopped at this error, [resume without losing the existing eviden
 
 ```bash
 npm install --global @cdot65/prisma-airs-cli@5.7.1
-airs tenant list
-airs runtime dlp patterns list --output json
-airs runtime dlp profiles list --output json
+airs-cli tenant list
+airs-cli runtime dlp patterns list --output json
+airs-cli runtime dlp profiles list --output json
 ```
 
 For legacy/default configuration, the equivalent environment settings are:
@@ -99,7 +99,7 @@ If you patch anything else, include the required fields via `--set` as well.
 - **`profiles delete` is a stub** — exits 2 without HTTP traffic. The historical status-patch idiom below is not verified cleanup; it returned HTTP 500 in the latest owned-fixture test:
 
     ```bash
-    airs runtime dlp profiles patch <id> --body-file - <<'EOF'
+    airs-cli runtime dlp profiles patch <id> --body-file - <<'EOF'
     { "name": "my-profile", "profile_type": "advanced", "profile_status": "deleted" }
     EOF
     ```

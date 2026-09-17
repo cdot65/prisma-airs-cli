@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { commandHint } from '../cli/invocation.js';
 import { type Config, ConfigSchema } from './schema.js';
 import {
   readTenantConfigFile,
@@ -36,9 +37,11 @@ export type ConfigContext =
   | { selection: 'none'; registryPath: string; registered: string[] };
 
 export function noTenantSelectedMessage(registered: string[]): string {
-  return registered.length
-    ? `No tenant selected. Run 'airs tenant switch <name>' (registered: ${registered.join(', ')})`
-    : "No tenant selected. Run 'airs tenant create <name>' and then 'airs tenant switch <name>'";
+  return commandHint(
+    registered.length
+      ? `No tenant selected. Run 'airs-cli tenant switch <name>' (registered: ${registered.join(', ')})`
+      : "No tenant selected. Run 'airs-cli tenant create <name>' and then 'airs-cli tenant switch <name>'",
+  );
 }
 
 export class NoTenantSelectedError extends Error {

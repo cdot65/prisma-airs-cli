@@ -23,7 +23,7 @@ For per-command reference (flag list, all output formats), see:
 - A **network broker channel** already created in the SCM web UI — you will need its UUID
 
 :::warning[Channels are not a CLI surface]
-There is no `airs redteam channels list` command. The channel UUID has to be copied out of the Strata Cloud Manager web UI (under **AI Red Teaming → Network Brokers**). Adding a CLI listing would close this loop — for now, the copy-out-of-UI workflow is the only path.
+There is no `airs-cli redteam channels list` command. The channel UUID has to be copied out of the Strata Cloud Manager web UI (under **AI Red Teaming → Network Brokers**). Adding a CLI listing would close this loop — for now, the copy-out-of-UI workflow is the only path.
 :::
 
 ---
@@ -35,7 +35,7 @@ Confirm CLI version, EULA state, and the attack surface you have to work with be
 ### 1.1 — CLI version
 
 ```bash
-airs --version
+airs-cli --version
 ```
 
 ```
@@ -45,7 +45,7 @@ airs --version
 ### 1.2 — Confirm the EULA is accepted
 
 ```bash
-airs redteam eula status
+airs-cli redteam eula status
 ```
 
 ```
@@ -55,12 +55,12 @@ EULA Status:
   Accepted By: <user-uuid>
 ```
 
-If `Accepted: no`, run `airs redteam eula accept` first (see [EULA & Infrastructure](infrastructure.md#eula)).
+If `Accepted: no`, run `airs-cli redteam eula accept` first (see [EULA & Infrastructure](infrastructure.md#eula)).
 
 ### 1.3 — Check existing targets
 
 ```bash
-airs redteam targets list --output json
+airs-cli redteam targets list --output json
 ```
 
 ```
@@ -72,7 +72,7 @@ A clean slate. If existing targets come back, pick a unique `name` for the one y
 ### 1.4 — Read scan-target metadata
 
 ```bash
-airs redteam targets metadata
+airs-cli redteam targets metadata
 ```
 
 ```json
@@ -97,7 +97,7 @@ Two things to note:
 ### 1.5 — List attack categories {#15-list-attack-categories}
 
 ```bash
-airs redteam categories
+airs-cli redteam categories
 ```
 
 The pretty renderer prints both the display name and the ID inline — the parenthesized value is what `--categories` wants:
@@ -109,20 +109,20 @@ The pretty renderer prints both the display name and the ID inline — the paren
     …
 ```
 
-Top-level groups: `SECURITY`, `SAFETY`, `BRAND_REPUTATION`, `COMPLIANCE`. The `id` strings you see in parens are exactly what you put into `--categories`, e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`. For the raw `/v1/categories` JSON (preselect flags etc.) use `airs --debug redteam categories` and read `./debug-api-*.jsonl` in the current working directory.
+Top-level groups: `SECURITY`, `SAFETY`, `BRAND_REPUTATION`, `COMPLIANCE`. The `id` strings you see in parens are exactly what you put into `--categories`, e.g. `--categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}'`. For the raw `/v1/categories` JSON (preselect flags etc.) use `airs-cli --debug redteam categories` and read `./debug-api-*.jsonl` in the current working directory.
 
 ---
 
 ## Phase 2 — Author the target fixture
 
-The target is a JSON file you hand to `airs redteam targets {probe,create}`. Scaffold one with `targets init`, then fix the gaps the scaffold leaves behind.
+The target is a JSON file you hand to `airs-cli redteam targets {probe,create}`. Scaffold one with `targets init`, then fix the gaps the scaffold leaves behind.
 
 ### 2.1 — Pick the right scaffold
 
 For an OpenAI-compatible Chat Completions endpoint like LiteLLM, **do not** use the `OPENAI` scaffold — it emits the OpenAI **Responses API** shape (`request_json.input[…]`), not Chat Completions (`request_json.messages[…]`). Use `REST` instead, which is fully bring-your-own:
 
 ```bash
-airs redteam targets init REST --output-file /tmp/redteam-REST.json
+airs-cli redteam targets init REST --output-file /tmp/redteam-REST.json
 ```
 
 ```json
@@ -209,7 +209,7 @@ Keep the bearer token in a real secret store, not on disk — `/tmp/` is shown h
 `probe` validates the fixture by spinning up an ephemeral **DRAFT** target, calling the endpoint once, and discarding the draft. It is the cheapest way to catch shape errors before persisting.
 
 ```bash
-airs redteam targets probe --config /tmp/redteam-target-litellm.json
+airs-cli redteam targets probe --config /tmp/redteam-target-litellm.json
 ```
 
 ```json
@@ -242,12 +242,12 @@ airs redteam targets probe --config /tmp/redteam-target-litellm.json
 
 If `target_background` comes back populated, the probe actually reached your model — the platform asked it a self-introduction question and inferred industry, use case, and competitors from the reply. That confirms the channel routing works.
 
-The DRAFT UUID is throwaway. It will not appear in `airs redteam targets list` after the probe call returns.
+The DRAFT UUID is throwaway. It will not appear in `airs-cli redteam targets list` after the probe call returns.
 
 ### 3.2 — Create the target (with validation)
 
 ```bash
-airs redteam targets create --config /tmp/redteam-target-litellm.json --validate
+airs-cli redteam targets create --config /tmp/redteam-target-litellm.json --validate
 ```
 
 ```
@@ -271,7 +271,7 @@ Target Detail:
 ### 3.3 — Inspect the persisted target
 
 ```bash
-airs redteam targets get <target-uuid>
+airs-cli redteam targets get <target-uuid>
 ```
 
 ```
@@ -298,7 +298,7 @@ The reconstructed `curl` template proves the server stored the request shape cor
 :::warning[Gotcha: nested objects render as `[object Object]` and there is no `--output json`]
 `targets get` preserves nested connection fields. Use `--output json` or
 `--output yaml` for the complete normalized object, or a tabular format for a
-two-column Key/Value view. `airs --debug` remains useful for inspecting the
+two-column Key/Value view. `airs-cli --debug` remains useful for inspecting the
 secret-redacted wire response in `./debug-api-*.jsonl` in the current working directory.
 :::
 
@@ -327,11 +327,11 @@ The `--categories` value is a JSON object keyed by top-level group ID, with each
 }
 ```
 
-This shape is not in `airs redteam scan --help` today — run `airs redteam categories` and use the IDs shown in parens (see [phase 1.5](#15-list-attack-categories)).
+This shape is not in `airs-cli redteam scan --help` today — run `airs-cli redteam categories` and use the IDs shown in parens (see [phase 1.5](#15-list-attack-categories)).
 :::
 
 ```bash
-airs redteam scan --name "litellm-mistral-7b-static-1" \
+airs-cli redteam scan --name "litellm-mistral-7b-static-1" \
   --target <target-uuid> \
   --type STATIC \
   --categories '{"SECURITY":["JAILBREAK","PROMPT_INJECTION"]}' \
@@ -354,7 +354,7 @@ Scan Status:
 ### 4.2 — Poll until complete
 
 ```bash
-airs redteam status <scan-uuid>
+airs-cli redteam status <scan-uuid>
 ```
 
 For a **574-prompt** STATIC scan against a **single-replica vLLM serving `mistral-7b-instruct-v0.3-awq`**, expect roughly:
@@ -388,7 +388,7 @@ Scan Status:
 ### 4.3 — Read the summary report
 
 ```bash
-airs redteam report <scan-uuid>
+airs-cli redteam report <scan-uuid>
 ```
 
 ```
@@ -424,7 +424,7 @@ Per-category counts (1019 jailbreak attempts, 648 prompt-injection attempts) are
 ### 4.4 — Drill into individual attacks
 
 ```bash
-airs redteam report <scan-uuid> --attacks --severity CRITICAL --limit 3
+airs-cli redteam report <scan-uuid> --attacks --severity CRITICAL --limit 3
 ```
 
 ```
@@ -460,12 +460,12 @@ Until the renderer is fixed, treat the pretty `--attacks` output as informationa
 
 - Schedule a regression scan after any model or prompt change
 - Add an AIRS runtime profile in front of your LLM gateway and re-scan to measure the lift
-- Build a custom prompt set with `airs redteam prompt-sets create` + `upload` and run a `CUSTOM` scan to test domain-specific guardrails ([Guardrail to Red Team](guardrail-to-redteam.md))
+- Build a custom prompt set with `airs-cli redteam prompt-sets create` + `upload` and run a `CUSTOM` scan to test domain-specific guardrails ([Guardrail to Red Team](guardrail-to-redteam.md))
 
 ### Tear-down (optional)
 
 ```bash
-airs redteam targets delete <target-uuid>
+airs-cli redteam targets delete <target-uuid>
 ```
 
 Scan history is retained after the target is deleted; you just lose the ability to launch new scans against it.

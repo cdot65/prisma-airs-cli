@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterListItem
 
-Defined in: src/airs/types.ts:1474
+Defined in: src/airs/types.ts:1522
 
 Adapter list row — no script, description, or variables; `get` for the full record.
 
@@ -10,7 +10,7 @@ Adapter list row — no script, description, or variables; `get` for the full re
 
 > `optional` **createdAt?**: `string`
 
-Defined in: src/airs/types.ts:1478
+Defined in: src/airs/types.ts:1526
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1478
 
 > `optional` **createdByUserId?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1480
+Defined in: src/airs/types.ts:1528
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1480
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1476
+Defined in: src/airs/types.ts:1524
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1476
 
 > **status**: `string`
 
-Defined in: src/airs/types.ts:1477
+Defined in: src/airs/types.ts:1525
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:1477
 
 > `optional` **targetCount?**: `number` \| `null`
 
-Defined in: src/airs/types.ts:1481
+Defined in: src/airs/types.ts:1529
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:1481
 
 > `optional` **updatedAt?**: `string`
 
-Defined in: src/airs/types.ts:1479
+Defined in: src/airs/types.ts:1527
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:1479
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:1475
+Defined in: src/airs/types.ts:1523

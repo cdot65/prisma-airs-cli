@@ -44,7 +44,7 @@ function commands() {
   return scripts.flatMap((script) => {
     const result = spawnSync(
       '/bin/bash',
-      ['-c', `airs() { printf '%s\\0' "$@"; printf '\\036'; }\n${script}`],
+      ['-c', `airs-cli() { printf '%s\\0' "$@"; printf '\\036'; }\n${script}`],
       {
         cwd: directory,
         encoding: 'utf8',
@@ -112,13 +112,13 @@ it('sourcing saved helpers makes no CLI calls and exports no stale tenant IDs', 
 
 it('reloads and exports tenant IDs without needing old shell state', () => {
   const result =
-    bash(`airs() { printf '%s' '[{"name":"prod","tsgId":"100"},{"name":"dev","tsgId":"200"}]'; }
+    bash(`airs-cli() { printf '%s' '[{"name":"prod","tsgId":"100"},{"name":"dev","tsgId":"200"}]'; }
 load_tenant_ids && "$NODE_BIN" -e 'if(process.env.PROD_TSG!=="100"||process.env.DEV_TSG!=="200")process.exit(1)'`);
   expect(result.status, result.stderr).toBe(0);
 });
 
 it('refuses incomplete registrations', () => {
-  const result = bash(`airs() { printf '%s' '[{"name":"prod","tsgId":"100"}]'; }
+  const result = bash(`airs-cli() { printf '%s' '[{"name":"prod","tsgId":"100"}]'; }
 load_tenant_ids`);
   expect(result.status).not.toBe(0);
 });

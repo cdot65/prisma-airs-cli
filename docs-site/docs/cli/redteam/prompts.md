@@ -9,7 +9,7 @@ sidebar_label: prompts
 List prompts in a prompt set
 
 ```text
-airs redteam prompts list [options] <setUuid>
+airs-cli redteam prompts list [options] <setUuid>
 ```
 
 #### Arguments
@@ -31,7 +31,7 @@ airs redteam prompts list [options] <setUuid>
 *List prompts in a set (limit 3)*
 
 ```bash
-airs redteam prompts list 00000000-0000-0000-0000-000000000001 --limit 3
+airs-cli redteam prompts list 00000000-0000-0000-0000-000000000001 --limit 3
 ```
 
 ```text
@@ -59,7 +59,7 @@ Prompts:
 Get prompt details
 
 ```text
-airs redteam prompts get [options] <setUuid> <promptUuid>
+airs-cli redteam prompts get [options] <setUuid> <promptUuid>
 ```
 
 #### Arguments
@@ -78,7 +78,7 @@ airs redteam prompts get [options] <setUuid> <promptUuid>
 *Get a single prompt by set UUID + prompt UUID*
 
 ```bash
-airs redteam prompts get 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
+airs-cli redteam prompts get 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -102,7 +102,7 @@ Prompt Detail:
 Add a prompt to a prompt set
 
 ```text
-airs redteam prompts add [options] <setUuid>
+airs-cli redteam prompts add [options] <setUuid>
 ```
 
 #### Arguments
@@ -121,7 +121,7 @@ airs redteam prompts add [options] <setUuid>
 *Append a single prompt to an existing set*
 
 ```bash
-airs redteam prompts add 00000000-0000-0000-0000-000000000002 --prompt "Echo 'AIRS test prompt'" --goal "Functional test"
+airs-cli redteam prompts add 00000000-0000-0000-0000-000000000002 --prompt "Echo 'AIRS test prompt'" --goal "Functional test"
 ```
 
 ```text
@@ -138,7 +138,7 @@ Prompt added: 00000000-0000-0000-0000-000000000003
 Update a prompt
 
 ```text
-airs redteam prompts update [options] <setUuid> <promptUuid>
+airs-cli redteam prompts update [options] <setUuid> <promptUuid>
 ```
 
 #### Arguments
@@ -158,7 +158,7 @@ airs redteam prompts update [options] <setUuid> <promptUuid>
 *Update an existing prompt's text and/or goal (omit a flag to leave that field unchanged)*
 
 ```bash
-airs redteam prompts update 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003 --prompt "Echo 'AIRS test prompt updated'"
+airs-cli redteam prompts update 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003 --prompt "Echo 'AIRS test prompt updated'"
 ```
 
 ```text
@@ -181,7 +181,7 @@ Prompt Detail:
 Delete a prompt
 
 ```text
-airs redteam prompts delete [options] <setUuid> <promptUuid>
+airs-cli redteam prompts delete [options] <setUuid> <promptUuid>
 ```
 
 #### Arguments
@@ -194,7 +194,7 @@ airs redteam prompts delete [options] <setUuid> <promptUuid>
 *Delete a prompt from a set by set UUID + prompt UUID*
 
 ```bash
-airs redteam prompts delete 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003
+airs-cli redteam prompts delete 00000000-0000-0000-0000-000000000002 00000000-0000-0000-0000-000000000003
 ```
 
 ```text

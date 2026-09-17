@@ -16,7 +16,7 @@ All 25 sources completed; 1,431 unique transactions were collected over 29 pages
 Current configurations are labeled separately from daily telemetry.
 
 ```bash
-airs --quiet aigateway report --workspace ws-develo-71f8d8 \
+airs-cli --quiet aigateway report --workspace ws-develo-71f8d8 \
   --start 2026-09-07T00:00:00Z --end 2026-09-08T00:00:00Z \
   --strict --output markdown --output-file -
 ```

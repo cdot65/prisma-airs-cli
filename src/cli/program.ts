@@ -12,6 +12,7 @@ import { registerRedteamCommand } from './commands/redteam.js';
 import { registerRuntimeCommand } from './commands/runtime.js';
 import { registerTenantCommand } from './commands/tenant.js';
 import { installDebugLogger } from './debug-logger.js';
+import { commandName } from './invocation.js';
 import { fail, resolveOutput, setQuiet, ui, usageError } from './renderer/index.js';
 
 const READ_COMMAND_NAMES = new Set([
@@ -98,7 +99,7 @@ export function buildProgram(): Command {
     }
   };
   program
-    .name('airs')
+    .name(commandName())
     .description(
       'CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits',
     )

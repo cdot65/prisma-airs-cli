@@ -72,7 +72,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'bulk-scan',
@@ -115,7 +115,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -140,7 +140,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -186,7 +186,7 @@ describe('runtime bulk-scan', () => {
     }) as typeof process.exit);
     const args = [
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -233,7 +233,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -264,7 +264,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -300,7 +300,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -326,7 +326,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -356,7 +356,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'bulk-scan',
@@ -393,7 +393,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -417,7 +417,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -449,7 +449,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -475,7 +475,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'resume-poll',
@@ -505,7 +505,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -546,7 +546,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -569,7 +569,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'resume-poll',
@@ -608,7 +608,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -636,7 +636,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'resume-poll',
@@ -686,7 +686,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -709,7 +709,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -723,7 +723,7 @@ describe('runtime bulk-scan', () => {
     sdk.queryByScanIds.mockClear();
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -758,7 +758,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -791,7 +791,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',
@@ -822,7 +822,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -862,7 +862,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'bulk-scan',
@@ -905,7 +905,7 @@ describe('runtime bulk-scan', () => {
     await expect(
       buildProgram().parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         '--quiet',
         'runtime',
         'bulk-scan',
@@ -943,7 +943,7 @@ describe('runtime bulk-scan', () => {
 
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'runtime',
       'resume-poll',

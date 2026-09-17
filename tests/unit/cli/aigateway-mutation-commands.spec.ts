@@ -109,7 +109,7 @@ async function requestFile(value: unknown, extension = 'json'): Promise<string> 
 }
 
 async function run(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(['node', 'airs', 'aigateway', ...args]);
+  await buildProgram().parseAsync(['node', 'airs-cli', 'aigateway', ...args]);
 }
 
 async function keyFile(value: string): Promise<string> {

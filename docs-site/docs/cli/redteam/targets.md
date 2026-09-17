@@ -9,7 +9,7 @@ sidebar_label: targets
 List configured red team targets
 
 ```text
-airs redteam targets list [options]
+airs-cli redteam targets list [options]
 ```
 
 #### Options
@@ -27,7 +27,7 @@ airs redteam targets list [options]
 *List all targets*
 
 ```bash
-airs redteam targets list
+airs-cli redteam targets list
 ```
 
 ```text
@@ -48,7 +48,7 @@ b9e2861d-73ac-48b5-a56f-f43039cfc4a1
 Get target details
 
 ```text
-airs redteam targets get [options] <uuid>
+airs-cli redteam targets get [options] <uuid>
 ```
 
 #### Arguments
@@ -66,7 +66,7 @@ airs redteam targets get [options] <uuid>
 *Show full target detail (nested connection_params expand inline as indented JSON)*
 
 ```bash
-airs redteam targets get 00000000-0000-0000-0000-000000000001
+airs-cli redteam targets get 00000000-0000-0000-0000-000000000001
 ```
 
 ```text
@@ -133,7 +133,7 @@ Target Detail:
 *Emit full target as JSON for piping to jq*
 
 ```bash
-airs redteam targets get 00000000-0000-0000-0000-000000000001 --output json
+airs-cli redteam targets get 00000000-0000-0000-0000-000000000001 --output json
 ```
 
 ```text
@@ -172,7 +172,7 @@ airs redteam targets get 00000000-0000-0000-0000-000000000001 --output json
 Create a new red team target
 
 ```text
-airs redteam targets create [options]
+airs-cli redteam targets create [options]
 ```
 
 #### Options
@@ -187,7 +187,7 @@ airs redteam targets create [options]
 *Create a REST application target from a config file (httpbin.org echo for docs capture)*
 
 ```bash
-airs redteam targets create --config target-create.json
+airs-cli redteam targets create --config target-create.json
 ```
 
 ```text
@@ -204,7 +204,7 @@ Target created: 00000000-0000-0000-0000-000000000001
 Update a red team target
 
 ```text
-airs redteam targets update [options] <uuid>
+airs-cli redteam targets update [options] <uuid>
 ```
 
 #### Arguments
@@ -223,7 +223,7 @@ airs redteam targets update [options] <uuid>
 *Update an existing target (raise rate limit, tweak description)*
 
 ```bash
-airs redteam targets update 00000000-0000-0000-0000-000000000001 --config target-update.json
+airs-cli redteam targets update 00000000-0000-0000-0000-000000000001 --config target-update.json
 ```
 
 ```text
@@ -240,7 +240,7 @@ Target updated: 00000000-0000-0000-0000-000000000001
 Delete a red team target
 
 ```text
-airs redteam targets delete [options] <uuid>
+airs-cli redteam targets delete [options] <uuid>
 ```
 
 #### Arguments
@@ -252,7 +252,7 @@ airs redteam targets delete [options] <uuid>
 *Delete a target by UUID (SDK now returns a clean confirmation on the empty-body 204)*
 
 ```bash
-airs redteam targets delete 00000000-0000-0000-0000-000000000001
+airs-cli redteam targets delete 00000000-0000-0000-0000-000000000001
 ```
 
 ```text
@@ -270,7 +270,7 @@ Target 00000000-0000-0000-0000-000000000001 deleted.
 Test target connection without saving
 
 ```text
-airs redteam targets probe [options]
+airs-cli redteam targets probe [options]
 ```
 
 #### Options
@@ -284,7 +284,7 @@ airs redteam targets probe [options]
 *Probe a target config without persisting (returns a draft Target object with profiling prompts inlined)*
 
 ```bash
-airs redteam targets probe --config target-create.json
+airs-cli redteam targets probe --config target-create.json
 ```
 
 ```text
@@ -320,7 +320,7 @@ Probe result:
 View target profile
 
 ```text
-airs redteam targets profile [options] <uuid>
+airs-cli redteam targets profile [options] <uuid>
 ```
 
 #### Arguments
@@ -332,7 +332,7 @@ airs redteam targets profile [options] <uuid>
 *Show AI-generated target profile (truncated — full output is ~230 lines of nested JSON)*
 
 ```bash
-airs redteam targets profile 00000000-0000-0000-0000-000000000001
+airs-cli redteam targets profile 00000000-0000-0000-0000-000000000001
 ```
 
 ```text
@@ -381,7 +381,7 @@ Target Profile:
 Update target profile
 
 ```text
-airs redteam targets update-profile [options] <uuid>
+airs-cli redteam targets update-profile [options] <uuid>
 ```
 
 #### Arguments
@@ -399,7 +399,7 @@ airs redteam targets update-profile [options] <uuid>
 *Patch a target's background/additional_context (use_case + core_architecture). Other fields preserved.*
 
 ```bash
-airs redteam targets update-profile 00000000-0000-0000-0000-000000000001 --config target-profile.json
+airs-cli redteam targets update-profile 00000000-0000-0000-0000-000000000001 --config target-profile.json
 ```
 
 ```text
@@ -434,7 +434,7 @@ Profile updated:
 Validate target auth credentials
 
 ```text
-airs redteam targets validate-auth [options]
+airs-cli redteam targets validate-auth [options]
 ```
 
 #### Options
@@ -450,7 +450,7 @@ airs redteam targets validate-auth [options]
 *Validate an auth header against a target's endpoint (server proxies the call and returns yes/no)*
 
 ```bash
-airs redteam targets validate-auth 00000000-0000-0000-0000-000000000001 --config target-auth.json
+airs-cli redteam targets validate-auth 00000000-0000-0000-0000-000000000001 --config target-auth.json
 ```
 
 ```text
@@ -470,7 +470,7 @@ Auth Validation:
 Get target field metadata
 
 ```text
-airs redteam targets metadata [options]
+airs-cli redteam targets metadata [options]
 ```
 
 #### Examples
@@ -478,7 +478,7 @@ airs redteam targets metadata [options]
 *Get scan-target field metadata (base models, breadth/depth ranges, NAT IPs, agent attack goal limit)*
 
 ```bash
-airs redteam targets metadata
+airs-cli redteam targets metadata
 ```
 
 ```text
@@ -531,7 +531,7 @@ Adversarial scan operations
 Scaffold a target config JSON from a provider template
 
 ```text
-airs redteam targets init [options] <provider>
+airs-cli redteam targets init [options] <provider>
 ```
 
 #### Arguments
@@ -549,7 +549,7 @@ airs redteam targets init [options] <provider>
 *Scaffold a target config JSON from a provider template (write to default filename)*
 
 ```bash
-airs redteam targets init OPENAI
+airs-cli redteam targets init OPENAI
 ```
 
 ```text
@@ -563,13 +563,13 @@ Target config scaffolded:
   Provider: OPENAI
 
 Next steps: Edit the file to fill in name and credentials, then run:
-  airs redteam targets create --config openai-target.json --validate
+  airs-cli redteam targets create --config openai-target.json --validate
 ```
 
 *Scaffold to a custom path*
 
 ```bash
-airs redteam targets init BEDROCK --output-file configs/bedrock.json
+airs-cli redteam targets init BEDROCK --output-file configs/bedrock.json
 ```
 
 ---
@@ -579,7 +579,7 @@ airs redteam targets init BEDROCK --output-file configs/bedrock.json
 Get provider-specific target templates
 
 ```text
-airs redteam targets templates [options]
+airs-cli redteam targets templates [options]
 ```
 
 #### Examples
@@ -587,7 +587,7 @@ airs redteam targets templates [options]
 *List provider-specific target templates (truncated — full output covers OPENAI, HUGGING_FACE, DATABRICKS, BEDROCK, REST, STREAMING, WEBSOCKET, MS_COPILOT_STUDIO)*
 
 ```bash
-airs redteam targets templates
+airs-cli redteam targets templates
 ```
 
 ```text
@@ -661,7 +661,7 @@ MS_COPILOT_STUDIO
 Backup red team targets to local JSON/YAML files
 
 ```text
-airs redteam targets backup [options]
+airs-cli redteam targets backup [options]
 ```
 
 #### Options
@@ -677,7 +677,7 @@ airs redteam targets backup [options]
 *Back up a single target by name to a local directory*
 
 ```bash
-airs redteam targets backup --output-dir ./backups --name "example-target"
+airs-cli redteam targets backup --output-dir ./backups --name "example-target"
 ```
 
 ```text
@@ -692,7 +692,7 @@ Backed up 1 target(s) to ./backups:
 *Back up all targets in YAML format*
 
 ```bash
-airs redteam targets backup --output-dir ./backups --file-format yaml
+airs-cli redteam targets backup --output-dir ./backups --file-format yaml
 ```
 
 ---
@@ -702,7 +702,7 @@ airs redteam targets backup --output-dir ./backups --file-format yaml
 Restore red team targets from local JSON/YAML backup files
 
 ```text
-airs redteam targets restore [options]
+airs-cli redteam targets restore [options]
 ```
 
 #### Options
@@ -719,7 +719,7 @@ airs redteam targets restore [options]
 *Restore from a directory of backup files (skips targets that already exist by name)*
 
 ```bash
-airs redteam targets restore --input-dir ./backups
+airs-cli redteam targets restore --input-dir ./backups
 ```
 
 ```text
@@ -736,7 +736,7 @@ Total: 1 skipped
 *Restore a single file and overwrite an existing target*
 
 ```bash
-airs redteam targets restore --file ./backups/example-target.json --overwrite
+airs-cli redteam targets restore --file ./backups/example-target.json --overwrite
 ```
 
 ### redteam targets error-logs
@@ -745,7 +745,7 @@ List target-profile error logs — errors captured while a target was exercised
 during scans (timeouts, auth failures, malformed responses).
 
 ```text
-airs redteam targets error-logs <targetId> [options]
+airs-cli redteam targets error-logs <targetId> [options]
 ```
 
 #### Options
@@ -760,6 +760,6 @@ airs redteam targets error-logs <targetId> [options]
 #### Examples
 
 ```bash
-airs redteam targets error-logs 550e8400-e29b-41d4-a716-446655440000
-airs redteam targets error-logs <targetId> --output json
+airs-cli redteam targets error-logs 550e8400-e29b-41d4-a716-446655440000
+airs-cli redteam targets error-logs <targetId> --output json
 ```

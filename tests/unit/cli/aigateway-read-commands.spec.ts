@@ -112,7 +112,7 @@ afterEach(() => {
 });
 
 async function run(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(['node', 'airs', 'aigateway', ...args, '--output', 'json']);
+  await buildProgram().parseAsync(['node', 'airs-cli', 'aigateway', ...args, '--output', 'json']);
 }
 
 describe('AI Gateway read command SDK mappings', () => {

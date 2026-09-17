@@ -8,7 +8,7 @@ Prisma AIRS (AI Runtime Security) is Palo Alto Networks' platform for securing A
 runtime. It inspects every prompt and response flowing through your AI applications, enforces
 guardrails you configure, and gives you tooling to validate and improve those guardrails over time.
 
-The `airs` CLI is your operational interface to the entire platform. You use it to scan prompts,
+The `airs-cli` CLI is your operational interface to the entire platform. You use it to scan prompts,
 manage security profiles and custom topics, run red team exercises, check ML model supply chain
 health, and test DLP detection — without writing a line of code.
 
@@ -41,19 +41,19 @@ CLI flags  >  environment variables  >  ~/.prisma-airs/config.json  >  defaults
 ```mermaid
 sequenceDiagram
     participant O as Operator
-    participant CLI as airs CLI
+    participant CLI as airs-cli CLI
     participant SA as Scanner API
     participant MA as Management API
     participant P as AIRS Platform
 
-    O->>CLI: airs runtime scan --profile my-profile "…prompt…"
+    O->>CLI: airs-cli runtime scan --profile my-profile "…prompt…"
     CLI->>SA: syncScan(prompt, profileName)
     SA->>P: evaluate against active profile
     P-->>SA: verdict (action, detections)
     SA-->>CLI: ScanResult
     CLI-->>O: rendered verdict
 
-    O->>CLI: airs runtime profiles create --name my-profile …
+    O->>CLI: airs-cli runtime profiles create --name my-profile …
     CLI->>MA: OAuth2 token request
     MA-->>CLI: access token
     CLI->>MA: createProfile(payload)
@@ -70,13 +70,13 @@ sequenceDiagram
 Think of a normal workflow as a loop with four stages:
 
 1. **Configure** — create a security profile and add custom topics that describe threats your
-   application faces (`airs runtime profiles create`, `airs runtime topics create`).
+   application faces (`airs-cli runtime profiles create`, `airs-cli runtime topics create`).
 2. **Scan** — run prompts through the profile in real time to see whether guardrails are
-   triggering correctly (`airs runtime scan`).
+   triggering correctly (`airs-cli runtime scan`).
 3. **Validate** — run adversarial red team exercises against your live endpoints to find gaps
-   between your guardrails and real attack coverage (`airs redteam scan`).
+   between your guardrails and real attack coverage (`airs-cli redteam scan`).
 4. **Harden** — check your ML model supply chain for vulnerabilities that could affect the
-   models powering your application (`airs model-security scans create`).
+   models powering your application (`airs-cli model-security scans create`).
 
 DLP detection sits alongside these four stages: it intercepts sensitive data patterns in prompts
 and responses independently of topic guardrails, acting as a parallel detection layer.
@@ -133,7 +133,7 @@ See [Model Security](../model-security/overview.md) for group and rule managemen
 ### DLP Detection
 
 DLP detection runs in parallel with topic guardrails. You configure DLP profiles, patterns, and
-dictionaries through the `airs runtime dlp` subcommands, then test detection against real or
+dictionaries through the `airs-cli runtime dlp` subcommands, then test detection against real or
 synthetic prompts.
 
 See [DLP Detection Testing](../dlp-detection/index.md) for pattern authoring and profile setup.

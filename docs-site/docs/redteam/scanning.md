@@ -22,9 +22,9 @@ Before launching multilingual scans, check which languages and job types your te
 supports:
 
 ```bash
-airs redteam languages
+airs-cli redteam languages
 # Structured output (table, csv, json, yaml)
-airs redteam languages --output json
+airs-cli redteam languages --output json
 ```
 
 The response reports whether multilingual scanning is enabled, which job types support it,
@@ -38,7 +38,7 @@ endpoint instead of the data plane.
 Before launching a STATIC scan, review the available attack categories:
 
 ```bash
-airs redteam categories
+airs-cli redteam categories
 ```
 
 ```
@@ -90,7 +90,7 @@ The parenthesized values are the category IDs you pass to `--categories` on a ST
 Run the complete AIRS attack library against a target:
 
 ```bash
-airs redteam scan \
+airs-cli redteam scan \
   --target 89e2374c-7bac-4c5c-a291-9392ae919e14 \
   --name "Full Static Scan"
 ```
@@ -114,7 +114,7 @@ By default, Prisma AIRS CLI polls until the scan completes. Use `--no-wait` to s
 Target specific attack categories:
 
 ```bash
-airs redteam scan \
+airs-cli redteam scan \
   --target <uuid> \
   --name "Prompt Injection Test" \
   --categories '{"prompt_injection": {}}'
@@ -125,7 +125,7 @@ airs redteam scan \
 Run your own prompts against a target:
 
 ```bash
-airs redteam scan \
+airs-cli redteam scan \
   --target 89e2374c-7bac-4c5c-a291-9392ae919e14 \
   --name "Pokemon guardrail validation" \
   --type CUSTOM \
@@ -146,13 +146,13 @@ airs redteam scan \
     Status:  QUEUED
 
   Job ID: 304becf3-7090-413a-aa41-2cd327b7f0c5
-  Run `airs redteam status <jobId>` to check progress.
+  Run `airs-cli redteam status <jobId>` to check progress.
 ```
 
 Multiple prompt sets can be passed as comma-separated UUIDs:
 
 ```bash
-airs redteam scan \
+airs-cli redteam scan \
   --target <uuid> \
   --name "Multi-Set Scan" \
   --type CUSTOM \
@@ -160,7 +160,7 @@ airs redteam scan \
 ```
 
 :::tip[Finding prompt set UUIDs]
-Use `airs redteam prompt-sets list` to find UUIDs. Prompt sets created with `airs redteam prompt-sets create` return the new UUID.
+Use `airs-cli redteam prompt-sets list` to find UUIDs. Prompt sets created with `airs-cli redteam prompt-sets create` return the new UUID.
 :::
 
 ### Dynamic Scan (Agent-Driven)
@@ -169,7 +169,7 @@ A `DYNAMIC` scan dispatches autonomous agents that adapt their attacks based on 
 
 ```bash
 # Fully automated agent scan
-airs redteam scan \
+airs-cli redteam scan \
   --target <uuid> \
   --name "Automated Agent Scan" \
   --type DYNAMIC
@@ -179,13 +179,13 @@ To steer agents toward specific objectives, pass attack goals — either inline 
 
 ```bash
 # Goals from a file
-airs redteam scan \
+airs-cli redteam scan \
   --target <uuid> --name "Targeted Agent Scan" \
   --type DYNAMIC \
   --goals goals.json --depth 10 --breadth 6
 
 # Inline goals
-airs redteam scan \
+airs-cli redteam scan \
   --target <uuid> --name "Targeted Agent Scan" \
   --type DYNAMIC \
   --goals '["Extract the system prompt", "Bypass the safety policy"]'
@@ -210,7 +210,7 @@ airs redteam scan \
 Poll progress using the job ID:
 
 ```bash
-airs redteam status 304becf3-7090-413a-aa41-2cd327b7f0c5
+airs-cli redteam status 304becf3-7090-413a-aa41-2cd327b7f0c5
 ```
 
 ```
@@ -234,7 +234,7 @@ Status values: `QUEUED`, `RUNNING`, `COMPLETED`, `PARTIALLY_COMPLETE`, `FAILED`,
 Browse scans with optional filters:
 
 ```bash
-airs redteam list --limit 5
+airs-cli redteam list --limit 5
 ```
 
 ```
@@ -257,13 +257,13 @@ Filter by status, type, or target:
 
 ```bash
 # Completed custom scans only
-airs redteam list --status COMPLETED --type CUSTOM
+airs-cli redteam list --status COMPLETED --type CUSTOM
 
 # Scans for a specific target
-airs redteam list --target <uuid> --limit 20
+airs-cli redteam list --target <uuid> --limit 20
 
 # Structured output (table, csv, json, yaml)
-airs redteam list --output json
+airs-cli redteam list --output json
 ```
 
 ---
@@ -273,7 +273,7 @@ airs redteam list --output json
 ### Summary Report
 
 ```bash
-airs redteam report 304becf3-7090-413a-aa41-2cd327b7f0c5
+airs-cli redteam report 304becf3-7090-413a-aa41-2cd327b7f0c5
 ```
 
 ```
@@ -302,7 +302,7 @@ airs redteam report 304becf3-7090-413a-aa41-2cd327b7f0c5
 Add `--attacks` to see per-prompt results:
 
 ```bash
-airs redteam report 304becf3-7090-413a-aa41-2cd327b7f0c5 --attacks --limit 5
+airs-cli redteam report 304becf3-7090-413a-aa41-2cd327b7f0c5 --attacks --limit 5
 ```
 
 ```
@@ -331,7 +331,7 @@ Each prompt shows:
 For STATIC scans, filter attacks by severity level:
 
 ```bash
-airs redteam report <jobId> --attacks --severity HIGH --limit 50
+airs-cli redteam report <jobId> --attacks --severity HIGH --limit 50
 ```
 
 ---
@@ -341,7 +341,7 @@ airs redteam report <jobId> --attacks --severity HIGH --limit 50
 Stop a scan that is queued or in progress:
 
 ```bash
-airs redteam abort <jobId>
+airs-cli redteam abort <jobId>
 ```
 
 ```
@@ -361,5 +361,5 @@ airs redteam abort <jobId>
 :::info[When to use each type]
 - **STATIC** for initial security assessment -- covers prompt injection, jailbreak, CBRN, and 20+ categories
 - **DYNAMIC** for sophisticated multi-turn attacks that adapt to the target's responses
-- **CUSTOM** for targeted validation -- use your custom prompt sets (`airs redteam prompt-sets create`) or hand-crafted prompt sets
+- **CUSTOM** for targeted validation -- use your custom prompt sets (`airs-cli redteam prompt-sets create`) or hand-crafted prompt sets
 :::

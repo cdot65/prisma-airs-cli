@@ -14,7 +14,7 @@ vi.mock('@cdot65/prisma-airs-sdk', async (original) => ({
 import { buildProgram } from '../../../src/cli/program.js';
 import { setQuiet } from '../../../src/cli/renderer/ui.js';
 
-describe('airs redteam report command', () => {
+describe('airs-cli redteam report command', () => {
   let directory: string;
   let tenant: Awaited<ReturnType<typeof useTestTenant>>;
   let client: ReturnType<typeof redTeamReportClient>;
@@ -36,13 +36,13 @@ describe('airs redteam report command', () => {
     await rm(directory, { recursive: true, force: true });
   });
   const run = (args: string[] = []) =>
-    buildProgram().parseAsync(['node', 'airs', '--quiet', 'redteam', 'report', ...args]);
+    buildProgram().parseAsync(['node', 'airs-cli', '--quiet', 'redteam', 'report', ...args]);
 
   it('retains dashboard as an alias for the same report command', async () => {
     const destination = join(directory, 'alias.html');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--quiet',
       'redteam',
       'dashboard',
@@ -58,7 +58,7 @@ describe('airs redteam report command', () => {
     const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('exit');
     });
-    await expect(buildProgram().parseAsync(['node', 'airs', 'redteam', name])).rejects.toThrow(
+    await expect(buildProgram().parseAsync(['node', 'airs-cli', 'redteam', name])).rejects.toThrow(
       'exit',
     );
     expect(exit).toHaveBeenCalledWith(2);
@@ -77,7 +77,7 @@ describe('airs redteam report command', () => {
     const first = join(directory, 'first.md');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--output',
       'markdown',
       'redteam',
@@ -89,7 +89,7 @@ describe('airs redteam report command', () => {
     const second = join(directory, 'second.html');
     await buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       '--output',
       'markdown',
       'redteam',

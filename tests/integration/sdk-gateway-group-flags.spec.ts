@@ -43,7 +43,7 @@ describe('public CLI group flags through the published SDK transport', () => {
       .exitOverride()
       .parseAsync([
         'node',
-        'airs',
+        'airs-cli',
         'aigateway',
         'telemetry',
         'group-by',

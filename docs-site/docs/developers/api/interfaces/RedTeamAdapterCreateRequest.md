@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterCreateRequest
 
-Defined in: src/airs/types.ts:1507
+Defined in: src/airs/types.ts:1555
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/airs/types.ts:1507
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:1512
+Defined in: src/airs/types.ts:1560
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/airs/types.ts:1512
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:1508
+Defined in: src/airs/types.ts:1556
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: src/airs/types.ts:1508
 
 > `optional` **networkBrokerChannelUuid?**: `string`
 
-Defined in: src/airs/types.ts:1514
+Defined in: src/airs/types.ts:1562
 
 Optional while DRAFT; required to activate (validate: true).
 
@@ -34,7 +34,7 @@ Optional while DRAFT; required to activate (validate: true).
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:1511
+Defined in: src/airs/types.ts:1559
 
 Sample prompt used to exercise the adapter during validation. Not stored.
 
@@ -44,7 +44,7 @@ Sample prompt used to exercise the adapter during validation. Not stored.
 
 > **scriptB64**: `string`
 
-Defined in: src/airs/types.ts:1509
+Defined in: src/airs/types.ts:1557
 
 ***
 
@@ -52,4 +52,4 @@ Defined in: src/airs/types.ts:1509
 
 > `optional` **variables?**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: src/airs/types.ts:1515
+Defined in: src/airs/types.ts:1563

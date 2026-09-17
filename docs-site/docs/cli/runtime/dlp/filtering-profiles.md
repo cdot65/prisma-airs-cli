@@ -9,7 +9,7 @@ sidebar_label: filtering-profiles
 List filtering profiles
 
 ```text
-airs runtime dlp filtering-profiles list [options]
+airs-cli runtime dlp filtering-profiles list [options]
 ```
 
 #### Options
@@ -28,7 +28,7 @@ airs runtime dlp filtering-profiles list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime dlp filtering-profiles list --limit 2 --sort name,asc
+airs-cli runtime dlp filtering-profiles list --limit 2 --sort name,asc
 ```
 
 ```text
@@ -45,7 +45,7 @@ page=0 size=2 returned=2 total=29
 *JSON output*
 
 ```bash
-airs runtime dlp filtering-profiles list --limit 2 --sort name,asc --output json
+airs-cli runtime dlp filtering-profiles list --limit 2 --sort name,asc --output json
 ```
 
 ```text
@@ -72,7 +72,7 @@ airs runtime dlp filtering-profiles list --limit 2 --sort name,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp filtering-profiles list --limit 2 --sort name,asc --output yaml
+airs-cli runtime dlp filtering-profiles list --limit 2 --sort name,asc --output yaml
 ```
 
 ```text
@@ -97,7 +97,7 @@ airs runtime dlp filtering-profiles list --limit 2 --sort name,asc --output yaml
 Get a filtering profile by id
 
 ```text
-airs runtime dlp filtering-profiles get [options] <id>
+airs-cli runtime dlp filtering-profiles get [options] <id>
 ```
 
 #### Arguments
@@ -115,7 +115,7 @@ airs runtime dlp filtering-profiles get [options] <id>
 *Pretty output (fallback `pretty` — predefined filtering profile)*
 
 ```bash
-airs runtime dlp filtering-profiles get 000000000000000000000001
+airs-cli runtime dlp filtering-profiles get 000000000000000000000001
 ```
 
 ```text
@@ -138,7 +138,7 @@ Data Filtering Profile:
 *JSON output*
 
 ```bash
-airs runtime dlp filtering-profiles get 000000000000000000000001 --output json
+airs-cli runtime dlp filtering-profiles get 000000000000000000000001 --output json
 ```
 
 ```text
@@ -161,7 +161,7 @@ airs runtime dlp filtering-profiles get 000000000000000000000001 --output json
 *YAML output*
 
 ```bash
-airs runtime dlp filtering-profiles get 000000000000000000000001 --output yaml
+airs-cli runtime dlp filtering-profiles get 000000000000000000000001 --output yaml
 ```
 
 ```text
@@ -186,7 +186,7 @@ updated: '2026-05-15T08:05:35.599Z'
 Full-replace a filtering profile (PUT)
 
 ```text
-airs runtime dlp filtering-profiles replace [options] <id>
+airs-cli runtime dlp filtering-profiles replace [options] <id>
 ```
 
 #### Arguments
@@ -217,7 +217,7 @@ airs runtime dlp filtering-profiles replace [options] <id>
 *Replace a filtering profile from a body fixture (see docs/cli/examples/dlp/filtering-profiles/replace.json). The API returns the new version on success.*
 
 ```bash
-airs runtime dlp filtering-profiles replace 000000000000000000000001 --body-file docs/cli/examples/dlp/filtering-profiles/replace.json --output json
+airs-cli runtime dlp filtering-profiles replace 000000000000000000000001 --body-file docs/cli/examples/dlp/filtering-profiles/replace.json --output json
 ```
 
 ```text

@@ -1,6 +1,6 @@
 /**
  * The CLI reads no configuration from the environment: tenant config files are the
- * only source. This module exists so `airs doctor` can tell users which variables
+ * only source. This module exists so `airs-cli doctor` can tell users which variables
  * they still have set that no longer do anything.
  */
 

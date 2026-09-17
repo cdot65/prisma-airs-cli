@@ -44,7 +44,7 @@ describe('runtime dashboard/session commands', () => {
     const program = new Command();
     program.hook('preAction', beforeAction);
     registerRuntimeDashboardCommands(program.command('runtime'));
-    return program.parseAsync(['node', 'airs', 'runtime', ...args, '--output', format]);
+    return program.parseAsync(['node', 'airs-cli', 'runtime', ...args, '--output', format]);
   };
   beforeEach(async () => {
     vi.clearAllMocks();

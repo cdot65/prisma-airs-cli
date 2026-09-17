@@ -9,7 +9,7 @@ sidebar_label: rule-instances
 List rule instances in a security group
 
 ```text
-airs model-security rule-instances list [options] <groupUuid>
+airs-cli model-security rule-instances list [options] <groupUuid>
 ```
 
 #### Arguments
@@ -33,7 +33,7 @@ airs model-security rule-instances list [options] <groupUuid>
 *List rule instances in a group*
 
 ```bash
-airs model-security rule-instances list <groupUuid>
+airs-cli model-security rule-instances list <groupUuid>
 ```
 
 ```text
@@ -56,7 +56,7 @@ d90c57bb-8ee5-41dc-94db-c7e3e23bd0dd
 Get rule instance details
 
 ```text
-airs model-security rule-instances get [options] <groupUuid> <instanceUuid>
+airs-cli model-security rule-instances get [options] <groupUuid> <instanceUuid>
 ```
 
 #### Arguments
@@ -75,7 +75,7 @@ airs model-security rule-instances get [options] <groupUuid> <instanceUuid>
 *Pretty output (fallback `pretty`; no output override in this example)*
 
 ```bash
-airs model-security rule-instances get 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
+airs-cli model-security rule-instances get 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -101,7 +101,7 @@ Rule Instance Detail:
 Update a rule instance
 
 ```text
-airs model-security rule-instances update [options] <groupUuid> <instanceUuid>
+airs-cli model-security rule-instances update [options] <groupUuid> <instanceUuid>
 ```
 
 #### Arguments
@@ -120,7 +120,7 @@ airs model-security rule-instances update [options] <groupUuid> <instanceUuid>
 *Flip a rule instance from BLOCKING to ALLOWING (see docs/cli/examples/model-security/rule-instance-update.json)*
 
 ```bash
-airs model-security rule-instances update 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000003 --config docs/cli/examples/model-security/rule-instance-update.json
+airs-cli model-security rule-instances update 00000000-0000-0000-0000-000000000001 00000000-0000-0000-0000-000000000003 --config docs/cli/examples/model-security/rule-instance-update.json
 ```
 
 ```text

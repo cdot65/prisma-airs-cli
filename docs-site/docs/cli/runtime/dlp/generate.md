@@ -17,7 +17,7 @@ Historical result: CLI 4.3.0 produced five valid PNG and five valid JPEG files a
 Generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX
 
 ```text
-airs runtime dlp generate [options]
+airs-cli runtime dlp generate [options]
 ```
 
 ### Options
@@ -36,7 +36,7 @@ airs runtime dlp generate [options]
 *Full corpus, reproducible seed (actual validated summary; temporary paths replaced)*
 
 ```bash
-airs runtime dlp generate --types all --count 1 --seed 431 --output json
+airs-cli runtime dlp generate --types all --count 1 --seed 431 --output json
 ```
 
 ```json
@@ -74,11 +74,11 @@ airs runtime dlp generate --types all --count 1 --seed 431 --output json
 *Images only, 3 of each*
 
 ```bash
-airs runtime dlp generate --types png,jpeg,svg --count 3
+airs-cli runtime dlp generate --types png,jpeg,svg --count 3
 ```
 
 *PNG LSB steganography only, JSON summary*
 
 ```bash
-airs runtime dlp generate --types png --techniques stego-lsb --output json
+airs-cli runtime dlp generate --types png --techniques stego-lsb --output json
 ```

@@ -47,4 +47,10 @@ jobs:
         run: pnpm run build
 
       - name: Publish to npm
-        run: npm publish --access public
+        env:
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          # Migration releases are staged until the matching harness is accepted.
+          tag=latest
+          if [ "$RELEASE_PRERELEASE" = true ]; then tag=next; fi
+          npm publish --access public --tag "$tag"

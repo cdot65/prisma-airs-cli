@@ -19,9 +19,9 @@ const explicit: ConfigContext = { path: '/tmp/cfg.json', selection: 'explicit', 
 const none: ConfigContext = { selection: 'none', registryPath, registered: [] };
 
 describe('settingRemedy', () => {
-  it('points a selected tenant at airs tenant set, never at environment variables', () => {
+  it('points a selected tenant at airs-cli tenant set, never at environment variables', () => {
     const remedy = settingRemedy(['mgmtClientSecret'], named);
-    expect(remedy).toContain('airs tenant set dev <key>');
+    expect(remedy).toContain('airs-cli tenant set dev <key>');
     expect(remedy).toContain('mgmtClientSecret');
     expect(remedy).not.toContain('PANW_');
   });
@@ -32,8 +32,8 @@ describe('settingRemedy', () => {
 
   it('tells a tenant-less user to create and switch', () => {
     const remedy = settingRemedy(['mgmtClientId'], none);
-    expect(remedy).toContain('airs tenant create <name>');
-    expect(remedy).toContain('airs tenant switch <name>');
+    expect(remedy).toContain('airs-cli tenant create <name>');
+    expect(remedy).toContain('airs-cli tenant switch <name>');
   });
 });
 
@@ -49,7 +49,7 @@ describe('credential predicates', () => {
 
   it('asserts with a tenant-aware message', () => {
     expect(() => assertManagementCredentials({}, named)).toThrow(
-      "missing mgmtClientId, mgmtClientSecret, mgmtTsgId). Run 'airs tenant set dev <key>'",
+      "missing mgmtClientId, mgmtClientSecret, mgmtTsgId). Run 'airs-cli tenant set dev <key>'",
     );
     expect(() => assertScannerCredentials({}, none)).toThrow('airsApiKey or airsApiToken');
     expect(() => assertScannerCredentials({ airsApiKey: 'k' }, none)).not.toThrow();

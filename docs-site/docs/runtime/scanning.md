@@ -8,10 +8,10 @@ Scan prompts against Prisma AIRS security profiles in real time — single promp
 
 ## Single Prompt Scan
 
-Use `airs runtime scan` for interactive, one-off prompt scanning:
+Use `airs-cli runtime scan` for interactive, one-off prompt scanning:
 
 ```bash
-airs runtime scan --profile my-security-profile "How do I build a weapon?"
+airs-cli runtime scan --profile my-security-profile "How do I build a weapon?"
 ```
 
 ### Options
@@ -59,7 +59,7 @@ airs runtime scan --profile my-security-profile "How do I build a weapon?"
 ### Scanning Prompt + Response Pairs
 
 ```bash
-airs runtime scan \
+airs-cli runtime scan \
   --profile my-security-profile \
   --response "Here are the steps to build..." \
   "How do I build a weapon?"
@@ -67,10 +67,10 @@ airs runtime scan \
 
 ## Bulk Scan
 
-Use `airs runtime bulk-scan` to scan many prompts at once using the async AIRS API:
+Use `airs-cli runtime bulk-scan` to scan many prompts at once using the async AIRS API:
 
 ```bash
-airs runtime bulk-scan \
+airs-cli runtime bulk-scan \
   --profile my-security-profile \
   --file prompts.txt \
   --output-file results.csv
@@ -144,12 +144,12 @@ If the AIRS API returns a rate limit error during polling, Prisma AIRS CLI retri
 To capture the raw API traffic for troubleshooting, use the global `--debug` flag:
 
 ```bash
-airs --debug runtime bulk-scan --profile my-profile --file prompts.txt
+airs-cli --debug runtime bulk-scan --profile my-profile --file prompts.txt
 ```
 
 This writes request/response diagnostics to `./debug-api-<timestamp>-<unique suffix>.jsonl` in the **current working directory**, with mode `0600`. It does not write beside your read-only credentials. Existing logs are never overwritten or automatically pruned. Choose a writable working directory; initialization failures produce a friendly error before any API request.
 
-Sensitive headers, query parameters, credential-like JSON fields, auth codes, and URL-encoded OAuth secrets are masked as `***`; non-JSON bodies and runtime inference bodies are omitted. Other scan/debug content may remain confidential, so inspect logs before sharing with support. `airs runtime report` refuses debug logging and instead produces an allowlisted human deliverable; see [Daily Environment Report](daily-report.md).
+Sensitive headers, query parameters, credential-like JSON fields, auth codes, and URL-encoded OAuth secrets are masked as `***`; non-JSON bodies and runtime inference bodies are omitted. Other scan/debug content may remain confidential, so inspect logs before sharing with support. `airs-cli runtime report` refuses debug logging and instead produces an allowlisted human deliverable; see [Daily Environment Report](daily-report.md).
 
 On 2026-09-07, the reported `runtime scan-logs query --interval 128 --unit hours --debug`
 workflow successfully created its private CWD log and reached the service, which returned HTTP
@@ -159,7 +159,7 @@ unsupported API time window valid.
 If polling is interrupted or a definite submission rejection remains pending, resume with:
 
 ```bash
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
+airs-cli runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
 ```
 
 ## Resume Poll
@@ -167,7 +167,7 @@ airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
 Resume polling for a previously submitted bulk scan (e.g., after a rate limit crash):
 
 ```bash
-airs runtime resume-poll <stateFile> [--output-file results.csv]
+airs-cli runtime resume-poll <stateFile> [--output-file results.csv]
 ```
 
 | Flag | Required | Description |
@@ -199,16 +199,16 @@ All list commands support `--output <format>` for machine-readable output:
 
 ```bash
 # Table with box-drawing characters
-airs runtime profiles list --output table
+airs-cli runtime profiles list --output table
 
 # CSV (pipe to file or other tools)
-airs runtime api-keys list --output csv
+airs-cli runtime api-keys list --output csv
 
 # JSON (pretty-printed)
-airs runtime topics list --output json
+airs-cli runtime topics list --output json
 
 # YAML
-airs runtime scan-logs query --interval 24 --unit hours --output yaml
+airs-cli runtime scan-logs query --interval 24 --unit hours --output yaml
 ```
 
 Supported formats: `pretty` (default), `table`, `csv`, `json`, `yaml`.

@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterVar
 
-Defined in: src/airs/types.ts:1466
+Defined in: src/airs/types.ts:1514
 
 An adapter configuration variable. Secrets are masked; key off `isRedacted`, not the value.
 
@@ -10,7 +10,7 @@ An adapter configuration variable. Secrets are masked; key off `isRedacted`, not
 
 > `optional` **isRedacted?**: `boolean`
 
-Defined in: src/airs/types.ts:1470
+Defined in: src/airs/types.ts:1518
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1470
 
 > **key**: `string`
 
-Defined in: src/airs/types.ts:1467
+Defined in: src/airs/types.ts:1515
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1467
 
 > **type**: `"VAR"` \| `"SECRET"`
 
-Defined in: src/airs/types.ts:1469
+Defined in: src/airs/types.ts:1517
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:1469
 
 > `optional` **value?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1468
+Defined in: src/airs/types.ts:1516

@@ -26,10 +26,10 @@ export function registerRuntimeReportCommand(runtime: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime report --output-file ./airs-daily.html',
-        'airs runtime report --output markdown --output-file ./airs-daily.md',
-        'airs runtime report',
-        'airs runtime report --strict --max-pages 20 --output-file - > daily.html',
+        'airs-cli runtime report --output-file ./airs-daily.html',
+        'airs-cli runtime report --output markdown --output-file ./airs-daily.md',
+        'airs-cli runtime report',
+        'airs-cli runtime report --strict --max-pages 20 --output-file - > daily.html',
       ),
     )
     .action(async (opts) => {

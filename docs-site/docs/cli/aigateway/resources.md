@@ -8,13 +8,13 @@ sidebar_position: 2
 For task-oriented setup, workspace creation, and integration-binding examples, start with the
 [AI Gateway workflow cheat sheet](workflows.md).
 
-`airs aigateway` exposes the SDK's SCM management surface plus separate runtime inference commands
+`airs-cli aigateway` exposes the SDK's SCM management surface plus separate runtime inference commands
 in this local candidate. The published dependency pin remains SDK 0.20.0; see
 [candidate verification and release ordering](inference.md#validated-candidate-and-release-ordering).
 Commands follow one grammar:
 
 ```text
-airs aigateway <resource> <action> [id]
+airs-cli aigateway <resource> <action> [id]
 ```
 
 Run any group with `--help` to see its identifiers, required flags, and examples. All reads accept
@@ -51,7 +51,7 @@ configuration. No request file is required:
 
 ```bash
 # Create a routing config
-airs aigateway configs create \
+airs-cli aigateway configs create \
   --name primary-routing \
   --workspace <workspace-uuid> \
   --set config.retry.attempts=3 \
@@ -59,14 +59,14 @@ airs aigateway configs create \
   --output json
 
 # Create a guardrail one field at a time
-airs aigateway guardrails create \
+airs-cli aigateway guardrails create \
   --name deny-risk \
   --workspace <workspace-uuid> \
   --set 'checks[0].id=prompt-injection' \
   --set actions.deny=true
 
 # Preserve existing MCP bindings while changing one workspace
-airs aigateway mcp integrations workspaces set <integration-id> \
+airs-cli aigateway mcp integrations workspaces set <integration-id> \
   --workspace-binding <workspace-id>=false \
   --global-access false \
   --preserve-existing \
@@ -87,20 +87,20 @@ integration-specific settings begin with `configurations.`. Run the exact leaf c
 
 An integration binds one provider family to your organisation and needs a credential; the
 gateway rejects a credential-less create with a generic `400 AB01`. Name the provider by catalog
-slug (`airs aigateway integrations providers` lists all 77) or UUID, and keep the credential out
+slug (`airs-cli aigateway integrations providers` lists all 77) or UUID, and keep the credential out
 of `argv`: in a terminal, omit every key flag and `create` prompts with hidden input; in
 automation, use `--key-file` or pipe it with `--key-stdin`:
 
 ```bash
 # xAI, credential from a file (or --key-stdin for a secret manager pipe)
-airs aigateway integrations create \
+airs-cli aigateway integrations create \
   --organisation-id 1001464285 \
   --ai-provider x-ai \
   --name redtail-x --slug redtail-x \
   --key-file ~/.secrets/xai.key
 
 # A self-hosted OpenAI-compatible endpoint (vLLM, Ollama, an in-cluster service)
-airs aigateway integrations create \
+airs-cli aigateway integrations create \
   --organisation-id 1001464285 \
   --ai-provider open-ai \
   --name talos7 --slug talos7 --description "Kubernetes node" \
@@ -109,7 +109,7 @@ airs aigateway integrations create \
   --key-stdin < ~/.secrets/qwen.key        # or omit the key flags to be prompted
 
 # Move an existing integration to a new host without touching its credential
-airs aigateway integrations update <integration-id> --base-url https://llm.example/v1
+airs-cli aigateway integrations update <integration-id> --base-url https://llm.example/v1
 ```
 
 `--base-url` writes the live-verified `configurations.custom_host` shape
@@ -125,7 +125,7 @@ because it lands in shell history.
 Named flags override file fields, and `--set` / `--set-string` apply last:
 
 ```bash
-airs aigateway integrations update <integration-id> \
+airs-cli aigateway integrations update <integration-id> \
   --file provider-base.yaml \
   --name vertex-production \
   --set configurations.vertex_region=us-central1
@@ -146,7 +146,7 @@ API-key create/rotate, deployment create, and deployment updates with `--rotate-
 to call the API until a secret destination is chosen:
 
 ```bash
-airs aigateway api-keys service create \
+airs-cli aigateway api-keys service create \
   --name ci-gateway \
   --organisation-id <numeric-tsg-id> \
   --workspace <workspace-uuid> \
@@ -154,13 +154,13 @@ airs aigateway api-keys service create \
   --scopes completions.write \
   --secret-output ./api-key.secret.json
 
-airs aigateway deployments create \
+airs-cli aigateway deployments create \
   --name private-gateway \
   --type production \
   --organisation-id <numeric-tsg-id> \
   --secret-output ./deployment.secret.json
 
-airs aigateway deployments update <deployment-id> \
+airs-cli aigateway deployments update <deployment-id> \
   --rotate-auth true \
   --secret-output ./rotated-deployment.secret.json
 ```
@@ -182,7 +182,7 @@ blocked; do not interpret the ping result as the only health signal.
 
 ## Local live-safe E2E
 
-Select the tenant to test against (`airs tenant switch <name>`, or set `AIRS_E2E_TENANT`), opt in with `RUN_AIGATEWAY_E2E=1`, and run:
+Select the tenant to test against (`airs-cli tenant switch <name>`, or set `AIRS_E2E_TENANT`), opt in with `RUN_AIGATEWAY_E2E=1`, and run:
 
 ```bash
 pnpm test:e2e:aigateway

@@ -13,14 +13,14 @@ never modify the source configuration or copy its credentials.
 ## Set up without a JSON file
 
 ```bash
-airs tenant create development
+airs-cli tenant create development
 # Prompts, one at a time: TSG ID, OAuth client ID, and a hidden OAuth client secret.
-airs tenant switch development
-airs tenant set development defaultOutput yaml
-airs tenant set development scanConcurrency 3
-airs tenant set development airsApiKey
+airs-cli tenant switch development
+airs-cli tenant set development defaultOutput yaml
+airs-cli tenant set development scanConcurrency 3
+airs-cli tenant set development airsApiKey
 # Hidden prompt for the runtime scanning key.
-airs tenant read
+airs-cli tenant read
 ```
 
 `create` waits for all three required values before saving anything. Ctrl+C cancels
@@ -39,16 +39,16 @@ prints one value with credentials redacted; `path [name]` prints the file path.
 For automation, pipe a secret from your secret manager or private file:
 
 ```bash
-airs tenant create development --tsg-id 100 --client-id client-100 \
+airs-cli tenant create development --tsg-id 100 --client-id client-100 \
   --client-secret-stdin < /secure/oauth-secret.txt
-airs tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
+airs-cli tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
 ```
 
 Stdin accepts one nonempty value, up to 64 KiB, with an optional final newline.
 Without a terminal, supply the creation IDs and `--client-secret-stdin`, or use
 `--config`. Do not combine `--config` with new-config options. Neither creation nor
 editing tests OAuth access; a successful save confirms local configuration only. Run
-`airs doctor` for that.
+`airs-cli doctor` for that.
 
 New configs are stored under `configs/` alongside the tenant registry, with a unique
 filename, directory mode `0700`, and file mode `0600` on POSIX. Secrets are stored in
@@ -61,13 +61,13 @@ configs.
 ## Use an existing JSON file
 
 ```bash
-airs tenant create development --config /secure/development.json
-airs tenant create production --config /secure/production.json
-airs tenant list --output json
-airs tenant switch development
-airs tenant read
-airs tenant read production --output yaml
-airs tenant delete production --force
+airs-cli tenant create development --config /secure/development.json
+airs-cli tenant create production --config /secure/production.json
+airs-cli tenant list --output json
+airs-cli tenant switch development
+airs-cli tenant read
+airs-cli tenant read production --output yaml
+airs-cli tenant delete production --force
 ```
 
 `create --config` registers an **existing file**, not a new cloud tenant or service account. Each
@@ -107,9 +107,9 @@ that no writer is running before removing that specific `.lock` file.
 
 Config resolution is: CLI flags, then the selected tenant's file, then defaults. No
 environment variable supplies a configuration value, and a `.env` file is not loaded.
-`airs doctor` names the selected tenant and TSG, validates the file against its pinned
+`airs-cli doctor` names the selected tenant and TSG, validates the file against its pinned
 identity, lists any `PANW_*` or `PRISMA_AIRS_CONFIG_PATH` variables still set in the shell
-(they are ignored), and phrases every remedy as `airs tenant set <name> <key>`.
+(they are ignored), and phrases every remedy as `airs-cli tenant set <name> <key>`.
 
 Selection affects new commands, not already running processes. For parallel jobs targeting
 different tenants, give each job its own registry through `PRISMA_AIRS_TENANTS_PATH`.
@@ -123,12 +123,12 @@ container removal. Config paths are interpreted inside the container.
 ## Cross-tenant profile migration
 
 ```bash
-airs tenant switch development
-airs runtime profiles backup --all --output-file ./profiles.json
-airs tenant switch production
-airs runtime profiles restore ./profiles.json --dry-run --output json
+airs-cli tenant switch development
+airs-cli runtime profiles backup --all --output-file ./profiles.json
+airs-cli tenant switch production
+airs-cli runtime profiles restore ./profiles.json --dry-run --output json
 # Review the destination and dependency plan before executing:
-airs runtime profiles restore ./profiles.json --expect-tsg 200 --force
+airs-cli runtime profiles restore ./profiles.json --expect-tsg 200 --force
 ```
 
 Replace `200` with the actual destination TSG. See the
@@ -142,17 +142,17 @@ this is a terminal interaction test, not a cloud authentication claim. Terminal
 control sequences have been removed; no credential value is included below.
 
 ```text
-$ airs tenant create guided-demo
+$ airs-cli tenant create guided-demo
 ✔ Tenant service group ID (mgmtTsgId): 100
 ✔ OAuth client ID (mgmtClientId): client-100
 ✔ OAuth client secret (mgmtClientSecret):
-  ✓ Registered guided-demo (TSG 100); private config created. Use airs tenant switch guided-demo.
+  ✓ Registered guided-demo (TSG 100); private config created. Use airs-cli tenant switch guided-demo.
 
-$ airs tenant set guided-demo defaultOutput
+$ airs-cli tenant set guided-demo defaultOutput
 ✔ defaultOutput: yaml
   ✓ Updated defaultOutput for tenant guided-demo; selection unchanged.
 
-$ airs tenant create cancelled-demo --tsg-id 100 --client-id client-100
+$ airs-cli tenant create cancelled-demo --tsg-id 100 --client-id client-100
 ? OAuth client secret (mgmtClientSecret): [input is masked]
 # Ctrl+C
   Cancelled; no configuration saved.

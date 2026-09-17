@@ -4,23 +4,23 @@ sidebar_label: runtime inference
 
 # Runtime inference
 
-`airs aigateway inference` uses your deployed gateway endpoint and runtime API key, independently
+`airs-cli aigateway inference` uses your deployed gateway endpoint and runtime API key, independently
 of SCM management OAuth. Configure `PANW_AI_GW_INFERENCE_ENDPOINT` (including `/v1`) and
 `PANW_AI_GW_INFERENCE_API_KEY`, or the corresponding `aiGwInferenceEndpoint` and
 `aiGwInferenceApiKey` config keys. Commands read config; they do not write or rotate credentials.
 There is deliberately no API-key command-line flag. Never put a real key in shell history.
 
 ```bash
-airs aigateway inference chat 'Reply with READY.' \
+airs-cli aigateway inference chat 'Reply with READY.' \
   --model @openai/gpt-5.6-terra --max-tokens 128 --output json
 
-airs aigateway inference chat 'Reply with READY.' \
+airs-cli aigateway inference chat 'Reply with READY.' \
   --model @openai/gpt-5.6-terra --max-tokens 128 --stream --output json
 
-airs aigateway inference responses 'Reply with READY.' \
+airs-cli aigateway inference responses 'Reply with READY.' \
   --model @openai/gpt-5.6-terra --max-tokens 128 --stream
 
-airs aigateway inference embeddings 'Readiness check' \
+airs-cli aigateway inference embeddings 'Readiness check' \
   --model @openai/text-embedding-3-small --dimensions 32 --encoding float --output json
 ```
 

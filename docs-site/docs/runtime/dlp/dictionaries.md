@@ -32,9 +32,9 @@ List tenant-created dictionaries with optional pagination. Predefined
 show them.
 
 ```bash
-airs runtime dlp dictionaries list
-airs runtime dlp dictionaries list --limit 50 --offset 0 --output json
-airs runtime dlp dictionaries list --keywords  # Include keyword array in output
+airs-cli runtime dlp dictionaries list
+airs-cli runtime dlp dictionaries list --limit 50 --offset 0 --output json
+airs-cli runtime dlp dictionaries list --keywords  # Include keyword array in output
 ```
 
 **Output (`--output json`)** — a bare array of complete camelCase records.
@@ -69,7 +69,7 @@ echo
 EOF
 
 # Flag-based metadata (preferred)
-airs runtime dlp dictionaries create \
+airs-cli runtime dlp dictionaries create \
   --name "project-codenames" \
   --category Confidential \
   --region "United States" \
@@ -108,9 +108,9 @@ response bodies. `PANW_AI_SEC_DEBUG_BODY` is disabled for DLP commands as well.
 Retrieve a single dictionary by ID.
 
 ```bash
-airs runtime dlp dictionaries get 6901...
-airs runtime dlp dictionaries get 6901... --output json
-airs runtime dlp dictionaries get 6901... --keywords  # Include keyword array
+airs-cli runtime dlp dictionaries get 6901...
+airs-cli runtime dlp dictionaries get 6901... --output json
+airs-cli runtime dlp dictionaries get 6901... --keywords  # Include keyword array
 ```
 
 **Output** — full dictionary object:
@@ -151,7 +151,7 @@ Note `dictionary_metadata.number_of_keywords` reflects the canonical server-side
 Full multipart replace of metadata + keyword file. Same flag set as `create`. The API returns 200+body in some regions, 204+empty in others — the CLI handles both.
 
 ```bash
-airs runtime dlp dictionaries replace 6901... \
+airs-cli runtime dlp dictionaries replace 6901... \
   --name "project-codenames" \
   --category Confidential \
   --region "United States" \
@@ -168,7 +168,7 @@ JSON Merge Patch. Required fields even on patch: `category`, `name`, `original_f
 
 ```bash
 # Rename and clear description
-airs runtime dlp dictionaries patch 6901... \
+airs-cli runtime dlp dictionaries patch 6901... \
   --set name='"project-codenames-v2"' \
   --set category='"Confidential"' \
   --set original_file_name='"codenames.txt"' \
@@ -176,7 +176,7 @@ airs runtime dlp dictionaries patch 6901... \
   --output json
 
 # Or via --body-file for arbitrary metadata
-airs runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output json
+airs-cli runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output json
 ```
 
 `--body-file` is mutually exclusive with `--set/--clear`. Keywords are not affected by PATCH — use REPLACE to change the keyword file.
@@ -188,7 +188,7 @@ airs runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output
 Delete a dictionary.
 
 ```bash
-airs runtime dlp dictionaries delete 6901...
+airs-cli runtime dlp dictionaries delete 6901...
 ```
 
 **Exit code** — 0 on success, 1 on error.

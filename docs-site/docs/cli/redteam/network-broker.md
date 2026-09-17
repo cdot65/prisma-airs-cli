@@ -15,7 +15,7 @@ commands (the tenant's `mgmt*` keys).
 List network broker channels.
 
 ```text
-airs redteam network-broker channels list [options]
+airs-cli redteam network-broker channels list [options]
 ```
 
 #### Options
@@ -33,8 +33,8 @@ airs redteam network-broker channels list [options]
 #### Examples
 
 ```bash
-airs redteam network-broker channels list
-airs redteam network-broker channels list --status ONLINE DRAFT --output json
+airs-cli redteam network-broker channels list
+airs-cli redteam network-broker channels list --status ONLINE DRAFT --output json
 ```
 
 ### redteam network-broker channels get
@@ -42,7 +42,7 @@ airs redteam network-broker channels list --status ONLINE DRAFT --output json
 Get a single channel by ID.
 
 ```text
-airs redteam network-broker channels get <channelId> [options]
+airs-cli redteam network-broker channels get <channelId> [options]
 ```
 
 | Flag | Required | Default | Description |
@@ -54,7 +54,7 @@ airs redteam network-broker channels get <channelId> [options]
 Create a channel.
 
 ```text
-airs redteam network-broker channels create --name <name> [options]
+airs-cli redteam network-broker channels create --name <name> [options]
 ```
 
 | Flag | Required | Default | Description |
@@ -65,7 +65,7 @@ airs redteam network-broker channels create --name <name> [options]
 #### Examples
 
 ```bash
-airs redteam network-broker channels create --name "prod-relay" --description "Production broker"
+airs-cli redteam network-broker channels create --name "prod-relay" --description "Production broker"
 ```
 
 ### redteam network-broker channels update
@@ -73,7 +73,7 @@ airs redteam network-broker channels create --name "prod-relay" --description "P
 Update a channel. At least one of `--name` / `--description` is required.
 
 ```text
-airs redteam network-broker channels update <channelId> [options]
+airs-cli redteam network-broker channels update <channelId> [options]
 ```
 
 | Flag | Required | Default | Description |
@@ -87,7 +87,7 @@ Show aggregate channel statistics (online/total channel counts, docker registry,
 helm chart, docker image, client version).
 
 ```text
-airs redteam network-broker stats [options]
+airs-cli redteam network-broker stats [options]
 ```
 
 | Flag | Required | Default | Description |

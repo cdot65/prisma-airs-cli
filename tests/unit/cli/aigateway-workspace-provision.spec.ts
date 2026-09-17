@@ -43,7 +43,7 @@ const workspace: AiGatewayWorkspaceDetail = {
 const provisioned: AiGatewayWorkspaceProvisionResult = { workspace, scope, scopeCreated: true };
 
 async function run(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(['node', 'airs', 'aigateway', ...args]);
+  await buildProgram().parseAsync(['node', 'airs-cli', 'aigateway', ...args]);
 }
 const stdout = () => vi.mocked(console.log).mock.calls.flat().map(String).join('\n');
 const stderr = () => vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
@@ -81,7 +81,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('airs aigateway workspaces create', () => {
+describe('airs-cli aigateway workspaces create', () => {
   it('provisions with a generated scope when --scope-name is omitted', async () => {
     await run(
       'workspaces',
@@ -148,7 +148,7 @@ describe('airs aigateway workspaces create', () => {
   });
 });
 
-describe('airs aigateway scopes', () => {
+describe('airs-cli aigateway scopes', () => {
   it('lists scopes as json rows', async () => {
     await run('scopes', 'list', '--output', 'json');
     expect(service.listScopes).toHaveBeenCalled();

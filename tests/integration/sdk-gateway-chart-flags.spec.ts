@@ -84,7 +84,7 @@ describe('public CLI chart flags through the registry SDK transport', () => {
   function run(metric: string, args: string[], format = 'json') {
     return buildProgram().parseAsync([
       'node',
-      'airs',
+      'airs-cli',
       'aigateway',
       'telemetry',
       metric,

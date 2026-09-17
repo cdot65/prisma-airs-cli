@@ -20,35 +20,35 @@ CLI flags  >  Selected tenant's config file  >  Zod defaults
 ## First-time setup
 
 ```bash
-airs tenant create development     # prompts for TSG ID, client ID, and a hidden client secret
-airs tenant switch development     # every command now uses this tenant
-airs doctor                        # verify the file, credentials, and connectivity
+airs-cli tenant create development     # prompts for TSG ID, client ID, and a hidden client secret
+airs-cli tenant switch development     # every command now uses this tenant
+airs-cli doctor                        # verify the file, credentials, and connectivity
 ```
 
 For scanning, add the runtime key with a hidden prompt:
 
 ```bash
-airs tenant set development airsApiKey
+airs-cli tenant set development airsApiKey
 ```
 
 Already have a JSON file? Register it without copying or editing it:
 
 ```bash
-airs tenant create production --config /secure/production.json
+airs-cli tenant create production --config /secure/production.json
 ```
 
 ## Managing settings
 
-`airs tenant` covers every read and write:
+`airs-cli tenant` covers every read and write:
 
 ```bash
-airs tenant read                          # all settings of the selected tenant, secrets redacted
-airs tenant get development scanConcurrency
-airs tenant set development scanConcurrency 3
-airs tenant set development defaultOutput json
-airs tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
-airs tenant unset development defaultOutput   # defaults take over
-airs tenant path                          # print the selected tenant's file path
+airs-cli tenant read                          # all settings of the selected tenant, secrets redacted
+airs-cli tenant get development scanConcurrency
+airs-cli tenant set development scanConcurrency 3
+airs-cli tenant set development defaultOutput json
+airs-cli tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
+airs-cli tenant unset development defaultOutput   # defaults take over
+airs-cli tenant path                          # print the selected tenant's file path
 ```
 
 - **`set`** validates the value through the schema before writing; invalid values are rejected
@@ -80,5 +80,5 @@ Keep `scanConcurrency` at 5 or lower to avoid AIRS rate limiting. Increase only 
 | Path | Purpose |
 |------|---------|
 | `~/.local/state/prisma-airs/tenants.json` | Tenant registry (names, file paths, TSG IDs; never credentials) |
-| `~/.local/state/prisma-airs/configs/` | Config files created by `airs tenant create` (mode `0600`) |
+| `~/.local/state/prisma-airs/configs/` | Config files created by `airs-cli tenant create` (mode `0600`) |
 | `~/.prisma-airs/runs/` | Bulk-scan state (`dataDir`) |

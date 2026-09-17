@@ -23,7 +23,7 @@ const summary = {
 };
 
 async function run(args: string[]) {
-  await buildProgram().parseAsync(['node', 'airs', ...args]);
+  await buildProgram().parseAsync(['node', 'airs-cli', ...args]);
 }
 
 describe('DLP generate public command output and preflight', () => {

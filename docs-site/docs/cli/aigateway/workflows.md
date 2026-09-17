@@ -28,9 +28,9 @@ AI Gateway **management** reuses the same SCM OAuth client ID, client secret, an
 Team, and Model Security APIs. It does not require a second AI Gateway credential set:
 
 ```bash
-airs tenant create dev      # prompts for the client ID, secret, and TSG ID
-airs tenant switch dev
-airs doctor
+airs-cli tenant create dev      # prompts for the client ID, secret, and TSG ID
+airs-cli tenant switch dev
+airs-cli doctor
 ```
 
 `aiGwDataEndpoint` and `aiGwAdminEndpoint` are optional base-URL overrides in the tenant file.
@@ -52,14 +52,14 @@ variables override values in `~/.prisma-airs/config.json`.
 List every active workspace in the tenant through the admin plane, then list integrations:
 
 ```bash
-airs aigateway workspaces list --plane admin --output json |
+airs-cli aigateway workspaces list --plane admin --output json |
   jq '.[] | {id, name, slug, scopeName}'
 
-airs aigateway integrations list --output json |
+airs-cli aigateway integrations list --output json |
   jq '.[] | {id, name, slug}'
 ```
 
-Use `airs aigateway workspaces list --all --output json` when archived workspaces must also be
+Use `airs-cli aigateway workspaces list --all --output json` when archived workspaces must also be
 included. A bare workspace list uses the data plane and only returns active workspaces visible to
 the caller's SCM workspace scope.
 
@@ -75,27 +75,27 @@ Choose a display name; the server generates the UUID and slug, and the CLI gener
 in SCM's own `ws_<name>_<suffix>` style unless `--scope-name` says otherwise:
 
 ```bash
-airs aigateway workspaces create \
+airs-cli aigateway workspaces create \
   --name Development \
   --description 'Development AI Gateway traffic' \
   --output json
 ```
 
 To pick the scope name yourself, or to bind a scope created earlier with
-`airs aigateway scopes create`, pass `--scope-name` (and `--existing-scope` for the latter):
+`airs-cli aigateway scopes create`, pass `--scope-name` (and `--existing-scope` for the latter):
 
 ```bash
-airs aigateway workspaces create --name Development --scope-name ws_development_4k2p9x
-airs aigateway workspaces create --name Development --scope-name ws_development_4k2p9x --existing-scope
+airs-cli aigateway workspaces create --name Development --scope-name ws_development_4k2p9x
+airs-cli aigateway workspaces create --name Development --scope-name ws_development_4k2p9x --existing-scope
 ```
 
 Confirm the resulting values and the binding:
 
 ```bash
-airs aigateway workspaces list --plane admin --output json |
+airs-cli aigateway workspaces list --plane admin --output json |
   jq '.[] | select(.name == "Development") | {id, name, slug, scopeName}'
 
-airs aigateway scopes get ws_development_4k2p9x --output json |
+airs-cli aigateway scopes get ws_development_4k2p9x --output json |
   jq '.resources'      # => [{ "resourceType": "workspace", "resourceId": "<slug>" }]
 ```
 
@@ -103,7 +103,7 @@ The workspace's `scopeName` must also be granted to the intended service account
 Access Management. If no caller holds that workspace-scope role, the workspace remains visible on
 the admin plane but will not appear in a normal data-plane list. If provisioning stops after the
 workspace was created, the error names the slug and scope; finish with
-`airs aigateway scopes bind <scope> --workspace <slug>`.
+`airs-cli aigateway scopes bind <scope> --workspace <slug>`.
 
 ## Add an integration to a workspace
 
@@ -111,13 +111,13 @@ This is the CLI equivalent of opening an integration in the GUI and adding a wor
 inspect its current bindings:
 
 ```bash
-airs aigateway integrations workspaces list <integration-id> --output json
+airs-cli aigateway integrations workspaces list <integration-id> --output json
 ```
 
 Then enable the workspace while preserving every binding not mentioned by this command:
 
 ```bash
-airs aigateway integrations workspaces set <integration-id> \
+airs-cli aigateway integrations workspaces set <integration-id> \
   --workspace-binding <workspace-uuid>=true \
   --preserve-existing
 ```
@@ -125,13 +125,13 @@ airs aigateway integrations workspaces set <integration-id> \
 For non-interactive automation, add `--force` only after confirming both UUIDs. Verify the result:
 
 ```bash
-airs aigateway integrations workspaces list <integration-id> --output json
+airs-cli aigateway integrations workspaces list <integration-id> --output json
 ```
 
 ### Remove one workspace without disturbing others
 
 ```bash
-airs aigateway integrations workspaces set <integration-id> \
+airs-cli aigateway integrations workspaces set <integration-id> \
   --workspace-binding <workspace-uuid>=false \
   --preserve-existing
 ```
@@ -142,7 +142,7 @@ Without `--preserve-existing`, the command replaces all existing workspace bindi
 workspace that should remain enabled:
 
 ```bash
-airs aigateway integrations workspaces set <integration-id> \
+airs-cli aigateway integrations workspaces set <integration-id> \
   --global-access false \
   --workspace-binding <workspace-a-uuid>=true \
   --workspace-binding <workspace-b-uuid>=true
@@ -151,7 +151,7 @@ airs aigateway integrations workspaces set <integration-id> \
 ### Grant the integration global workspace access
 
 ```bash
-airs aigateway integrations workspaces set <integration-id> \
+airs-cli aigateway integrations workspaces set <integration-id> \
   --global-access true
 ```
 
@@ -166,14 +166,14 @@ For an integration that should create a provider binding as it is attached, add:
 Inspect the available model slugs before changing model bindings:
 
 ```bash
-airs aigateway integrations models list <integration-id> --output json
+airs-cli aigateway integrations models list <integration-id> --output json
 ```
 
 The model `set` command represents the desired binding set, so include every model that should
 remain configured:
 
 ```bash
-airs aigateway integrations models set <integration-id> \
+airs-cli aigateway integrations models set <integration-id> \
   --allow-all-models false \
   --model <model-a-slug>=true \
   --model <model-b-slug>=true
@@ -185,12 +185,12 @@ MCP workspace access follows the same additive-versus-replacement rule:
 
 ```bash
 # Add one workspace and preserve the rest
-airs aigateway mcp integrations workspaces set <mcp-integration-id> \
+airs-cli aigateway mcp integrations workspaces set <mcp-integration-id> \
   --workspace-binding <workspace-uuid>=true \
   --preserve-existing
 
 # Verify workspace access from integration detail
-airs aigateway mcp integrations workspaces list <mcp-integration-id> --output json
+airs-cli aigateway mcp integrations workspaces list <mcp-integration-id> --output json
 ```
 
 To disable one MCP workspace binding, send the same binding with `=false` and keep
@@ -201,9 +201,9 @@ To disable one MCP workspace binding, send the same binding with `=false` and ke
 Relationship commands use the workspace UUID, but telemetry uses the workspace slug:
 
 ```bash
-airs aigateway telemetry requests --workspace <workspace-slug> --days 7
-airs aigateway telemetry cost --workspace <workspace-slug> --days 30 --output json
-airs aigateway telemetry logs list --workspace <workspace-slug> --page-size 50
+airs-cli aigateway telemetry requests --workspace <workspace-slug> --days 7
+airs-cli aigateway telemetry cost --workspace <workspace-slug> --days 30 --output json
+airs-cli aigateway telemetry logs list --workspace <workspace-slug> --page-size 50
 ```
 
 See the [telemetry reference](telemetry.md) for every metric and filter.
@@ -217,10 +217,10 @@ Confirm that the client ID, client secret, and TSG ID belong to the same SCM ser
 remove stale endpoint overrides:
 
 ```bash
-airs tenant unset <name> mgmtTokenEndpoint
-airs tenant unset <name> aiGwDataEndpoint
-airs tenant unset <name> aiGwAdminEndpoint
-airs doctor
+airs-cli tenant unset <name> mgmtTokenEndpoint
+airs-cli tenant unset <name> aiGwDataEndpoint
+airs-cli tenant unset <name> aiGwAdminEndpoint
+airs-cli doctor
 ```
 
 ### Workspace appears on the admin plane but not the data plane
@@ -229,7 +229,7 @@ The OAuth identity lacks the SCM workspace role for that workspace's `scopeName`
 from the admin plane and add the corresponding role scope in SCM Access Management:
 
 ```bash
-airs aigateway workspaces list --plane admin --output json |
+airs-cli aigateway workspaces list --plane admin --output json |
   jq '.[] | {name, slug, scopeName}'
 ```
 

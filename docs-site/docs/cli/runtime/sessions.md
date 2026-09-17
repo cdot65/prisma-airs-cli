@@ -9,15 +9,15 @@ served by the [broken legacy scan-logs command](scan-logs.md). The schemas diffe
 Authentication and endpoint overrides are described under [dashboard](dashboard.md).
 
 ```bash
-airs runtime sessions chart --interval 1 --unit day --output json
-airs runtime sessions list --interval 1 --unit day --limit 25 --offset 0 --output json
-airs runtime sessions list --interval 7 --unit days --output yaml
-airs runtime sessions list --all --max 10000 --output json
+airs-cli runtime sessions chart --interval 1 --unit day --output json
+airs-cli runtime sessions list --interval 1 --unit day --limit 25 --offset 0 --output json
+airs-cli runtime sessions list --interval 7 --unit days --output yaml
+airs-cli runtime sessions list --all --max 10000 --output json
 
-airs runtime sessions get --session-id SESSION_ID \
+airs-cli runtime sessions get --session-id SESSION_ID \
   --app-id APPLICATION_ID --app-name 'Exact name' --interval 30 --unit days
 
-airs runtime sessions transaction --session-id SESSION_ID \
+airs-cli runtime sessions transaction --session-id SESSION_ID \
   --app-id APPLICATION_ID --app-name 'Exact name' \
   --scan-id SCAN_ID --scan-sub-req-id 0 --interval 30 --unit days
 ```
@@ -47,10 +47,10 @@ exactly one content destination:
 
 ```bash
 # Explicitly display sensitive content
-airs runtime sessions scan-content --scan-id SCAN_ID --scan-sub-req-id 0 --show-content
+airs-cli runtime sessions scan-content --scan-id SCAN_ID --scan-sub-req-id 0 --show-content
 
 # Or write a new private file (0600); never overwrites an existing file or symlink
-airs runtime sessions scan-content --scan-id SCAN_ID --scan-sub-req-id 0 \
+airs-cli runtime sessions scan-content --scan-id SCAN_ID --scan-sub-req-id 0 \
   --output-file ./stored-scan.json
 ```
 

@@ -1,3 +1,5 @@
+import { commandHint } from './invocation.js';
+
 /**
  * Format usage examples for `.addHelpText('after', ...)`.
  *
@@ -5,5 +7,5 @@
  * `$ ` prefix. Keep examples flag-accurate — canonical flags only.
  */
 export function examples(...lines: string[]): string {
-  return `\nExamples:\n${lines.map((l) => `  $ ${l}`).join('\n')}\n`;
+  return `\nExamples:\n${lines.map((l) => `  $ ${commandHint(l)}`).join('\n')}\n`;
 }

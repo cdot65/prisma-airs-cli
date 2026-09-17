@@ -163,8 +163,8 @@ export function registerProfileTransferCommands(profiles: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime profiles backup --all --output-file ./profiles.json',
-        'airs runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml',
+        'airs-cli runtime profiles backup --all --output-file ./profiles.json',
+        'airs-cli runtime profiles backup "Production" --file-format yaml --output-file ./production.yaml',
       ),
     )
     .action(async (profile: string | undefined, opts) => {
@@ -258,9 +258,9 @@ export function registerProfileTransferCommands(profiles: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime profiles restore ./profiles.json --dry-run --output json',
-        'airs runtime profiles restore ./profiles.json --on-missing-dlp basic --dry-run --output json',
-        'airs runtime profiles restore ./profiles.json --name-prefix migrated- --expect-tsg <destination-tsg> --force',
+        'airs-cli runtime profiles restore ./profiles.json --dry-run --output json',
+        'airs-cli runtime profiles restore ./profiles.json --on-missing-dlp basic --dry-run --output json',
+        'airs-cli runtime profiles restore ./profiles.json --name-prefix migrated- --expect-tsg <destination-tsg> --force',
       ),
     )
     .action(async (file: string, opts) => {

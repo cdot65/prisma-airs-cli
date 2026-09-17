@@ -1,13 +1,13 @@
 ---
-title: airs runtime report
+title: airs-cli runtime report
 ---
 
-# airs runtime report
+# airs-cli runtime report
 
 Generate a read-only AI Runtime Security daily environment deliverable.
 
 ```bash
-airs runtime report [--output html|markdown] [--output-file <new-path|->]
+airs-cli runtime report [--output html|markdown] [--output-file <new-path|->]
                     [--title <text>] [--max-pages <1-100>] [--strict]
 ```
 
@@ -24,10 +24,10 @@ writing it. File output is mode `0600`, atomic and no-clobber. No automatic dele
 reports. `--debug` and enabled SDK debug logging are refused for report privacy.
 
 ```bash
-airs runtime report
-airs runtime report --output markdown
-airs runtime report --output-file ./runtime-daily.html --title "Operations review"
-airs runtime report --output markdown --output-file - | less
+airs-cli runtime report
+airs-cli runtime report --output markdown
+airs-cli runtime report --output-file ./runtime-daily.html --title "Operations review"
+airs-cli runtime report --output markdown --output-file - | less
 ```
 
 See the [daily report guide](../../runtime/daily-report.md) for example HTML/Markdown deliverables,

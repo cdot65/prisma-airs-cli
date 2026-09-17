@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterListOptions
 
-Defined in: src/airs/types.ts:1501
+Defined in: src/airs/types.ts:1549
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/airs/types.ts:1501
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:1502
+Defined in: src/airs/types.ts:1550
 
 ***
 
@@ -16,7 +16,7 @@ Defined in: src/airs/types.ts:1502
 
 > `optional` **offset?**: `number`
 
-Defined in: src/airs/types.ts:1503
+Defined in: src/airs/types.ts:1551
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: src/airs/types.ts:1503
 
 > `optional` **search?**: `string`
 
-Defined in: src/airs/types.ts:1504
+Defined in: src/airs/types.ts:1552

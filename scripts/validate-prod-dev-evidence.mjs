@@ -74,7 +74,7 @@ export function validateEvidence(files) {
       assert.equal(files[receipt].trim(), '0');
       assert.ok(Object.hasOwn(files, name));
       assert.ok(Object.hasOwn(files, `${name}.stderr`));
-      assert.match(files[`${name}.command.txt`], /^airs (runtime|tenant) /);
+      assert.match(files[`${name}.command.txt`], /^airs(?:-cli)? (runtime|tenant) /);
     }
     for (const name of Object.keys(files).filter(
       (n) => n.endsWith('.json') && !textAcknowledgements.includes(n),

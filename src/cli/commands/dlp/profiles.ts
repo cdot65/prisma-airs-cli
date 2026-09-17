@@ -261,7 +261,7 @@ export function register(dlp: Command): void {
           `  Status-based retirement is not live-verified: the latest owned-fixture\n` +
           `  PATCH/PUT returned HTTP 500; an advertised DELETE returned HTTP 501.\n` +
           `  No API request was sent by this command. Do not assume the profile was removed.\n` +
-          `  Inspect current state with: airs runtime dlp profiles get ${id} --output json`,
+          `  Inspect current state with: airs-cli runtime dlp profiles get ${id} --output json`,
       );
     });
 }

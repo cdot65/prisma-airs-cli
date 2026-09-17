@@ -20,7 +20,7 @@ The Red Team EULA must be accepted before launching scans. Three subcommands man
 ### Check Acceptance Status
 
 ```bash
-airs redteam eula status
+airs-cli redteam eula status
 ```
 
 Returns whether the EULA has been accepted, when, and by whom.
@@ -28,7 +28,7 @@ Returns whether the EULA has been accepted, when, and by whom.
 ### View EULA Content
 
 ```bash
-airs redteam eula content
+airs-cli redteam eula content
 ```
 
 Displays the full EULA text.
@@ -36,7 +36,7 @@ Displays the full EULA text.
 ### Accept the EULA
 
 ```bash
-airs redteam eula accept
+airs-cli redteam eula accept
 ```
 
 Fetches the current EULA content and submits acceptance. This is a one-time operation per tenant.
@@ -45,12 +45,12 @@ Fetches the current EULA content and submits acceptance. This is a one-time oper
 
 ## Instances
 
-Red Team instances represent dedicated compute environments for running adversarial scans. Full CRUD is available via `airs redteam instances`.
+Red Team instances represent dedicated compute environments for running adversarial scans. Full CRUD is available via `airs-cli redteam instances`.
 
 ### Create an Instance
 
 ```bash
-airs redteam instances create \
+airs-cli redteam instances create \
   --tsg-id <tsgId> \
   --tenant-id <tenantId> \
   --app-id <appId> \
@@ -67,7 +67,7 @@ airs redteam instances create \
 ### Get Instance Details
 
 ```bash
-airs redteam instances get <tenantId>
+airs-cli redteam instances get <tenantId>
 ```
 
 Returns the instance configuration: TSG ID, tenant ID, app ID, and region.
@@ -75,7 +75,7 @@ Returns the instance configuration: TSG ID, tenant ID, app ID, and region.
 ### Update an Instance
 
 ```bash
-airs redteam instances update <tenantId> \
+airs-cli redteam instances update <tenantId> \
   --tsg-id <tsgId> \
   --tenant-id <tenantId> \
   --app-id <appId> \
@@ -85,7 +85,7 @@ airs redteam instances update <tenantId> \
 ### Delete an Instance
 
 ```bash
-airs redteam instances delete <tenantId>
+airs-cli redteam instances delete <tenantId>
 ```
 
 ---
@@ -97,7 +97,7 @@ Devices are attached to Red Team instances and represent the scanning infrastruc
 ### Create Devices
 
 ```bash
-airs redteam devices create <tenantId> --config devices.json
+airs-cli redteam devices create <tenantId> --config devices.json
 ```
 
 The config file contains the device specification as JSON.
@@ -105,7 +105,7 @@ The config file contains the device specification as JSON.
 ### Update Devices
 
 ```bash
-airs redteam devices update <tenantId> --config devices.json
+airs-cli redteam devices update <tenantId> --config devices.json
 ```
 
 Performs a PATCH update on the device configuration.
@@ -113,7 +113,7 @@ Performs a PATCH update on the device configuration.
 ### Delete Devices
 
 ```bash
-airs redteam devices delete <tenantId> --serial-numbers <serials>
+airs-cli redteam devices delete <tenantId> --serial-numbers <serials>
 ```
 
 | Flag | Required | Description |
@@ -127,7 +127,7 @@ airs redteam devices delete <tenantId> --serial-numbers <serials>
 Fetch time-limited container registry credentials for pulling Red Team infrastructure images:
 
 ```bash
-airs redteam registry-credentials
+airs-cli redteam registry-credentials
 ```
 
 Returns a token and its expiry timestamp.
@@ -152,15 +152,15 @@ See the broker server domain, container image/registry, helm chart, client versi
 online/total channel counts:
 
 ```bash
-airs redteam network-broker stats
+airs-cli redteam network-broker stats
 ```
 
 ### List Channels
 
 ```bash
-airs redteam network-broker channels list
+airs-cli redteam network-broker channels list
 # Filter by status; structured output
-airs redteam network-broker channels list --status ONLINE DRAFT --output json
+airs-cli redteam network-broker channels list --status ONLINE DRAFT --output json
 ```
 
 Each channel reports a status — `ONLINE`, `OFFLINE`, or `DRAFT` — plus its connected-client
@@ -169,8 +169,8 @@ count and last-online timestamp.
 ### Create & Inspect a Channel
 
 ```bash
-airs redteam network-broker channels create --name "prod-relay" --description "Production broker"
-airs redteam network-broker channels get <channelId>
+airs-cli redteam network-broker channels create --name "prod-relay" --description "Production broker"
+airs-cli redteam network-broker channels get <channelId>
 ```
 
 A newly created channel starts in `DRAFT` with all features disabled; it becomes usable once
@@ -179,7 +179,7 @@ a broker client connects to it.
 ### Update a Channel
 
 ```bash
-airs redteam network-broker channels update <channelId> --name "renamed" --description "…"
+airs-cli redteam network-broker channels update <channelId> --name "renamed" --description "…"
 ```
 
 :::note

@@ -1093,7 +1093,7 @@ export async function prepareIntegrationOptions(
         prepared.key = await readTenantStdin();
       } catch {
         throw new CliUsageError(
-          '--key-stdin reads one credential from piped stdin, e.g. `airs aigateway integrations create ... --key-stdin < provider.key`; in a terminal, omit every key flag to be prompted',
+          '--key-stdin reads one credential from piped stdin, e.g. `airs-cli aigateway integrations create ... --key-stdin < provider.key`; in a terminal, omit every key flag to be prompted',
         );
       }
     }

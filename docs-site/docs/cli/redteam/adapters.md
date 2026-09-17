@@ -11,7 +11,7 @@ credentials are shared with the other Red Team commands (the tenant's `mgmt*` ke
 ### redteam adapter list
 
 ```text
-airs redteam adapter list [--limit <n>] [--offset <n>] [--all] [--max <n>] [--search <text>] [--output <format>]
+airs-cli redteam adapter list [--limit <n>] [--offset <n>] [--all] [--max <n>] [--search <text>] [--output <format>]
 ```
 
 List rows carry no script, description, or variables — use `get` for the full
@@ -24,21 +24,21 @@ change the cap with `--max`, or use `--max 0` for no cap. Read output supports
 #### Examples
 
 ```bash
-airs redteam adapter list
-airs redteam adapter list --search keycloak --output json
+airs-cli redteam adapter list
+airs-cli redteam adapter list --search keycloak --output json
 ```
 
 ### redteam adapter get
 
 ```text
-airs redteam adapter get <uuid> [--output pretty|table|markdown|csv|json|yaml]
+airs-cli redteam adapter get <uuid> [--output pretty|table|markdown|csv|json|yaml]
 ```
 
 #### Examples
 
 ```bash
-airs redteam adapter get 3073d369-12e2-46c9-a45a-5697041fcbbf
-airs redteam adapter get 3073d369-12e2-46c9-a45a-5697041fcbbf --output json
+airs-cli redteam adapter get 3073d369-12e2-46c9-a45a-5697041fcbbf
+airs-cli redteam adapter get 3073d369-12e2-46c9-a45a-5697041fcbbf --output json
 ```
 
 :::note Secrets are masked, not null
@@ -52,7 +52,7 @@ never treat the mask as the real value.
 ### redteam adapter create
 
 ```text
-airs redteam adapter create --name <name> --prompt <text> \
+airs-cli redteam adapter create --name <name> --prompt <text> \
   (--script-file <path> | --script-b64 <b64>) \
   [--description <text>] [--channel <uuid>] [--variables <json>] [--draft]
 ```
@@ -70,18 +70,18 @@ airs redteam adapter create --name <name> --prompt <text> \
 #### Examples
 
 ```bash
-airs redteam adapter create --name my-adapter --script-file ./adapter.py \
+airs-cli redteam adapter create --name my-adapter --script-file ./adapter.py \
   --channel 550e8400-... --prompt 'Hello' \
   --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"},{"key":"api_key","value":"s3cret","type":"SECRET"}]'
 
 # Draft first, activate later via update
-airs redteam adapter create --name my-adapter --script-file ./adapter.py --prompt Hello --draft
+airs-cli redteam adapter create --name my-adapter --script-file ./adapter.py --prompt Hello --draft
 ```
 
 ### redteam adapter update
 
 ```text
-airs redteam adapter update <uuid> --prompt <text> [overrides...] [--draft]
+airs-cli redteam adapter update <uuid> --prompt <text> [overrides...] [--draft]
 ```
 
 :::warning Upstream update is a full-replacement PUT
@@ -101,17 +101,17 @@ every key you want to keep.
 
 ```bash
 # Change only the description — stored variables (incl. secrets) are preserved
-airs redteam adapter update 3073d369-... --description 'points at staging now' --prompt 'Hello'
+airs-cli redteam adapter update 3073d369-... --description 'points at staging now' --prompt 'Hello'
 
 # Swap the script and replace the variable set wholesale
-airs redteam adapter update 3073d369-... --script-file ./adapter-v2.py --prompt 'Hello' \
+airs-cli redteam adapter update 3073d369-... --script-file ./adapter-v2.py --prompt 'Hello' \
   --variables '[{"key":"endpoint","value":"http://staging.svc:8080","type":"VAR"},{"key":"api_key","value":null,"type":"SECRET"}]'
 ```
 
 ### redteam adapter delete
 
 ```text
-airs redteam adapter delete <uuid> [--force]
+airs-cli redteam adapter delete <uuid> [--force]
 ```
 
 Alias: `rm`. Prompts for confirmation unless `--force`.
@@ -119,8 +119,8 @@ Alias: `rm`. Prompts for confirmation unless `--force`.
 #### Examples
 
 ```bash
-airs redteam adapter delete 3073d369-...
-airs redteam adapter delete 3073d369-... --force
+airs-cli redteam adapter delete 3073d369-...
+airs-cli redteam adapter delete 3073d369-... --force
 ```
 
 ### redteam adapter validate
@@ -129,7 +129,7 @@ Run a script end-to-end through the broker channel using the sample prompt,
 without saving anything.
 
 ```text
-airs redteam adapter validate --channel <uuid> --prompt <text> \
+airs-cli redteam adapter validate --channel <uuid> --prompt <text> \
   (--script-file <path> | --script-b64 <b64>) \
   [--variables <json>] [--adapter <uuid>]
 ```
@@ -150,11 +150,11 @@ airs redteam adapter validate --channel <uuid> --prompt <text> \
 #### Examples
 
 ```bash
-airs redteam adapter validate --script-file ./adapter.py \
+airs-cli redteam adapter validate --script-file ./adapter.py \
   --channel 550e8400-... --prompt 'Hello' \
   --variables '[{"key":"endpoint","value":"http://agent.svc:8080","type":"VAR"}]'
 
 # Re-validate an existing adapter's script, resolving its stored secrets
-airs redteam adapter validate --script-file ./adapter.py \
+airs-cli redteam adapter validate --script-file ./adapter.py \
   --channel 550e8400-... --prompt 'Hello' --adapter 660e8400-...
 ```

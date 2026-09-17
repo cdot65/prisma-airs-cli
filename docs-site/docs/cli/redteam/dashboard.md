@@ -20,21 +20,21 @@ SDK 0.28.0. Earlier SDK 0.26.0 installations cannot supply GET quota; there is n
 
 Generate a read-only environment deliverable from seven SDK feeds: dashboard overview,
 scan statistics, targets, GET quota, scans, network-broker statistics and adapters.
-`airs redteam report <jobId>` still displays an individual scan using the existing terminal
+`airs-cli redteam report <jobId>` still displays an individual scan using the existing terminal
 renderer. Its `--attacks`, `--severity` and `--limit` options require a job ID;
 environment-deliverable options cannot be combined with a job ID.
 
 ## Usage
 
 ```bash
-airs redteam report
-airs redteam report --output markdown
-airs redteam report --strict --output-file ./redteam-health.html
-airs redteam report --output markdown --output-file -
+airs-cli redteam report
+airs-cli redteam report --output markdown
+airs-cli redteam report --strict --output-file ./redteam-health.html
+airs-cli redteam report --output markdown --output-file -
 ```
 
 Install or update using `npm install --global @cdot65/prisma-airs-cli@5.3.0`.
-When working from source, build the checkout and use `node dist/cli/index.js` in place of `airs`.
+When working from source, build the checkout and use `node dist/cli/index.js` in place of `airs-cli`.
 The package pins SDK 0.28.0; no local SDK link is needed.
 
 | Option | Default | Behavior |
@@ -61,7 +61,7 @@ No scans, adapter executions, configuration changes, or quota-consuming jobs are
 The following is the exact stdout captured from globally npm-installed CLI 5.3.0 with SDK 0.28.0, not a synthesized sample:
 
 ```bash
-airs --quiet redteam report --strict --output markdown --output-file -
+airs-cli --quiet redteam report --strict --output markdown --output-file -
 ```
 
 The live workflow passed 4/4 E2E tests: default HTML, Markdown file/stdout, strict partial-page

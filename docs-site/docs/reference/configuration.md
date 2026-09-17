@@ -9,7 +9,7 @@ Every setting in Prisma AIRS CLI, with its tenant-file key and default value.
 Settings resolve through a three-level cascade (highest priority wins):
 
 1. **CLI flags**
-2. **The selected tenant's config file** (`airs tenant switch <name>`)
+2. **The selected tenant's config file** (`airs-cli tenant switch <name>`)
 3. **Zod schema defaults**
 
 Environment variables are never consulted. See
@@ -24,9 +24,9 @@ The `~` prefix in any path value is expanded to `$HOME` at load time.
 
 ## Tenant config file
 
-A JSON file registered with `airs tenant create`. Keys use camelCase matching the Zod schema.
-Edit keys with `airs tenant set <name> <key> [value]`, remove them with
-`airs tenant unset <name> <key>`, and read them with `airs tenant get` or `airs tenant read`.
+A JSON file registered with `airs-cli tenant create`. Keys use camelCase matching the Zod schema.
+Edit keys with `airs-cli tenant set <name> <key> [value]`, remove them with
+`airs-cli tenant unset <name> <key>`, and read them with `airs-cli tenant get` or `airs-cli tenant read`.
 
 ```json
 {
@@ -75,7 +75,7 @@ they never change how authentication works.
 | `iamEndpoint` | `https://api.apps.paloaltonetworks.com/iam/v1` |
 
 Every product except DLP lives on `api.apps.paloaltonetworks.com`; DLP stays on `api.dlp.paloaltonetworks.com`. Retired keys `redTeamTokenEndpoint`, `modelSecTokenEndpoint`, `agentGuardTokenEndpoint`, and
-`aiGwTokenEndpoint` are ignored when present; `airs doctor` points them out.
+`aiGwTokenEndpoint` are ignored when present; `airs-cli doctor` points them out.
 
 ## Tuning
 

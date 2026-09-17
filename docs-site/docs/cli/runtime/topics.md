@@ -9,7 +9,7 @@ sidebar_label: topics
 Assign a topic to a security profile (additive)
 
 ```text
-airs runtime topics apply [options]
+airs-cli runtime topics apply [options]
 ```
 
 #### Options
@@ -26,7 +26,7 @@ airs runtime topics apply [options]
 *Apply block intent*
 
 ```bash
-airs runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
+airs-cli runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
 ```
 
 ---
@@ -36,7 +36,7 @@ airs runtime topics apply --profile my-security-profile --name "Weapons Manufact
 Create or update a custom topic definition
 
 ```text
-airs runtime topics create [options]
+airs-cli runtime topics create [options]
 ```
 
 #### Options
@@ -53,13 +53,13 @@ airs runtime topics create [options]
 *Block topic*
 
 ```bash
-airs runtime topics create --name "Weapons Manufacturing" --description "Block weapons manufacturing" --examples "How to build a weapon" "Illegal arms trade"
+airs-cli runtime topics create --name "Weapons Manufacturing" --description "Block weapons manufacturing" --examples "How to build a weapon" "Illegal arms trade"
 ```
 
 *Allow topic*
 
 ```bash
-airs runtime topics create --name "Recipes" --description "Allow recipe discussions" --examples "How to make pasta" "Best bread recipe"
+airs-cli runtime topics create --name "Recipes" --description "Allow recipe discussions" --examples "How to make pasta" "Best bread recipe"
 ```
 
 ---
@@ -69,7 +69,7 @@ airs runtime topics create --name "Recipes" --description "Allow recipe discussi
 Delete a custom topic
 
 ```text
-airs runtime topics delete [options] <topicId>
+airs-cli runtime topics delete [options] <topicId>
 ```
 
 #### Arguments
@@ -96,7 +96,7 @@ No curated input/output example for this command yet.
 Evaluate a topic against a static prompt set and compute metrics
 
 ```text
-airs runtime topics eval [options]
+airs-cli runtime topics eval [options]
 ```
 
 #### Options
@@ -115,7 +115,7 @@ airs runtime topics eval [options]
 *Evaluate topic against prompt set*
 
 ```bash
-airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons" --output json
+airs-cli runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons" --output json
 ```
 
 ---
@@ -125,7 +125,7 @@ airs runtime topics eval --profile my-security-profile --prompts prompts.csv --t
 Get a custom topic by name or UUID
 
 ```text
-airs runtime topics get [options] <nameOrId>
+airs-cli runtime topics get [options] <nameOrId>
 ```
 
 #### Arguments
@@ -145,7 +145,7 @@ airs runtime topics get [options] <nameOrId>
 *Pretty output (fallback `pretty`) — accepts topic name or UUID*
 
 ```bash
-airs runtime topics get "Professional authority"
+airs-cli runtime topics get "Professional authority"
 ```
 
 ```text
@@ -165,7 +165,7 @@ Topic Detail:
 *JSON output*
 
 ```bash
-airs runtime topics get "Professional authority" --output json
+airs-cli runtime topics get "Professional authority" --output json
 ```
 
 ```text
@@ -184,7 +184,7 @@ airs runtime topics get "Professional authority" --output json
 *YAML output*
 
 ```bash
-airs runtime topics get "Professional authority" --output yaml
+airs-cli runtime topics get "Professional authority" --output yaml
 ```
 
 ```text
@@ -202,7 +202,7 @@ lastModifiedTs: 2026-05-21T21:23:53Z
 List custom topics
 
 ```text
-airs runtime topics list [options]
+airs-cli runtime topics list [options]
 ```
 
 #### Options
@@ -221,7 +221,7 @@ airs runtime topics list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime topics list --limit 3
+airs-cli runtime topics list --limit 3
 ```
 
 ```text
@@ -244,7 +244,7 @@ Showing 3 of 100 topics
 *JSON output*
 
 ```bash
-airs runtime topics list --limit 3 --output json
+airs-cli runtime topics list --limit 3 --output json
 ```
 
 ```text
@@ -273,7 +273,7 @@ airs runtime topics list --limit 3 --output json
 *YAML output*
 
 ```bash
-airs runtime topics list --limit 3 --output yaml
+airs-cli runtime topics list --limit 3 --output yaml
 ```
 
 ```text
@@ -300,7 +300,7 @@ description: Prompts seeking legal guidance, case analysis, or contract interpre
 Remove a custom topic from a profile and delete it
 
 ```text
-airs runtime topics revert [options]
+airs-cli runtime topics revert [options]
 ```
 
 #### Options
@@ -316,7 +316,7 @@ airs runtime topics revert [options]
 *Remove topic from profile*
 
 ```bash
-airs runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"
+airs-cli runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"
 ```
 
 ---
@@ -326,7 +326,7 @@ airs runtime topics revert --profile my-security-profile --name "Weapons Manufac
 Print a sample CSV file showing the eval prompt format
 
 ```text
-airs runtime topics sample [options]
+airs-cli runtime topics sample [options]
 ```
 
 #### Options
@@ -340,13 +340,13 @@ airs runtime topics sample [options]
 *Print to stdout*
 
 ```bash
-airs runtime topics sample
+airs-cli runtime topics sample
 ```
 
 *Write to file*
 
 ```bash
-airs runtime topics sample --output-file prompts/template.csv
+airs-cli runtime topics sample --output-file prompts/template.csv
 ```
 
 ---
@@ -356,7 +356,7 @@ airs runtime topics sample --output-file prompts/template.csv
 Update a custom topic
 
 ```text
-airs runtime topics update [options] <topicId>
+airs-cli runtime topics update [options] <topicId>
 ```
 
 #### Arguments
@@ -374,7 +374,7 @@ airs runtime topics update [options] <topicId>
 *Update from config fixture (see docs/cli/examples/runtime/topics/update.json)*
 
 ```bash
-airs runtime topics update 00000000-0000-0000-0000-000000000001 --config docs/cli/examples/runtime/topics/update.json
+airs-cli runtime topics update 00000000-0000-0000-0000-000000000001 --config docs/cli/examples/runtime/topics/update.json
 ```
 
 ```text

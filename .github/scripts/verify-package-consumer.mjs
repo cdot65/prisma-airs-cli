@@ -38,6 +38,7 @@ for (const packed of files) {
 }
 const pkg = JSON.parse(readFileSync(resolve(installed, 'package.json'), 'utf8'));
 assert.equal(pkg.version, expected.version);
+assert.deepEqual(pkg.bin, { 'airs-cli': 'dist/cli/index.js' });
 assert.equal(
   pkg.dependencies['@cdot65/prisma-airs-sdk'],
   expected.dependencies['@cdot65/prisma-airs-sdk'],

@@ -22,12 +22,12 @@ without reviewing the policies and the explicit loss of custom DLP protection.
 
 Use CLI **5.7.1 or newer** and existing named tenants with valid Management credentials.
 Run commands individually from a private working directory; environment variables and
-`.env` files are not read. These commands use the installed `airs` executable.
+`.env` files are not read. These commands use the installed `airs-cli` executable.
 
 ```bash
-airs --version
-airs runtime profiles restore --help
-airs tenant list
+airs-cli --version
+airs-cli runtime profiles restore --help
+airs-cli tenant list
 ```
 
 Check both registered TSG IDs before continuing. The destination must be empty for this
@@ -36,20 +36,20 @@ clean-start example. These are real writes; no existing configuration is deleted
 ## Inspect the destination and back up the source
 
 ```bash
-airs tenant switch cdot65
-airs tenant list
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
+airs-cli tenant switch cdot65
+airs-cli tenant list
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
 ```
 
 Both inventories must be `[]`. Otherwise stop; use the recovery preview below for an
 already-started migration rather than repeating the clean-start workflow.
 
 ```bash
-airs tenant switch aisecurity
-airs runtime profiles backup --all --output-file ./source-profiles.json --output json
-airs tenant switch cdot65
-airs tenant list
+airs-cli tenant switch aisecurity
+airs-cli runtime profiles backup --all --output-file ./source-profiles.json --output json
+airs-cli tenant switch cdot65
+airs-cli tenant list
 ```
 
 Verify the backup response's source TSG and counts. Keep the backup private.
@@ -58,7 +58,7 @@ Existing backup files are not overwritten; choose a new filename if necessary.
 ## Preview and restore
 
 ```bash
-airs runtime profiles restore ./source-profiles.json \
+airs-cli runtime profiles restore ./source-profiles.json \
   --on-missing-dlp basic --expect-tsg 1220195158 --dry-run --output json
 ```
 
@@ -67,7 +67,7 @@ you require those rules; use the [custom-DLP preservation guide](prod-dev-migrat
 Check the destination TSG, resource counts, and all proposed actions before proceeding.
 
 ```bash
-airs runtime profiles restore ./source-profiles.json \
+airs-cli runtime profiles restore ./source-profiles.json \
   --on-missing-dlp basic --expect-tsg 1220195158 --output json
 ```
 
@@ -77,30 +77,30 @@ leaves completed writes in place. Inspect rather than automatically retrying.
 ## Verify the restored configuration
 
 ```bash
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs runtime profiles restore ./source-profiles.json \
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli runtime profiles restore ./source-profiles.json \
   --on-conflict verify --on-missing-dlp basic --expect-tsg 1220195158 --dry-run --output json
 ```
 
 Expect every profile action to be `verify` and topic action to be `reuse`, with no
-creates or updates. Inspect individual policies with `airs runtime profiles get`:
+creates or updates. Inspect individual policies with `airs-cli runtime profiles get`:
 
 ```bash
-airs runtime profiles get insomnia --output json
-airs runtime profiles get NexusOS-Platform-HIGH --output json
-airs runtime profiles get Truffles --output json
+airs-cli runtime profiles get insomnia --output json
+airs-cli runtime profiles get NexusOS-Platform-HIGH --output json
+airs-cli runtime profiles get Truffles --output json
 ```
 
 After a clean preview, complete verification and optionally back up the destination:
 
 ```bash
-airs runtime profiles restore ./source-profiles.json \
+airs-cli runtime profiles restore ./source-profiles.json \
   --on-conflict verify --on-missing-dlp basic --expect-tsg 1220195158 --output json
-airs runtime profiles backup --all --output-file ./destination-profiles.json --output json
-airs runtime profiles list --all --max 0 --output json
-airs runtime topics list --all --max 0 --output json
-airs tenant list
+airs-cli runtime profiles backup --all --output-file ./destination-profiles.json --output json
+airs-cli runtime profiles list --all --max 0 --output json
+airs-cli runtime topics list --all --max 0 --output json
+airs-cli tenant list
 ```
 
 Expect `complete: true`, all profiles `verified`, topics `reused`, and unchanged
@@ -112,7 +112,7 @@ do not treat it as universally read-only. Keep source and destination backups pr
 If interrupted, retain the source backup and inspect a read-only recovery preview:
 
 ```bash
-airs runtime profiles restore ./source-profiles.json \
+airs-cli runtime profiles restore ./source-profiles.json \
   --on-conflict verify --on-missing-dlp basic --expect-tsg 1220195158 --dry-run
 ```
 

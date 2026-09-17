@@ -528,9 +528,9 @@ export function registerModelSecurityCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs model-security scans list',
-        'airs model-security scans list --eval-outcome MALICIOUS --limit 10',
-        'airs model-security scans list --output json',
+        'airs-cli model-security scans list',
+        'airs-cli model-security scans list --eval-outcome MALICIOUS --limit 10',
+        'airs-cli model-security scans list --output json',
       ),
     )
     .action(async (opts) => {
@@ -688,7 +688,7 @@ export function registerModelSecurityCommand(program: Command): void {
     .option('--limit <n>', 'Max results')
     .option('--offset <n>', 'Starting offset')
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
-    .addHelpText('after', examples('airs model-security models list'))
+    .addHelpText('after', examples('airs-cli model-security models list'))
     .action(async (opts) => {
       try {
         const fmt = await resolveOutput(modelsList, opts);
