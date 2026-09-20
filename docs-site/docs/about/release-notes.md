@@ -1,7 +1,7 @@
 # Release Notes
 
-Public npm channels as of September 20, 2026: **`latest` = 7.0.1**, **`next` = 7.1.4**.
-The 7.1 features are available with `npm install -g @cdot65/prisma-airs-cli@7.1.4`.
+Public npm channels as of September 20, 2026: **`latest` = 7.0.1**, **`next` = 7.1.5**.
+The 7.1 features are available with `npm install -g @cdot65/prisma-airs-cli@7.1.5`.
 See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
@@ -9,6 +9,16 @@ included in 7.1.2; they do not imply those intermediate versions were published 
 The matching harness preview **0.1.2-alpha.3.mcp.1** is published under `mcp` at
 `https://npm.cdot.io`, bundling **7.1.4** and the corrected native judge skill.
 See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-airs-harness).
+
+## v7.1.5 (2026-09-20) — Harness judge credential handoff
+
+- The managed harness can supply an environment-scoped TypeSafe credential to
+  the judge without a CLI tenant key or Python runtime.
+- Jev requests use the official `@typesafe-ai/sdk` 0.6.0. The adapter retains
+  bounded retries, redirect refusal, redacted failures and disabled SDK logging.
+- Replay summaries explicitly report reused answers and no fresh evaluation.
+- Standalone tenant-based authentication and verbatim output handling remain
+  supported. The matching harness preview is pending native acceptance.
 
 ## v7.1.4 (2026-09-20) — Preserve model output strings
 

@@ -1,7 +1,7 @@
 import { lstat, mkdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { RedTeamClient } from '@cdot65/prisma-airs-sdk';
-import type { Command } from 'commander';
+import { type Command, Option } from 'commander';
 import { redTeamClientOptions } from '../../config/client-options.js';
 import { settingRemedy } from '../../config/credentials.js';
 import { type ConfigContext, loadConfig, resolveConfigContext } from '../../config/loader.js';
@@ -34,6 +34,7 @@ export const JUDGE_PROVIDER_ERROR_EXIT_CODE = 4;
 export const JUDGE_OUTPUT_FILES = ['results.json', 'judgments.json', 'summary.md'] as const;
 
 interface JudgeOptions {
+  harnessCredentials?: boolean;
   job?: string;
   out: string;
   provider: string;
@@ -117,6 +118,7 @@ export function registerRedTeamJudgeCommand(redteam: Command): void {
     .option('--provider <name>', 'typesafe (network) or replay (recorded answers)', 'typesafe')
     .option('--replay <file>', 'Recorded judgments file for --provider replay')
     .option('--record <file>', 'Write raw provider answers here for later replay')
+    .addOption(new Option('--harness-credentials').hideHelp())
     .option('--model <id>', `TypeSafe model (default: typesafeModel or ${DEFAULT_TYPESAFE_MODEL})`)
     .option(
       '--base-url <url>',
@@ -182,7 +184,9 @@ async function runJudge(
   if (!opts.out.trim()) throw new CliUsageError('--out cannot be empty');
 
   // Only a live judge run or an AIRS fetch needs the tenant; replaying a file does not.
-  const needsConfig = opts.job !== undefined || (opts.provider === 'typesafe' && !opts.dryRun);
+  const needsConfig =
+    opts.job !== undefined ||
+    (opts.provider === 'typesafe' && !opts.dryRun && !opts.harnessCredentials);
   const config: Config | undefined = needsConfig
     ? await loadConfig()
     : await loadConfig().catch(() => undefined);
@@ -225,8 +229,16 @@ async function runJudge(
     );
   }
   const { units, notes } = normalized;
-  const model = opts.model ?? config?.typesafeModel ?? DEFAULT_TYPESAFE_MODEL;
-  const baseUrl = opts.baseUrl ?? config?.typesafeBaseUrl ?? DEFAULT_TYPESAFE_BASE_URL;
+  // The managed harness explicitly scopes these variables to this judge child.
+  // Standalone commands continue to use tenant JSON and ignore credential env vars.
+  const model =
+    opts.model ??
+    (opts.harnessCredentials ? process.env.TYPESAFE_DEFAULT_MODEL : config?.typesafeModel) ??
+    DEFAULT_TYPESAFE_MODEL;
+  const baseUrl =
+    opts.baseUrl ??
+    (opts.harnessCredentials ? process.env.TYPESAFE_BASE_URL : config?.typesafeBaseUrl) ??
+    DEFAULT_TYPESAFE_BASE_URL;
 
   if (opts.dryRun) {
     const first = units.find((unit) => !unit.is_error);
@@ -248,10 +260,12 @@ async function runJudge(
       throw new CliUsageError('--replay must contain a JSON object');
     provider = new ReplayProvider(recorded as Record<string, unknown>);
   } else {
-    const apiKey = config?.typesafeApiKey;
+    const apiKey = opts.harnessCredentials ? process.env.TYPESAFE_API_KEY : config?.typesafeApiKey;
     if (typeof apiKey !== 'string' || !apiKey.trim())
       throw new Error(
-        `TypeSafe API key is not configured (typesafeApiKey). ${settingRemedy(['typesafeApiKey'], safeContext())}`,
+        opts.harnessCredentials
+          ? 'No TypeSafe key reached the judge from its AIRS environment. Check airs env typesafe status, or save a key with airs env typesafe set. No live judgment was performed; replay was not substituted.'
+          : `TypeSafe API key is not configured (typesafeApiKey). ${settingRemedy(['typesafeApiKey'], safeContext())}`,
       );
     provider = new TypeSafeHttpProvider({ apiKey, model, baseUrl, maxRetries, timeoutMs });
   }

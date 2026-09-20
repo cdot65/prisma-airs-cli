@@ -80,7 +80,7 @@ describe('TypeSafeHttpProvider', () => {
       12,
     ]);
     expect(raw.latency_ms).toBeGreaterThanOrEqual(0);
-    expect(provider.name).toBe('typesafe-http');
+    expect(provider.name).toBe('typesafe-sdk');
   });
 
   it('retries retryable statuses honoring Retry-After, then fails cleanly', async () => {
@@ -132,7 +132,7 @@ describe('TypeSafeHttpProvider', () => {
     const sleep = vi.fn(async () => {});
     const provider = new TypeSafeHttpProvider({ apiKey: 'k', maxRetries: 1, fetch, sleep });
     await expect(provider.judge({ unitId: 'u', state, questions: QUESTIONS })).rejects.toThrow(
-      'TypeSafe API connection failed: TimeoutError',
+      'TypeSafe API connection failed: APIConnectionError',
     );
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(sleep.mock.calls[0][0]).toBeGreaterThanOrEqual(500);

@@ -17,7 +17,7 @@ shell aliases, service definitions and user-created skills before changing their
 installed command. Product config files and tenant registrations stay in place.
 
 As of September 20, 2026, standalone **7.0.1** is the stable release for default
-public npm installs. **7.1.4** is published under `next` and adds the
+public npm installs. **7.1.5** is published under `next` and adds the
 [TypeSafe Jev red-team judge](../cli/redteam/judge.md), including explicit coverage
 exclusions, validated provider responses and offline replay.
 
@@ -27,7 +27,7 @@ The harness bundles an independently pinned CLI. Installing a newer global
 Harness **0.1.2-alpha.3.mcp.1** bundles CLI **7.1.4** and the matching native skill.
 Install the exact preview with
 `npm install -g airs-harness@0.1.2-alpha.3.mcp.1 --registry=https://npm.cdot.io`.
-Installing standalone 7.1.4 does not update the CLI or skill embedded inside an
+Installing standalone 7.1.5 does not update the CLI or skill embedded inside an
 existing harness. Restart `airs` after upgrading to load the updated native skill.
 The harness's stable `latest` remains **0.1.1**, bundling CLI 7.0.0.
 
@@ -44,7 +44,7 @@ airs-cli tenant list
 To try the judge preview instead, install the exact version:
 
 ```sh
-npm install -g @cdot65/prisma-airs-cli@7.1.4
+npm install -g @cdot65/prisma-airs-cli@7.1.5
 airs-cli redteam judge --help
 ```
 

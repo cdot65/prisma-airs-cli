@@ -24,16 +24,35 @@ made by one can be replayed by the other.
 airs-cli redteam judge [options] [scanFile]
 ```
 
+## Harness environment credentials
+
+CLI **7.1.5** supports the harness's automatic credential handoff and uses the
+official TypeSafe JavaScript SDK. The matching harness preview is being prepared.
+The new skill entrypoint runs under Node and delegates to this bundled CLI;
+Python and a separate SDK installation are not required.
+
+The installed entrypoint selects the environment that owns the skill, even if
+the saved default changes. Its native helper supplies the saved TypeSafe key only
+to the judge child. An absent shell variable alone does not indicate a missing
+saved key. Help, dry-run and explicit replay need no credential. Missing keys
+fail without silently switching to replay; replay summaries state that old
+answers were reused and no new evaluation occurred.
+
+Standalone invocations continue to use tenant JSON. The harness supplies an
+explicit internal credential mode; this does not change other CLI commands or
+write a key into a tenant file. Fetching scans with `--job` still needs the
+selected tenant's AIRS management credentials.
+
 ## Requirements
 
-Install standalone **7.1.4** from public npm to get the current judge fixes:
+Install standalone **7.1.5** from public npm to get the current judge fixes:
 
 ```bash
-npm install -g @cdot65/prisma-airs-cli@7.1.4
+npm install -g @cdot65/prisma-airs-cli@7.1.5
 airs-cli --version
 ```
 
-Version 7.1.4 is on `next`; an unversioned install currently selects 7.0.1, which
+Version 7.1.5 is on `next`; an unversioned install currently selects 7.0.1, which
 does not contain this command. The standalone install does not replace the
 harness's independently bundled CLI or its embedded Python skill.
 

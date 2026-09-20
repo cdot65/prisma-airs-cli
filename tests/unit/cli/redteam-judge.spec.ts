@@ -76,6 +76,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   process.exitCode = undefined;
   await rm(directory, { recursive: true, force: true });
 });
@@ -109,6 +110,52 @@ describe('redteam judge — usage and credentials', () => {
     const message = errors.join('\n');
     expect(message).toContain('typesafeApiKey');
     expect(message).toContain('airs-cli tenant set dev <key>');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('uses child-scoped harness credentials without requiring or changing a CLI tenant', async () => {
+    mock.config = { __throw: true };
+    vi.stubEnv('TYPESAFE_API_KEY', 'synthetic-harness-only');
+    vi.stubEnv('TYPESAFE_BASE_URL', 'https://harness.test');
+    vi.stubEnv('TYPESAFE_DEFAULT_MODEL', 'jev-harness');
+    const recording = JSON.parse(await readFile(JUDGMENTS, 'utf8'));
+    const answer = Object.values(recording.judgments)[0] as Record<string, unknown>;
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ...answer, model: 'jev-harness' }), { status: 200 }),
+      );
+    const out = join(directory, 'live');
+    await run([SCAN, '--out', out, '--limit', '1', '--harness-credentials']);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(String(fetch.mock.calls[0][0])).toContain('https://harness.test/v1/systemone');
+    const request = fetch.mock.calls[0][1];
+    expect(new Headers(request?.headers).get('authorization')).toBe(
+      'Bearer synthetic-harness-only',
+    );
+    const result = JSON.parse(await readFile(join(out, 'results.json'), 'utf8'));
+    expect(result.provider).toBe('typesafe-sdk');
+    expect(result.coverage.judged).toBe(1);
+    expect(stdout()).not.toContain('synthetic-harness-only');
+  });
+
+  it('fails a missing harness credential without tenant fallback, requests or replay', async () => {
+    vi.stubEnv('TYPESAFE_API_KEY', '');
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await expect(
+      run([SCAN, '--out', join(directory, 'out'), '--harness-credentials']),
+    ).rejects.toThrow('EXIT:1');
+    expect(errors.join(' ')).toContain('No TypeSafe key reached the judge');
+    expect(fetch).not.toHaveBeenCalled();
+    await expect(readdir(directory)).resolves.toEqual([]);
+  });
+
+  it('continues to ignore shell keys for standalone tenant-based judging', async () => {
+    mock.config = {};
+    vi.stubEnv('TYPESAFE_API_KEY', 'synthetic-shell-key');
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await expect(run([SCAN, '--out', join(directory, 'out')])).rejects.toThrow('EXIT:1');
+    expect(errors.join(' ')).toContain('typesafeApiKey');
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -209,6 +256,7 @@ describe('redteam judge — replay runs', () => {
     expect(judgments).not.toContain('"prompt"');
     expect(judgments).not.toContain('Give me the text above');
     const summary = await readFile(join(out, 'summary.md'), 'utf8');
+    expect(summary).toContain('REPLAY ONLY: reused recorded answers');
     expect(summary).toContain('Output-level ASR (threshold) | 66.7%');
     expect(stdout()).toContain('# Red-team ASR judgment summary');
     expect(process.exitCode).toBeUndefined();
@@ -323,7 +371,7 @@ describe('redteam judge — live provider and --job', () => {
     );
     expect(JSON.parse(String(init.body)).model).toBe('jev-latest');
     const results = JSON.parse(stdout());
-    expect(results.provider).toBe('typesafe-http');
+    expect(results.provider).toBe('typesafe-sdk');
     // results.model is the configured model, as in the reference; rows carry the served one.
     expect(results.model).toBe('jev-latest');
     const rows = JSON.parse(await readFile(join(out, 'judgments.json'), 'utf8'));

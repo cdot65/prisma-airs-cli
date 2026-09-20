@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { type EntryType, type Questions, TypeSafeClient } from '@typesafe-ai/sdk';
 import type { JudgeState } from './ingest.js';
 import {
   DEFAULT_TYPESAFE_BASE_URL,
@@ -115,13 +116,13 @@ export interface TypeSafeHttpProviderOptions {
 }
 
 /**
- * Client for `POST {baseUrl}/v1/systemone` per https://docs.typesafe.ai/api.md. Retries
+ * Official SDK transport for `POST {baseUrl}/v1/systemone` per https://docs.typesafe.ai/api.md. Retries
  * 408, 429 and 5xx (including 529 overloaded) with backoff; never retries 401/422.
  * Response bodies are parsed only for the documented `answers`/`model`/`usage` keys and are
  * never included in error messages.
  */
 export class TypeSafeHttpProvider implements JudgeProvider {
-  readonly name = 'typesafe-http';
+  readonly name = 'typesafe-sdk';
   readonly model: string;
   private readonly url: string;
   private readonly apiKey: string;
@@ -141,33 +142,41 @@ export class TypeSafeHttpProvider implements JudgeProvider {
   }
 
   async judge(request: JudgeRequest): Promise<RawJudgment> {
-    const body = JSON.stringify({
-      state: request.state,
-      model: this.model,
-      questions: request.questions,
+    let received: Response | undefined;
+    const client = new TypeSafeClient({
+      apiKey: this.apiKey,
+      baseURL: this.url.slice(0, -'/v1/systemone'.length),
+      timeout: this.timeoutMs,
+      retry: { maxRetries: 0 }, // One retry owner: the adapter below.
+      logLevel: 'off', // Do not allow SDK environment settings to log scan text.
+      fetch: async (input, init) => {
+        received = await this.fetch(input, { ...init, redirect: 'error' });
+        return received;
+      },
     });
     for (let attempt = 0; ; attempt += 1) {
       const started = performance.now();
       let response: Response;
       try {
-        response = await this.fetch(this.url, {
-          method: 'POST',
-          redirect: 'error',
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body,
-          signal: AbortSignal.timeout(this.timeoutMs),
-        });
+        received = undefined;
+        response = await client
+          .systemOne({
+            state: request.state as unknown as EntryType,
+            model: this.model,
+            questions: request.questions as Questions,
+          })
+          .asResponse();
       } catch (error) {
-        if (attempt >= this.maxRetries)
-          throw new ProviderError(
-            `TypeSafe API connection failed: ${error instanceof Error ? error.name : 'Error'}`,
-          );
-        await this.sleep(retryDelayMs(attempt, null));
-        continue;
+        if (received && !received.ok) {
+          response = received;
+        } else {
+          if (attempt >= this.maxRetries)
+            throw new ProviderError(
+              `TypeSafe API connection failed: ${error instanceof Error ? error.name : 'Error'}`,
+            );
+          await this.sleep(retryDelayMs(attempt, null));
+          continue;
+        }
       }
       if (response.ok) {
         let decoded: unknown;

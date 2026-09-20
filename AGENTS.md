@@ -1101,3 +1101,13 @@ Location: `~/.prisma-airs/config.json`
 Required fields depend on the operation. `typesafeApiKey` (optional `typesafeBaseUrl`,
 `typesafeModel`) is only needed by `airs-cli redteam judge`; `TYPESAFE_API_KEY` in the
 environment is ignored. Register this file with `airs-cli tenant create NAME --config PATH`, then select the tenant. Environment credentials are ignored.
+
+### Managed harness judge credentials (7.1.5)
+
+The bundled harness skill invokes the TypeScript judge with a hidden, explicit
+child credential mode after resolving its owning environment through the native
+harness helper. That mode consumes `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` and
+`TYPESAFE_DEFAULT_MODEL` only for `redteam judge`; it does not persist them or
+change standalone tenant-only defaults. The official TypeSafe JavaScript SDK is
+pinned at 0.6.0, with logging off, redirect refusal and one adapter-owned retry
+policy. Missing keys fail; never substitute replay for a requested fresh run.

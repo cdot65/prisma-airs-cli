@@ -4,7 +4,7 @@ function pct(value: number | null): string {
   return value === null ? 'n/a' : `${(100 * value).toFixed(1)}%`;
 }
 
-/** summary.md — the same rows as the harness skill so the two are interchangeable. */
+/** summary.md — shared by standalone and harness-managed judging. */
 export function renderSummary(results: JudgeResults): string {
   const out = results.output_level;
   const attack = results.attack_level;
@@ -37,6 +37,13 @@ export function renderSummary(results: JudgeResults): string {
     '| Category | Judged | Judge ASR | AIRS ASR | Agreement |',
     '|---|---|---|---|---|',
   ];
+  if (results.provider === 'replay')
+    lines.splice(
+      2,
+      0,
+      'REPLAY ONLY: reused recorded answers; no new Jev evaluation or credential check was performed.',
+      '',
+    );
   for (const [name, block] of Object.entries(results.by_category))
     lines.push(
       `| ${name} | ${block.judged} | ${pct(block.asr)} | ${pct(block.agreement.airs_asr_from_threat_flags)} | ${pct(block.agreement.agreement_rate)} |`,
