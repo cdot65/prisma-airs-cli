@@ -15,8 +15,8 @@ are aggregated locally. Judgments are **model outputs under a stated threshold p
 not ground truth**: Jev gives no rationale and cannot abstain, so disagreements with AIRS
 must be reviewed by reading the unit.
 
-The command is a faithful port of the harness skill `prisma-airs-asr-judge`. Both produce
-the same `results.json` (`schema_version` 1), `judgments.json` and `summary.md`, ask the
+The harness skill `prisma-airs-asr-judge` delegates to this TypeScript implementation.
+Both entrypoints produce the same `results.json` (`schema_version` 1), `judgments.json` and `summary.md`, ask the
 same questions, and read and write the same `--record` / `--replay` files, so a recording
 made by one can be replayed by the other.
 
@@ -27,9 +27,19 @@ airs-cli redteam judge [options] [scanFile]
 ## Harness environment credentials
 
 CLI **7.1.5** supports the harness's automatic credential handoff and uses the
-official TypeSafe JavaScript SDK. The matching harness preview is being prepared.
+official TypeSafe JavaScript SDK. Harness **0.1.2-alpha.4.mcp.1** bundles this version.
 The new skill entrypoint runs under Node and delegates to this bundled CLI;
 Python and a separate SDK installation are not required.
+
+Inside `airs`, run `/typesafe` and choose **Save or replace API key**. Enter the key
+in the hidden field and press Enter. The optional dialog also shows configuration
+status and confirms removal; Escape cancels key entry without changing an existing
+key. The conversation and draft are preserved. No command in another terminal is
+required. Saving a key does not perform a paid judgment or establish API access.
+Use `/doctor` access verification to check the TypeSafe models endpoint.
+
+Invoke `$prisma-airs-asr-judge attacks.json` in a new harness session after upgrading.
+Never paste a credential into the conversation.
 
 The installed entrypoint selects the environment that owns the skill, even if
 the saved default changes. Its native helper supplies the saved TypeSafe key only
@@ -54,23 +64,25 @@ airs-cli --version
 
 Version 7.1.5 is on `next`; an unversioned install currently selects 7.0.1, which
 does not contain this command. The standalone install does not replace the
-harness's independently bundled CLI or its embedded Python skill.
+harness's independently bundled CLI or its embedded skill.
 
-Harness preview **0.1.2-alpha.3.mcp.1** bundles **7.1.4** and the updated native
+Harness preview **0.1.2-alpha.4.mcp.1** bundles **7.1.5** and the updated native
 `prisma-airs-asr-judge` skill. Both preserve model output strings verbatim:
 
 ```bash
-npm install -g airs-harness@0.1.2-alpha.3.mcp.1 --registry=https://npm.cdot.io
+npm install -g airs-harness@0.1.2-alpha.4.mcp.1 --registry=https://npm.cdot.io
 airs --version
-# 0.1.2-alpha.3.mcp.1
+# 0.1.2-alpha.4.mcp.1
 airs cli --version
-# 7.1.4
+# 7.1.5
 ```
 
 Restart `airs` after upgrading. Use a fresh output directory and recording for a
 small probe; do not reuse recordings made from extracted inner response text.
 See [command migration](../../getting-started/command-migration.md) for the
 separate command and package versions.
+
+## Standalone tenant configuration
 
 | Setting | Purpose |
 |---------|---------|
@@ -79,7 +91,7 @@ separate command and package versions.
 | `typesafeModel` | Optional model; default `jev-latest` |
 | `mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` | Only for `--job`, which reads the scan through the Red Team API |
 
-`TYPESAFE_API_KEY` in the environment is **not** read; the tenant file is the only source,
+For standalone commands, `TYPESAFE_API_KEY` in the environment is **not** read; the tenant file is the only source,
 like every other credential. `airs-cli doctor` reports the key's presence and probes
 `GET /v1/models` (the documented model listing, which spends no judge budget).
 

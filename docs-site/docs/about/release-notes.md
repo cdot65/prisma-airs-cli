@@ -6,8 +6,8 @@ See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
 
-The matching harness preview **0.1.2-alpha.3.mcp.1** is published under `mcp` at
-`https://npm.cdot.io`, bundling **7.1.4** and the corrected native judge skill.
+The matching harness preview **0.1.2-alpha.4.mcp.1** is published under `mcp` at
+`https://npm.cdot.io`, bundling **7.1.5** and the corrected native judge skill.
 See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-airs-harness).
 
 ## v7.1.5 (2026-09-20) — Harness judge credential handoff
@@ -18,7 +18,8 @@ See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-
   bounded retries, redirect refusal, redacted failures and disabled SDK logging.
 - Replay summaries explicitly report reused answers and no fresh evaluation.
 - Standalone tenant-based authentication and verbatim output handling remain
-  supported. The matching harness preview is pending native acceptance.
+  supported. The matching harness adds `/typesafe` for hidden key entry, status
+  and confirmed removal inside the conversation session.
 
 ## v7.1.4 (2026-09-20) — Preserve model output strings
 
