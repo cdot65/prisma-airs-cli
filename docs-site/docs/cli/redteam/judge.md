@@ -41,6 +41,28 @@ Use `/doctor` access verification to check the TypeSafe models endpoint.
 Invoke `$prisma-airs-asr-judge attacks.json` in a new harness session after upgrading.
 Never paste a credential into the conversation.
 
+### Saved key works in `/typesafe` but the skill cannot read it
+
+The login UI and shell tools run with different permissions. A successful save
+or `/doctor` probe does not grant the shell sandbox access to the native
+credential store or the TypeSafe API. A missing key error from that sandboxed
+process does not prove your saved key is absent.
+
+The harness correction requests **per-command approval** for a live judge probe
+or full run. Approve that specific command inside AIRS to allow native credential
+access and sending the selected scan records to TypeSafe. Dry runs and explicitly
+requested replay keep normal sandbox permissions. The workspace sandbox remains
+enabled for other commands, and the key stays out of the conversation and command
+arguments. If approval is declined, the judge sends no request.
+
+If an approved command still cannot read the credential, inspect `/typesafe` and
+unlock the native store before replacing the key. Repeatedly saving the same key
+does not repair a process permission boundary.
+
+This correction is being prepared for **0.1.2-alpha.5.mcp.1**. Published alpha.4
+does not contain the revised skill instructions. The CLI implementation remains
+7.1.5; upgrading the standalone CLI alone does not update the harness skill.
+
 The installed entrypoint selects the environment that owns the skill, even if
 the saved default changes. Its native helper supplies the saved TypeSafe key only
 to the judge child. An absent shell variable alone does not indicate a missing
