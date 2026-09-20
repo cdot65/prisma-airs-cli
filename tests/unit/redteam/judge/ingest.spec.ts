@@ -169,3 +169,9 @@ describe('normalizeScan', () => {
     expect(redacted.attack.category).toBe('SECURITY');
   });
 });
+
+it('rejects ambiguous duplicate ids and oversized text instead of silently scoring different input', () => {
+  const record = { uuid: 'same', prompt: 'p', output: 'r' };
+  expect(() => normalizeScan([record, record])).toThrow('duplicate');
+  expect(() => normalizeScan([{ ...record, output: 'x'.repeat(200_001) }])).toThrow('truncate');
+});

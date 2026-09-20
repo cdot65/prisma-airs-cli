@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { JudgeState } from './ingest.js';
 import {
   DEFAULT_TYPESAFE_BASE_URL,
@@ -73,11 +74,34 @@ export function retryDelayMs(
       ['retry-after', 1000],
     ] as const) {
       const value = headers.get(header);
-      if (value && Number.isFinite(Number(value))) return Number(value) * multiplier;
+      if (value && Number.isFinite(Number(value)) && Number(value) >= 0)
+        return Math.min(Number(value) * multiplier, 60_000);
     }
   }
   const base = Math.min(500 * 2 ** attempt, 5000);
   return base + base * 0.25 * random();
+}
+
+/** Refuse cleartext remote endpoints and URL credentials before sending a key. */
+export function typesafeEndpoint(baseUrl: string, path: string): string {
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new ProviderError('Invalid TypeSafe base URL');
+  }
+  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (
+    (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  )
+    throw new ProviderError(
+      'TypeSafe base URL requires HTTPS (HTTP only for loopback) without credentials, query or fragment',
+    );
+  return `${url.toString().replace(/\/+$/, '')}${path}`;
 }
 
 export interface TypeSafeHttpProviderOptions {
@@ -109,7 +133,7 @@ export class TypeSafeHttpProvider implements JudgeProvider {
   constructor(options: TypeSafeHttpProviderOptions) {
     this.apiKey = options.apiKey;
     this.model = options.model ?? DEFAULT_TYPESAFE_MODEL;
-    this.url = `${(options.baseUrl ?? DEFAULT_TYPESAFE_BASE_URL).replace(/\/+$/, '')}/v1/systemone`;
+    this.url = typesafeEndpoint(options.baseUrl ?? DEFAULT_TYPESAFE_BASE_URL, '/v1/systemone');
     this.maxRetries = options.maxRetries ?? 2;
     this.timeoutMs = options.timeoutMs ?? 30_000;
     this.fetch = options.fetch ?? globalThis.fetch;
@@ -128,6 +152,7 @@ export class TypeSafeHttpProvider implements JudgeProvider {
       try {
         response = await this.fetch(this.url, {
           method: 'POST',
+          redirect: 'error',
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
@@ -145,7 +170,15 @@ export class TypeSafeHttpProvider implements JudgeProvider {
         continue;
       }
       if (response.ok) {
-        const payload = (await response.json()) as Record<string, unknown>;
+        let decoded: unknown;
+        try {
+          decoded = await response.json();
+        } catch {
+          throw new ProviderError('TypeSafe API returned invalid JSON');
+        }
+        if (decoded === null || typeof decoded !== 'object' || Array.isArray(decoded))
+          throw new ProviderError('TypeSafe API response must be an object');
+        const payload = decoded as Record<string, unknown>;
         const answers = payload.answers;
         if (answers === null || typeof answers !== 'object' || Array.isArray(answers))
           throw new ProviderError('TypeSafe API response has no answers map');
@@ -188,6 +221,15 @@ export class ReplayProvider implements JudgeProvider {
     const entry = this.recorded[request.unitId];
     if (!entry || typeof entry !== 'object' || !entry.answers)
       throw new ProviderError(`no recorded judgment for unit ${request.unitId}`);
+    for (const [field, text] of [
+      ['prompt_sha256', request.state.attack.prompt],
+      ['response_sha256', request.state.target_response],
+    ] as const) {
+      const expected = entry[field];
+      const actual = createHash('sha256').update(text).digest('hex').slice(0, 16);
+      if (expected !== undefined && expected !== actual)
+        throw new ProviderError(`recorded ${field} does not match unit ${request.unitId}`);
+    }
     return {
       answers: entry.answers,
       model: typeof entry.model === 'string' ? entry.model : this.model,
@@ -219,8 +261,9 @@ export async function listTypesafeModels(options: {
   fetch?: FetchLike;
 }): Promise<number> {
   const fetchImpl = options.fetch ?? globalThis.fetch;
-  const url = `${(options.baseUrl ?? DEFAULT_TYPESAFE_BASE_URL).replace(/\/+$/, '')}/v1/models`;
+  const url = typesafeEndpoint(options.baseUrl ?? DEFAULT_TYPESAFE_BASE_URL, '/v1/models');
   const response = await fetchImpl(url, {
+    redirect: 'error',
     headers: { Authorization: `Bearer ${options.apiKey}`, Accept: 'application/json' },
     signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
   });
@@ -231,5 +274,7 @@ export async function listTypesafeModels(options: {
     });
   }
   const payload = (await response.json()) as { models?: unknown };
-  return Array.isArray(payload.models) ? payload.models.length : 0;
+  if (!payload || !Array.isArray(payload.models))
+    throw new ProviderError('TypeSafe models response has no models array');
+  return payload.models.length;
 }

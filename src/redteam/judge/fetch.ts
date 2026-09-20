@@ -121,14 +121,16 @@ export async function fetchJobAttackRecords(
     const response = await client.listAttacks(jobId, { limit: pageSize, skip: page * pageSize });
     const data = Array.isArray(response.data) ? response.data : [];
     for (const item of data) {
-      if (typeof item.uuid === 'string' && !seen.has(item.uuid)) {
+      if (typeof item.uuid !== 'string' || seen.has(item.uuid))
+        throw new Error('Attack pagination returned an invalid or duplicate identifier');
+      if (typeof item.uuid === 'string') {
         seen.add(item.uuid);
         ids.push(item.uuid);
       }
     }
-    const total = response.pagination?.total_items;
     if (data.length < pageSize) break;
-    if (typeof total === 'number' && (page + 1) * pageSize >= total) break;
+    if (page === MAX_PAGES - 1)
+      throw new Error('Attack pagination exceeded its bound; refusing to judge an incomplete scan');
   }
   const limit = pLimit(Math.max(1, options.concurrency ?? 5));
   return Promise.all(

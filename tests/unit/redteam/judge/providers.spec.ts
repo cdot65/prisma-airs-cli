@@ -205,6 +205,44 @@ describe('listTypesafeModels', () => {
     ).rejects.toMatchObject({ status: 401 });
     expect(denied.mock.calls[0][0]).toBe('https://x.test/v1/models');
     const odd = vi.fn(async () => ok({}));
-    await expect(listTypesafeModels({ apiKey: 'k', fetch: odd })).resolves.toBe(0);
+    await expect(listTypesafeModels({ apiKey: 'k', fetch: odd })).rejects.toThrow(
+      'no models array',
+    );
+  });
+});
+
+describe('provider failure isolation', () => {
+  it('sanitizes malformed success responses and never retries them', async () => {
+    for (const body of ['<html>PRIVATE</html>', 'null', '[]']) {
+      const fetch = vi.fn(async () => new Response(body, { status: 200 }));
+      const provider = new TypeSafeHttpProvider({ apiKey: 'k', fetch, sleep: noSleep });
+      const error = await provider
+        .judge({ unitId: 'u', state, questions: QUESTIONS })
+        .catch((e) => e);
+      expect(error).toBeInstanceOf(ProviderError);
+      expect(error.message).not.toContain('PRIVATE');
+      expect(fetch).toHaveBeenCalledTimes(1);
+    }
+  });
+  it('refuses insecure endpoints before a credential can be sent', () => {
+    for (const baseUrl of [
+      'http://example.test',
+      'https://user:password@example.test',
+      'https://example.test?key=secret',
+    ]) {
+      expect(() => new TypeSafeHttpProvider({ apiKey: 'k', baseUrl })).toThrow(ProviderError);
+    }
+  });
+  it('bounds invalid and excessive retry headers', () => {
+    expect(retryDelayMs(0, new Headers({ 'retry-after': '-1' }), () => 0)).toBe(500);
+    expect(retryDelayMs(0, new Headers({ 'retry-after': '999999' }))).toBe(60_000);
+  });
+  it('rejects recordings for changed prompts', async () => {
+    const provider = new ReplayProvider({
+      judgments: { u: { answers: answers(0.7), prompt_sha256: 'different' } },
+    });
+    await expect(provider.judge({ unitId: 'u', state, questions: QUESTIONS })).rejects.toThrow(
+      'does not match',
+    );
   });
 });

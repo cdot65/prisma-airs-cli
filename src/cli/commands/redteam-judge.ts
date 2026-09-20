@@ -195,6 +195,9 @@ async function runJudge(
   const targets = JUDGE_OUTPUT_FILES.map((name) => join(outDir, name));
   const recordPath = opts.record ? resolve(opts.record) : undefined;
   if (!opts.dryRun) {
+    const destinations = [...targets, ...(recordPath ? [recordPath] : [])];
+    if (new Set(destinations).size !== destinations.length)
+      throw new CliUsageError('Output destinations must be distinct new files');
     for (const path of [...targets, ...(recordPath ? [recordPath] : [])])
       if (await exists(path))
         throw new Error(`Output already exists: ${path}. Existing files are never overwritten.`);

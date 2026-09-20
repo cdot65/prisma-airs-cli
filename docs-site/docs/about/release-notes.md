@@ -1,5 +1,18 @@
 # Release Notes
 
+## v7.1.1 (2026-09-20) — Harden red-team judge failure handling
+
+- Invalid provider responses become per-unit errors; valid judgments remain available.
+- Judge endpoints require HTTPS except loopback fixtures, refuse redirects, and bound retry delays.
+- Duplicate attack/output IDs, oversized input, duplicate pagination and output path collisions fail before judging ambiguous evidence.
+- Replay checks recorded prompt/response hashes when present. Evaluation guidance distinguishes model probabilities, coverage and population accuracy.
+
+## v7.1.0 (2026-09-20) — TypeSafe Jev red-team judge
+
+- Adds `airs-cli redteam judge` for local scan exports or read-only job retrieval, with typed judgments, ASR, replay and private reports.
+- Configure `typesafeApiKey`, `typesafeBaseUrl` and `typesafeModel` in the selected tenant. Doctor supports the TypeSafe models endpoint.
+- This is a proof of concept validated with fixtures and mock transports; no live Jev accuracy claim is made.
+
 ## v6.1.1 (2026-09-12) — Prompt for the provider key in a terminal
 
 - `airs-cli aigateway integrations create` now prompts for the provider key with hidden input when

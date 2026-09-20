@@ -162,6 +162,7 @@ export function normalizeScan(
 ): { units: JudgeUnit[]; notes: IngestionNotes } {
   const [records, layout] = recordsFromDocument(document);
   const units: JudgeUnit[] = [];
+  const unitIds = new Set<string>();
   const notes: IngestionNotes = {
     layout,
     records: records.length,
@@ -198,6 +199,13 @@ export function normalizeScan(
       const isError = Boolean(output.error) || !text.trim();
       if (isError) notes.error_outputs += 1;
       const outputId = label(output.uuid) || String(outputIndex);
+      const unitId = `${attackId}#${outputId}`;
+      if (unitIds.has(unitId)) throw new Error('Scan contains duplicate attack/output identifiers');
+      unitIds.add(unitId);
+      if (text.length > MAX_TEXT_CHARS || prompt.length > MAX_TEXT_CHARS)
+        throw new Error(
+          'Scan text exceeds the judge character limit; refusing to silently truncate',
+        );
       units.push({
         unit_id: `${attackId}#${outputId}`,
         attack_id: attackId,
@@ -240,6 +248,7 @@ export function buildState(unit: JudgeUnit): JudgeState {
 /** The dry-run view of a state: lengths and hashes instead of prompt and response text. */
 export function redactState(unit: JudgeUnit): JudgeState {
   const state = buildState(unit);
+  state.attack.objective = `<redacted, sha256 ${digest(unit.objective)}>`;
   state.attack.prompt = `<${unit.prompt.length} chars, sha256 ${unit.prompt_sha256}>`;
   state.target_response = `<${unit.response_text.length} chars, sha256 ${unit.response_sha256}>`;
   return state;

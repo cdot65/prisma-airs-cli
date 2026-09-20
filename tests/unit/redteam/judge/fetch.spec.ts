@@ -92,22 +92,29 @@ describe('fetchJobAttackRecords', () => {
     );
   });
 
-  it('stops at the reported total, drops duplicates and tolerates missing outputs', async () => {
+  it('rejects duplicate pages before fetching details', async () => {
+    const listAttacks = vi.fn().mockResolvedValue({ data: [{ uuid: 'a' }, { uuid: 'a' }] });
+    const getAttackDetail = vi.fn();
+    await expect(
+      fetchJobAttackRecords({ listAttacks, getAttackDetail }, 'job', { pageSize: 2 }),
+    ).rejects.toThrow('duplicate');
+    expect(getAttackDetail).not.toHaveBeenCalled();
+  });
+
+  it('continues beyond a page-sized total and tolerates missing outputs', async () => {
     const listAttacks = vi
       .fn()
       .mockResolvedValueOnce({
         pagination: { total_items: 2 },
-        data: [{ uuid: 'a' }, { uuid: 'a' }],
+        data: [{ uuid: 'a' }, { uuid: 'b' }],
       })
-      .mockResolvedValue({ pagination: {}, data: [] });
+      .mockResolvedValueOnce({ pagination: { total_items: 1 }, data: [{ uuid: 'c' }] });
     const getAttackDetail = vi.fn(async (_job: string, uuid: string) => ({ uuid, prompt: 'p' }));
     const records = await fetchJobAttackRecords({ listAttacks, getAttackDetail }, 'job', {
       pageSize: 2,
     });
-    expect(listAttacks).toHaveBeenCalledTimes(1);
-    expect(records).toHaveLength(1);
-    expect(records[0].outputs).toBeUndefined();
-    expect('outputs' in records[0]).toBe(false);
+    expect(records).toHaveLength(3);
+    expect(listAttacks).toHaveBeenCalledTimes(2);
     expect(normalizeScan(records).units[0]).toMatchObject({ unit_id: 'a#0', is_error: true });
   });
 

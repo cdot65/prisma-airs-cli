@@ -150,3 +150,17 @@ Provider: replay (model fixture-not-jev). Success threshold 0.5.
   spread; keep the threshold fixed when comparing scans and re-derive alternatives with
   `--provider replay`.
 - No published accuracy figure exists for Jev on red-team success judgment.
+
+## Boundary checks and evaluation limits
+
+The judge refuses duplicate attack/output identifiers and oversized text rather than
+silently truncating evidence. Replay validates recorded input hashes when present.
+Existing outputs are never overwritten, and destinations must be distinct. Provider
+redirects are refused; remote endpoints require HTTPS. Invalid JSON responses become
+per-unit provider errors and exit code 4, preserving successfully judged units.
+
+The displayed Wilson interval does not include judge error or correlation between
+outputs from one attack. Evaluate with an independently human-labeled representative
+held-out sample, including agreements, and report coverage alongside ASR. A sample
+containing only disagreements is useful for error analysis, not population accuracy.
+Thresholds are starting points; mean model probability is not proven calibrated ASR.
