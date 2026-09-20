@@ -17,24 +17,18 @@ shell aliases, service definitions and user-created skills before changing their
 installed command. Product config files and tenant registrations stay in place.
 
 As of September 20, 2026, standalone **7.0.1** is the stable release for default
-public npm installs. **7.1.2** is published under `next` and adds the
+public npm installs. **7.1.3** is published under `next` and adds the
 [TypeSafe Jev red-team judge](../cli/redteam/judge.md), including explicit coverage
 exclusions, validated provider responses and offline replay.
 
 The harness bundles an independently pinned CLI. Installing a newer global
 `airs-cli` does not upgrade `airs cli`. Check both with `airs-cli --version` and
-`airs cli --version`; the judge requires a bundled CLI of 7.1 or newer, with 7.1.2
-recommended for the coverage and failure-handling fixes. Harness
-**0.1.2-alpha.2.mcp.1** bundles CLI **7.1.2** and is published under `mcp` at
-`https://npm.cdot.io`. The harness's stable `latest` remains **0.1.1**, which
-bundles CLI 7.0.0. Install the exact preview to use the judge through the harness:
-
-```sh
-npm install -g airs-harness@0.1.2-alpha.2.mcp.1 --registry=https://npm.cdot.io
-airs cli --version
-# 7.1.2
-airs cli redteam judge --help
-```
+`airs cli --version`. Use **7.1.3** for AIRS A2A message-envelope exports.
+Harness **0.1.2-alpha.2.mcp.1** bundles CLI **7.1.2** and its embedded skill has the
+same envelope-normalization defect. A matching corrected harness preview is
+being prepared; installing standalone 7.1.3 alone does not update either component
+inside an existing harness installation. The harness's stable `latest` remains
+**0.1.1**, bundling CLI 7.0.0.
 
 ## Upgrade an existing standalone installation
 
@@ -49,7 +43,7 @@ airs-cli tenant list
 To try the judge preview instead, install the exact version:
 
 ```sh
-npm install -g @cdot65/prisma-airs-cli@7.1.2
+npm install -g @cdot65/prisma-airs-cli@7.1.3
 airs-cli redteam judge --help
 ```
 

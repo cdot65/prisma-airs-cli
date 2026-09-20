@@ -26,19 +26,22 @@ airs-cli redteam judge [options] [scanFile]
 
 ## Requirements
 
-Install standalone **7.1.2** from public npm to get the current judge fixes:
+Install standalone **7.1.3** from public npm to get the current judge fixes:
 
 ```bash
-npm install -g @cdot65/prisma-airs-cli@7.1.2
+npm install -g @cdot65/prisma-airs-cli@7.1.3
 airs-cli --version
 ```
 
-Version 7.1.2 is on `next`; an unversioned install currently selects 7.0.1, which
-does not contain this command. A harness with CLI 7.1.2 bundled can run the same
-examples through `airs cli redteam judge ...`; check `airs cli --version` first.
-The standalone install does not replace the harness's bundled CLI. The published
-harness preview **0.1.2-alpha.2.mcp.1** includes CLI **7.1.2**; see the
-[harness installation command](../../getting-started/command-migration.md).
+Version 7.1.3 is on `next`; an unversioned install currently selects 7.0.1, which
+does not contain this command. The standalone install does not replace the
+harness's independently bundled CLI or its embedded Python skill.
+
+Harness preview **0.1.2-alpha.2.mcp.1** bundles **7.1.2**, whose judge does not
+extract Python-style A2A message envelopes correctly. Use standalone **7.1.3**
+for those exports until the matching corrected harness preview is published.
+See [command migration](../../getting-started/command-migration.md) for the
+separate command and package versions.
 
 | Setting | Purpose |
 |---------|---------|
