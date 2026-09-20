@@ -16,44 +16,24 @@ const SAMPLE_SCAN = JSON.parse(
 );
 
 describe('extractResponseText', () => {
-  it('extracts known shapes and falls back to the raw string', () => {
-    const responsesApi = JSON.stringify({
-      output: [{ type: 'message', content: [{ type: 'output_text', text: 'hello' }] }],
-    });
-    const chat = JSON.stringify({ choices: [{ message: { role: 'assistant', content: 'hi' } }] });
-    const multiTurn = JSON.stringify({
-      messages: [
-        { role: 'user', content: 'q' },
-        { role: 'assistant', content: 'last' },
-      ],
-    });
-    const cases: Record<string, [string, string]> = {
-      'plain text': ['plain text', 'plain'],
-      [responsesApi]: ['hello', 'responses_api'],
-      [chat]: ['hi', 'chat_completions'],
-      [multiTurn]: ['last', 'multi_turn_last'],
-      '{not json': ['{not json', 'plain'],
-      '': ['', 'empty'],
-      '   ': ['', 'empty'],
-      '{"unknown": 1}': ['{"unknown": 1}', 'json_unparsed'],
-      '{"output_text": "direct"}': ['direct', 'json.output_text'],
-      '["a", "b"]': ['a\nb', 'list_of_strings'],
-      '[1, 2]': ['[1, 2]', 'json_unparsed'],
-    };
-    expect(
-      Object.fromEntries(Object.keys(cases).map((raw) => [raw, extractResponseText(raw)])),
-    ).toEqual(cases);
+  it('preserves every output string, including JSON, escapes and whitespace', () => {
+    for (const raw of [
+      'plain text',
+      '',
+      '  \n\t',
+      '{not json',
+      '{"output":[{"content":[{"text":"nested"}]}]}',
+      '{"choices":[{"message":{"content":"nested"}}]}',
+      '{"messages":[{"role":"assistant","content":"nested"}]}',
+      '{"text":"literal JSON"}',
+      '["a", "b"]',
+      '  café 😀\nsecond line  ',
+    ])
+      expect(extractResponseText(raw)).toEqual([raw, raw.trim() ? 'plain' : 'empty']);
     expect(extractResponseText(null)).toEqual(['', 'empty']);
     expect(extractResponseText(undefined)).toEqual(['', 'empty']);
-    expect(extractResponseText(42)).toEqual(['42', 'coerced']);
-    expect(extractResponseText({ turns: [{ content: [{ text: 'part' }] }] })).toEqual([
-      'part',
-      'multi_turn_last',
-    ]);
-    expect(extractResponseText({ output: [{ content: 'not a list' }] })).toEqual([
-      '{"output": [{"content": "not a list"}]}',
-      'plain_unparsed',
-    ]);
+    for (const raw of [42, false, {}, [], { output: 'text' }])
+      expect(() => extractResponseText(raw)).toThrow('Expected output to be a string');
   });
 
   it('re-serializes like Python json.dumps so fallbacks hash identically', () => {
@@ -77,8 +57,8 @@ describe('normalizeScan', () => {
     expect(units).toHaveLength(10);
     const first = units[0];
     expect(first.unit_id).toBe('0a1f3c2e-1111-4a1a-9c01-000000000001#0');
-    expect(first.extraction).toBe('responses_api');
-    expect(first.response_text.startsWith("I can't access your machine")).toBe(true);
+    expect(first.extraction).toBe('plain');
+    expect(first.response_text).toBe(SAMPLE_SCAN[0].output);
     expect([first.category, first.sub_category, first.airs_threat]).toEqual([
       'SECURITY',
       'Remote Code Execution',
@@ -90,7 +70,7 @@ describe('normalizeScan', () => {
     expect(first.prompt_sha256).toMatch(/^[0-9a-f]{16}$/);
     expect(units[7].is_error).toBe(true);
     expect(units[7].airs_threat).toBeNull();
-    expect(units[6].extraction).toBe('chat_completions');
+    expect(units[6].response_text).toBe(SAMPLE_SCAN[6].output);
   });
 
   it('accepts the API detail shape with nested outputs', () => {
@@ -186,32 +166,36 @@ const ENVELOPES = JSON.parse(
   readFileSync(new URL('../../../fixtures/redteam-judge/envelopes.json', import.meta.url), 'utf8'),
 ) as { name: string; input: unknown; expected: [string, string] }[];
 
-it.each(ENVELOPES)('normalizes AIRS envelope $name without rewriting its text', ({
+it.each(ENVELOPES)('keeps serialized envelope $name as model output', ({ input }) => {
+  if (typeof input === 'string') expect(extractResponseText(input)).toEqual([input, 'plain']);
+  else expect(() => extractResponseText(input)).toThrow('Expected output to be a string');
+});
+
+it.each(ENVELOPES)('normalizes prompt envelope $name independently of output', ({
   input,
   expected,
 }) => {
-  expect(extractResponseText(input)).toEqual(expected);
+  const prompt = typeof input === 'string' ? input : JSON.stringify(input);
+  const { units, notes } = normalizeScan([{ prompt, output: '{"text":"literal model output"}' }]);
+  if (!expected[0]) {
+    expect(units).toEqual([]);
+    expect(notes.skipped_no_prompt).toBe(1);
+  } else {
+    expect(units[0].prompt).toBe(expected[0]);
+    expect(units[0].response_text).toBe('{"text":"literal model output"}');
+  }
 });
 
-it('preserves JSON attack content, unwraps explicit prompt messages and counts unsupported responses', () => {
-  const literal = '{"text":"this JSON is the attack", "role":"user"}';
-  const { units, notes } = normalizeScan([
-    { prompt: literal, output: ENVELOPES[0].input },
-    {
-      prompt: JSON.stringify({ kind: 'message', parts: [{ kind: 'text', text: 'actual prompt' }] }),
-      output: ENVELOPES[10].input,
-    },
+it('preserves ordinary JSON prompts and malformed JSON model output', () => {
+  const prompt = '{"text":"this JSON is the attack", "role":"user"}';
+  const output = String(ENVELOPES[10].input);
+  const { units, notes } = normalizeScan([{ prompt, output }]);
+  expect([units[0].prompt, units[0].response_text, units[0].is_error]).toEqual([
+    prompt,
+    output,
+    false,
   ]);
-  expect(units.map((u) => [u.prompt, u.response_text, u.is_error])).toEqual([
-    [literal, "I can't help with that.", false],
-    ['actual prompt', '', true],
-  ]);
-  expect(notes).toMatchObject({
-    response_envelopes: 2,
-    normalized_prompt_envelopes: 1,
-    unsupported_response_envelopes: 1,
-    error_outputs: 1,
-  });
+  expect(notes.error_outputs).toBe(0);
 });
 
 it('does not execute Python syntax and bounds parsing', () => {

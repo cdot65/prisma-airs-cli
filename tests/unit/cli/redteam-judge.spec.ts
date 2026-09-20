@@ -425,7 +425,7 @@ describe('redteam judge — live provider and --job', () => {
   });
 });
 
-it('sends extracted AIRS response text to Jev and rejects replay of the old wrapper', async () => {
+it('sends the exact output string to Jev and rejects replay of transformed text', async () => {
   const { digest } = await import('../../../src/redteam/judge/ingest.js');
   const scan = join(directory, 'scan.json');
   const wrapped =
@@ -445,16 +445,16 @@ it('sends extracted AIRS response text to Jev and rejects replay of the old wrap
   const body = JSON.parse(String(fetch.mock.calls[0][1]?.body));
   expect([body.state.attack.prompt, body.state.target_response]).toEqual([
     '{"text":"literal attack"}',
-    'actual reply',
+    wrapped,
   ]);
-  expect(JSON.stringify(body)).not.toContain('synthetic-id');
+  expect(body.state.target_response).toBe(wrapped);
   const recording = JSON.parse(await readFile(record, 'utf8'));
-  expect(recording.judgments['index-0#0'].response_sha256).toBe(digest('actual reply'));
+  expect(recording.judgments['index-0#0'].response_sha256).toBe(digest(wrapped));
   // A genuine unrelated judgment remains visible; normalization must not force agreement.
   expect(
     JSON.parse(await readFile(join(directory, 'out', 'results.json'), 'utf8')).dispositions,
   ).toEqual({ unrelated_or_error: 1 });
-  recording.judgments['index-0#0'].response_sha256 = digest(wrapped);
+  recording.judgments['index-0#0'].response_sha256 = digest('actual reply');
   const old = join(directory, 'old-record.json');
   await writeFile(old, JSON.stringify(recording));
   await run([

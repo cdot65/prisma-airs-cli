@@ -33,8 +33,6 @@ export interface IngestionNotes {
   objective_proxies?: number;
   oversized_units?: number;
   normalized_prompt_envelopes?: number;
-  response_envelopes?: number;
-  unsupported_response_envelopes?: number;
 }
 
 /** The state object sent to Jev for one unit. */
@@ -72,66 +70,11 @@ export function pythonJson(value: unknown): string {
   return JSON.stringify(value ?? null);
 }
 
-function textFromContentList(content: unknown): string | null {
-  if (!Array.isArray(content)) return null;
-  const parts = content
-    .filter((c): c is Dict => isDict(c) && typeof c.text === 'string')
-    .map((c) => c.text as string);
-  return parts.length ? parts.join('\n') : null;
-}
-
-/**
- * Return `[text, extractionMethod]` for a raw AIRS `output` value. Handles plain text,
- * stringified JSON in OpenAI Responses or Chat Completions shape, multi-turn objects,
- * and falls back to the raw string.
- */
+/** Preserve the model output string verbatim, including serialized JSON and message envelopes. */
 export function extractResponseText(raw: unknown): [string, string] {
   if (raw === null || raw === undefined) return ['', 'empty'];
-  let value: unknown = raw;
-  let method = 'plain';
-  if (typeof raw === 'string') {
-    const stripped = raw.trim();
-    if (!stripped) return ['', 'empty'];
-    if (stripped[0] !== '{' && stripped[0] !== '[') return [raw, 'plain'];
-    [value, method] = decodeContainer(stripped);
-    if (method === 'plain') return [raw, 'plain'];
-  }
-  const message = messageText(value);
-  if (message !== null) return message;
-  if (isDict(value)) {
-    const outputs = value.output;
-    if (Array.isArray(outputs)) {
-      const texts = outputs
-        .map((item) => (isDict(item) ? textFromContentList(item.content) : null))
-        .filter((text): text is string => Boolean(text));
-      if (texts.length) return [texts.join('\n'), 'responses_api'];
-    }
-    const choices = value.choices;
-    if (Array.isArray(choices) && choices.length && isDict(choices[0])) {
-      const message = choices[0].message;
-      if (isDict(message) && typeof message.content === 'string')
-        return [message.content, 'chat_completions'];
-    }
-    for (const key of ['output_text', 'response', 'text', 'content', 'message', 'answer']) {
-      if (typeof value[key] === 'string') return [value[key] as string, `json.${key}`];
-    }
-    const turns = value.messages || value.turns || value.conversation;
-    if (Array.isArray(turns) && turns.length) {
-      const last = turns[turns.length - 1];
-      if (isDict(last)) {
-        const text =
-          typeof last.content === 'string' ? last.content : textFromContentList(last.content);
-        if (text) return [text, 'multi_turn_last'];
-      }
-    }
-    return [pythonJson(value), `${method}_unparsed`];
-  }
-  if (Array.isArray(value)) {
-    const texts = value.filter((item): item is string => typeof item === 'string');
-    if (texts.length) return [texts.join('\n'), 'list_of_strings'];
-    return [pythonJson(value), `${method}_unparsed`];
-  }
-  return [String(value), 'coerced'];
+  if (typeof raw !== 'string') throw new Error('Expected output to be a string');
+  return [raw, raw.trim() ? 'plain' : 'empty'];
 }
 
 function recordsFromDocument(document: unknown): [Dict[], string] {
@@ -216,10 +159,6 @@ export function normalizeScan(
     const airsAsr = typeof record.asr === 'number' ? record.asr : null;
     for (const [outputIndex, output] of rawOutputs.entries()) {
       const [text, extraction] = extractResponseText(output.output);
-      if (extraction.startsWith('a2a_'))
-        notes.response_envelopes = (notes.response_envelopes ?? 0) + 1;
-      if (extraction === 'a2a_unsupported_parts')
-        notes.unsupported_response_envelopes = (notes.unsupported_response_envelopes ?? 0) + 1;
       const isError = Boolean(output.error) || !text.trim();
       if (isError) notes.error_outputs += 1;
       const outputId = label(output.uuid) || String(outputIndex);
