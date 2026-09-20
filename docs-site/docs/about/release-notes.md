@@ -1,10 +1,17 @@
 # Release Notes
 
-Public npm channels as of September 20, 2026: **`latest` = 7.0.1**, **`next` = 7.1.3**.
-The 7.1 features are available with `npm install -g @cdot65/prisma-airs-cli@7.1.3`.
+Public npm channels as of September 20, 2026: **`latest` = 7.0.1**, **`next` = 7.1.4**.
+The 7.1 features are available with `npm install -g @cdot65/prisma-airs-cli@7.1.4`.
 See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
+
+## v7.1.4 (2026-09-20) — Preserve model output strings
+
+- Treat the complete `output` string as the model response, including nested JSON or serialized message text. This supersedes 7.1.3 response-envelope extraction.
+- Normalize explicit prompt envelopes independently; preserve ordinary JSON prompt content.
+- Reject non-string response values and verify replay against the complete output string.
+- Validate exact provider-boundary text preservation; genuine unrelated/error dispositions remain possible.
 
 ## v7.1.3 (2026-09-20) — Extract AIRS message text before judging
 
@@ -35,7 +42,7 @@ included in 7.1.2; they do not imply those intermediate versions were published 
 ## v7.0.1 — Standalone release metadata
 
 - Corrects release metadata without changing the version 7 command behavior or tenant configuration.
-- Remains the public npm `latest` release while 7.1.3 is evaluated through `next`.
+- Remains the public npm `latest` release while 7.1.4 is evaluated through `next`.
 
 ## v7.0.0 — Rename the product command
 

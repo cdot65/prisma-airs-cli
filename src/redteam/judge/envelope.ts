@@ -126,7 +126,7 @@ export function messageText(value: unknown): [string, string] | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const message = value as Record<string, unknown>;
   if (message.kind !== 'message' || !Object.hasOwn(message, 'parts')) return null;
-  // AIRS exports target replies with role=user, so role must not filter replies.
+  // Prompt envelopes can use either role; response strings are never unwrapped.
   const parts = message.parts;
   if (
     !Array.isArray(parts) ||

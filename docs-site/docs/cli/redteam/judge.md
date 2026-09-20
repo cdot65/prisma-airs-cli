@@ -26,22 +26,21 @@ airs-cli redteam judge [options] [scanFile]
 
 ## Requirements
 
-Install standalone **7.1.3** from public npm to get the current judge fixes:
+Install standalone **7.1.4** from public npm to get the current judge fixes:
 
 ```bash
-npm install -g @cdot65/prisma-airs-cli@7.1.3
+npm install -g @cdot65/prisma-airs-cli@7.1.4
 airs-cli --version
 ```
 
-Version 7.1.3 is on `next`; an unversioned install currently selects 7.0.1, which
+Version 7.1.4 is on `next`; an unversioned install currently selects 7.0.1, which
 does not contain this command. The standalone install does not replace the
 harness's independently bundled CLI or its embedded Python skill.
 
-Harness preview **0.1.2-alpha.2.mcp.1** bundles **7.1.2**, whose judge does not
-extract Python-style A2A message envelopes correctly. Use standalone **7.1.3**
-for those exports until the matching corrected harness preview is published.
-See [command migration](../../getting-started/command-migration.md) for the
-separate command and package versions.
+Harness preview **0.1.2-alpha.2.mcp.1** bundles **7.1.2**. Use standalone
+**7.1.4** for the response-string contract until the matching harness preview is
+published. See [command migration](../../getting-started/command-migration.md)
+for the separate command and package versions.
 
 | Setting | Purpose |
 |---------|---------|
@@ -206,21 +205,23 @@ containing only disagreements is useful for error analysis, not population accur
 Thresholds are starting points; mean model probability is not proven calibrated ASR.
 
 
-## Message-envelope normalization
+## Model output strings and prompt normalization
 
-AIRS exports can store target responses as A2A message envelopes serialized as JSON
-or Python-style dictionaries. The judge extracts `parts[].text` in order, including
-exports that label replies `role: user`. Transport IDs are not sent to Jev. Literal
-JSON within a text part remains intact, and attack prompts are only unwrapped when
-they are explicit message envelopes themselves.
+`output` is the model's direct response string. The judge sends the complete string
+to Jev unchanged, including nested JSON, serialized A2A messages, Python-style
+text, whitespace and escapes. It does not interpret nested fields as transport
+metadata or replace the response with an inner value. Malformed JSON and echoed
+prompts remain model content; they do not automatically establish pipeline errors
+or attack success. Non-string response values reject ingestion instead of being
+coerced. Missing/null output and empty strings retain skipped-error handling.
 
-Check `ingestion.response_envelopes` in a dry-run. Empty responses and unsupported
-mixed/non-text parts are counted as skipped errors; they are not silently judged
-from incomplete text. Size limits apply after extraction. `unrelated_or_error` is
-still a valid model disposition, separate from provider failures and AIRS agreement.
+Prompt normalization is independent: explicit message envelopes in `prompt` have
+their ordered text parts extracted, while ordinary JSON attack content stays
+literal. The dry run counts `normalized_prompt_envelopes` when applicable.
+Size limits and replay hashes use the complete response string.
 
-After upgrading from 7.1.2, run a fresh small probe into a new output directory and
-recording file. Old wrapper-based judgments cannot be replayed against corrected
-response hashes. The supplied 4,362-row export now normalizes identically in the
-CLI and native harness skill: 4,362 extracted responses, no empty/unsupported
-envelopes, and 36 oversized units. This validates input handling, not live accuracy.
+After changing versions, run a fresh small recorded probe using new output paths.
+A recording made against extracted inner text will fail the response-hash check.
+`unrelated_or_error` is a model disposition, not a disagreement flag or provider
+error. Inspect dispositions before committing to a full paid run; no zero-count
+or ASR accuracy guarantee is made.

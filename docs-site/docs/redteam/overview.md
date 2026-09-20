@@ -39,7 +39,7 @@ The `airs-cli redteam` command group provides full access to Red Team operations
 - [Environment Dashboard](../cli/redteam/dashboard.md) — CLI 5.1.0 read-only HTML/Markdown report with actual verified CLI output
 - **[End-to-End Walkthrough](end-to-end-walkthrough.md)** -- tutorial: onboard a target, run a STATIC scan, pull the report, with every command + response
 - [Running Scans](scanning.md) -- launch scans, monitor progress, view reports
-- [Judge scan results with TypeSafe Jev](../cli/redteam/judge.md) -- 7.1.3 setup, dry run, bounded judging, replay and ASR interpretation
+- [Judge scan results with TypeSafe Jev](../cli/redteam/judge.md) -- 7.1.4 setup, dry run, bounded judging, replay and ASR interpretation
 - [Managing Targets](targets.md) -- CRUD operations for red team targets, auth validation, metadata, templates
 - [EULA & Infrastructure](infrastructure.md) -- EULA acceptance, instance management, devices, registry credentials, network broker channels
 - [Prompt Sets & Prompts](prompt-sets.md) -- manage custom prompt sets and individual prompts
