@@ -27,7 +27,7 @@ airs-cli redteam judge [options] [scanFile]
 ## Harness environment credentials
 
 CLI **7.1.5** supports the harness's automatic credential handoff and uses the
-official TypeSafe JavaScript SDK. Harness **0.1.2-alpha.4.mcp.1** bundles this version.
+official TypeSafe JavaScript SDK. Harness **0.1.2-alpha.5.mcp.1** bundles this version.
 The new skill entrypoint runs under Node and delegates to this bundled CLI;
 Python and a separate SDK installation are not required.
 
@@ -59,7 +59,7 @@ If an approved command still cannot read the credential, inspect `/typesafe` and
 unlock the native store before replacing the key. Repeatedly saving the same key
 does not repair a process permission boundary.
 
-This correction is being prepared for **0.1.2-alpha.5.mcp.1**. Published alpha.4
+This correction is included in **0.1.2-alpha.5.mcp.1**. Earlier alpha.4
 does not contain the revised skill instructions. The CLI implementation remains
 7.1.5; upgrading the standalone CLI alone does not update the harness skill.
 
@@ -88,13 +88,13 @@ Version 7.1.5 is on `next`; an unversioned install currently selects 7.0.1, whic
 does not contain this command. The standalone install does not replace the
 harness's independently bundled CLI or its embedded skill.
 
-Harness preview **0.1.2-alpha.4.mcp.1** bundles **7.1.5** and the updated native
+Harness preview **0.1.2-alpha.5.mcp.1** bundles **7.1.5** and the updated native
 `prisma-airs-asr-judge` skill. Both preserve model output strings verbatim:
 
 ```bash
-npm install -g airs-harness@0.1.2-alpha.4.mcp.1 --registry=https://npm.cdot.io
+npm install -g airs-harness@0.1.2-alpha.5.mcp.1 --registry=https://npm.cdot.io
 airs --version
-# 0.1.2-alpha.4.mcp.1
+# 0.1.2-alpha.5.mcp.1
 airs cli --version
 # 7.1.5
 ```

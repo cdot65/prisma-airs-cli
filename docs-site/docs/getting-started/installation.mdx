@@ -63,13 +63,13 @@ key; reading a scan with `--job` also requires AIRS management credentials.
 
 ### Use the bundled judge in AIRS Harness
 
-The **0.1.2-alpha.4.mcp.1** harness preview includes CLI **7.1.5** and the updated
+The **0.1.2-alpha.5.mcp.1** harness preview includes CLI **7.1.5** and the updated
 native judge skill. No separate product CLI install is needed:
 
 ```bash
-npm install -g airs-harness@0.1.2-alpha.4.mcp.1 --registry=https://npm.cdot.io
+npm install -g airs-harness@0.1.2-alpha.5.mcp.1 --registry=https://npm.cdot.io
 airs --version
-# 0.1.2-alpha.4.mcp.1
+# 0.1.2-alpha.5.mcp.1
 airs cli --version
 # 7.1.5
 ```
@@ -78,7 +78,9 @@ Restart `airs` after upgrading. Stable harness `latest` remains **0.1.1**;
 install this exact preview to test the shared TypeScript judge and automatic credential handoff.
 Inside `airs`, use `/typesafe` for hidden API-key entry, status and confirmed removal.
 Then invoke `$prisma-airs-asr-judge attacks.json`. No Python or external setup command
-is required; the bundled skill uses its owning environment's saved key.
+is required; the bundled skill uses its owning environment's saved key. Approve
+the specific live judge command when AIRS asks for credential-store and network
+access. Dry runs remain sandboxed and need no key.
 
 ### Verify either installation
 

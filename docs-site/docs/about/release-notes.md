@@ -6,8 +6,10 @@ See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
 
-The matching harness preview **0.1.2-alpha.4.mcp.1** is published under `mcp` at
+The matching harness preview **0.1.2-alpha.5.mcp.1** is published under `mcp` at
 `https://npm.cdot.io`, bundling **7.1.5** and the corrected native judge skill.
+The skill requests per-command approval for live credential-store and network
+access. This repairs the shell execution boundary; the CLI version remains 7.1.5.
 See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-airs-harness).
 
 ## v7.1.5 (2026-09-20) — Harness judge credential handoff
