@@ -36,6 +36,7 @@ export interface JudgeResults {
     units: number;
     judged: number;
     skipped_error: number;
+    skipped_oversized?: number;
     provider_error: number;
     attacks_judged: number;
   };
@@ -162,6 +163,9 @@ export function aggregate(
       skipped_error: judgments.filter((j) => j.status === 'skipped_error').length,
       provider_error: judgments.filter((j) => j.status === 'provider_error').length,
       attacks_judged: byAttack.size,
+      ...(judgments.some((j) => j.status === 'skipped_oversized')
+        ? { skipped_oversized: judgments.filter((j) => j.status === 'skipped_oversized').length }
+        : {}),
     },
     output_level: { ...rateBlock(judged), agreement_with_airs: agreement(judged) },
     attack_level: {

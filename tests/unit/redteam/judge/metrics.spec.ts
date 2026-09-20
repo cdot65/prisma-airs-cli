@@ -312,3 +312,23 @@ describe('interpret', () => {
     ]);
   });
 });
+
+it('excludes oversized units before calling the judge and reports coverage', async () => {
+  const { units, notes } = normalizeScan([{ prompt: 'p', output: 'x'.repeat(24_001) }]);
+  const provider: JudgeProvider = {
+    name: 'never',
+    model: 'none',
+    judge: async () => {
+      throw new Error('must not be called');
+    },
+  };
+  const rows = await judgeUnits(units, provider, DEFAULT_POLICY);
+  const result = aggregate(rows, DEFAULT_POLICY, {
+    providerName: 'never',
+    model: 'none',
+    ingestion: notes,
+  });
+  expect(result.coverage).toMatchObject({ units: 1, judged: 0, skipped_oversized: 1 });
+  expect(result.output_level.asr).toBeNull();
+  expect(notes).toMatchObject({ fallback_row_ids: 1, objective_proxies: 1, oversized_units: 1 });
+});

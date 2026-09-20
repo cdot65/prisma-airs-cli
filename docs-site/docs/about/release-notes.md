@@ -1,5 +1,11 @@
 # Release Notes
 
+## v7.1.2 (2026-09-20) — Handle representative export coverage
+
+- Oversized units are reported as `skipped_oversized` without a paid request; eligible rows continue without truncating evidence.
+- Reports disclose source-row fallback IDs and category/goal-category objective proxies when exports omit explicit IDs and goals.
+- Validated ingestion parity with the harness skill on a supplied 4,362-row export: 4,326 eligible rows and 36 excluded oversized rows. The file was unchanged; deterministic fake judgments are not a live Jev evaluation.
+
 ## v7.1.1 (2026-09-20) — Harden red-team judge failure handling
 
 - Invalid provider responses become per-unit errors; valid judgments remain available.

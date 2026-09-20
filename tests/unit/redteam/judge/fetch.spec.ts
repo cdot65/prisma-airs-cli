@@ -84,7 +84,13 @@ describe('fetchJobAttackRecords', () => {
       ],
     });
     const { units, notes } = normalizeScan(records);
-    expect(notes).toEqual({ layout: 'array', records: 7, skipped_no_prompt: 0, error_outputs: 7 });
+    expect(notes).toEqual({
+      layout: 'array',
+      records: 7,
+      skipped_no_prompt: 0,
+      error_outputs: 7,
+      objective_proxies: 6,
+    });
     expect(units[0].unit_id).toBe('attack-0#attack-0-out');
     expect(units[0].objective).toBe('leak');
     expect(units[2].objective).toBe(

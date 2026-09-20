@@ -159,6 +159,7 @@ describe('redteam judge — dry run', () => {
       skipped_no_prompt: 0,
       error_outputs: 0,
       truncated_to_limit: 4,
+      objective_proxies: 4,
     });
     expect(payload.units).toBe(4);
     expect(payload.model).toBe('jev-latest');

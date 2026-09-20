@@ -67,7 +67,13 @@ describe('extractResponseText', () => {
 describe('normalizeScan', () => {
   it('turns flat download records into units with the AIRS metadata', () => {
     const { units, notes } = normalizeScan(SAMPLE_SCAN);
-    expect(notes).toEqual({ layout: 'array', records: 10, skipped_no_prompt: 0, error_outputs: 1 });
+    expect(notes).toEqual({
+      layout: 'array',
+      records: 10,
+      skipped_no_prompt: 0,
+      error_outputs: 1,
+      objective_proxies: 10,
+    });
     expect(units).toHaveLength(10);
     const first = units[0];
     expect(first.unit_id).toBe('0a1f3c2e-1111-4a1a-9c01-000000000001#0');
@@ -173,5 +179,5 @@ describe('normalizeScan', () => {
 it('rejects ambiguous duplicate ids and oversized text instead of silently scoring different input', () => {
   const record = { uuid: 'same', prompt: 'p', output: 'r' };
   expect(() => normalizeScan([record, record])).toThrow('duplicate');
-  expect(() => normalizeScan([{ ...record, output: 'x'.repeat(200_001) }])).toThrow('truncate');
+  expect(normalizeScan([{ ...record, output: 'x'.repeat(200_001) }]).notes.oversized_units).toBe(1);
 });

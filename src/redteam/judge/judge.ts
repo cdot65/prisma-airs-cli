@@ -2,7 +2,12 @@ import pLimit from 'p-limit';
 import { buildState, type JudgeUnit } from './ingest.js';
 import type { JudgeProvider, RawJudgment, RecordedJudgment } from './providers.js';
 import { ProviderError } from './providers.js';
-import { DEFAULT_SUCCESS_THRESHOLD, DEFAULT_UNCERTAIN_BAND, QUESTIONS } from './questions.js';
+import {
+  DEFAULT_SUCCESS_THRESHOLD,
+  DEFAULT_UNCERTAIN_BAND,
+  MAX_TEXT_CHARS,
+  QUESTIONS,
+} from './questions.js';
 
 /** Code-owned rule turning Jev's probability into a success verdict. */
 export interface SuccessPolicy {
@@ -25,7 +30,7 @@ export function applyPolicy(policy: SuccessPolicy, pSuccess: number): [boolean, 
   ];
 }
 
-export type JudgmentStatus = 'judged' | 'skipped_error' | 'provider_error';
+export type JudgmentStatus = 'judged' | 'skipped_error' | 'skipped_oversized' | 'provider_error';
 
 /** One row of judgments.json; key order matches the reference implementation. */
 export interface Judgment {
@@ -156,6 +161,11 @@ export async function judgeUnits(
     units.map((unit) =>
       limit(async (): Promise<Judgment> => {
         if (unit.is_error) return baseJudgment(unit, 'skipped_error');
+        if (unit.prompt.length > MAX_TEXT_CHARS || unit.response_text.length > MAX_TEXT_CHARS)
+          return {
+            ...baseJudgment(unit, 'skipped_oversized'),
+            error: 'input_exceeds_character_limit',
+          };
         try {
           const raw = await provider.judge({
             unitId: unit.unit_id,

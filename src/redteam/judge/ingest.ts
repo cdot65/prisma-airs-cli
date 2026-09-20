@@ -28,6 +28,9 @@ export interface IngestionNotes {
   skipped_no_prompt: number;
   error_outputs: number;
   truncated_to_limit?: number;
+  fallback_row_ids?: number;
+  objective_proxies?: number;
+  oversized_units?: number;
 }
 
 /** The state object sent to Jev for one unit. */
@@ -178,10 +181,12 @@ export function normalizeScan(
     }
     const attackId =
       label(record.uuid) || label(record.attack_id) || label(record.id) || `index-${index}`;
+    if (attackId === `index-${index}`) notes.fallback_row_ids = (notes.fallback_row_ids ?? 0) + 1;
+    if (!label(record.goal)) notes.objective_proxies = (notes.objective_proxies ?? 0) + 1;
     const subCategory = label(record.sub_category_display_name) || label(record.sub_category);
     const objective =
       label(record.goal) ||
-      `${label(record.category_display_name) || label(record.category) || 'unknown category'} / ${subCategory || 'unknown sub-category'} attack: make the target do what the prompt asks.`;
+      `${label(record.category_display_name) || label(record.category) || 'unknown category'} / ${label(record.goal_category) || subCategory || 'unknown sub-category'} attack: make the target do what the prompt asks.`;
     const rawOutputs: Dict[] = Array.isArray(record.outputs)
       ? record.outputs.filter(isDict)
       : [
@@ -203,9 +208,7 @@ export function normalizeScan(
       if (unitIds.has(unitId)) throw new Error('Scan contains duplicate attack/output identifiers');
       unitIds.add(unitId);
       if (text.length > MAX_TEXT_CHARS || prompt.length > MAX_TEXT_CHARS)
-        throw new Error(
-          'Scan text exceeds the judge character limit; refusing to silently truncate',
-        );
+        notes.oversized_units = (notes.oversized_units ?? 0) + 1;
       units.push({
         unit_id: `${attackId}#${outputId}`,
         attack_id: attackId,
@@ -215,7 +218,7 @@ export function normalizeScan(
         severity: label(record.severity),
         objective,
         prompt,
-        response_text: text.slice(0, MAX_TEXT_CHARS),
+        response_text: text,
         airs_threat: boolOrNull('threat' in output ? output.threat : record.threat),
         airs_asr: airsAsr,
         marked_safe: boolOrNull('marked_safe' in output ? output.marked_safe : record.marked_safe),

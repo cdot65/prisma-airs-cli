@@ -153,8 +153,9 @@ Provider: replay (model fixture-not-jev). Success threshold 0.5.
 
 ## Boundary checks and evaluation limits
 
-The judge refuses duplicate attack/output identifiers and oversized text rather than
-silently truncating evidence. Replay validates recorded input hashes when present.
+The judge refuses duplicate attack/output identifiers. Oversized units are explicitly
+reported as `skipped_oversized` and excluded before provider calls; evidence is never silently truncated. Replay validates recorded input hashes when present.
+Missing source IDs and explicit goals are reported as row-index IDs and objective proxies.
 Existing outputs are never overwritten, and destinations must be distinct. Provider
 redirects are refused; remote endpoints require HTTPS. Invalid JSON responses become
 per-unit provider errors and exit code 4, preserving successfully judged units.
