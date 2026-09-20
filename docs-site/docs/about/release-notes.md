@@ -6,6 +6,13 @@ See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
 
+## v7.1.3 (2026-09-20) — Extract AIRS message text before judging
+
+- Decode AIRS A2A message envelopes stored as JSON or Python-style dictionaries and judge their ordered text parts, excluding transport metadata.
+- Preserve literal JSON attack content and report envelope coverage; unsupported non-text parts are skipped rather than partially judged.
+- Verify normalized hashes across CLI and harness on the supplied 4,362-record export. Old wrapper-based recordings do not apply to corrected text; start with a fresh recorded probe.
+- This corrects input handling. It does not promise zero unrelated dispositions or validated Jev accuracy.
+
 ## v7.1.2 (2026-09-20) — Handle representative export coverage
 
 - Oversized units are reported as `skipped_oversized` without a paid request; eligible rows continue without truncating evidence.

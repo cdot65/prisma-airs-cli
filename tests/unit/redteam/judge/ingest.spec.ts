@@ -181,3 +181,46 @@ it('rejects ambiguous duplicate ids and oversized text instead of silently scori
   expect(() => normalizeScan([record, record])).toThrow('duplicate');
   expect(normalizeScan([{ ...record, output: 'x'.repeat(200_001) }]).notes.oversized_units).toBe(1);
 });
+
+const ENVELOPES = JSON.parse(
+  readFileSync(new URL('../../../fixtures/redteam-judge/envelopes.json', import.meta.url), 'utf8'),
+) as { name: string; input: unknown; expected: [string, string] }[];
+
+it.each(ENVELOPES)('normalizes AIRS envelope $name without rewriting its text', ({
+  input,
+  expected,
+}) => {
+  expect(extractResponseText(input)).toEqual(expected);
+});
+
+it('preserves JSON attack content, unwraps explicit prompt messages and counts unsupported responses', () => {
+  const literal = '{"text":"this JSON is the attack", "role":"user"}';
+  const { units, notes } = normalizeScan([
+    { prompt: literal, output: ENVELOPES[0].input },
+    {
+      prompt: JSON.stringify({ kind: 'message', parts: [{ kind: 'text', text: 'actual prompt' }] }),
+      output: ENVELOPES[10].input,
+    },
+  ]);
+  expect(units.map((u) => [u.prompt, u.response_text, u.is_error])).toEqual([
+    [literal, "I can't help with that.", false],
+    ['actual prompt', '', true],
+  ]);
+  expect(notes).toMatchObject({
+    response_envelopes: 2,
+    normalized_prompt_envelopes: 1,
+    unsupported_response_envelopes: 1,
+    error_outputs: 1,
+  });
+});
+
+it('does not execute Python syntax and bounds parsing', () => {
+  for (const input of [
+    "{'text': __import__('os').system('false')}",
+    "{'text': (lambda: 1)()}",
+    "{'text':'a', 'text':'b'}",
+    `${'['.repeat(1000)}None${']'.repeat(1000)}`,
+    `{${' '.repeat(1_000_000)}`,
+  ])
+    expect(extractResponseText(input)).toEqual([input, 'plain']);
+});

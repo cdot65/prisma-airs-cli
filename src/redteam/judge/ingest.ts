@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { decodeContainer, messageText } from './envelope.js';
 import { MAX_TEXT_CHARS } from './questions.js';
 
 /** One (attack, output) pair to judge, with the AIRS metadata kept alongside. */
@@ -31,6 +32,9 @@ export interface IngestionNotes {
   fallback_row_ids?: number;
   objective_proxies?: number;
   oversized_units?: number;
+  normalized_prompt_envelopes?: number;
+  response_envelopes?: number;
+  unsupported_response_envelopes?: number;
 }
 
 /** The state object sent to Jev for one unit. */
@@ -89,13 +93,11 @@ export function extractResponseText(raw: unknown): [string, string] {
     const stripped = raw.trim();
     if (!stripped) return ['', 'empty'];
     if (stripped[0] !== '{' && stripped[0] !== '[') return [raw, 'plain'];
-    try {
-      value = JSON.parse(stripped);
-      method = 'json';
-    } catch {
-      return [raw, 'plain'];
-    }
+    [value, method] = decodeContainer(stripped);
+    if (method === 'plain') return [raw, 'plain'];
   }
+  const message = messageText(value);
+  if (message !== null) return message;
   if (isDict(value)) {
     const outputs = value.output;
     if (Array.isArray(outputs)) {
@@ -174,10 +176,23 @@ export function normalizeScan(
   };
   const limit = options.limit;
   for (const [index, record] of records.entries()) {
-    const prompt = record.prompt;
-    if (typeof prompt !== 'string' || !prompt.trim()) {
+    const rawPrompt = record.prompt;
+    if (typeof rawPrompt !== 'string' || !rawPrompt.trim()) {
       notes.skipped_no_prompt += 1;
       continue;
+    }
+    let prompt: string = rawPrompt;
+    // Only unwrap explicit envelopes; arbitrary JSON prompts are attack content.
+    const promptMessage = prompt.trimStart().startsWith('{')
+      ? messageText(decodeContainer(prompt.trim())[0])
+      : null;
+    if (promptMessage !== null) {
+      prompt = promptMessage[0];
+      if (!prompt.trim()) {
+        notes.skipped_no_prompt += 1;
+        continue;
+      }
+      notes.normalized_prompt_envelopes = (notes.normalized_prompt_envelopes ?? 0) + 1;
     }
     const attackId =
       label(record.uuid) || label(record.attack_id) || label(record.id) || `index-${index}`;
@@ -201,6 +216,10 @@ export function normalizeScan(
     const airsAsr = typeof record.asr === 'number' ? record.asr : null;
     for (const [outputIndex, output] of rawOutputs.entries()) {
       const [text, extraction] = extractResponseText(output.output);
+      if (extraction.startsWith('a2a_'))
+        notes.response_envelopes = (notes.response_envelopes ?? 0) + 1;
+      if (extraction === 'a2a_unsupported_parts')
+        notes.unsupported_response_envelopes = (notes.unsupported_response_envelopes ?? 0) + 1;
       const isError = Boolean(output.error) || !text.trim();
       if (isError) notes.error_outputs += 1;
       const outputId = label(output.uuid) || String(outputIndex);

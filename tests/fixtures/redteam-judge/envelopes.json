@@ -1,0 +1,79 @@
+[
+  {
+    "name": "refusal_json",
+    "input": "{\"contextId\": \"synthetic-context\", \"kind\": \"message\", \"messageId\": \"synthetic-message\", \"parts\": [{\"kind\": \"text\", \"text\": \"I can't help with that.\"}], \"role\": \"user\", \"taskId\": \"synthetic-task\"}",
+    "expected": ["I can't help with that.", "a2a_text"]
+  },
+  {
+    "name": "refusal_python",
+    "input": "{'contextId': 'synthetic-context', 'kind': 'message', 'messageId': 'synthetic-message', 'parts': [{'kind': 'text', 'text': \"I can't help with that.\"}], 'role': 'user', 'taskId': 'synthetic-task'}",
+    "expected": ["I can't help with that.", "a2a_text"]
+  },
+  {
+    "name": "unicode_json",
+    "input": "{\"contextId\": \"synthetic-context\", \"kind\": \"message\", \"messageId\": \"synthetic-message\", \"parts\": [{\"kind\": \"text\", \"text\": \"Quote ' and \\\"; path C:\\\\tmp; caf\\u00e9 \\u2600 \\ud83d\\ude00\\nnext\\tline\"}], \"role\": \"user\", \"taskId\": \"synthetic-task\"}",
+    "expected": ["Quote ' and \"; path C:\\tmp; café ☀ 😀\nnext\tline", "a2a_text"]
+  },
+  {
+    "name": "unicode_python",
+    "input": "{'contextId': 'synthetic-context', 'kind': 'message', 'messageId': 'synthetic-message', 'parts': [{'kind': 'text', 'text': 'Quote \\' and \"; path C:\\\\tmp; café ☀ 😀\\nnext\\tline'}], 'role': 'user', 'taskId': 'synthetic-task'}",
+    "expected": ["Quote ' and \"; path C:\\tmp; café ☀ 😀\nnext\tline", "a2a_text"]
+  },
+  {
+    "name": "literal_json_json",
+    "input": "{\"contextId\": \"synthetic-context\", \"kind\": \"message\", \"messageId\": \"synthetic-message\", \"parts\": [{\"kind\": \"text\", \"text\": \"{\\\"answer\\\": \\\"preserve this JSON\\\", \\\"parts\\\": []}\"}], \"role\": \"user\", \"taskId\": \"synthetic-task\"}",
+    "expected": ["{\"answer\": \"preserve this JSON\", \"parts\": []}", "a2a_text"]
+  },
+  {
+    "name": "literal_json_python",
+    "input": "{'contextId': 'synthetic-context', 'kind': 'message', 'messageId': 'synthetic-message', 'parts': [{'kind': 'text', 'text': '{\"answer\": \"preserve this JSON\", \"parts\": []}'}], 'role': 'user', 'taskId': 'synthetic-task'}",
+    "expected": ["{\"answer\": \"preserve this JSON\", \"parts\": []}", "a2a_text"]
+  },
+  {
+    "name": "empty_json",
+    "input": "{\"contextId\": \"synthetic-context\", \"kind\": \"message\", \"messageId\": \"synthetic-message\", \"parts\": [{\"kind\": \"text\", \"text\": \"\"}], \"role\": \"user\", \"taskId\": \"synthetic-task\"}",
+    "expected": ["", "a2a_text"]
+  },
+  {
+    "name": "empty_python",
+    "input": "{'contextId': 'synthetic-context', 'kind': 'message', 'messageId': 'synthetic-message', 'parts': [{'kind': 'text', 'text': ''}], 'role': 'user', 'taskId': 'synthetic-task'}",
+    "expected": ["", "a2a_text"]
+  },
+  {
+    "name": "multiple_parts",
+    "input": "{'contextId': 'synthetic-context', 'kind': 'message', 'messageId': 'synthetic-message', 'parts': [{'kind': 'text', 'text': 'first'}, {'kind': 'text', 'text': 'second'}], 'role': 'user', 'taskId': 'synthetic-task'}",
+    "expected": ["first\nsecond", "a2a_text"]
+  },
+  {
+    "name": "native_object",
+    "input": {
+      "contextId": "synthetic-context",
+      "kind": "message",
+      "messageId": "synthetic-message",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "native"
+        }
+      ],
+      "role": "user",
+      "taskId": "synthetic-task"
+    },
+    "expected": ["native", "a2a_text"]
+  },
+  {
+    "name": "mixed_parts",
+    "input": "{'contextId': 'synthetic-context', 'kind': 'message', 'messageId': 'synthetic-message', 'parts': [{'kind': 'text', 'text': 'partial'}, {'kind': 'data', 'data': {'value': 1}}], 'role': 'user', 'taskId': 'synthetic-task'}",
+    "expected": ["", "a2a_unsupported_parts"]
+  },
+  {
+    "name": "malformed_parts",
+    "input": "{\"contextId\": \"synthetic-context\", \"kind\": \"message\", \"messageId\": \"synthetic-message\", \"parts\": \"not a list\", \"role\": \"user\", \"taskId\": \"synthetic-task\"}",
+    "expected": ["", "a2a_unsupported_parts"]
+  },
+  {
+    "name": "escapes",
+    "input": "{'kind': 'message', 'parts': [{'kind': 'text', 'text': '\\x41\\u00e9\\U0001f600\\101\\\\\\'\\\"\\n\\r\\t\\b\\f\\v\\a\\q'}], 'metadata': [True, False, None, -1, 1.5]}",
+    "expected": ["Aé😀A\\'\"\n\r\t\b\f\u000b\u0007\\q", "a2a_text"]
+  }
+]

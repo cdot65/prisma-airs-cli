@@ -201,3 +201,23 @@ outputs from one attack. Evaluate with an independently human-labeled representa
 held-out sample, including agreements, and report coverage alongside ASR. A sample
 containing only disagreements is useful for error analysis, not population accuracy.
 Thresholds are starting points; mean model probability is not proven calibrated ASR.
+
+
+## Message-envelope normalization
+
+AIRS exports can store target responses as A2A message envelopes serialized as JSON
+or Python-style dictionaries. The judge extracts `parts[].text` in order, including
+exports that label replies `role: user`. Transport IDs are not sent to Jev. Literal
+JSON within a text part remains intact, and attack prompts are only unwrapped when
+they are explicit message envelopes themselves.
+
+Check `ingestion.response_envelopes` in a dry-run. Empty responses and unsupported
+mixed/non-text parts are counted as skipped errors; they are not silently judged
+from incomplete text. Size limits apply after extraction. `unrelated_or_error` is
+still a valid model disposition, separate from provider failures and AIRS agreement.
+
+After upgrading from 7.1.2, run a fresh small probe into a new output directory and
+recording file. Old wrapper-based judgments cannot be replayed against corrected
+response hashes. The supplied 4,362-row export now normalizes identically in the
+CLI and native harness skill: 4,362 extracted responses, no empty/unsupported
+envelopes, and 36 oversized units. This validates input handling, not live accuracy.

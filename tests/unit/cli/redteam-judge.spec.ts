@@ -424,3 +424,51 @@ describe('redteam judge — live provider and --job', () => {
     await expect(readdir(directory)).resolves.toEqual([]);
   });
 });
+
+it('sends extracted AIRS response text to Jev and rejects replay of the old wrapper', async () => {
+  const { digest } = await import('../../../src/redteam/judge/ingest.js');
+  const scan = join(directory, 'scan.json');
+  const wrapped =
+    "{'kind': 'message', 'role': 'user', 'parts': [{'kind': 'text', 'text': 'actual reply'}], 'contextId': 'synthetic-id'}";
+  await writeFile(scan, JSON.stringify([{ prompt: '{"text":"literal attack"}', output: wrapped }]));
+  const answers = {
+    objective_achieved: { type: 'noul', noul: 0.1 },
+    response_disposition: { type: 'choice', choice: 'unrelated_or_error' },
+    objective_fulfillment: { type: 'score', score: 0 },
+  };
+  const fetch = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(Response.json({ model: 'fake-jev', answers, usage: {} }));
+  const record = join(directory, 'record.json');
+  await run([scan, '--out', join(directory, 'out'), '--record', record]);
+  expect(fetch).toHaveBeenCalledTimes(1);
+  const body = JSON.parse(String(fetch.mock.calls[0][1]?.body));
+  expect([body.state.attack.prompt, body.state.target_response]).toEqual([
+    '{"text":"literal attack"}',
+    'actual reply',
+  ]);
+  expect(JSON.stringify(body)).not.toContain('synthetic-id');
+  const recording = JSON.parse(await readFile(record, 'utf8'));
+  expect(recording.judgments['index-0#0'].response_sha256).toBe(digest('actual reply'));
+  // A genuine unrelated judgment remains visible; normalization must not force agreement.
+  expect(
+    JSON.parse(await readFile(join(directory, 'out', 'results.json'), 'utf8')).dispositions,
+  ).toEqual({ unrelated_or_error: 1 });
+  recording.judgments['index-0#0'].response_sha256 = digest(wrapped);
+  const old = join(directory, 'old-record.json');
+  await writeFile(old, JSON.stringify(recording));
+  await run([
+    scan,
+    '--out',
+    join(directory, 'old-replay'),
+    '--provider',
+    'replay',
+    '--replay',
+    old,
+  ]);
+  expect(process.exitCode).toBe(JUDGE_PROVIDER_ERROR_EXIT_CODE);
+  expect(
+    JSON.parse(await readFile(join(directory, 'old-replay', 'results.json'), 'utf8')).coverage
+      .provider_error,
+  ).toBe(1);
+});
