@@ -37,10 +37,21 @@ Version 7.1.4 is on `next`; an unversioned install currently selects 7.0.1, whic
 does not contain this command. The standalone install does not replace the
 harness's independently bundled CLI or its embedded Python skill.
 
-Harness preview **0.1.2-alpha.2.mcp.1** bundles **7.1.2**. Use standalone
-**7.1.4** for the response-string contract until the matching harness preview is
-published. See [command migration](../../getting-started/command-migration.md)
-for the separate command and package versions.
+Harness preview **0.1.2-alpha.3.mcp.1** bundles **7.1.4** and the updated native
+`prisma-airs-asr-judge` skill. Both preserve model output strings verbatim:
+
+```bash
+npm install -g airs-harness@0.1.2-alpha.3.mcp.1 --registry=https://npm.cdot.io
+airs --version
+# 0.1.2-alpha.3.mcp.1
+airs cli --version
+# 7.1.4
+```
+
+Restart `airs` after upgrading. Use a fresh output directory and recording for a
+small probe; do not reuse recordings made from extracted inner response text.
+See [command migration](../../getting-started/command-migration.md) for the
+separate command and package versions.
 
 | Setting | Purpose |
 |---------|---------|

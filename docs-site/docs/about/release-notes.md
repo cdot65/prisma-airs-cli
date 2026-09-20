@@ -6,6 +6,10 @@ See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
 
+The matching harness preview **0.1.2-alpha.3.mcp.1** is published under `mcp` at
+`https://npm.cdot.io`, bundling **7.1.4** and the corrected native judge skill.
+See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-airs-harness).
+
 ## v7.1.4 (2026-09-20) — Preserve model output strings
 
 - Treat the complete `output` string as the model response, including nested JSON or serialized message text. This supersedes 7.1.3 response-envelope extraction.
