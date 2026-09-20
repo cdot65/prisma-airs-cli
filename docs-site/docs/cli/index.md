@@ -35,6 +35,7 @@ configuration. JSON and YAML examples always specify their format explicitly.
 - [`airs-cli redteam devices`](redteam/devices.md)
 - [`airs-cli redteam eula`](redteam/eula.md)
 - [`airs-cli redteam instances`](redteam/instances.md)
+- [`airs-cli redteam judge`](redteam/judge.md)
 - [`airs-cli redteam languages`](redteam/languages.md)
 - [`airs-cli redteam list`](redteam/list.md)
 - [`airs-cli redteam network-broker`](redteam/network-broker.md)

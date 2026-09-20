@@ -12,6 +12,8 @@ import {
   checkScannerApi,
   checkScannerCredentials,
   checkTenant,
+  checkTypesafeApi,
+  checkTypesafeCredentials,
   DOCTOR_CHECK_NAMES,
   type DoctorCheck,
   hasFailure,
@@ -32,6 +34,7 @@ function inspected(overrides: Record<string, ConfigEntry> = {}): Record<string, 
     mgmtClientId: entry(undefined, 'default'),
     mgmtClientSecret: entry(undefined, 'default'),
     mgmtTsgId: entry(undefined, 'default'),
+    typesafeApiKey: entry(undefined, 'default'),
     ...overrides,
   };
 }
@@ -292,6 +295,72 @@ describe('doctor command', () => {
     });
   });
 
+  describe('checkTypesafeCredentials', () => {
+    it('passes and reports the source, never the key', () => {
+      const check = checkTypesafeCredentials(inspected({ typesafeApiKey: entry('ts-secret') }));
+      expect(check.status).toBe('pass');
+      expect(check.detail).toBe('typesafeApiKey (file)');
+      expect(check.detail).not.toContain('ts-secret');
+    });
+
+    it('skips (not fails) when unset, with the tenant remedy', () => {
+      const check = checkTypesafeCredentials(inspected(), namedContext('/cfg/dev.json'));
+      expect(check.status).toBe('skip');
+      expect(check.name).toBe('Typesafe credentials');
+      expect(check.detail).toContain('redteam judge');
+      expect(check.hint).toContain('airs-cli tenant set dev <key>');
+      expect(check.hint).toContain('typesafeApiKey');
+    });
+
+    it('skips when the config could not be inspected', () => {
+      expect(checkTypesafeCredentials(undefined).status).toBe('skip');
+    });
+  });
+
+  describe('checkTypesafeApi', () => {
+    it('skips when no key is configured', async () => {
+      const check = await checkTypesafeApi(never, false, 50);
+      expect(check.status).toBe('skip');
+      expect(check.detail).toContain('typesafeApiKey');
+    });
+
+    it('passes with the listed model count', async () => {
+      const check = await checkTypesafeApi(() => Promise.resolve(2), true, 50);
+      expect(check.status).toBe('pass');
+      expect(check.name).toBe('Typesafe API');
+      expect(check.detail).toContain('2 models listed');
+    });
+
+    it.each([401, 403, 429])('warns (not fails) on HTTP %s — endpoint answered', async (status) => {
+      const err = Object.assign(new Error(`TypeSafe API returned HTTP ${status}`), { status });
+      const check = await checkTypesafeApi(() => Promise.reject(err), true, 50);
+      expect(check.status).toBe('warn');
+      expect(check.detail).toContain(`HTTP ${status}`);
+      expect(check.hint).toContain(status === 429 ? 'Retry later' : 'typesafeApiKey');
+    });
+
+    it('fails on unexpected HTTP errors and on network failures', async () => {
+      const server = Object.assign(new Error('boom'), { status: 500 });
+      const failed = await checkTypesafeApi(() => Promise.reject(server), true, 50);
+      expect(failed.status).toBe('fail');
+      expect(failed.detail).toContain('HTTP 500');
+      const network = await checkTypesafeApi(
+        () => Promise.reject(new TypeError('fetch failed')),
+        true,
+        50,
+      );
+      expect(network.status).toBe('fail');
+      expect(network.detail).toContain('network unreachable');
+      expect(network.hint).toContain('typesafeBaseUrl');
+    });
+
+    it('fails when the probe hangs past the timeout', async () => {
+      const check = await checkTypesafeApi(never, true, 20);
+      expect(check.status).toBe('fail');
+      expect(check.detail).toContain('timed out');
+    });
+  });
+
   describe('checkScannerApi', () => {
     it('skips when no API key is configured', async () => {
       const check = await checkScannerApi(never, false, 50);
@@ -405,7 +474,7 @@ describe('doctor command', () => {
   });
 
   describe('runDoctor', () => {
-    it('runs all nine checks in order and never throws, even when probes reject', async () => {
+    it('runs all eleven checks in order and never throws, even when probes reject', async () => {
       const p = join(tempDir, 'dev.json');
       await writeFile(p, validTenantFile);
       const checks = await runDoctor({
@@ -418,14 +487,17 @@ describe('doctor command', () => {
             mgmtClientId: entry('id'),
             mgmtClientSecret: entry('secret'),
             mgmtTsgId: entry('100'),
+            typesafeApiKey: entry('ts'),
           }),
         scannerProbe: () => Promise.reject(new TypeError('fetch failed')),
         mgmtProbe: () => Promise.reject(Object.assign(new Error('boom'), { status: 500 })),
         aiGwProbe: () => Promise.reject(Object.assign(new Error('boom'), { status: 500 })),
+        typesafeProbe: () => Promise.reject(Object.assign(new Error('boom'), { status: 401 })),
         timeoutMs: 50,
       });
 
       expect(checks.map((c) => c.name)).toEqual([...DOCTOR_CHECK_NAMES]);
+      expect(checks.at(-1)).toMatchObject({ name: 'Typesafe API', status: 'warn' });
       for (const c of checks) {
         expect(['pass', 'warn', 'fail', 'skip']).toContain(c.status);
         expect(typeof c.detail).toBe('string');
@@ -443,11 +515,14 @@ describe('doctor command', () => {
         scannerProbe: probe,
         mgmtProbe: probe,
         aiGwProbe: probe,
+        typesafeProbe: probe,
         timeoutMs: 20,
       });
 
       const byName = Object.fromEntries(checks.map((c) => [c.name, c]));
       expect(byName.Tenant.status).toBe('fail');
+      expect(byName['Typesafe credentials'].status).toBe('skip');
+      expect(byName['Typesafe API'].status).toBe('skip');
       expect(byName['Config file'].status).toBe('skip');
       expect(byName.Environment.status).toBe('warn');
       expect(byName['Scanner credentials'].status).toBe('skip');
@@ -474,6 +549,7 @@ describe('doctor command', () => {
         scannerProbe: never,
         mgmtProbe: () => Promise.resolve(2),
         aiGwProbe: () => Promise.resolve(1),
+        typesafeProbe: never,
         timeoutMs: 50,
       });
 
@@ -486,12 +562,14 @@ describe('doctor command', () => {
         'skip',
         'pass',
         'skip',
+        'skip',
         'pass',
         'pass',
+        'skip',
       ]);
       expect(summarize(checks)).toEqual({
         failed: false,
-        message: 'All checks passed (2 skipped)',
+        message: 'All checks passed (4 skipped)',
       });
     });
 
@@ -507,6 +585,7 @@ describe('doctor command', () => {
         scannerProbe: never,
         mgmtProbe: never,
         aiGwProbe: never,
+        typesafeProbe: never,
         timeoutMs: 20,
       });
       const byName = Object.fromEntries(checks.map((c) => [c.name, c]));
@@ -540,15 +619,17 @@ describe('doctor command', () => {
             mgmtClientId: entry('c'),
             mgmtClientSecret: entry('s'),
             mgmtTsgId: entry('100'),
+            typesafeApiKey: entry('ts'),
           }),
         loadConfig: loader,
         scannerProbe: async (config) => seen.push(`scan:${config.mgmtTsgId}`),
         mgmtProbe: async (config) => seen.push(`mgmt:${config.mgmtTsgId}`),
         aiGwProbe: async (config) => seen.push(`gw:${config.mgmtTsgId}`),
+        typesafeProbe: async (config) => seen.push(`ts:${config.mgmtTsgId}`),
         timeoutMs: 50,
       });
       expect(loader).toHaveBeenCalledTimes(1);
-      expect(seen).toEqual(['scan:100', 'mgmt:100', 'gw:100']);
+      expect(seen).toEqual(['scan:100', 'mgmt:100', 'gw:100', 'ts:100']);
       expect(hasFailure(checks)).toBe(false);
     });
 
@@ -561,6 +642,7 @@ describe('doctor command', () => {
         scannerProbe: never,
         mgmtProbe: never,
         aiGwProbe: never,
+        typesafeProbe: never,
         timeoutMs: 20,
       });
 
@@ -569,6 +651,44 @@ describe('doctor command', () => {
         expect(Object.keys(c).sort()).toEqual(expect.arrayContaining(['detail', 'name', 'status']));
         if ('hint' in c) expect(typeof c.hint).toBe('string');
       }
+    });
+  });
+
+  describe('default TypeSafe probe', () => {
+    it('lists models at the configured base URL with the configured key', async () => {
+      const p = join(tempDir, 'dev.json');
+      await writeFile(p, validTenantFile);
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(Response.json({ models: [{ name: 'jev-latest' }] }));
+      const checks = await runDoctor({
+        nodeVersion: 'v22.13.0',
+        context: namedContext(p),
+        env: {},
+        inspect: async () =>
+          inspected({
+            mgmtClientId: entry('c'),
+            mgmtClientSecret: entry('s'),
+            mgmtTsgId: entry('100'),
+            typesafeApiKey: entry('ts-key'),
+          }),
+        loadConfig: async () =>
+          ({
+            mgmtTsgId: '100',
+            typesafeApiKey: 'ts-key',
+            typesafeBaseUrl: 'https://typesafe.test/',
+          }) as never,
+        scannerProbe: never,
+        mgmtProbe: () => Promise.resolve(0),
+        aiGwProbe: () => Promise.resolve(0),
+        timeoutMs: 200,
+      });
+      const check = checks.find((c) => c.name === 'Typesafe API');
+      expect(check).toMatchObject({ status: 'pass', detail: expect.stringContaining('1 model') });
+      const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toBe('https://typesafe.test/v1/models');
+      expect((init.headers as Record<string, string>).Authorization).toBe('Bearer ts-key');
+      expect(JSON.stringify(checks)).not.toContain('ts-key');
     });
   });
 

@@ -47,6 +47,7 @@ airs-cli tenant get development scanConcurrency
 airs-cli tenant set development scanConcurrency 3
 airs-cli tenant set development defaultOutput json
 airs-cli tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
+airs-cli tenant set development typesafeApiKey    # hidden prompt; enables redteam judge
 airs-cli tenant unset development defaultOutput   # defaults take over
 airs-cli tenant path                          # print the selected tenant's file path
 ```

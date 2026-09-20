@@ -515,6 +515,21 @@ GET quota uses SDK 0.27.0's additive `getQuotaSummary()`. SDK 0.26.0 lacks that 
 and reports quota unavailable without falling back to POST. See the dashboard CLI docs
 for real command output and verification evidence.
 
+#### Independent ASR judge (TypeSafe Jev)
+
+```bash
+airs-cli redteam judge <scanFile> --out <dir> [--dry-run] [--limit <n>] [--record <file>]
+airs-cli redteam judge --job <jobId> --out <dir> [--record <file>]
+airs-cli redteam judge <scanFile> --out <dir> --provider replay --replay <file> [--threshold <p>]
+```
+
+Judges every (attack, output) unit with `POST /v1/systemone` (three typed questions), applies
+a code-owned success policy (threshold 0.5, uncertain band 0.35-0.65) and writes private
+`results.json` (schema_version 1), `judgments.json` and `summary.md`; never overwrites. Needs
+`typesafeApiKey`; `--job` also needs the management credentials. Exit 4 means provider errors
+on some units. `--debug` is refused. Output is interchangeable with the `prisma-airs-asr-judge`
+harness skill. Verdicts are model outputs under a stated policy, not ground truth.
+
 #### Scans
 
 ```bash
@@ -1075,9 +1090,14 @@ Location: `~/.prisma-airs/config.json`
   "aiGwDataEndpoint": "...",
   "aiGwAdminEndpoint": "...",
   "aiGwTokenEndpoint": "...",
+  "typesafeApiKey": "...",
+  "typesafeBaseUrl": "https://api.typesafe.ai",
+  "typesafeModel": "jev-latest",
   "scanConcurrency": 5,
   "dataDir": "~/.prisma-airs/runs"
 }
 ```
 
-Required fields depend on the operation. Register this file with `airs-cli tenant create NAME --config PATH`, then select the tenant. Environment credentials are ignored.
+Required fields depend on the operation. `typesafeApiKey` (optional `typesafeBaseUrl`,
+`typesafeModel`) is only needed by `airs-cli redteam judge`; `TYPESAFE_API_KEY` in the
+environment is ignored. Register this file with `airs-cli tenant create NAME --config PATH`, then select the tenant. Environment credentials are ignored.

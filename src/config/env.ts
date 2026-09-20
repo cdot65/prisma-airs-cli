@@ -17,6 +17,10 @@ export const REGISTRY_ENV_VARS = ['PRISMA_AIRS_TENANTS_PATH', 'XDG_STATE_HOME'] 
 /** Names earlier releases read that are now ignored. */
 const RETIRED_ENV_VARS = [
   'PRISMA_AIRS_CONFIG_PATH',
+  // Read by the prisma-airs-asr-judge harness script, never by `redteam judge`.
+  'TYPESAFE_API_KEY',
+  'TYPESAFE_BASE_URL',
+  'TYPESAFE_DEFAULT_MODEL',
   'SCAN_CONCURRENCY',
   'DATA_DIR',
   'MEMORY_ENABLED',

@@ -9,6 +9,7 @@ The CLI follows one contract everywhere:
 | `0` | Success |
 | `1` | Runtime failure — API error, network failure, missing credentials, partial batch failure |
 | `2` | Usage error — invalid flag value, unparsable input file, missing required flag combination |
+| `4` | [`redteam judge`](../cli/redteam/judge.md) only: deliverables were written but at least one unit hit a judge provider error |
 
 Scripts can rely on `2` meaning "fix the invocation" and `1` meaning "fix the
 environment or retry".

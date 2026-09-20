@@ -120,9 +120,15 @@ it('allows rotating credentials without exposing them in the registry', async ()
 });
 
 it('distinguishes credentials from token endpoints', () => {
-  for (const key of ['airsApiKey', 'airsApiToken', 'mgmtClientSecret', 'aiGwInferenceApiKey'])
+  for (const key of [
+    'airsApiKey',
+    'airsApiToken',
+    'mgmtClientSecret',
+    'aiGwInferenceApiKey',
+    'typesafeApiKey',
+  ])
     expect(isTenantSecret(key)).toBe(true);
-  for (const key of ['mgmtTokenEndpoint', 'mgmtClientId', 'defaultOutput'])
+  for (const key of ['mgmtTokenEndpoint', 'mgmtClientId', 'defaultOutput', 'typesafeBaseUrl'])
     expect(isTenantSecret(key)).toBe(false);
 });
 

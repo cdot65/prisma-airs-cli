@@ -149,6 +149,16 @@ export function buildProgram(): Command {
       usageError(
         'Disable --debug and PANW_AI_SEC_DEBUG for environment reports to avoid persisting sensitive traffic content',
       );
+    // Judge traffic carries attack prompts and target responses; never persist it.
+    const isRedTeamJudge =
+      actionCommand.name() === 'judge' && actionCommand.parent?.name() === 'redteam';
+    if (
+      isRedTeamJudge &&
+      (root.debug || /^(1|true|yes|on)$/i.test(process.env.PANW_AI_SEC_DEBUG?.trim() ?? ''))
+    )
+      usageError(
+        'Disable --debug and PANW_AI_SEC_DEBUG for redteam judge; attack prompts and responses are never persisted to diagnostics',
+      );
     if (
       !isEnvironmentReport &&
       actionCommand.parent?.name() !== 'tenant' &&

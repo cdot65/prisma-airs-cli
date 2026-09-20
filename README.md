@@ -129,7 +129,7 @@ The full guides, complete CLI reference, configuration, and architecture live on
 
 ## Configuration
 
-Configuration lives only in tenant files managed by `airs-cli tenant`; environment variables are not read. Every management-plane product (Management, DLP, Red Team, Model Security, AgentGuard, AI Gateway) authenticates with the tenant's single SCM OAuth credential set (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId`); scanning adds `airsApiKey`. Set `defaultOutput` with `airs-cli tenant set <name> defaultOutput json` to choose a default read format. See the [configuration guide](https://cdot65.github.io/prisma-airs-cli/getting-started/configuration/) for the full list.
+Configuration lives only in tenant files managed by `airs-cli tenant`; environment variables are not read. Every management-plane product (Management, DLP, Red Team, Model Security, AgentGuard, AI Gateway) authenticates with the tenant's single SCM OAuth credential set (`mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId`); scanning adds `airsApiKey`, and `airs-cli redteam judge` adds `typesafeApiKey` (TypeSafe Jev; `typesafeBaseUrl` and `typesafeModel` are optional). Set `defaultOutput` with `airs-cli tenant set <name> defaultOutput json` to choose a default read format. See the [configuration guide](https://cdot65.github.io/prisma-airs-cli/getting-started/configuration/) for the full list.
 
 ## License
 

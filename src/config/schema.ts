@@ -41,6 +41,12 @@ export const ConfigSchema = z.object({
   aiGwInferenceModel: z.string().optional(),
   aiGwEmbeddingModel: z.string().optional(),
 
+  // TypeSafe Jev judge for `redteam judge` — a hosted key, never SCM OAuth.
+  // Defaults (https://api.typesafe.ai, jev-latest) are applied in code.
+  typesafeApiKey: z.string().optional(),
+  typesafeBaseUrl: z.string().url().optional(),
+  typesafeModel: z.string().optional(),
+
   // Tuning
   scanConcurrency: z.coerce.number().int().min(1).max(20).default(5),
   defaultOutput: z.enum(['pretty', 'table', 'markdown', 'csv', 'json', 'yaml']).optional(),

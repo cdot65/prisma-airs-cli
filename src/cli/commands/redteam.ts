@@ -57,6 +57,7 @@ import {
   usageError,
 } from '../renderer/index.js';
 import { backupTargets } from './backup.js';
+import { registerRedTeamJudgeCommand } from './redteam-judge.js';
 import { registerRedTeamReportCommand } from './redteam-report.js';
 import { restoreTargets } from './restore.js';
 
@@ -883,6 +884,11 @@ export function registerRedteamCommand(program: Command): void {
       fail(err);
     }
   });
+
+  // -----------------------------------------------------------------------
+  // redteam judge — independent ASR judged by TypeSafe Jev
+  // -----------------------------------------------------------------------
+  registerRedTeamJudgeCommand(redteam);
 
   // -----------------------------------------------------------------------
   // redteam scan — execute a red team scan

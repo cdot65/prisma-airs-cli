@@ -20,10 +20,12 @@ Run `airs-cli doctor` to preflight your environment before doing anything else. 
 4. **Environment** — names (never values) of any `PANW_*` or `PRISMA_AIRS_CONFIG_PATH`
    variables still set; they are [ignored](../reference/environment-variables.md#ignored-names)
    because tenant files are the only configuration source.
-5. **Scanner credentials** and **Management credentials**, with a remedy phrased as
+5. **Scanner credentials**, **Management credentials** and **Typesafe credentials**
+   (the optional `redteam judge` key), with a remedy phrased as
    `airs-cli tenant set <name> <key>`.
-6. One cheap authenticated call each to the **Scanner API**, **Management OAuth**, and
-   **AI Gateway API** to verify connectivity and grants.
+6. One cheap authenticated call each to the **Scanner API**, **Management OAuth**,
+   **AI Gateway API** and **Typesafe API** (`GET /v1/models`) to verify connectivity
+   and grants.
 
 ```bash
 # Pretty pass/warn/fail report with fix hints

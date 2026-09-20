@@ -56,6 +56,8 @@ AgentGuard, AI Gateway, and SCM IAM commands all authenticate with it, through o
 | `airsApiToken` | scan commands | Pre-obtained scan bearer token (alternative to the key) |
 | `aiGwInferenceEndpoint`, `aiGwInferenceApiKey` | inference commands | AI Gateway runtime base URL and workspace key; not SCM OAuth |
 | `aiGwInferenceModel`, `aiGwEmbeddingModel` | -- | Default models for inference commands |
+| `typesafeApiKey` | `redteam judge` | TypeSafe API key for the Jev judge; not SCM OAuth. `TYPESAFE_API_KEY` in the environment is ignored |
+| `typesafeBaseUrl`, `typesafeModel` | -- | TypeSafe base URL (default `https://api.typesafe.ai`) and model (default `jev-latest`) for [`redteam judge`](../cli/redteam/judge.md) |
 
 ## Endpoints
 

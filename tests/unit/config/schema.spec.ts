@@ -96,4 +96,17 @@ describe('ConfigSchema', () => {
     expect(config.aiGwInferenceEndpoint).toBe('https://gw.example.com/v1');
     expect(config.aiGwInferenceApiKey).toBe('runtime-key');
   });
+
+  it('keeps the TypeSafe judge fields optional and validates the base URL', () => {
+    const config = ConfigSchema.parse({
+      typesafeApiKey: 'ts-key',
+      typesafeBaseUrl: 'https://api.typesafe.ai',
+      typesafeModel: 'jev-1.13.0',
+    });
+    expect(config.typesafeApiKey).toBe('ts-key');
+    expect(config.typesafeBaseUrl).toBe('https://api.typesafe.ai');
+    expect(config.typesafeModel).toBe('jev-1.13.0');
+    expect(ConfigSchema.parse({}).typesafeApiKey).toBeUndefined();
+    expect(ConfigSchema.safeParse({ typesafeBaseUrl: 'not a url' }).success).toBe(false);
+  });
 });

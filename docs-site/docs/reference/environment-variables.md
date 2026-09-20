@@ -30,7 +30,7 @@ they are on.
 | `PANW_AI_SEC_DEBUG_BODY` | off | Also log bodies; the CLI forces it off for DLP and AgentGuard commands |
 | `PANW_AI_SEC_TIMEOUT_MS` | `60000` | Per-request HTTP timeout in the SDK |
 
-Profile transfer and environment reports refuse to run while `PANW_AI_SEC_DEBUG` or `--debug` is on.
+Profile transfer, environment reports and `redteam judge` refuse to run while `PANW_AI_SEC_DEBUG` or `--debug` is on.
 
 ## Ignored names
 
@@ -44,6 +44,7 @@ Setting any of these does nothing. `airs-cli doctor` warns so stale shell profil
 | `PANW_DLP_ENDPOINT`, `PANW_RED_TEAM_*_ENDPOINT`, `PANW_MODEL_SEC_*_ENDPOINT`, `PANW_AGENT_GUARD_*_ENDPOINT`, `PANW_AI_GW_*_ENDPOINT`, `PANW_IAM_ENDPOINT` | the matching base-URL keys listed in [configuration options](./configuration.md); per-product token endpoints no longer exist |
 | `PANW_RED_TEAM_CLIENT_ID`, `PANW_MODEL_SEC_CLIENT_ID`, `PANW_AI_GW_CLIENT_ID`, `PANW_AGENT_GUARD_CLIENT_ID` and their `_CLIENT_SECRET` / `_TSG_ID` | nowhere: every product authenticates with the tenant's single `mgmt*` credential set |
 | `PANW_AI_GW_INFERENCE_*` | `aiGwInferenceEndpoint`, `aiGwInferenceApiKey`, `aiGwInferenceModel`, `aiGwEmbeddingModel` |
+| `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`, `TYPESAFE_DEFAULT_MODEL` | `typesafeApiKey`, `typesafeBaseUrl`, `typesafeModel` for [`redteam judge`](../cli/redteam/judge.md); only the standalone `prisma-airs-asr-judge` harness script reads these names |
 | `PANW_CLI_OUTPUT`, `PANW_CLI_SCAN_CONCURRENCY`, `PANW_CLI_DATA_DIR`, `SCAN_CONCURRENCY`, `DATA_DIR` | `defaultOutput`, `scanConcurrency`, `dataDir` |
 | `PRISMA_AIRS_CONFIG_PATH` | `airs-cli tenant switch <name>`, or a private registry via `PRISMA_AIRS_TENANTS_PATH` |
 | `MEMORY_*`, `ACCUMULATE_TESTS`, `MAX_ACCUMULATED_TESTS` | removed features |

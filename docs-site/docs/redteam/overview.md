@@ -13,6 +13,7 @@ The `airs-cli redteam` command group provides full access to Red Team operations
 - **Scan** -- launch static, dynamic, or custom prompt set scans
 - **Status** -- monitor running scans
 - **Report** -- view results with severity breakdowns and attack details
+- **Judge** -- compute an independent attack success rate with TypeSafe Jev ([`redteam judge`](../cli/redteam/judge.md))
 - **List** -- browse recent scans
 - **Targets** -- full CRUD on red team targets (create, get, update, delete, probe, profile, validate-auth, metadata, templates)
 - **EULA** -- check, view, and accept the Red Team end-user license agreement

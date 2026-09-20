@@ -24,6 +24,7 @@ import {
 } from '../../config/loader.js';
 import { type Config, ConfigSchema, RETIRED_CONFIG_KEYS } from '../../config/schema.js';
 import { tenantStorePath } from '../../config/tenants.js';
+import { listTypesafeModels } from '../../redteam/judge/index.js';
 import { examples } from '../examples.js';
 import { commandHint } from '../invocation.js';
 import { type BulletKind, formatOutput, resolveOutput, ui } from '../renderer/index.js';
@@ -54,9 +55,11 @@ export const DOCTOR_CHECK_NAMES = [
   'Environment',
   'Scanner credentials',
   'Management credentials',
+  'Typesafe credentials',
   'Scanner API',
   'Management OAuth',
   'AI Gateway API',
+  'Typesafe API',
 ] as const;
 
 function plural(count: number, noun: string): string {
@@ -298,6 +301,27 @@ export function checkManagementCredentials(
   };
 }
 
+/**
+ * Check 7: the TypeSafe key behind `redteam judge`. Optional, like the scanner key:
+ * absent means the judge is unavailable, nothing else.
+ */
+export function checkTypesafeCredentials(
+  inspected: Record<string, ConfigEntry> | undefined,
+  context?: ConfigContext,
+): DoctorCheck {
+  const name = 'Typesafe credentials';
+  if (!inspected) return notEvaluated(name);
+  if (isSet(inspected.typesafeApiKey)) {
+    return { name, status: 'pass', detail: `typesafeApiKey (${inspected.typesafeApiKey.source})` };
+  }
+  return {
+    name,
+    status: 'skip',
+    detail: 'not configured — redteam judge is unavailable',
+    hint: settingRemedy(['typesafeApiKey'], context),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Network checks (time-boxed, never throw)
 // ---------------------------------------------------------------------------
@@ -332,7 +356,7 @@ const AUTH_REJECTED_PATTERN =
   /invalid api key|invalid.*oauth token|api key or oauth token|unauthorized|forbidden/i;
 
 /**
- * Check 7: scanner API reachability + key validity.
+ * Check 8: scanner API reachability + key validity.
  *
  * The probe resolves if the endpoint answered 2xx, rejects with an HTTP
  * status otherwise. 401/403 means the key was rejected; any other HTTP
@@ -389,7 +413,7 @@ export async function checkScannerApi(
   }
 }
 
-/** Check 8: management OAuth token fetch via a minimal authenticated call. */
+/** Check 9: management OAuth token fetch via a minimal authenticated call. */
 export async function checkManagementAuth(
   probe: () => Promise<number>,
   hasCreds: boolean,
@@ -435,7 +459,7 @@ export async function checkManagementAuth(
 }
 
 /**
- * Check 9: AI Gateway reachability via the cheapest authenticated data-plane
+ * Check 10: AI Gateway reachability via the cheapest authenticated data-plane
  * read (workspace list). Shares management credentials, so it is skipped when
  * those are missing. A 403 is a grant problem — surface which grant via
  * {@link aiGatewayGrantHint}.
@@ -491,6 +515,68 @@ export async function checkAiGatewayApi(
   }
 }
 
+/**
+ * Check 11: TypeSafe reachability and key validity through `GET /v1/models`, the
+ * documented model listing (https://docs.typesafe.ai/models.md) — the cheapest
+ * authenticated call, and one that never spends judge budget. A rejected key
+ * (401/403) or a rate limit (429) warns: the endpoint answered, only `redteam judge`
+ * is affected. Anything else is a broken environment.
+ */
+export async function checkTypesafeApi(
+  probe: () => Promise<number>,
+  hasKey: boolean,
+  timeoutMs: number = DOCTOR_TIMEOUT_MS,
+): Promise<DoctorCheck> {
+  const name = 'Typesafe API';
+  if (!hasKey) {
+    return { name, status: 'skip', detail: 'skipped — typesafeApiKey not configured' };
+  }
+  try {
+    const result = await withTimeout(probe(), timeoutMs);
+    if (result === TIMED_OUT) {
+      return {
+        name,
+        status: 'fail',
+        detail: `timed out after ${timeoutMs}ms — network unreachable or endpoint not responding`,
+        hint: 'Check network connectivity and the typesafeBaseUrl setting',
+      };
+    }
+    return {
+      name,
+      status: 'pass',
+      detail: `endpoint reachable, API key accepted (${plural(result, 'model')} listed)`,
+    };
+  } catch (err) {
+    const status = httpStatus(err);
+    const message = errMessage(err);
+    if (status === 401 || status === 403) {
+      return {
+        name,
+        status: 'warn',
+        detail: `endpoint reachable, but API key rejected (HTTP ${status}): ${message}`,
+        hint: 'Verify typesafeApiKey is a current TypeSafe key; only redteam judge is affected',
+      };
+    }
+    if (status === 429) {
+      return {
+        name,
+        status: 'warn',
+        detail: `endpoint reachable, but rate limited (HTTP ${status}): ${message}`,
+        hint: 'Retry later; redteam judge backs off automatically',
+      };
+    }
+    return {
+      name,
+      status: 'fail',
+      detail:
+        status !== undefined
+          ? `TypeSafe API error (HTTP ${status}): ${message}`
+          : `network unreachable: ${message}`,
+      hint: 'Check network connectivity, proxy settings, and the typesafeBaseUrl setting',
+    };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Orchestration
 // ---------------------------------------------------------------------------
@@ -511,6 +597,8 @@ export interface DoctorDeps {
   mgmtProbe?: (config: Config) => Promise<number>;
   /** Minimal AI Gateway call returning a workspace count; built from config when omitted. */
   aiGwProbe?: (config: Config) => Promise<number>;
+  /** TypeSafe model listing returning a model count; built from config when omitted. */
+  typesafeProbe?: (config: Config) => Promise<number>;
   timeoutMs?: number;
 }
 
@@ -541,6 +629,18 @@ async function defaultAiGwProbe(config: Config): Promise<number> {
   const service = new SdkAiGatewayService(aiGatewayClientOptions(config));
   const workspaces = await service.listWorkspaces();
   return workspaces.length;
+}
+
+/**
+ * Default TypeSafe probe: `GET {typesafeBaseUrl}/v1/models` with the configured key. The
+ * configured model is not validated: versioned IDs are accepted whether or not listed.
+ */
+function defaultTypesafeProbe(config: Config, timeoutMs: number): Promise<number> {
+  return listTypesafeModels({
+    apiKey: config.typesafeApiKey ?? '',
+    baseUrl: config.typesafeBaseUrl,
+    timeoutMs,
+  });
 }
 
 /** Run all checks in order. Never throws. */
@@ -583,6 +683,8 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
   const hasScanner = scannerCreds.status === 'pass';
   const mgmtCreds = checkManagementCredentials(inspected, context, hasScanner);
   const hasMgmt = mgmtCreds.status === 'pass';
+  const typesafeCreds = checkTypesafeCredentials(inspected, context);
+  const hasTypesafe = typesafeCreds.status === 'pass';
 
   // Probes read the file the checks above validated, never a second registry lookup.
   const configPath =
@@ -595,6 +697,8 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
   const scannerProbe = deps.scannerProbe ?? defaultScannerProbe;
   const mgmtProbe = deps.mgmtProbe ?? defaultMgmtProbe;
   const aiGwProbe = deps.aiGwProbe ?? defaultAiGwProbe;
+  const typesafeProbe =
+    deps.typesafeProbe ?? ((config: Config) => defaultTypesafeProbe(config, timeoutMs));
 
   const scannerApi = await checkScannerApi(
     async () => scannerProbe(await getConfig()),
@@ -611,6 +715,11 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
     hasMgmt,
     timeoutMs,
   );
+  const typesafeApi = await checkTypesafeApi(
+    async () => typesafeProbe(await getConfig()),
+    hasTypesafe,
+    timeoutMs,
+  );
 
   return [
     node,
@@ -619,9 +728,11 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
     environment,
     scannerCreds,
     mgmtCreds,
+    typesafeCreds,
     scannerApi,
     mgmtAuth,
     aiGwApi,
+    typesafeApi,
   ];
 }
 

@@ -36,6 +36,13 @@ describe('ignoredEnvironment', () => {
     expect(ignoredEnvironment({ HOME: '/h', PATH: '/bin' })).toEqual([]);
   });
 
+  it('flags TypeSafe variables, which only the harness script reads', () => {
+    expect(ignoredEnvironment({ TYPESAFE_API_KEY: 'k', TYPESAFE_BASE_URL: 'u' })).toEqual([
+      'TYPESAFE_API_KEY',
+      'TYPESAFE_BASE_URL',
+    ]);
+  });
+
   it('documents the only variables the CLI or SDK still honor', () => {
     expect([...SDK_DIAGNOSTIC_ENV_VARS]).toEqual([
       'PANW_AI_SEC_DEBUG',
