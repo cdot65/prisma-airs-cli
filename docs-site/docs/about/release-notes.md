@@ -1,5 +1,11 @@
 # Release Notes
 
+Public npm channels as of September 20, 2026: **`latest` = 7.0.1**, **`next` = 7.1.2**.
+The 7.1 features are available with `npm install -g @cdot65/prisma-airs-cli@7.1.2`.
+See [installation](../getting-started/installation.mdx) and the
+[judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
+included in 7.1.2; they do not imply those intermediate versions were published to public npm.
+
 ## v7.1.2 (2026-09-20) — Handle representative export coverage
 
 - Oversized units are reported as `skipped_oversized` without a paid request; eligible rows continue without truncating evidence.
@@ -18,6 +24,18 @@
 - Adds `airs-cli redteam judge` for local scan exports or read-only job retrieval, with typed judgments, ASR, replay and private reports.
 - Configure `typesafeApiKey`, `typesafeBaseUrl` and `typesafeModel` in the selected tenant. Doctor supports the TypeSafe models endpoint.
 - This is a proof of concept validated with fixtures and mock transports; no live Jev accuracy claim is made.
+
+## v7.0.1 — Standalone release metadata
+
+- Corrects release metadata without changing the version 7 command behavior or tenant configuration.
+- Remains the public npm `latest` release while 7.1.2 is evaluated through `next`.
+
+## v7.0.0 — Rename the product command
+
+- **Breaking:** the standalone executable changes from `airs` to `airs-cli`; the npm package remains `@cdot65/prisma-airs-cli`.
+- The harness owns `airs` and runs its bundled product CLI through `airs cli ...`.
+- Existing CLI tenant registrations and configuration files remain in place. Harness environments and CLI tenants keep independent selections and credentials.
+- Follow the [command migration guide](../getting-started/command-migration.md) to update scripts, PATH entries and shell completions.
 
 ## v6.1.1 (2026-09-12) — Prompt for the provider key in a terminal
 

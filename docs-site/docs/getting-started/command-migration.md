@@ -16,10 +16,16 @@ package remains `@cdot65/prisma-airs-cli`. The Prisma AIRS Harness takes the
 shell aliases, service definitions and user-created skills before changing their
 installed command. Product config files and tenant registrations stay in place.
 
-Standalone **7.0.1** is the stable release for default npm installs. Harness
-alpha.22 bundles the independently pinned **7.0.0** CLI. The patch changes release
-metadata, not command behavior or tenant configuration; either standalone version
-can coexist with that harness.
+As of September 20, 2026, standalone **7.0.1** is the stable release for default
+public npm installs. **7.1.2** is published under `next` and adds the
+[TypeSafe Jev red-team judge](../cli/redteam/judge.md), including explicit coverage
+exclusions, validated provider responses and offline replay.
+
+The harness bundles an independently pinned CLI. Installing a newer global
+`airs-cli` does not upgrade `airs cli`. Check both with `airs-cli --version` and
+`airs cli --version`; the judge requires a bundled CLI of 7.1 or newer, with 7.1.2
+recommended for the coverage and failure-handling fixes. The harness release
+bundling 7.1.2 is still pending publication; standalone 7.1.2 is available now.
 
 ## Upgrade an existing standalone installation
 
@@ -29,6 +35,13 @@ Upgrade the CLI **before** installing the renamed harness so it releases `airs`:
 npm install -g @cdot65/prisma-airs-cli@7.0.1
 airs-cli --version
 airs-cli tenant list
+```
+
+To try the judge preview instead, install the exact version:
+
+```sh
+npm install -g @cdot65/prisma-airs-cli@7.1.2
+airs-cli redteam judge --help
 ```
 
 Then install the harness version supplied by your organization, with npm optional

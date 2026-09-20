@@ -26,6 +26,18 @@ airs-cli redteam judge [options] [scanFile]
 
 ## Requirements
 
+Install standalone **7.1.2** from public npm to get the current judge fixes:
+
+```bash
+npm install -g @cdot65/prisma-airs-cli@7.1.2
+airs-cli --version
+```
+
+Version 7.1.2 is on `next`; an unversioned install currently selects 7.0.1, which
+does not contain this command. A harness with CLI 7.1.2 bundled can run the same
+examples through `airs cli redteam judge ...`; check `airs cli --version` first.
+The standalone install does not replace the harness's bundled CLI.
+
 | Setting | Purpose |
 |---------|---------|
 | `typesafeApiKey` | TypeSafe API key; set with `airs-cli tenant set <name> typesafeApiKey` (hidden prompt or `--stdin`). Required for `--provider typesafe`. |
@@ -36,6 +48,19 @@ airs-cli redteam judge [options] [scanFile]
 `TYPESAFE_API_KEY` in the environment is **not** read; the tenant file is the only source,
 like every other credential. `airs-cli doctor` reports the key's presence and probes
 `GET /v1/models` (the documented model listing, which spends no judge budget).
+
+For live judging, select an existing CLI tenant and save the key through hidden input:
+
+```bash
+airs-cli tenant list
+airs-cli tenant switch development
+airs-cli tenant set development typesafeApiKey
+```
+
+Replace `development` with your registered tenant name. If none is registered, follow
+[tenant setup](../tenant.md). Harness environment selection and inference/MCP SSO do
+not configure this CLI credential. A local-file `--dry-run` or replay needs neither
+a selected tenant nor an API key; `--job` always reads AIRS and needs its credentials.
 
 ## Arguments
 
@@ -71,8 +96,11 @@ prefixes of both texts instead.
 
 ## Method
 
-Each unit sends the state `{attack: {category, sub_category, objective, prompt}, target_response}`
-(response text truncated to 24,000 characters) with three independent questions:
+Each eligible unit sends the state
+`{attack: {category, sub_category, objective, prompt}, target_response}` with three
+independent questions. If either the prompt or response exceeds 24,000 characters,
+the unit is recorded as `skipped_oversized` without a provider call. Evidence is not
+truncated to fit the limit.
 
 | id | primitive | role |
 |----|-----------|------|
@@ -82,9 +110,9 @@ Each unit sends the state `{attack: {category, sub_category, objective, prompt},
 
 Policy: an output **succeeded** when `P(success) >= --threshold`; it is **uncertain** when
 `P(success)` lies inside `--uncertain-band`; an attack succeeded when any judged output
-did. Error and empty outputs are skipped (`skipped_error`) and excluded from every
-denominator; provider failures are counted per unit (`provider_error`) and never abort
-the run.
+did. Error and empty outputs (`skipped_error`), oversized inputs (`skipped_oversized`)
+and provider failures (`provider_error`) are excluded from ASR denominators and
+reported in coverage. A provider failure on one unit does not abort the other units.
 
 `results.json` reports `coverage`, `output_level` (ASR, 95% Wilson interval, expected ASR
 as the mean `P(success)`, uncertain count, and `agreement_with_airs` with both-success,
@@ -103,12 +131,18 @@ airs-cli redteam judge ./scan.json --out ./judged --limit 25 --record ./probe.js
 # Judge a completed scan straight from the Red Team API
 airs-cli redteam judge --job <jobId> --out ./judged --record ./full-run-1.json
 
-# Re-derive the metrics at another threshold without new inference
+# Replay the same source file used by the 25-unit probe, without new inference
 airs-cli redteam judge ./scan.json --out ./judged-0.6 \
-  --provider replay --replay ./full-run-1.json --threshold 0.6
+  --limit 25 --provider replay --replay ./probe.json --threshold 0.6
 ```
 
-`summary.md` (also printed to the terminal) starts with:
+Use a new output directory and recording path for each run; existing files are
+never overwritten. Live judging sends prompt and response text to TypeSafe even
+when local reports omit it. Review the ingestion notes before a paid run, especially
+when objectives or attack IDs were inferred from the export.
+
+The following `summary.md` excerpt uses synthetic replay answers; it is an example
+of the report format, not measured Jev performance:
 
 ```text
 # Red-team ASR judgment summary

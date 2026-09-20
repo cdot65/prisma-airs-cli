@@ -39,6 +39,7 @@ The `airs-cli redteam` command group provides full access to Red Team operations
 - [Environment Dashboard](../cli/redteam/dashboard.md) — CLI 5.1.0 read-only HTML/Markdown report with actual verified CLI output
 - **[End-to-End Walkthrough](end-to-end-walkthrough.md)** -- tutorial: onboard a target, run a STATIC scan, pull the report, with every command + response
 - [Running Scans](scanning.md) -- launch scans, monitor progress, view reports
+- [Judge scan results with TypeSafe Jev](../cli/redteam/judge.md) -- 7.1.2 setup, dry run, bounded judging, replay and ASR interpretation
 - [Managing Targets](targets.md) -- CRUD operations for red team targets, auth validation, metadata, templates
 - [EULA & Infrastructure](infrastructure.md) -- EULA acceptance, instance management, devices, registry credentials, network broker channels
 - [Prompt Sets & Prompts](prompt-sets.md) -- manage custom prompt sets and individual prompts
@@ -50,17 +51,16 @@ Every red team command with options and example output lives in the
 
 ## Authentication
 
-Red Team operations reuse the same OAuth2 credentials as topic management:
+Red Team API operations use `mgmtClientId`, `mgmtClientSecret` and `mgmtTsgId`
+from the selected CLI tenant. Set them through [tenant configuration](../cli/tenant.md);
+credential environment variables are ignored. The same `mgmtTokenEndpoint` serves
+management authentication across product groups. Optional `redTeamDataEndpoint` and
+`redTeamMgmtEndpoint` settings change API destinations, not authentication.
 
-- `PANW_MGMT_CLIENT_ID`
-- `PANW_MGMT_CLIENT_SECRET`
-- `PANW_MGMT_TSG_ID`
-
-Optional overrides for dedicated red team endpoints:
-
-- `PANW_RED_TEAM_DATA_ENDPOINT`
-- `PANW_RED_TEAM_MGMT_ENDPOINT`
-- `PANW_RED_TEAM_TOKEN_ENDPOINT`
+Live `redteam judge` calls additionally use the tenant's `typesafeApiKey`. A local-file
+dry run or replay needs no credentials; `--job` still requires management credentials
+to fetch the scan. This distinction applies to the CLI; the library example below
+passes its own configuration explicitly.
 
 ## Library API
 
