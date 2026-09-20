@@ -36,7 +36,9 @@ airs-cli --version
 Version 7.1.2 is on `next`; an unversioned install currently selects 7.0.1, which
 does not contain this command. A harness with CLI 7.1.2 bundled can run the same
 examples through `airs cli redteam judge ...`; check `airs cli --version` first.
-The standalone install does not replace the harness's bundled CLI.
+The standalone install does not replace the harness's bundled CLI. The published
+harness preview **0.1.2-alpha.2.mcp.1** includes CLI **7.1.2**; see the
+[harness installation command](../../getting-started/command-migration.md).
 
 | Setting | Purpose |
 |---------|---------|

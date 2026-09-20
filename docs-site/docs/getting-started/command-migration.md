@@ -24,8 +24,17 @@ exclusions, validated provider responses and offline replay.
 The harness bundles an independently pinned CLI. Installing a newer global
 `airs-cli` does not upgrade `airs cli`. Check both with `airs-cli --version` and
 `airs cli --version`; the judge requires a bundled CLI of 7.1 or newer, with 7.1.2
-recommended for the coverage and failure-handling fixes. The harness release
-bundling 7.1.2 is still pending publication; standalone 7.1.2 is available now.
+recommended for the coverage and failure-handling fixes. Harness
+**0.1.2-alpha.2.mcp.1** bundles CLI **7.1.2** and is published under `mcp` at
+`https://npm.cdot.io`. The harness's stable `latest` remains **0.1.1**, which
+bundles CLI 7.0.0. Install the exact preview to use the judge through the harness:
+
+```sh
+npm install -g airs-harness@0.1.2-alpha.2.mcp.1 --registry=https://npm.cdot.io
+airs cli --version
+# 7.1.2
+airs cli redteam judge --help
+```
 
 ## Upgrade an existing standalone installation
 
