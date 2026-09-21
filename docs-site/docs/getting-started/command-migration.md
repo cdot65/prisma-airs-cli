@@ -24,13 +24,13 @@ exclusions, validated provider responses and offline replay.
 The harness bundles an independently pinned CLI. Installing a newer global
 `airs-cli` does not upgrade `airs cli`. Check both with `airs-cli --version` and
 `airs cli --version`. Use **7.1.5** for the shared TypeScript judge and official Jev SDK. Model output strings remain verbatim.
-Harness **0.1.2-alpha.5.mcp.1** bundles CLI **7.1.5** and the matching native skill.
-Install the exact preview with
-`npm install -g airs-harness@0.1.2-alpha.5.mcp.1 --registry=https://npm.cdot.io`.
+Harness **0.1.2** bundles CLI **7.1.5** and the matching native skill.
+Install the stable release with
+`npm install -g airs-harness@0.1.2 --registry=https://npm.cdot.io`.
 Installing standalone 7.1.5 does not update the CLI or skill embedded inside an
 existing harness. Restart `airs` after upgrading to load the updated native skill.
 Use `/typesafe` inside the harness to configure the optional judge key without an external command.
-The harness's stable `latest` remains **0.1.1**, bundling CLI 7.0.0.
+The harness's stable `latest` is **0.1.2**, bundling CLI **7.1.5**.
 
 ## Upgrade an existing standalone installation
 
