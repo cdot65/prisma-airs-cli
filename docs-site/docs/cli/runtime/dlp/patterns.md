@@ -9,7 +9,7 @@ sidebar_label: patterns
 List data patterns
 
 ```text
-airs runtime dlp patterns list [options]
+airs-cli runtime dlp patterns list [options]
 ```
 
 #### Options
@@ -28,7 +28,7 @@ airs runtime dlp patterns list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime dlp patterns list --limit 2 --sort name,asc
+airs-cli runtime dlp patterns list --limit 2 --sort name,asc
 ```
 
 ```text
@@ -45,7 +45,7 @@ page=0 size=2 returned=2 total=1126
 *JSON output*
 
 ```bash
-airs runtime dlp patterns list --limit 2 --sort name,asc --output json
+airs-cli runtime dlp patterns list --limit 2 --sort name,asc --output json
 ```
 
 ```text
@@ -70,7 +70,7 @@ airs runtime dlp patterns list --limit 2 --sort name,asc --output json
 *YAML output*
 
 ```bash
-airs runtime dlp patterns list --limit 2 --sort name,asc --output yaml
+airs-cli runtime dlp patterns list --limit 2 --sort name,asc --output yaml
 ```
 
 ```text
@@ -93,7 +93,7 @@ airs runtime dlp patterns list --limit 2 --sort name,asc --output yaml
 Create a data pattern
 
 ```text
-airs runtime dlp patterns create [options]
+airs-cli runtime dlp patterns create [options]
 ```
 
 #### Options
@@ -120,7 +120,7 @@ airs runtime dlp patterns create [options]
 *Create a custom regex pattern with --name + --regex flags*
 
 ```bash
-airs runtime dlp patterns create --name docs-example-pattern --regex '\bACME-\d{6}\b' --output json
+airs-cli runtime dlp patterns create --name docs-example-pattern --regex '\bACME-\d{6}\b' --output json
 ```
 
 ```text
@@ -141,7 +141,7 @@ airs runtime dlp patterns create --name docs-example-pattern --regex '\bACME-\d{
 Get a data pattern by id
 
 ```text
-airs runtime dlp patterns get [options] <id>
+airs-cli runtime dlp patterns get [options] <id>
 ```
 
 #### Arguments
@@ -159,7 +159,7 @@ airs runtime dlp patterns get [options] <id>
 *Pretty output (fallback `pretty` — predefined pattern)*
 
 ```bash
-airs runtime dlp patterns get 000000000000000000000001
+airs-cli runtime dlp patterns get 000000000000000000000001
 ```
 
 ```text
@@ -179,7 +179,7 @@ Data Pattern:
 *JSON output*
 
 ```bash
-airs runtime dlp patterns get 000000000000000000000001 --output json
+airs-cli runtime dlp patterns get 000000000000000000000001 --output json
 ```
 
 ```text
@@ -199,7 +199,7 @@ airs runtime dlp patterns get 000000000000000000000001 --output json
 *YAML output*
 
 ```bash
-airs runtime dlp patterns get 000000000000000000000001 --output yaml
+airs-cli runtime dlp patterns get 000000000000000000000001 --output yaml
 ```
 
 ```text
@@ -221,7 +221,7 @@ updated: '2026-05-25T15:50:58.037Z'
 Full-replace a data pattern (PUT)
 
 ```text
-airs runtime dlp patterns replace [options] <id>
+airs-cli runtime dlp patterns replace [options] <id>
 ```
 
 #### Arguments
@@ -252,7 +252,7 @@ airs runtime dlp patterns replace [options] <id>
 *Full-replace a custom pattern from a body fixture (see docs/cli/examples/dlp/patterns/replace.json). API returns the new version.*
 
 ```bash
-airs runtime dlp patterns replace 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/replace.json --output json
+airs-cli runtime dlp patterns replace 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/replace.json --output json
 ```
 
 ```text
@@ -273,7 +273,7 @@ airs runtime dlp patterns replace 000000000000000000000099 --body-file docs/cli/
 JSON Merge Patch. Use --body-file for nested fields. --set/--clear coerce values: numbers/booleans/JSON literals. To force a string, quote: --set count='"5"'.
 
 ```text
-airs runtime dlp patterns patch [options] <id>
+airs-cli runtime dlp patterns patch [options] <id>
 ```
 
 #### Arguments
@@ -294,7 +294,7 @@ airs runtime dlp patterns patch [options] <id>
 *Merge-patch a pattern's description from a body fixture (see docs/cli/examples/dlp/patterns/patch.json). Omitted fields are unchanged.*
 
 ```bash
-airs runtime dlp patterns patch 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/patch.json --output json
+airs-cli runtime dlp patterns patch 000000000000000000000099 --body-file docs/cli/examples/dlp/patterns/patch.json --output json
 ```
 
 ```text
@@ -311,7 +311,7 @@ airs runtime dlp patterns patch 000000000000000000000099 --body-file docs/cli/ex
 *Merge-patch inline via --set (scalar fields only; quote regex/JSON literals as needed)*
 
 ```bash
-airs runtime dlp patterns patch 000000000000000000000099 --set description='docs example' --output json
+airs-cli runtime dlp patterns patch 000000000000000000000099 --set description='docs example' --output json
 ```
 
 ```text
@@ -332,7 +332,7 @@ airs runtime dlp patterns patch 000000000000000000000099 --set description='docs
 Soft-delete (archive) a data pattern
 
 ```text
-airs runtime dlp patterns delete [options] <id>
+airs-cli runtime dlp patterns delete [options] <id>
 ```
 
 #### Arguments
@@ -344,7 +344,7 @@ airs runtime dlp patterns delete [options] <id>
 *Soft-delete (archive) a data pattern by id*
 
 ```bash
-airs runtime dlp patterns delete 000000000000000000000003
+airs-cli runtime dlp patterns delete 000000000000000000000003
 ```
 
 ```text

@@ -4,7 +4,7 @@ This file provides guidance to GitHub Copilot, Codex, Pi, and other AI coding ag
 
 ## Project
 
-Prisma AIRS CLI (`airs`) — a CLI and library for Palo Alto Prisma AI Runtime Security. Manages security profiles, custom topic guardrails, AI red teaming, and model security scanning.
+Prisma AIRS CLI (`airs-cli`) — a CLI and library for Palo Alto Prisma AI Runtime Security. Manages security profiles, custom topic guardrails, AI red teaming, and model security scanning.
 
 ## Key References
 

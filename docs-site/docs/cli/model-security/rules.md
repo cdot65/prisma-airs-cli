@@ -9,7 +9,7 @@ sidebar_label: rules
 List available security rules
 
 ```text
-airs model-security rules list [options]
+airs-cli model-security rules list [options]
 ```
 
 #### Options
@@ -29,7 +29,7 @@ airs model-security rules list [options]
 *List security rules*
 
 ```bash
-airs model-security rules list
+airs-cli model-security rules list
 ```
 
 ```text
@@ -56,7 +56,7 @@ Security Rules:
 Get security rule details
 
 ```text
-airs model-security rules get [options] <uuid>
+airs-cli model-security rules get [options] <uuid>
 ```
 
 #### Arguments
@@ -74,7 +74,7 @@ airs model-security rules get [options] <uuid>
 *Pretty output (fallback `pretty`; no output override in this example)*
 
 ```bash
-airs model-security rules get 550e8400-e29b-41d4-a716-44665544000b
+airs-cli model-security rules get 550e8400-e29b-41d4-a716-44665544000b
 ```
 
 ```text

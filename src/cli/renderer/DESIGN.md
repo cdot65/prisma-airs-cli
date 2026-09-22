@@ -11,7 +11,7 @@ primitives; they do not call `chalk` directly. Command files call renderers (or
 | stdout | Data: pretty layouts, tables, and *only* the payload for `--output json\|yaml\|csv` |
 | stderr | Everything that is not data: status/progress lines, warnings, errors, deprecation notices |
 
-Rule: `airs <cmd> --output json | jq .` must always parse. Decorative output is
+Rule: `airs-cli <cmd> --output json | jq .` must always parse. Decorative output is
 never emitted when a machine-readable format is selected.
 
 ## Semantic colors and glyphs

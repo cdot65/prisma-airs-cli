@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFileListOptions
 
-Defined in: src/airs/types.ts:890
+Defined in: src/airs/types.ts:897
 
 Filter options for listing scanned files.
 
@@ -10,7 +10,7 @@ Filter options for listing scanned files.
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:894
+Defined in: src/airs/types.ts:901
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:894
 
 > `optional` **result?**: `string`
 
-Defined in: src/airs/types.ts:892
+Defined in: src/airs/types.ts:899
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:892
 
 > `optional` **skip?**: `number`
 
-Defined in: src/airs/types.ts:893
+Defined in: src/airs/types.ts:900
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:893
 
 > `optional` **type?**: `string`
 
-Defined in: src/airs/types.ts:891
+Defined in: src/airs/types.ts:898

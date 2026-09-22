@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Summary
 
+AgentGuard additions in CLI 5.4.1 / SDK 0.29.0: `airs agentguard scans list`, `scans vulnerabilities <scanUuid>`, `stats`, `rules list`, `report`. Read-only Management OAuth; HTML/Markdown reports use private no-clobber CWD files. Debug bodies are omitted and finding text/code requires `--include-content`. Rules `total_items` is a page count, not a global total; failed scan metrics may be null. Live acceptance: `node scripts/e2e-agentguard.mjs`. Keep the exact SDK 0.29.0 dependency; never publish with a local link override. See `docs-site/docs/cli/agentguard/index.md` for actual-output evidence.
+
 Prisma AIRS CLI (`airs`) is a CLI and library providing full operational coverage over **Palo Alto Prisma AIRS** AI security capabilities: runtime prompt scanning and configuration management, atomic topic commands (create, apply, eval, revert) for agent-driven optimization following the autoresearch pattern, adversarial red team scanning, AI Gateway workspace management and cost telemetry, ML model supply chain security, and backup/restore of AIRS configuration to local files.
 
 ## Commands
@@ -102,12 +104,12 @@ src/
 │   │   ├── restore.ts     # Restore core logic (restoreTargets, prepareTargetPayload)
 │   │   ├── profiles-cleanup.ts # Delete old profile revisions, keep only latest per name
 │   │   ├── dlp/           # DLP CLI commands (4 subgroups + aggregator + shared patch/parseBody utils)
-│   │   ├── config.ts      # airs config {list,get,set,unset,path} — manage ~/.prisma-airs/config.json
+│   │   ├── tenant.ts      # airs tenant {create,switch,set,unset,get,list,read,path,delete} — the only config surface
 │   │   ├── doctor.ts      # airs doctor — environment/credential/connectivity diagnostics
 │   │   ├── completion.ts  # airs completion <shell> — shell completion scripts
 │   │   ├── runtime.ts     # Runtime scanning + config management + topics (profiles)
 │   │   ├── redteam.ts     # Red team operations (scan, targets CRUD + backup/restore, prompt-sets CRUD, prompts CRUD, properties, adapters CRUD+validate)
-│   │   ├── aigateway.ts   # AI Gateway workspace CRUD + cost telemetry (two-plane routing, --all merge)
+│   │   ├── aigateway.ts   # AI Gateway workspace CRUD + IAM scopes + cost telemetry (two-plane routing, --all merge; create = scope → workspace → bind)
 │   │   └── modelsecurity.ts # Model security operations (groups, rules, rule-instances, scans, labels, pypi-auth)
 │   ├── bulk-scan-state.ts # Validated item-centric v2 bulk state; atomic 0600 checkpoints for safe resume
 │   ├── parse-input.ts     # Input file parsing — CSV (prompt column) or plain text (line-per-prompt)
@@ -138,7 +140,7 @@ src/
 │   ├── promptsets.ts      # SdkPromptSetService — custom prompt set CRUD via RedTeamClient
 │   ├── dlp/               # DLP namespace: filtering-profiles, patterns, profiles, dictionaries SDK service wrappers
 │   ├── redteam.ts         # SdkRedTeamService — red team scan CRUD, polling, reports
-│   ├── aigateway.ts       # SdkAiGatewayService — workspace CRUD/cost telemetry + 403 grant hints
+│   ├── aigateway.ts       # SdkAiGatewayService — workspace provisioning (SDK provision()), IAM scopes, cost telemetry + 403 grant hints
 │   ├── modelsecurity.ts   # SdkModelSecurityService — security groups, rules, scans, labels
 │   └── types.ts           # ScanResult, ProfileTopic, ScanService, ManagementService, PromptSetService, RedTeamService, ModelSecurityService
 ├── backup/
@@ -176,7 +178,7 @@ tests/
 - **Flag canon**: `--output` = format (`pretty|table|csv|json|yaml`), `--output-file`/`--output-dir` = destinations, `--file`/`--input-dir` = inputs, `--limit`/`--offset` = pagination, `--force` = skip confirmation. Old v2 spellings (`--format`, `--input`, `--page`/`--size`, `--confirm`) are hidden deprecated aliases, removed in v3 — see `docs-site/docs/about/flag-migration.md`
 - **Confirmation prompts**: destructive commands prompt interactively unless `--force` (non-TTY requires `--force`)
 - **Aliases**: every `list` command accepts `ls`, every `delete` accepts `rm`
-- **Utility commands**: `airs config {list,get,set,unset,path}` (config file management), `airs doctor` (env/credential/connectivity diagnostics), `airs completion <shell>` (shell completions)
+- **Utility commands**: `airs tenant {create,switch,set,unset,get,list,read,path,delete}` (tenant files are the only configuration source), `airs doctor` (tenant/credential/connectivity diagnostics), `airs completion <shell>` (shell completions)
 
 ### Topic Commands (`src/cli/commands/topics-*.ts`)
 - **`create`** (`topics-create.ts`): create or update a custom topic; validates AIRS constraints (name ≤100, desc ≤250, each example ≤250, combined ≤1000, max 5 examples), upserts by name
@@ -200,7 +202,8 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - **Detection**: `triggered` (= `topic_violation`) is the sole guardrail detection signal. No category-based or action-based detection.
 - **`DebugScanService`**: Wrapper that appends raw scan responses to a JSONL file when `--debug-scans` is passed
 - **`RateLimitedScanService`**: Wrapper that caps scan throughput to N calls/second via sliding-window token bucket
-- **`--debug` global flag**: Intercepts `globalThis.fetch` to log all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl`. Deep redaction — sensitive headers, query params, and credential-like body fields masked as `***`; only the 10 newest debug files are kept. Works with any subcommand.
+- **`--debug` global flag**: Intercepts `globalThis.fetch` to write a private, exclusive `./debug-api-<timestamp>-<unique suffix>.jsonl` in CWD. No writes beside read-only credentials, no truncation and no automatic pruning. Redacts headers, query params, credential-like JSON fields, auth codes and OAuth form secrets; non-JSON and inference bodies are omitted. Startup failures are friendly errors. Environment reports refuse debug logging to avoid persisting raw scan content.
+- **Daily environment report (CLI 5.0 / schema 2)**: `airs runtime report --output html|markdown` uses `src/reports/` for SDK-only collection, evidence-backed findings, self-contained HTML/Markdown and atomic no-clobber 0600 files in CWD; `--output-file -` selects stdout. Seven sources: daily applications, latest profiles, registered apps, session inventory, session chart, top violations and daily severity trend. Default 40 pages/source; 25 sessions/page, 100 application/configuration records/page. `sessions` replaces `logs`; `dailyTelemetry` keeps independent counters. Partial evidence is explicit, `--strict` exits 1 after writing, and all-unavailable exits 1. No numeric health score or unsupported daily token figures. Never fetch stored content automatically. Legacy `scan-logs query` is broken/under refactor and explicitly exits 1; migrate to `runtime sessions` / `runtime dashboard` with the separately scoped `mgmtDashboardEndpoint`.
 - **Prompt sets**: `SdkPromptSetService` wraps `RedTeamClient.customAttacks` for custom prompt set CRUD
 - **Management**: `ManagementClient` via OAuth2 — topic CRUD, security profile CRUD, API key management, customer app management, deployment profile listing, scan log querying
 - Profile updates create **new revisions with new UUIDs** — always reference profiles by name, never ID
@@ -260,7 +263,8 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime api-keys {list,create,regenerate,delete}` — API key management (`regenerate` takes `--interval`/`--unit`)
   - `airs runtime customer-apps {list,get,update,delete,consumption}` — customer app CRUD + `consumption` (per-app token usage + violation breakdown from SCM dashboard; `--time-interval 7|30|60`)
   - `airs runtime deployment-profiles {list}` — deployment profile listing (`--unactivated` filter)
-  - `airs runtime scan-logs {query}` — scan log querying (`--interval`/`--unit hours`/`--filter`/`--limit`/`--offset`)
+  - `airs runtime scan-logs {query}` — broken legacy path, explicitly exits 1; migrate to `runtime sessions list`
+  - `airs runtime dashboard` / `airs runtime sessions` — verified SCM summaries, paginated inventory and explicit drill-down; see AGENTS.md and command references
   - `airs runtime dlp filtering-profiles {list, get, replace}` — read + full-replace
   - `airs runtime dlp patterns {list, create, get, replace, patch, delete}` — full CRUD + soft-delete
   - `airs runtime dlp profiles {list, create, get, replace, patch, delete*}` — no real delete; patch profile_status
@@ -268,7 +272,8 @@ These four commands compose into an autoresearch-style optimization loop: an age
   - `airs runtime dlp generate` — generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX; no auth (local only)
 
 ### AI Gateway (`src/airs/aigateway.ts`)
-- `SdkAiGatewayService` wraps `AiGatewayClient` for workspace CRUD and cost telemetry, using the existing `PANW_MGMT_*` OAuth credentials plus optional `PANW_AI_GW_{DATA,ADMIN,TOKEN}_ENDPOINT` overrides.
+- Runtime inference lives separately in `src/cli/commands/aigateway/inference.ts`: `airs aigateway inference {chat,responses,embeddings}` uses an explicit runtime endpoint/API key, not SCM OAuth. Config keys `aiGwInferenceEndpoint`, `aiGwInferenceApiKey`, `aiGwInferenceModel`, `aiGwEmbeddingModel` map to `PANW_AI_GW_INFERENCE_ENDPOINT`, `PANW_AI_GW_INFERENCE_API_KEY`, `PANW_AI_GW_INFERENCE_MODEL`, `PANW_AI_GW_EMBEDDING_MODEL`. JSON streaming means JSONL; pretty streaming means text. Preserve cancellation/backpressure, cleanup before exit helpers, zero automatic retries, and omission of runtime bodies in debug logs. Release the SDK changeset before updating the CLI pin.
+- `SdkAiGatewayService` wraps `AiGatewayClient` for workspace CRUD and cost telemetry, using the tenant's `mgmt*` OAuth credentials plus optional `PANW_AI_GW_{DATA,ADMIN,TOKEN}_ENDPOINT` overrides.
 - Two authorization planes: data-plane reads return active workspaces in the caller's SCM role scope; admin-plane reads and all writes require the tenant-root AI Gateway admin grant. A 403 is decorated with the missing-grant hint.
 - CLI: `airs aigateway workspace {list,get,create,update,delete}` and `airs aigateway telemetry cost`.
 - `workspace list` defaults to scoped data-plane reads. `--plane admin --status active|archived` reads tenant-wide state; `--all` merges both admin lifecycle states and is mutually exclusive with `--plane`/`--status`.
@@ -325,30 +330,9 @@ These four commands compose into an autoresearch-style optimization loop: an age
 - `scanConcurrency` default 5 — higher risks rate limiting
 - `topics create` validates and rejects descriptions exceeding 250 bytes (UTF-8) rather than silently truncating
 
-## Environment Variables
+## Configuration
 
-See `.env.example` for the full list. Config priority: CLI flags > env vars > `~/.prisma-airs/config.json` > Zod defaults.
-
-### Required
-
-| Variable | Purpose |
-|----------|---------|
-| `PANW_AI_SEC_API_KEY` | Prisma AIRS Scanner API |
-| `PANW_MGMT_CLIENT_ID` | Prisma AIRS Management OAuth2 |
-| `PANW_MGMT_CLIENT_SECRET` | Prisma AIRS Management OAuth2 |
-| `PANW_MGMT_TSG_ID` | Prisma AIRS Tenant Service Group |
-
-### Optional
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `PANW_MGMT_ENDPOINT` | SDK default | Management API endpoint |
-| `PANW_MGMT_TOKEN_ENDPOINT` | SDK default | Management API token endpoint |
-| `PANW_AI_GW_DATA_ENDPOINT` | SDK default | AI Gateway data-plane endpoint (`/ai_gw/v2`) |
-| `PANW_AI_GW_ADMIN_ENDPOINT` | SDK default | AI Gateway admin-plane endpoint (`/ai_gw/admin/v2`) |
-| `PANW_AI_GW_TOKEN_ENDPOINT` | mgmt token endpoint | AI Gateway token endpoint override |
-| `SCAN_CONCURRENCY` | `5` | Concurrent AIRS scans (1-20) |
-| `DATA_DIR` | `~/.prisma-airs/runs` | Run state persistence directory |
+The CLI reads **no configuration from the environment**; `dotenv` is gone. `loadConfig()` resolves CLI flags > the selected tenant's file (registry at `$XDG_STATE_HOME/prisma-airs/tenants.json`, override with `PRISMA_AIRS_TENANTS_PATH`) > Zod defaults, and throws `No tenant selected` otherwise. `src/config/schema.ts` lists every key; `RETIRED_CONFIG_KEYS` are the per-product token endpoints. Every management-plane product authenticates with the one `mgmt*` credential set and `mgmtTokenEndpoint`; product base URLs are optional file-only overrides defaulting to SDK constants. `src/config/client-options.ts` passes every credential and endpoint explicitly (asserting `mgmt*` first) so the SDK never falls back to its own `PANW_*` lookups. `src/config/env.ts` only lists ignored names for `airs doctor`; `PANW_AI_SEC_DEBUG`, `PANW_AI_SEC_DEBUG_BODY`, and `PANW_AI_SEC_TIMEOUT_MS` remain SDK-read diagnostics. Tests register tenants with `tests/helpers/tenant.ts` (`useTestTenant`, `writeTestRegistry`); live scripts resolve the operator's selected tenant with `scripts/lib/live-tenant.mjs` / `tests/helpers/live-tenant.ts`.
 
 ## Guardrail Optimization Loop
 

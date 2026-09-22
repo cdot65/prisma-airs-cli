@@ -8,7 +8,7 @@ List the tenant's supported languages and job types. Multilingual red team scans
 use these language codes.
 
 ```text
-airs redteam languages [options]
+airs-cli redteam languages [options]
 ```
 
 #### Options
@@ -21,7 +21,7 @@ airs redteam languages [options]
 #### Examples
 
 ```bash
-airs redteam languages
-airs redteam languages --output json
-airs redteam languages --management
+airs-cli redteam languages
+airs-cli redteam languages --output json
+airs-cli redteam languages --management
 ```

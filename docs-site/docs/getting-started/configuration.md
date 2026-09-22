@@ -4,69 +4,72 @@ title: Configuration
 
 # Configuration
 
-Prisma AIRS CLI is designed to work with minimal setup. All settings have sensible defaults — only credentials are strictly required.
+Prisma AIRS CLI is configured entirely through **tenants**. A tenant is a private JSON file
+holding one set of SCM OAuth credentials (client ID, secret, TSG ID) plus any optional
+settings, registered under a name. Exactly one tenant is selected at a time, and every command
+reads only that file. Environment variables are never consulted.
 
 ## Config Cascade
 
 Settings are resolved in priority order (highest wins):
 
 ```
-CLI flags  >  Environment variables  >  ~/.prisma-airs/config.json  >  Zod defaults
+CLI flags  >  Selected tenant's config file  >  Zod defaults
 ```
 
-This means a CLI flag always beats an env var, which always beats the config file.
-
-## Config File
-
-For settings you use across every run, create `~/.prisma-airs/config.json`:
-
-```json title="~/.prisma-airs/config.json"
-{
-  "scanConcurrency": 5,
-  "defaultOutput": "json"
-}
-```
-
-## Managing config from the CLI
-
-The `airs config` command group manages `~/.prisma-airs/config.json` without hand-editing:
+## First-time setup
 
 ```bash
-airs config list                     # Effective config: every key, value, and source (env/file/default)
-airs config get scanConcurrency      # Print a single effective value
-airs config get defaultOutput --output yaml
-airs config set scanConcurrency 3    # Validate via schema and write to the config file
-airs config unset scanConcurrency    # Remove the key from the file (defaults take over)
-airs config path                     # Print the config file path (pipe-friendly)
+airs-cli tenant create development     # prompts for TSG ID, client ID, and a hidden client secret
+airs-cli tenant switch development     # every command now uses this tenant
+airs-cli doctor                        # verify the file, credentials, and connectivity
 ```
 
-- **`list` and `get`** show effective values and their source. Both support
-  `--output pretty|table|markdown|csv|json|yaml`; structured `get` output is a
-  `{key, value, source}` record.
-- **`set`** validates the resulting config through the schema before writing — invalid values (for example `scanConcurrency` above 20) are rejected with exit code 2 and nothing is written. Unknown keys already present in the file are preserved.
-- **`unset`** removes a key from the file; if the key is not set, the command is a no-op.
-- **`path`** prints only the resolved config file path, which honors the `PRISMA_AIRS_CONFIG_PATH` environment variable override.
-
-### Secret masking and `--reveal`
-
-Keys whose names match `key`, `secret`, `token`, or `password` (for example `airsApiKey`, `mgmtClientSecret`) are **masked** in `list` and `get` output — long values show only the last 4 characters (`***3456`), short values show `***`. Masking applies to `json` and `yaml` output too.
-
-To print the real value, pass `--reveal`:
+For scanning, add the runtime key with a hidden prompt:
 
 ```bash
-airs config get airsApiKey --reveal   # Prints the full value; a warning goes to stderr
-airs config list --reveal             # Unmasked listing
+airs-cli tenant set development airsApiKey
 ```
+
+Already have a JSON file? Register it without copying or editing it:
+
+```bash
+airs-cli tenant create production --config /secure/production.json
+```
+
+## Managing settings
+
+`airs-cli tenant` covers every read and write:
+
+```bash
+airs-cli tenant read                          # all settings of the selected tenant, secrets redacted
+airs-cli tenant get development scanConcurrency
+airs-cli tenant set development scanConcurrency 3
+airs-cli tenant set development defaultOutput json
+airs-cli tenant set development mgmtClientSecret --stdin < /secure/rotated-secret.txt
+airs-cli tenant unset development defaultOutput   # defaults take over
+airs-cli tenant path                          # print the selected tenant's file path
+```
+
+- **`set`** validates the value through the schema before writing; invalid values are rejected
+  and nothing is written. Credentials never go on the command line: omit the value for a hidden
+  prompt or pipe it with `--stdin`. The registered `mgmtTsgId` is pinned.
+- **`unset`** removes a key so the schema default applies; credential keys cannot be cleared.
+- **`get`** and **`read`** redact every key whose name ends in `key`, `secret`, `token`, or
+  `password`. There is intentionally no `--reveal`.
+- **`path`** prints only the file path, which is pipe-friendly.
+
+Keys and defaults are listed in [configuration options](../reference/configuration.md).
+Multi-tenant workflows, automation, and the registry layout are in
+[tenant selection](../cli/tenant.md).
 
 ## Tuning Parameters
 
-These settings control how Prisma AIRS CLI interacts with AIRS.
-
-| Env Var | Config Key | Default | What it does |
-|---------|-----------|---------|-------------|
-| `SCAN_CONCURRENCY` | `scanConcurrency` | `5` | Parallel scan requests per batch (1--20) |
-| `DATA_DIR` | `dataDir` | `~/.prisma-airs/runs` | Data directory |
-| `PANW_CLI_OUTPUT` | `defaultOutput` | `pretty` | Default read format: `pretty`, `table`, `markdown`, `csv`, `json`, or `yaml` |
+| Config Key | Default | What it does |
+|-----------|---------|-------------|
+| `scanConcurrency` | `5` | Parallel scan requests per batch (1--20) |
+| `dataDir` | `~/.prisma-airs/runs` | Bulk-scan state directory |
+| `defaultOutput` | `pretty` | Default read format: `pretty`, `table`, `markdown`, `csv`, `json`, or `yaml` |
 
 :::tip[Concurrency vs. rate limits]
 Keep `scanConcurrency` at 5 or lower to avoid AIRS rate limiting. Increase only if your tenant has elevated quotas.
@@ -76,5 +79,6 @@ Keep `scanConcurrency` at 5 or lower to avoid AIRS rate limiting. Increase only 
 
 | Path | Purpose |
 |------|---------|
-| `~/.prisma-airs/config.json` | Persistent configuration |
-| `~/.prisma-airs/runs/` | Data directory |
+| `~/.local/state/prisma-airs/tenants.json` | Tenant registry (names, file paths, TSG IDs; never credentials) |
+| `~/.local/state/prisma-airs/configs/` | Config files created by `airs-cli tenant create` (mode `0600`) |
+| `~/.prisma-airs/runs/` | Bulk-scan state (`dataDir`) |

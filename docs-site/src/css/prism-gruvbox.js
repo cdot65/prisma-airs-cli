@@ -11,6 +11,7 @@
  *   }
  * (ESM config: `import gruvboxTheme from './src/css/prism-gruvbox.js';`)
  */
+/** @type {import('prism-react-renderer').PrismTheme} */
 const gruvboxTheme = {
   plain: {
     color: '#ebdbb2',          // fg1

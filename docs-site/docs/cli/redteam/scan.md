@@ -9,7 +9,7 @@ sidebar_label: scan
 Execute a red team scan against a target
 
 ```text
-airs redteam scan [options]
+airs-cli redteam scan [options]
 ```
 
 ### Options
@@ -31,17 +31,17 @@ airs redteam scan [options]
 *Static scan with all categories*
 
 ```bash
-airs redteam scan --target <uuid> --name "Full Scan"
+airs-cli redteam scan --target <uuid> --name "Full Scan"
 ```
 
 *Custom scan with prompt sets*
 
 ```bash
-airs redteam scan --target <uuid> --name "Topic Validation" --type CUSTOM --prompt-sets <uuid1>,<uuid2>
+airs-cli redteam scan --target <uuid> --name "Topic Validation" --type CUSTOM --prompt-sets <uuid1>,<uuid2>
 ```
 
 *Dynamic scan with goals file*
 
 ```bash
-airs redteam scan --target <uuid> --name "Agent Scan" --type DYNAMIC --goals goals.json --depth 10 --breadth 6
+airs-cli redteam scan --target <uuid> --name "Agent Scan" --type DYNAMIC --goals goals.json --depth 10 --breadth 6
 ```

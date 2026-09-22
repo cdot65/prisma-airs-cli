@@ -40,7 +40,6 @@ describe('help examples', () => {
     ['redteam', 'scan'],
     ['redteam', 'targets', 'list'],
     ['model-security', 'scans', 'list'],
-    ['config'],
     ['doctor'],
   ];
 
@@ -48,7 +47,7 @@ describe('help examples', () => {
     it(`${path.join(' ')} --help shows an Examples section`, () => {
       const help = helpOf(find(program, ...path));
       expect(help).toContain('Examples:');
-      expect(help).toContain('$ airs');
+      expect(help).toContain('$ airs-cli');
     });
   }
 

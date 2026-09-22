@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 /** Domains that indicate AIRS / Strata Cloud Manager API traffic. */
 const AIRS_DOMAINS = [
   'api.sase.paloaltonetworks.com',
+  'api.apps.paloaltonetworks.com',
   'service.api.aisecurity.paloaltonetworks.com',
   'auth.apps.paloaltonetworks.com',
   'api.dlp.paloaltonetworks.com',
@@ -29,7 +30,7 @@ const MASK = '***';
 
 /** Key names (headers, query params, JSON body fields) whose values are secrets. */
 const SENSITIVE_KEY_PATTERN =
-  /token|secret|password|passwd|credential|authorization|cookie|api[-_]?key|client[-_]?auth|^key$/i;
+  /token|secret|password|passwd|credential|authorization|cookie|api[-_]?key|client[-_]?auth|auth[-_]?code|^key$/i;
 
 function isSensitiveKey(key: string): boolean {
   return SENSITIVE_KEY_PATTERN.test(key);
@@ -39,7 +40,8 @@ function isSensitiveKey(key: string): boolean {
 export function redactHeaders(headers: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(headers)) {
-    out[k] = isSensitiveKey(k) ? MASK : v;
+    out[k] =
+      isSensitiveKey(k) || /^x-portkey-(config|metadata|forward-headers)$/i.test(k) ? MASK : v;
   }
   return out;
 }
@@ -125,18 +127,19 @@ function headersToRecord(
   return headers as Record<string, string>;
 }
 
-const KEEP_DEBUG_LOGS = 10;
-
 /**
  * Install a global fetch interceptor that logs all AIRS / SCM API
  * requests and responses to a JSONL file.
  *
  * Returns the log file path and a teardown function.
  */
-export function installDebugLogger(logPath: string): { teardown: () => void } {
-  mkdirSync(dirname(logPath), { recursive: true });
-  writeFileSync(logPath, '', 'utf-8'); // truncate / create
-  pruneDebugLogs(dirname(logPath), KEEP_DEBUG_LOGS);
+export function installDebugLogger(
+  logPath: string,
+  options: { omitBodies?: boolean } = {},
+): { teardown: () => void } {
+  mkdirSync(dirname(logPath), { recursive: true, mode: 0o700 });
+  writeFileSync(logPath, '', { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+  // CWD artifacts belong to the user: never truncate or automatically prune earlier logs.
 
   const originalFetch = globalThis.fetch;
 
@@ -151,20 +154,34 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
           ? input.toString()
           : (input as Request).url;
 
-    if (!isAirsUrl(url)) {
+    const rawHeaders = headersToRecord(
+      init?.headers ?? (input instanceof Request ? input.headers : undefined),
+    );
+    const inference = Object.keys(rawHeaders).some(
+      (name) => name.toLowerCase() === 'x-portkey-api-key',
+    );
+    if (!isAirsUrl(url) && !inference) {
       return originalFetch(input, init);
     }
+    const dashboard =
+      options.omitBodies ||
+      /\/v1\/mgmt\/(dashboard\/|reports\/scancontent(?:\?|$))/.test(url) ||
+      /\/aiag\//.test(new URL(url).pathname);
 
     const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
-    const reqHeaders = redactHeaders(headersToRecord(init?.headers));
+    const reqHeaders = redactHeaders(rawHeaders);
     const loggedUrl = redactUrl(url);
 
     let reqBody: unknown;
-    if (init?.body) {
+    if (inference || dashboard) reqBody = '[BODY OMITTED]';
+    else if (init?.body) {
       try {
         reqBody = redactDeep(JSON.parse(String(init.body)));
       } catch {
-        reqBody = String(init.body);
+        const contentType = new Headers(rawHeaders).get('content-type') ?? '';
+        reqBody = contentType.includes('application/x-www-form-urlencoded')
+          ? redactDeep(Object.fromEntries(new URLSearchParams(String(init.body))))
+          : '[NON-JSON BODY OMITTED]';
       }
     }
 
@@ -178,7 +195,7 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     try {
       response = await originalFetch(input, init);
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      error = inference ? 'Runtime request failed' : 'Request failed';
       const entry = JSON.stringify({
         timestamp: ts,
         durationMs: Date.now() - startMs,
@@ -196,16 +213,26 @@ export function installDebugLogger(logPath: string): { teardown: () => void } {
     });
 
     // Clone so the original consumer can still read the body
-    const clone = response.clone();
-    try {
-      const text = await clone.text();
+    if (
+      inference ||
+      dashboard ||
+      response.headers.get('content-type')?.includes('text/event-stream')
+    ) {
+      // Never consume/tee an inference stream before the SDK can read it. Besides retaining
+      // sensitive prompt text, clone().text() would buffer the full stream and defeat cancellation.
+      resBody = '[BODY OMITTED]';
+    } else {
+      const clone = response.clone();
       try {
-        resBody = redactDeep(JSON.parse(text));
+        const text = await clone.text();
+        try {
+          resBody = redactDeep(JSON.parse(text));
+        } catch {
+          resBody = '[NON-JSON BODY OMITTED]';
+        }
       } catch {
-        resBody = text;
+        resBody = '<unreadable>';
       }
-    } catch {
-      resBody = '<unreadable>';
     }
 
     const entry = JSON.stringify({

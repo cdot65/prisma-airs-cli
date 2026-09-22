@@ -1,6 +1,6 @@
 # Interface: BatchEntry
 
-Defined in: src/airs/types.ts:67
+Defined in: src/airs/types.ts:71
 
 Correlation data for one prompt accepted in an async AIRS submission.
 
@@ -14,7 +14,7 @@ Correlation data for one prompt accepted in an async AIRS submission.
 
 > **index**: `number`
 
-Defined in: src/airs/types.ts:62
+Defined in: src/airs/types.ts:66
 
 #### Inherited from
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:62
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:63
+Defined in: src/airs/types.ts:67
 
 #### Inherited from
 
@@ -38,7 +38,7 @@ Defined in: src/airs/types.ts:63
 
 > **reqId**: `number`
 
-Defined in: src/airs/types.ts:69
+Defined in: src/airs/types.ts:73
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: src/airs/types.ts:69
 
 > **scanId**: `string`
 
-Defined in: src/airs/types.ts:68
+Defined in: src/airs/types.ts:72

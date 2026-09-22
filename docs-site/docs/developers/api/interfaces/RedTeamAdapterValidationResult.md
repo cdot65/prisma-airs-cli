@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterValidationResult
 
-Defined in: src/airs/types.ts:1534
+Defined in: src/airs/types.ts:1591
 
 Execution outcome of a validation run — not an adapter record.
 
@@ -10,7 +10,7 @@ Execution outcome of a validation run — not an adapter record.
 
 > `optional` **stderr?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1537
+Defined in: src/airs/types.ts:1594
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:1537
 
 > `optional` **stdout?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1536
+Defined in: src/airs/types.ts:1593
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1536
 
 > `optional` **traceback?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:1538
+Defined in: src/airs/types.ts:1595
 
 ***
 
@@ -34,4 +34,4 @@ Defined in: src/airs/types.ts:1538
 
 > **validated**: `boolean`
 
-Defined in: src/airs/types.ts:1535
+Defined in: src/airs/types.ts:1592

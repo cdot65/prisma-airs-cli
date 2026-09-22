@@ -9,7 +9,7 @@ sidebar_label: eula
 Check EULA acceptance status
 
 ```text
-airs redteam eula status [options]
+airs-cli redteam eula status [options]
 ```
 
 #### Examples
@@ -17,7 +17,7 @@ airs redteam eula status [options]
 *Check whether the EULA has been accepted on this tenant*
 
 ```bash
-airs redteam eula status
+airs-cli redteam eula status
 ```
 
 ```text
@@ -39,7 +39,7 @@ EULA Status:
 Display EULA content
 
 ```text
-airs redteam eula content [options]
+airs-cli redteam eula content [options]
 ```
 
 #### Examples
@@ -47,7 +47,7 @@ airs redteam eula content [options]
 *Display the EULA text (output truncated — actual document is ~500 lines)*
 
 ```bash
-airs redteam eula content
+airs-cli redteam eula content
 ```
 
 ```text
@@ -79,7 +79,7 @@ THIS IS A LEGAL AGREEMENT BETWEEN YOU (REFERRED TO HEREIN AS "CUSTOMER" or
 Accept the EULA
 
 ```text
-airs redteam eula accept [options]
+airs-cli redteam eula accept [options]
 ```
 
 #### Options
@@ -93,7 +93,7 @@ airs redteam eula accept [options]
 *Accept the EULA on this tenant (idempotent — re-running just re-confirms the existing acceptance)*
 
 ```bash
-airs redteam eula accept
+airs-cli redteam eula accept
 ```
 
 ```text

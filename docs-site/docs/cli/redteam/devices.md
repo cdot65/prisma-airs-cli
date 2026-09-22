@@ -9,7 +9,7 @@ sidebar_label: devices
 Create devices for an instance
 
 ```text
-airs redteam devices create [options] <tenantId>
+airs-cli redteam devices create [options] <tenantId>
 ```
 
 #### Arguments
@@ -35,7 +35,7 @@ No curated input/output example for this command yet.
 Update devices for an instance (PATCH)
 
 ```text
-airs redteam devices update [options] <tenantId>
+airs-cli redteam devices update [options] <tenantId>
 ```
 
 #### Arguments
@@ -61,7 +61,7 @@ No curated input/output example for this command yet.
 Delete devices by serial numbers
 
 ```text
-airs redteam devices delete [options] <tenantId>
+airs-cli redteam devices delete [options] <tenantId>
 ```
 
 #### Arguments

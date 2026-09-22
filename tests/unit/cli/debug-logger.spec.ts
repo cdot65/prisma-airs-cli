@@ -1,4 +1,12 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -34,6 +42,21 @@ describe('isAirsUrl', () => {
 });
 
 describe('redactHeaders', () => {
+  it('masks opaque gateway routing/configuration header values', () => {
+    expect(
+      redactHeaders({
+        'x-portkey-api-key': 'key',
+        'x-portkey-config': '{"api_key":"nested-secret"}',
+        'X-Portkey-Metadata': '{"private":"data"}',
+        'x-portkey-forward-headers': 'Authorization',
+      }),
+    ).toEqual({
+      'x-portkey-api-key': '***',
+      'x-portkey-config': '***',
+      'X-Portkey-Metadata': '***',
+      'x-portkey-forward-headers': '***',
+    });
+  });
   it('fully masks sensitive headers with no value prefix retained', () => {
     const out = redactHeaders({
       Authorization: 'Bearer abcdefghijklmnop',
@@ -139,6 +162,85 @@ describe('installDebugLogger redaction integration', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+  });
+
+  it('never truncates an existing file or follows a destination symlink', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'airs-debug-existing-'));
+    try {
+      const target = join(dir, 'config.json');
+      const link = join(dir, 'debug-api-link.jsonl');
+      writeFileSync(target, 'KEEP');
+      symlinkSync(target, link);
+      expect(() => installDebugLogger(target)).toThrow();
+      expect(() => installDebugLogger(link)).toThrow();
+      expect(readFileSync(target, 'utf8')).toBe('KEEP');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('redacts URL-encoded OAuth credentials, auth codes, and non-JSON bodies', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'airs-debug-oauth-'));
+    const logPath = join(dir, 'debug-api-test.jsonl');
+    try {
+      globalThis.fetch = vi.fn(async () =>
+        Response.json({ auth_code: 'PRIVATE-AUTH', result: 'ok' }),
+      );
+      const { teardown } = installDebugLogger(logPath);
+      await fetch('https://auth.apps.paloaltonetworks.com/oauth2/access_token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_secret: 'PRIVATE-SECRET',
+          grant_type: 'client_credentials',
+        }),
+      });
+      await fetch('https://api.sase.paloaltonetworks.com/v1/example', {
+        method: 'POST',
+        body: 'PRIVATE-NON-JSON',
+      });
+      teardown();
+      const raw = readFileSync(logPath, 'utf8');
+      expect(raw).not.toContain('PRIVATE-');
+      const first = JSON.parse(raw.split('\n')[0]);
+      expect(first.request.body.client_secret).toBe('***');
+      expect(first.response.body.auth_code).toBe('***');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('logs a private gateway without consuming its stream or retaining prompts and credentials', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'airs-debug-runtime-'));
+    const logPath = join(dir, 'debug-api-test.jsonl');
+    const response = new Response(new ReadableStream(), {
+      headers: { 'content-type': 'text/event-stream' },
+    });
+    const clone = vi.spyOn(response, 'clone');
+    try {
+      globalThis.fetch = vi.fn(async () => response) as typeof fetch;
+      const { teardown } = installDebugLogger(logPath);
+      const result = await fetch('https://private-gateway.example/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'x-portkey-api-key': 'runtime-secret',
+          'x-portkey-config': '{"api_key":"provider-secret"}',
+        },
+        body: '{"messages":[{"content":"private prompt"}]}',
+      });
+      teardown();
+      expect(result).toBe(response);
+      expect(clone).not.toHaveBeenCalled();
+      const raw = readFileSync(logPath, 'utf8');
+      for (const secret of ['runtime-secret', 'provider-secret', 'private prompt'])
+        expect(raw).not.toContain(secret);
+      expect(JSON.parse(raw).request.body).toBe('[BODY OMITTED]');
+      expect(JSON.parse(raw).response.body).toBe('[BODY OMITTED]');
+    } finally {
+      await response.body?.cancel();
+      clone.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('writes redacted request/response bodies, headers, and URLs to the log', async () => {

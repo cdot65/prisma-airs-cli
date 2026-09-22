@@ -9,7 +9,7 @@ sidebar_label: api-keys
 List API keys
 
 ```text
-airs runtime api-keys list [options]
+airs-cli runtime api-keys list [options]
 ```
 
 #### Options
@@ -27,7 +27,7 @@ airs runtime api-keys list [options]
 *Pretty output (fallback `pretty`) — `last8` is the trailing 8 chars of the secret; full key is only echoed on create / regenerate*
 
 ```bash
-airs runtime api-keys list --limit 2
+airs-cli runtime api-keys list --limit 2
 ```
 
 ```text
@@ -46,7 +46,7 @@ API Keys:
 *JSON output*
 
 ```bash
-airs runtime api-keys list --limit 2 --output json
+airs-cli runtime api-keys list --limit 2 --output json
 ```
 
 ```text
@@ -71,7 +71,7 @@ airs runtime api-keys list --limit 2 --output json
 *YAML output (one sequence containing complete records)*
 
 ```bash
-airs runtime api-keys list --limit 2 --output yaml
+airs-cli runtime api-keys list --limit 2 --output yaml
 ```
 
 ```text
@@ -94,7 +94,7 @@ airs runtime api-keys list --limit 2 --output yaml
 Create a new API key
 
 ```text
-airs runtime api-keys create [options]
+airs-cli runtime api-keys create [options]
 ```
 
 #### Options
@@ -108,7 +108,7 @@ airs runtime api-keys create [options]
 *Create a new API key from a config fixture (no JSON output flag — pretty only). The full secret is echoed exactly once; subsequent `list` only shows `last8`.*
 
 ```bash
-airs runtime api-keys create --config docs/cli/examples/runtime/api-keys-create.json
+airs-cli runtime api-keys create --config docs/cli/examples/runtime/api-keys-create.json
 ```
 
 ```text
@@ -132,7 +132,7 @@ API Key Detail:
 Regenerate an API key
 
 ```text
-airs runtime api-keys regenerate [options] <apiKeyId>
+airs-cli runtime api-keys regenerate [options] <apiKeyId>
 ```
 
 #### Arguments
@@ -152,7 +152,7 @@ airs runtime api-keys regenerate [options] <apiKeyId>
 *Regenerate by api-key UUID. Returns a NEW UUID and a NEW secret — the old key is invalidated. No JSON output flag — pretty only.*
 
 ```bash
-airs runtime api-keys regenerate 00000000-0000-0000-0000-000000000001 --interval 90 --unit days --updated-by user@example.com
+airs-cli runtime api-keys regenerate 00000000-0000-0000-0000-000000000001 --interval 90 --unit days --updated-by user@example.com
 ```
 
 ```text
@@ -176,7 +176,7 @@ API Key Detail:
 Delete an API key
 
 ```text
-airs runtime api-keys delete [options] <apiKeyName>
+airs-cli runtime api-keys delete [options] <apiKeyName>
 ```
 
 #### Arguments

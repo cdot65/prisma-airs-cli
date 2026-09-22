@@ -9,7 +9,7 @@ sidebar_label: properties
 List property names
 
 ```text
-airs redteam properties list [options]
+airs-cli redteam properties list [options]
 ```
 
 #### Options
@@ -27,7 +27,7 @@ airs redteam properties list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs redteam properties list
+airs-cli redteam properties list
 ```
 
 ```text
@@ -44,7 +44,7 @@ Property Names:
 *JSON output (raw string array from SDK 0.10.0)*
 
 ```bash
-airs redteam properties list --output json
+airs-cli redteam properties list --output json
 ```
 
 ```text
@@ -57,7 +57,7 @@ airs redteam properties list --output json
 *YAML output*
 
 ```bash
-airs redteam properties list --output yaml
+airs-cli redteam properties list --output yaml
 ```
 
 ```text
@@ -72,7 +72,7 @@ airs redteam properties list --output yaml
 Create a property name
 
 ```text
-airs redteam properties create [options]
+airs-cli redteam properties create [options]
 ```
 
 #### Options
@@ -94,7 +94,7 @@ No curated input/output example for this command yet.
 List values for a property
 
 ```text
-airs redteam properties values [options] <name>
+airs-cli redteam properties values [options] <name>
 ```
 
 #### Arguments
@@ -112,7 +112,7 @@ airs redteam properties values [options] <name>
 *List values for a property name (pretty)*
 
 ```bash
-airs redteam properties values severity
+airs-cli redteam properties values severity
 ```
 
 ```text
@@ -131,7 +131,7 @@ Property Values:
 *JSON output (single {name, values[]} object — SDK 0.10.0 shape)*
 
 ```bash
-airs redteam properties values severity --output json
+airs-cli redteam properties values severity --output json
 ```
 
 ```text
@@ -148,7 +148,7 @@ airs redteam properties values severity --output json
 *YAML output*
 
 ```bash
-airs redteam properties values severity --output yaml
+airs-cli redteam properties values severity --output yaml
 ```
 
 ```text
@@ -166,7 +166,7 @@ values:
 Create a property value
 
 ```text
-airs redteam properties add-value [options]
+airs-cli redteam properties add-value [options]
 ```
 
 #### Options
@@ -181,7 +181,7 @@ airs redteam properties add-value [options]
 *Create a new value for an existing property name*
 
 ```bash
-airs redteam properties add-value --name severity --value critical
+airs-cli redteam properties add-value --name severity --value critical
 ```
 
 ```text

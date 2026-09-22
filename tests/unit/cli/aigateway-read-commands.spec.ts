@@ -2,9 +2,13 @@ import type { AIGatewayClient } from '@cdot65/prisma-airs-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAiGatewayClientFactoryForTest } from '../../../src/cli/commands/aigateway/shared.js';
 import { buildProgram } from '../../../src/cli/program.js';
+import { useTestTenant } from '../../helpers/tenant.js';
 
 const methods = {
+  apiKeysGetService: vi.fn(),
+  apiKeysGetUser: vi.fn(),
   apiKeysListService: vi.fn(),
+  apiKeysListUser: vi.fn(),
   auditLogsList: vi.fn(),
   configsGet: vi.fn(),
   configsList: vi.fn(),
@@ -15,6 +19,7 @@ const methods = {
   guardrailsList: vi.fn(),
   integrationsModels: vi.fn(),
   integrationsWorkspaces: vi.fn(),
+  integrationsCatalog: vi.fn(),
   mcpCapabilities: vi.fn(),
   mcpMetadata: vi.fn(),
   organisationsAuth: vi.fn(),
@@ -23,11 +28,22 @@ const methods = {
   providersGet: vi.fn(),
   providersList: vi.fn(),
   telemetryRequests: vi.fn(),
+  errorCategories: vi.fn(),
+  groupedErrors: vi.fn(),
+  filterBoundaries: vi.fn(),
+  logs: vi.fn(),
+  organisationInfo: vi.fn(),
+  catalog: vi.fn(),
 };
 
 function fakeClient(): AIGatewayClient {
   return {
-    apiKeys: { listService: methods.apiKeysListService },
+    apiKeys: {
+      getService: methods.apiKeysGetService,
+      getUser: methods.apiKeysGetUser,
+      listService: methods.apiKeysListService,
+      listUser: methods.apiKeysListUser,
+    },
     auditLogs: { list: methods.auditLogsList },
     configs: {
       get: methods.configsGet,
@@ -39,8 +55,9 @@ function fakeClient(): AIGatewayClient {
       list: methods.deploymentsList,
       ping: methods.deploymentsPing,
     },
-    guardrails: { list: methods.guardrailsList },
+    guardrails: { list: methods.guardrailsList, getCatalog: methods.catalog },
     integrations: {
+      catalog: methods.integrationsCatalog,
       getModels: methods.integrationsModels,
       getWorkspaces: methods.integrationsWorkspaces,
     },
@@ -51,17 +68,25 @@ function fakeClient(): AIGatewayClient {
     organisations: {
       getAuthSettings: methods.organisationsAuth,
       getSelf: methods.organisationsSelf,
+      getInfo: methods.organisationInfo,
     },
     plugins: { list: methods.pluginsList },
     providers: { get: methods.providersGet, list: methods.providersList },
-    telemetry: { requests: methods.telemetryRequests },
+    telemetry: {
+      requests: methods.telemetryRequests,
+      errorCategoryTrends: methods.errorCategories,
+      groupedErrors: methods.groupedErrors,
+      filterBoundaries: methods.filterBoundaries,
+      logs: methods.logs,
+    },
   } as unknown as AIGatewayClient;
 }
 
 let restoreFactory: (() => void) | undefined;
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await useTestTenant();
   for (const method of Object.values(methods)) method.mockResolvedValue({ data: [] });
   methods.configsGet.mockResolvedValue({ id: 'config-1' });
   methods.deploymentsGet.mockResolvedValue({ id: 'deployment-1' });
@@ -87,10 +112,40 @@ afterEach(() => {
 });
 
 async function run(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(['node', 'airs', 'aigateway', ...args, '--output', 'json']);
+  await buildProgram().parseAsync(['node', 'airs-cli', 'aigateway', ...args, '--output', 'json']);
 }
 
 describe('AI Gateway read command SDK mappings', () => {
+  it('maps the five new dashboard reads and redacts sensitive subtrees', async () => {
+    await run('telemetry', 'error-category-trends', '--workspace', 'dev');
+    expect(methods.errorCategories).toHaveBeenCalledWith({ workspaceSlug: 'dev', days: 7 });
+    await run('telemetry', 'grouped-errors', '--workspace', 'dev');
+    expect(methods.groupedErrors).toHaveBeenCalledWith({ workspaceSlug: 'dev', days: 7 });
+    methods.filterBoundaries.mockResolvedValue({
+      success: true,
+      data: { unique_api_keys: ['PRIVATE'] },
+    });
+    await run('telemetry', 'filter-boundaries', '--workspace', 'dev');
+    methods.organisationInfo.mockResolvedValue({
+      id: 'org',
+      settings: { dashboard_gateway_url: 'PRIVATE' },
+    });
+    await run('organisations', 'info', '--tsg-id', '123');
+    expect(methods.organisationInfo).toHaveBeenCalledWith('123');
+    await run('guardrails', 'catalog');
+    expect(methods.catalog).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain('PRIVATE');
+  });
+
+  it.each(['0', '1', '12'])('preserves zero-based current page %s', async (page) => {
+    await run('telemetry', 'logs', 'list', '--workspace', 'dev', '--current-page', page);
+    expect(methods.logs).toHaveBeenCalledWith({
+      workspaceSlug: 'dev',
+      days: 7,
+      pageSize: 50,
+      currentPage: Number(page),
+    });
+  });
   it('maps workspace-scoped collection reads to workspace UUID options', async () => {
     await run('configs', 'list', '--workspace', 'workspace-1');
     expect(methods.configsList).toHaveBeenCalledWith({ workspaceId: 'workspace-1' });
@@ -103,6 +158,22 @@ describe('AI Gateway read command SDK mappings', () => {
 
     await run('api-keys', 'service', 'list', '--workspace', 'workspace-1');
     expect(methods.apiKeysListService).toHaveBeenCalledWith({ workspaceId: 'workspace-1' });
+  });
+
+  it('lists the provider catalog for --ai-provider slugs', async () => {
+    methods.integrationsCatalog.mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: '0a9635da-bd84-11ef-9c04-1235d6b0b075',
+          slug: 'x-ai',
+          name: 'x-ai',
+          status: 'active',
+        },
+      ],
+    });
+    await run('integrations', 'providers');
+    expect(methods.integrationsCatalog).toHaveBeenCalledTimes(1);
   });
 
   it('maps config detail and version reads', async () => {
@@ -189,6 +260,57 @@ describe('AI Gateway read command SDK mappings', () => {
       .mock.calls.map(([line]) => String(line))
       .join('\n');
     expect(JSON.parse(stdout).scim_token).toBe('scim-secret');
+  });
+
+  it.each([
+    'service',
+    'user',
+  ] as const)('redacts %s API keys on list and detail reads unless explicitly revealed', async (kind) => {
+    const listMethod = kind === 'service' ? methods.apiKeysListService : methods.apiKeysListUser;
+    const getMethod = kind === 'service' ? methods.apiKeysGetService : methods.apiKeysGetUser;
+    listMethod.mockResolvedValue({
+      data: [{ api_key_defaults_id: 'defaults-1', id: 'key-1', key: 'live-list-secret' }],
+    });
+    getMethod.mockResolvedValue({
+      api_key_defaults_id: 'defaults-1',
+      id: 'key-1',
+      key: 'live-detail-secret',
+    });
+
+    await run('api-keys', kind, 'list', '--workspace', 'workspace-1');
+    let stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(stdout).not.toContain('live-list-secret');
+    expect(JSON.parse(stdout)[0].key).toBe('***');
+    expect(JSON.parse(stdout)[0].api_key_defaults_id).toBe('defaults-1');
+
+    vi.mocked(console.log).mockClear();
+    await run('api-keys', kind, 'get', 'key-1');
+    stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(stdout).not.toContain('live-detail-secret');
+    expect(JSON.parse(stdout).key).toBe('***');
+    expect(JSON.parse(stdout).api_key_defaults_id).toBe('defaults-1');
+
+    vi.mocked(console.log).mockClear();
+    await run('api-keys', kind, 'list', '--workspace', 'workspace-1', '--reveal-sensitive');
+    stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(JSON.parse(stdout)[0].key).toBe('live-list-secret');
+
+    vi.mocked(console.log).mockClear();
+    await run('api-keys', kind, 'get', 'key-1', '--reveal-sensitive');
+    stdout = vi
+      .mocked(console.log)
+      .mock.calls.map(([line]) => String(line))
+      .join('\n');
+    expect(JSON.parse(stdout).key).toBe('live-detail-secret');
   });
 
   it.each([

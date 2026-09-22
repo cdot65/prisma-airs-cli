@@ -9,7 +9,7 @@ sidebar_label: deployment-profiles
 List deployment profiles
 
 ```text
-airs runtime deployment-profiles list [options]
+airs-cli runtime deployment-profiles list [options]
 ```
 
 ### Options
@@ -24,7 +24,7 @@ airs runtime deployment-profiles list [options]
 *Pretty output (fallback `pretty`)*
 
 ```bash
-airs runtime deployment-profiles list
+airs-cli runtime deployment-profiles list
 ```
 
 ```text
@@ -42,7 +42,7 @@ Deployment Profiles:
 *JSON output*
 
 ```bash
-airs runtime deployment-profiles list --output json
+airs-cli runtime deployment-profiles list --output json
 ```
 
 ```text
@@ -68,7 +68,7 @@ airs runtime deployment-profiles list --output json
 *YAML output*
 
 ```bash
-airs runtime deployment-profiles list --output yaml
+airs-cli runtime deployment-profiles list --output yaml
 ```
 
 ```text

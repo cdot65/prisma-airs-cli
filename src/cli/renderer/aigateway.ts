@@ -1,6 +1,10 @@
 import chalk from 'chalk';
 import { dump as yamlDump } from 'js-yaml';
-import type { AiGatewayWorkspace, AiGatewayWorkspaceDetail } from '../../airs/types.js';
+import type {
+  AiGatewayScope,
+  AiGatewayWorkspace,
+  AiGatewayWorkspaceDetail,
+} from '../../airs/types.js';
 import { formatOutput, type OutputFormat } from './common.js';
 import { ui } from './ui.js';
 import { emitDetail } from './view.js';
@@ -114,6 +118,68 @@ export function renderWorkspaceDetail(
     ui.section('Security Settings:');
     ui.keyValue(Object.entries(workspace.securitySettings).map(([k, v]) => [k, v]));
   }
+  console.log();
+}
+
+function scopeBindings(scope: AiGatewayScope): string {
+  return scope.resources.map((r) => `${r.resourceType}:${r.resourceId}`).join(', ');
+}
+
+/** Render an IAM scope list. Structured rows flatten bindings to `type:id, ...`. */
+export function renderScopeList(scopes: AiGatewayScope[], format: OutputFormat = 'pretty'): void {
+  // Structured consumers get a real empty document, never a prose notice.
+  if (scopes.length === 0 && (format === 'json' || format === 'yaml')) {
+    console.log(format === 'json' ? '[]' : yamlDump([]).trimEnd());
+    return;
+  }
+  if (scopes.length === 0) {
+    ui.emptyList('IAM scopes');
+    return;
+  }
+  if (format !== 'pretty') {
+    const rows = scopes.map((s) => ({
+      name: s.name,
+      description: s.description,
+      resources: scopeBindings(s),
+      tsgId: s.tsgId,
+    }));
+    console.log(
+      formatOutput(
+        rows,
+        [
+          { key: 'name', label: 'Name' },
+          { key: 'description', label: 'Description' },
+          { key: 'resources', label: 'Bound resources' },
+          { key: 'tsgId', label: 'TSG' },
+        ],
+        format,
+      ),
+    );
+    return;
+  }
+  ui.section('IAM Scopes:');
+  for (const s of scopes) {
+    const bindings = scopeBindings(s);
+    console.log(`    ${s.name}  ${bindings ? chalk.dim(bindings) : chalk.yellow('unbound')}`);
+    if (s.description) console.log(`    ${chalk.dim(s.description)}`);
+    console.log();
+  }
+}
+
+/** Render one IAM scope. */
+export function renderScopeDetail(scope: AiGatewayScope, format: OutputFormat = 'pretty'): void {
+  if (format !== 'pretty') {
+    console.log(format === 'json' ? JSON.stringify(scope, null, 2) : yamlDump(scope));
+    return;
+  }
+  ui.section('IAM Scope:');
+  ui.keyValue([
+    ['Name', scope.name],
+    ['Description', scope.description || chalk.dim('(none)')],
+    ['TSG', scope.tsgId],
+    ['ID', scope.id],
+    ['Bound resources', scopeBindings(scope) || chalk.yellow('none — unbound')],
+  ]);
   console.log();
 }
 

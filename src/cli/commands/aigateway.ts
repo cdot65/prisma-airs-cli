@@ -11,18 +11,23 @@ import { loadConfig } from '../../config/loader.js';
 import { confirmOrAbort } from '../confirm.js';
 import { examples } from '../examples.js';
 import {
+  CliUsageError,
   fail,
-  type OutputFormat,
   renderAiGatewayHeader,
   renderCostReport,
+  renderScopeDetail,
+  renderScopeList,
   renderWorkspaceDetail,
   renderWorkspaceList,
   resolveOutput,
   ui,
   usageError,
 } from '../renderer/index.js';
+import { registerAiGatewayInference } from './aigateway/inference.js';
 import { registerAiGatewayInventory } from './aigateway/inventory.js';
-import { registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
+import { parsePositiveInteger, registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
+import { addChartFilterOptions, chartFiltersFrom } from './aigateway/telemetry-filters.js';
+import { registerAiGatewayReportCommand } from './aigateway-report.js';
 
 /** Create an SdkAiGatewayService from config. */
 async function createService() {
@@ -126,6 +131,8 @@ export function registerAiGatewayCommand(program: Command): void {
     .action(() => aigateway.outputHelp());
 
   registerAiGatewayInventory(aigateway);
+  registerAiGatewayReportCommand(aigateway);
+  registerAiGatewayInference(aigateway);
 
   const workspace = aigateway
     .command('workspaces')
@@ -143,10 +150,10 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspaces list',
-        'airs aigateway workspaces list --plane admin',
-        'airs aigateway workspaces list --plane admin --status archived',
-        'airs aigateway workspaces list --all --output json',
+        'airs-cli aigateway workspaces list',
+        'airs-cli aigateway workspaces list --plane admin',
+        'airs-cli aigateway workspaces list --plane admin --status archived',
+        'airs-cli aigateway workspaces list --all --output json',
       ),
     )
     .action(async (opts) => {
@@ -183,8 +190,8 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspaces get ws-main-a-349e0e',
-        'airs aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json',
+        'airs-cli aigateway workspaces get ws-main-a-349e0e',
+        'airs-cli aigateway workspaces get 16f7e90d-382a-4e78-b577-1b01eb5f8297 --plane admin --output json',
       ),
     )
     .action(async (ref: string, opts) => {
@@ -203,13 +210,17 @@ export function registerAiGatewayCommand(program: Command): void {
       }
     });
 
-  workspace
+  const workspaceCreate = workspace
     .command('create')
-    .description('Create a workspace (admin plane)')
+    .description('Create a workspace: IAM scope → workspace → bind scope (admin plane)')
     .requiredOption('--name <name>', 'Display name')
-    .requiredOption(
+    .option(
       '--scope-name <scope>',
-      'SCM role scope granting data-plane access (e.g. ws_production_bx7qw0) — not derived from --name',
+      'IAM scope to create and bind (e.g. ws_production_bx7qw0). Default: ws_<name>_<suffix>',
+    )
+    .option(
+      '--existing-scope',
+      'Bind an IAM scope that already exists instead of creating one (requires --scope-name)',
     )
     .option('--description <text>', 'Workspace description')
     .option('--icon <icon>', 'Workspace icon')
@@ -222,34 +233,48 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0',
-        `airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0 --metadata '{"env":"production"}' --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'`,
+        'airs-cli aigateway workspaces create --name truffles --description "Online recipe generation application"',
+        'airs-cli aigateway workspaces create --name Production --scope-name ws_production_bx7qw0',
+        'airs-cli aigateway workspaces create --name Staging --scope-name ws_staging_q1x8mz --existing-scope',
+        `airs-cli aigateway workspaces create --name Production --metadata '{"env":"production"}' --rate-limits '[{"type":"requests","unit":"rpm","value":100}]'`,
       ),
     )
     .action(async (opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        // The root program also declares --output, so a raw opts.output never sees
+        // `--output json` given after the subcommand; resolve it like the reads do.
+        const fmt = await resolveOutput(workspaceCreate, opts, {
+          allowed: ['pretty', 'json', 'yaml'],
+        });
         if (fmt === 'pretty') renderAiGatewayHeader();
-        if (scopeNameLooksUnrelated(opts.name, opts.scopeName)) {
+        if (opts.existingScope && !opts.scopeName) {
+          throw new CliUsageError('--existing-scope requires --scope-name');
+        }
+        if (opts.scopeName && scopeNameLooksUnrelated(opts.name, opts.scopeName)) {
           ui.warn(
             `--scope-name '${opts.scopeName}' shares no token with --name '${opts.name}'. ` +
-              'A workspace created with a scope nobody holds will not appear in data-plane lists.',
+              'Operators find workspaces by scope in SCM Access Management; an unrelated name is easy to lose.',
           );
         }
         const service = await createService();
-        const workspace = await service.createWorkspace({
+        const { workspace, scope, scopeCreated } = await service.createWorkspace({
           ...buildWorkspaceWriteRequest(opts),
           name: opts.name,
-          scopeName: opts.scopeName,
+          ...(opts.scopeName !== undefined ? { scopeName: opts.scopeName } : {}),
+          ...(opts.existingScope ? { existingScope: true } : {}),
         });
         ui.success(`Workspace created: ${workspace.id}`);
+        ui.status(
+          `IAM scope ${scope.name} ${scopeCreated ? 'created and ' : ''}bound to workspace ${workspace.slug}. ` +
+            'Grant that scope to the service accounts that should reach the workspace on the data plane.',
+        );
         renderWorkspaceDetail(workspace, fmt);
       } catch (err) {
         failWithGrantHint(err);
       }
     });
 
-  workspace
+  const workspaceUpdate = workspace
     .command('update <ref>')
     .description('Update a workspace (admin plane, partial patch)')
     .option('--name <name>', 'New display name')
@@ -263,12 +288,14 @@ export function registerAiGatewayCommand(program: Command): void {
     .addHelpText(
       'after',
       examples(
-        `airs aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'`,
+        `airs-cli aigateway workspaces update ws-produc-985697 --description 'Production workloads, us-east'`,
       ),
     )
     .action(async (ref: string, opts) => {
       try {
-        const fmt = opts.output as OutputFormat;
+        const fmt = await resolveOutput(workspaceUpdate, opts, {
+          allowed: ['pretty', 'json', 'yaml'],
+        });
         if (fmt === 'pretty') renderAiGatewayHeader();
         const request = buildWorkspaceWriteRequest(opts);
         if (Object.keys(request).length === 0) {
@@ -313,7 +340,10 @@ export function registerAiGatewayCommand(program: Command): void {
     .command('archive <ref>')
     .description('Archive a workspace (soft delete — there is no hard delete)')
     .option('--force', 'Skip confirmation prompt')
-    .addHelpText('after', examples('airs aigateway workspaces archive ws-produc-985697 --force'))
+    .addHelpText(
+      'after',
+      examples('airs-cli aigateway workspaces archive ws-produc-985697 --force'),
+    )
     .action((ref: string, opts) => archiveWorkspace(ref, opts, false));
 
   workspace
@@ -322,6 +352,121 @@ export function registerAiGatewayCommand(program: Command): void {
     .option('--force', 'Skip confirmation prompt')
     .action((ref: string, opts) => archiveWorkspace(ref, opts, true));
 
+  const scopes = aigateway
+    .command('scopes')
+    .description('Manage SCM IAM scopes — the objects a workspace scope_name points at (/iam/v1)')
+    .action(() => scopes.outputHelp());
+
+  const scopeList = scopes
+    .command('list')
+    .description('List every IAM scope in the tenant (unbound scopes have no resources)')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
+    .addHelpText(
+      'after',
+      examples('airs-cli aigateway scopes list', 'airs-cli aigateway scopes list --output json'),
+    )
+    .action(async (opts) => {
+      try {
+        const fmt = await resolveOutput(scopeList, opts);
+        if (fmt === 'pretty') renderAiGatewayHeader();
+        const service = await createService();
+        renderScopeList(await service.listScopes(), fmt);
+      } catch (err) {
+        failWithGrantHint(err);
+      }
+    });
+
+  const scopeGet = scopes
+    .command('get <name>')
+    .description('Get one IAM scope by name')
+    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
+    .addHelpText('after', examples('airs-cli aigateway scopes get ws_production_bx7qw0'))
+    .action(async (name: string, opts) => {
+      try {
+        const fmt = await resolveOutput(scopeGet, opts);
+        if (fmt === 'pretty') renderAiGatewayHeader();
+        const service = await createService();
+        renderScopeDetail(await service.getScope(name), fmt);
+      } catch (err) {
+        failWithGrantHint(err);
+      }
+    });
+
+  const scopeCreate = scopes
+    .command('create')
+    .description('Create an unbound IAM scope (step 1 of provisioning, on its own)')
+    .requiredOption('--name <name>', 'Scope name, e.g. ws_production_bx7qw0')
+    .option('--description <text>', 'Scope description')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples(
+        `airs-cli aigateway scopes create --name ws_production_bx7qw0 --description 'All production applications'`,
+      ),
+    )
+    .action(async (opts) => {
+      try {
+        const fmt = await resolveOutput(scopeCreate, opts, { allowed: ['pretty', 'json', 'yaml'] });
+        if (fmt === 'pretty') renderAiGatewayHeader();
+        const service = await createService();
+        const scope = await service.createScope({
+          name: opts.name,
+          ...(opts.description !== undefined ? { description: opts.description } : {}),
+        });
+        ui.success(`IAM scope created: ${scope.name}`);
+        ui.status(
+          'The scope is not bound to anything yet — `workspaces create --existing-scope` or `scopes bind` finishes the job.',
+        );
+        renderScopeDetail(scope, fmt);
+      } catch (err) {
+        failWithGrantHint(err);
+      }
+    });
+
+  const scopeBind = scopes
+    .command('bind <name>')
+    .description('Bind a workspace to an existing IAM scope (step 3 of provisioning, on its own)')
+    .requiredOption('--workspace <ref>', 'Workspace slug, UUID, or unique display name')
+    .option('--output <format>', 'Output format: pretty, json, yaml', 'pretty')
+    .addHelpText(
+      'after',
+      examples('airs-cli aigateway scopes bind ws_production_bx7qw0 --workspace ws-produc-985697'),
+    )
+    .action(async (name: string, opts) => {
+      try {
+        const fmt = await resolveOutput(scopeBind, opts, { allowed: ['pretty', 'json', 'yaml'] });
+        if (fmt === 'pretty') renderAiGatewayHeader();
+        const service = await createService();
+        const scope = await service.bindScope(name, opts.workspace);
+        ui.success(`IAM scope ${scope.name} now binds ${scope.resources.length} resource(s)`);
+        renderScopeDetail(scope, fmt);
+      } catch (err) {
+        failWithGrantHint(err);
+      }
+    });
+
+  scopes
+    .command('delete <name>')
+    .alias('rm')
+    .description('Delete an IAM scope by name (not live-verified upstream; the API may decline)')
+    .option('--force', 'Skip confirmation prompt')
+    .addHelpText('after', examples('airs-cli aigateway scopes delete ws_truffles_ggolfu --force'))
+    .action(async (name: string, opts) => {
+      try {
+        renderAiGatewayHeader();
+        await confirmOrAbort(
+          `Delete IAM scope ${name}? Workspaces bound to it lose their data-plane grant.`,
+          Boolean(opts.force),
+          { action: `delete IAM scope ${name}` },
+        );
+        const service = await createService();
+        await service.deleteScope(name);
+        ui.success(`IAM scope deleted: ${name}`);
+      } catch (err) {
+        failWithGrantHint(err);
+      }
+    });
+
   const telemetry = aigateway
     .command('telemetry')
     .description('AI Gateway runtime telemetry (data plane)')
@@ -329,34 +474,37 @@ export function registerAiGatewayCommand(program: Command): void {
 
   registerAiGatewayTelemetryReads(telemetry);
 
-  const cost = telemetry
-    .command('cost')
-    .description(
-      'Total and per-day spend for a workspace (API reports cents; pretty output shows dollars)',
-    )
-    .requiredOption('--workspace <slug>', 'Workspace slug (not UUID), e.g. ws-main-a-349e0e')
-    .option('--days <n>', 'Rolling window in days, counted back from now', '7')
-    .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
-    .addHelpText(
-      'after',
-      examples(
-        'airs aigateway telemetry cost --workspace ws-main-a-349e0e',
-        'airs aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
+  const cost = addChartFilterOptions(
+    telemetry
+      .command('cost')
+      .description(
+        'Total and per-day spend for a workspace (API reports cents; pretty output shows dollars)',
+      )
+      .requiredOption('--workspace <ref>', 'Workspace slug, UUID, or unique display name')
+      .option('--days <n>', 'Rolling window in days, counted back from now', '7')
+      .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
+      .addHelpText(
+        'after',
+        examples(
+          'airs-cli aigateway telemetry cost --workspace ws-main-a-349e0e',
+          'airs-cli aigateway telemetry cost --workspace ws-main-a-349e0e --days 30 --output json',
+        ),
       ),
-    )
-    .action(async (opts) => {
-      try {
-        const fmt = await resolveOutput(cost, opts);
-        if (fmt === 'pretty') renderAiGatewayHeader();
-        const days = Number.parseInt(opts.days, 10);
-        if (!Number.isFinite(days) || days <= 0) {
-          usageError(`Invalid --days '${opts.days}'. Expected a positive integer`);
-        }
-        const service = await createService();
-        const report = await service.getTelemetryCost({ workspaceSlug: opts.workspace, days });
-        renderCostReport(report, fmt);
-      } catch (err) {
-        failWithGrantHint(err);
-      }
-    });
+  ).action(async (opts) => {
+    try {
+      const days = parsePositiveInteger(opts.days, '--days');
+      const filters = chartFiltersFrom(opts);
+      const fmt = await resolveOutput(cost, opts);
+      if (fmt === 'pretty') renderAiGatewayHeader();
+      const service = await createService();
+      const report = await service.getTelemetryCost({
+        workspaceSlug: opts.workspace,
+        days,
+        ...filters,
+      });
+      renderCostReport(report, fmt);
+    } catch (err) {
+      failWithGrantHint(err);
+    }
+  });
 }

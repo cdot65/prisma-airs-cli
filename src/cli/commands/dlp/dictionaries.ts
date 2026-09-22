@@ -1,25 +1,63 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
+import { AISecSDKException, ErrorType } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { SdkDictionariesService } from '../../../airs/dlp/dictionaries.js';
 import type { DictionaryRequest } from '../../../airs/dlp/types.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import {
-  dlpDictionaries,
-  fail,
-  type OutputFormat,
-  resolveOutput,
-  usageError,
-} from '../../renderer/index.js';
-import { buildMergePatch, parseBody } from './patch.js';
+import { CliUsageError, dlpDictionaries, fail, resolveOutput } from '../../renderer/index.js';
+import { loadDlpClientOptions } from './config.js';
+import { buildMergePatch } from './patch.js';
+import { predefinedFlag, visibleRecords } from './visibility.js';
+
+async function readMetadata(path: string): Promise<Record<string, unknown>> {
+  const raw = await readFile(path, 'utf-8');
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    // JSON.parse errors can quote keyword or other sensitive file contents.
+    throw new CliUsageError('Invalid JSON in dictionary metadata file');
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new CliUsageError('Dictionary metadata must be a JSON object');
+  }
+  return value as Record<string, unknown>;
+}
+
+function dictionaryFailure(err: unknown): never {
+  if (err instanceof AISecSDKException && err.errorType === ErrorType.USER_REQUEST_PAYLOAD_ERROR) {
+    // SDK request validation happens before HTTP; do not print values supplied in metadata.
+    fail(new CliUsageError('Invalid dictionary metadata: verify required fields and value types'));
+  }
+  fail(err);
+}
+
+function uploadFailure(err: unknown): never {
+  const error = err as {
+    status?: number;
+    statusCode?: number;
+    problem?: { detail?: string; errors?: unknown[] };
+  } | null;
+  if (
+    (error?.status ?? error?.statusCode) === 400 &&
+    !error?.problem?.detail &&
+    !error?.problem?.errors?.length
+  ) {
+    console.error(
+      'Dictionary upload rejected. Verify the SCM region display name (for example, --region "United States"); region codes such as GLOBAL or us-west-2 are not equivalent.',
+    );
+  }
+  dictionaryFailure(err);
+}
 
 // biome-ignore lint/suspicious/noExplicitAny: opts object from commander
 async function buildMetadata(opts: any): Promise<DictionaryRequest> {
   if (opts.metadataFile) {
-    return JSON.parse(await readFile(opts.metadataFile, 'utf-8'));
+    return (await readMetadata(opts.metadataFile)) as DictionaryRequest;
   }
   if (!opts.name || !opts.category || !opts.region || !opts.file) {
-    throw new Error('--name, --category, --region, and --file are required');
+    throw new CliUsageError('--name, --category, --region, and --file are required');
   }
   return {
     name: opts.name,
@@ -45,20 +83,24 @@ export function register(dlp: Command): void {
     .option('--keywords', 'Include keyword list in response')
     .option('--include-keywords', 'Alias for --keywords')
     .option('--output <fmt>', 'Output format: pretty, table, markdown, csv, json, yaml');
+  predefinedFlag(listCmd);
   registerPageAliases(listCmd, { sizeFlag: '--size', sizeKey: 'size' });
   listCmd.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
       const includeKeywords = opts.keywords || opts.includeKeywords;
-      const svc = new SdkDictionariesService();
+      const svc = new SdkDictionariesService(await loadDlpClientOptions());
       const params = {
         size,
-        sort: opts.sort,
+        sort: opts.sort ?? ['name,asc'],
         keywords: includeKeywords ? true : undefined,
       };
-      const all = opts.all ? await svc.listAll({ ...params, max: Number(opts.max) }) : undefined;
+      const all = opts.all
+        ? await svc.listAll({ ...params, max: Number(opts.max) })
+        : (await svc.list({ ...params, page })).content;
+      const visible = visibleRecords(all, opts.includePredefined);
       dlpDictionaries.renderList(
-        all ? { content: all, totalElements: all.length } : await svc.list({ ...params, page }),
+        { content: visible, totalElements: visible.length },
         await resolveOutput(listCmd, opts),
       );
     } catch (err) {
@@ -71,26 +113,27 @@ export function register(dlp: Command): void {
     .description('Create dictionary via multipart upload')
     .option('--name <s>', '')
     .option('--category <s>', '')
-    .option('--region <s>', '')
+    .option('--region <s>', 'SCM region display name, e.g. "United States"')
     .option('--description <s>', '')
-    .option('--classification <s>', '')
-    .option('--file <path>', 'Keyword file')
+    .option('--classification <s>', 'Legacy top-level metadata field (server support unverified)')
+    .option('--file <path>', 'Keyword file: TXT (one keyword per line), or CSV (header required)')
     .option('--metadata-file <path>', 'JSON metadata file (overrides --name/--category/...)')
     .option('--include-keywords', 'Include keywords in response')
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (opts) => {
+    .action(async (opts, command) => {
       try {
+        const format = await resolveOutput(command, opts);
         const metadata = await buildMetadata(opts);
-        if (!opts.file) throw new Error('--file is required (multipart upload)');
+        if (!opts.file) throw new CliUsageError('--file is required (multipart upload)');
         const file = await readFile(opts.file);
-        const r = await new SdkDictionariesService().create({
+        const r = await new SdkDictionariesService(await loadDlpClientOptions()).create({
           metadata,
           file,
           includeKeywords: opts.includeKeywords,
         });
-        dlpDictionaries.renderCreated(r, opts.output as OutputFormat);
+        dlpDictionaries.renderCreated(r, format);
       } catch (err) {
-        usageError(err instanceof Error ? err.message : String(err));
+        uploadFailure(err);
       }
     });
 
@@ -103,7 +146,9 @@ export function register(dlp: Command): void {
       try {
         const includeKeywords = opts.keywords || opts.includeKeywords;
         dlpDictionaries.renderGet(
-          await new SdkDictionariesService().get(id, { includeKeywords }),
+          await new SdkDictionariesService(await loadDlpClientOptions()).get(id, {
+            includeKeywords,
+          }),
           await resolveOutput(getCmd, opts),
         );
       } catch (err) {
@@ -119,19 +164,20 @@ export function register(dlp: Command): void {
     )
     .option('--name <s>', '')
     .option('--category <s>', '')
-    .option('--region <s>', '')
+    .option('--region <s>', 'SCM region display name, e.g. "United States"')
     .option('--description <s>', '')
-    .option('--classification <s>', '')
-    .option('--file <path>', 'Keyword file (required)')
+    .option('--classification <s>', 'Legacy top-level metadata field (server support unverified)')
+    .option('--file <path>', 'Required: TXT (one keyword per line), or CSV (header required)')
     .option('--metadata-file <path>', 'JSON metadata file')
     .option('--include-keywords', '')
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (id, opts) => {
+    .action(async (id, opts, command) => {
       try {
         const metadata = await buildMetadata(opts);
-        if (!opts.file) throw new Error('--file is required (multipart upload)');
+        const format = await resolveOutput(command, opts);
+        if (!opts.file) throw new CliUsageError('--file is required (multipart upload)');
         const file = await readFile(opts.file);
-        const r = await new SdkDictionariesService().replace(id, {
+        const r = await new SdkDictionariesService(await loadDlpClientOptions()).replace(id, {
           metadata,
           file,
           includeKeywords: opts.includeKeywords,
@@ -139,10 +185,10 @@ export function register(dlp: Command): void {
         if ('kind' in r && r.kind === 'fallback') {
           dlpDictionaries.renderReplaced204Fallback(id);
         } else {
-          dlpDictionaries.renderReplaced(r, opts.output as OutputFormat);
+          dlpDictionaries.renderReplaced(r, format);
         }
       } catch (err) {
-        usageError(err instanceof Error ? err.message : String(err));
+        uploadFailure(err);
       }
     });
 
@@ -152,21 +198,31 @@ export function register(dlp: Command): void {
     .option('--set <k=v...>', '(repeatable)', (v, p: string[] = []) => [...p, v])
     .option('--clear <key...>', '(repeatable)', (v, p: string[] = []) => [...p, v])
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (id, opts) => {
+    .action(async (id, opts, command) => {
       try {
+        const format = await resolveOutput(command, opts);
         if (opts.bodyFile && (opts.set || opts.clear)) {
-          throw new Error('--body-file is mutually exclusive with --set/--clear');
+          throw new CliUsageError('--body-file is mutually exclusive with --set/--clear');
         }
-        const body = opts.bodyFile
-          ? await parseBody({ bodyFile: opts.bodyFile })
-          : buildMergePatch({ set: opts.set, clear: opts.clear });
+        let body: Record<string, unknown>;
+        if (opts.bodyFile) {
+          body = await readMetadata(opts.bodyFile);
+        } else {
+          try {
+            body = buildMergePatch({ set: opts.set, clear: opts.clear });
+          } catch {
+            throw new CliUsageError(
+              'Invalid dictionary patch flags: use --set key=value, --clear key, or --body-file for nested fields',
+            );
+          }
+        }
         dlpDictionaries.renderPatched(
           // biome-ignore lint/suspicious/noExplicitAny: buildMergePatch returns Record<string, unknown>, cast for patch()
-          await new SdkDictionariesService().patch(id, body as any),
-          opts.output as OutputFormat,
+          await new SdkDictionariesService(await loadDlpClientOptions()).patch(id, body as any),
+          format,
         );
       } catch (err) {
-        usageError(err instanceof Error ? err.message : String(err));
+        dictionaryFailure(err);
       }
     });
 
@@ -175,7 +231,7 @@ export function register(dlp: Command): void {
     .description('Delete a dictionary')
     .action(async (id) => {
       try {
-        await new SdkDictionariesService().delete(id);
+        await new SdkDictionariesService(await loadDlpClientOptions()).delete(id);
         dlpDictionaries.renderDeleted(id);
       } catch (err) {
         fail(err);

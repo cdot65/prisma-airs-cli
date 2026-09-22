@@ -1,6 +1,6 @@
 # Interface: EulaContent
 
-Defined in: src/airs/types.ts:407
+Defined in: src/airs/types.ts:411
 
 EULA content response.
 
@@ -10,4 +10,4 @@ EULA content response.
 
 > **content**: `string`
 
-Defined in: src/airs/types.ts:408
+Defined in: src/airs/types.ts:412

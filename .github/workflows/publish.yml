@@ -28,18 +28,29 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm audit:prod
+      - run: pnpm test:release
 
       - name: Lint
         run: pnpm run lint
+
+      - name: Format
+        run: pnpm run format:check
 
       - name: Typecheck
         run: pnpm tsc --noEmit
 
       - name: Test
-        run: pnpm test
+        run: pnpm test:coverage
 
       - name: Build
         run: pnpm run build
 
       - name: Publish to npm
-        run: npm publish --access public
+        env:
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          # Migration releases are staged until the matching harness is accepted.
+          tag=latest
+          if [ "$RELEASE_PRERELEASE" = true ]; then tag=next; fi
+          npm publish --access public --tag "$tag"

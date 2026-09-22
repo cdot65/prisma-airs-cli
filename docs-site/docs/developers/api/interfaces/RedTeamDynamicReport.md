@@ -1,6 +1,6 @@
 # Interface: RedTeamDynamicReport
 
-Defined in: src/airs/types.ts:353
+Defined in: src/airs/types.ts:357
 
 Normalized dynamic scan report summary.
 
@@ -10,7 +10,7 @@ Normalized dynamic scan report summary.
 
 > `optional` **asr?**: `number`
 
-Defined in: src/airs/types.ts:355
+Defined in: src/airs/types.ts:359
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:355
 
 > `optional` **goalsAchieved?**: `number`
 
-Defined in: src/airs/types.ts:357
+Defined in: src/airs/types.ts:361
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:357
 
 > `optional` **reportSummary?**: `string` \| `null`
 
-Defined in: src/airs/types.ts:360
+Defined in: src/airs/types.ts:364
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:360
 
 > `optional` **score?**: `number`
 
-Defined in: src/airs/types.ts:354
+Defined in: src/airs/types.ts:358
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:354
 
 > `optional` **totalGoals?**: `number`
 
-Defined in: src/airs/types.ts:356
+Defined in: src/airs/types.ts:360
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:356
 
 > `optional` **totalStreams?**: `number`
 
-Defined in: src/airs/types.ts:358
+Defined in: src/airs/types.ts:362
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:358
 
 > `optional` **totalThreats?**: `number`
 
-Defined in: src/airs/types.ts:359
+Defined in: src/airs/types.ts:363

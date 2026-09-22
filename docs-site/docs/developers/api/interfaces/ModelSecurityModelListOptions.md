@@ -1,16 +1,24 @@
 # Interface: ModelSecurityModelListOptions
 
-Defined in: src/airs/types.ts:931
+Defined in: src/airs/types.ts:938
 
 Filter options for listing models.
 
 ## Properties
 
+### endTime?
+
+> `optional` **endTime?**: `string`
+
+Defined in: src/airs/types.ts:940
+
+***
+
 ### limit?
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:937
+Defined in: src/airs/types.ts:946
 
 ***
 
@@ -18,7 +26,7 @@ Defined in: src/airs/types.ts:937
 
 > `optional` **search?**: `string`
 
-Defined in: src/airs/types.ts:932
+Defined in: src/airs/types.ts:941
 
 ***
 
@@ -26,7 +34,7 @@ Defined in: src/airs/types.ts:932
 
 > `optional` **searchQuery?**: `string`
 
-Defined in: src/airs/types.ts:933
+Defined in: src/airs/types.ts:942
 
 ***
 
@@ -34,7 +42,7 @@ Defined in: src/airs/types.ts:933
 
 > `optional` **skip?**: `number`
 
-Defined in: src/airs/types.ts:936
+Defined in: src/airs/types.ts:945
 
 ***
 
@@ -42,7 +50,7 @@ Defined in: src/airs/types.ts:936
 
 > `optional` **sortField?**: `string`
 
-Defined in: src/airs/types.ts:934
+Defined in: src/airs/types.ts:943
 
 ***
 
@@ -50,4 +58,12 @@ Defined in: src/airs/types.ts:934
 
 > `optional` **sortOrder?**: `string`
 
-Defined in: src/airs/types.ts:935
+Defined in: src/airs/types.ts:944
+
+***
+
+### startTime?
+
+> `optional` **startTime?**: `string`
+
+Defined in: src/airs/types.ts:939

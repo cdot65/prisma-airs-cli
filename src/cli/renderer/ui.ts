@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { commandHint } from '../invocation.js';
 import { formatOutput } from './common.js';
 
 /**
@@ -87,6 +88,7 @@ export const ui = {
   },
 
   success(msg: string): void {
+    msg = commandHint(msg);
     console.log(`${INDENT}${COLORS.success(`${GLYPHS.success} ${msg}`)}`);
   },
 
@@ -94,14 +96,22 @@ export const ui = {
     console.log(`${INDENT}${COLORS.warn(`${GLYPHS.warn} ${msg}`)}`);
   },
 
+  /** Safety warnings remain visible in quiet mode without corrupting structured stdout. */
+  warning(msg: string): void {
+    msg = commandHint(msg);
+    console.error(`${INDENT}${COLORS.warn(`${GLYPHS.warn} ${msg}`)}`);
+  },
+
   /** Neutral informational callout. Quiet-suppressed. */
   info(msg: string): void {
+    msg = commandHint(msg);
     if (quietMode) return;
     console.log(`${INDENT}${COLORS.info(`${GLYPHS.info} ${msg}`)}`);
   },
 
   /** Errors go to stderr. */
   error(msg: string): void {
+    msg = commandHint(msg);
     console.error(`${INDENT}${COLORS.error(`${GLYPHS.error} ${msg}`)}`);
   },
 
@@ -112,12 +122,14 @@ export const ui = {
 
   /** Dim de-emphasized line. Quiet-suppressed. */
   dim(msg: string): void {
+    msg = commandHint(msg);
     if (quietMode) return;
     console.log(`${INDENT}${chalk.dim(msg)}`);
   },
 
   /** Progress / status line — stderr so it never pollutes piped data. Quiet-suppressed. */
   status(msg: string): void {
+    msg = commandHint(msg);
     if (quietMode) return;
     console.error(`${INDENT}${chalk.dim(msg)}`);
   },

@@ -1,0 +1,1793 @@
+import type {
+  DataPatternResponse,
+  DataProfileResponse,
+  DictionaryResponse,
+} from '@cdot65/prisma-airs-sdk';
+import {
+  backupDlpResources,
+  compareEcho,
+  type DlpResourcesBackup,
+  type DlpTransferApi,
+  planDlpResourcesRestore,
+  restoreDlpResources,
+} from '../../../src/backup/dlp-resources.js';
+
+const srcDictionary = (): DictionaryResponse => ({
+  id: 'src-dict-1',
+  name: 'Keywords',
+  type: 'custom',
+  category: 'Financial',
+  region_name: 'us',
+  is_case_sensitive: false,
+  keywords: ['beta', 'alpha'],
+  dictionary_metadata: { original_file_name: 'kw.txt' },
+});
+const srcPattern = (): DataPatternResponse => ({
+  id: 'src-pat-1',
+  name: 'Custom Regex',
+  type: 'custom',
+  status: 'active',
+  version: 2,
+  tenant_id: 'tenant-src',
+  detection_config: { technique: 'regex', supported_confidence_levels: ['high'] },
+  matching_rules: { regexes: [{ regex: 'a+', weight: 10 }] },
+});
+const srcPredefined = (): DataPatternResponse => ({
+  id: 'src-pat-pre',
+  name: 'SSN',
+  type: 'predefined',
+  status: 'active',
+  version: 3,
+  detection_config: { technique: 'ml' },
+});
+const srcEdm = (): DataPatternResponse => ({
+  id: 'src-pat-edm',
+  name: 'EDM SSN',
+  type: 'custom',
+  status: 'active',
+  version: 1,
+  tenant_id: 'tenant-src',
+  detection_config: { technique: 'edm' },
+});
+const srcProfile = (): DataProfileResponse => ({
+  id: 'src-prof-1',
+  name: 'Profile One',
+  type: 'custom',
+  profile_status: 'active',
+  profile_type: 'advanced',
+  tenant_id: 'tenant-src',
+  detection_rules: [
+    {
+      rule_type: 'expression_tree',
+      expression_tree: {
+        operator_type: 'or',
+        sub_expressions: [
+          {
+            rule_item: {
+              detection_technique: 'regex',
+              id: 'src-pat-1',
+              name: 'Custom Regex',
+              version: 2,
+              confidence_level: 'high',
+            },
+          },
+          { rule_item: { detection_technique: 'dictionary', id: 'src-dict-1', name: 'Keywords' } },
+          { rule_item: { detection_technique: 'ml', id: 'src-pat-pre', name: 'SSN', version: 3 } },
+        ],
+      },
+    },
+  ],
+});
+const destPredefined = (): DataPatternResponse => ({
+  id: 'dest-pat-pre',
+  name: 'SSN',
+  type: 'predefined',
+  status: 'active',
+  version: 7,
+  tenant_id: 'tenant-dest',
+  detection_config: { technique: 'ml' },
+});
+
+interface Seed {
+  dictionaries?: DictionaryResponse[];
+  patterns?: DataPatternResponse[];
+  profiles?: DataProfileResponse[];
+}
+
+function memoryApi(seed: Seed = {}) {
+  const state = {
+    dictionaries: structuredClone(seed.dictionaries ?? []),
+    patterns: structuredClone(seed.patterns ?? []),
+    profiles: structuredClone(seed.profiles ?? []),
+  };
+  let next = 0;
+  const api = {
+    dictionaries: {
+      list: vi.fn(async () => ({ content: structuredClone(state.dictionaries), last: true })),
+      create: vi.fn(async ({ metadata, file }) => {
+        const { original_file_name, ...rest } = metadata;
+        const record: DictionaryResponse = {
+          ...rest,
+          id: `dest-dict-${next++}`,
+          type: 'custom',
+          keywords: String(file).split('\n').filter(Boolean),
+          dictionary_metadata: { original_file_name },
+        };
+        state.dictionaries.push(record);
+        return structuredClone(record);
+      }),
+      get: vi.fn(async (id) => {
+        const record = state.dictionaries.find((d) => d.id === id);
+        if (!record) throw new Error('missing dictionary');
+        return structuredClone(record);
+      }),
+    },
+    patterns: {
+      list: vi.fn(async () => ({ content: structuredClone(state.patterns), last: true })),
+      create: vi.fn(async (body) => {
+        const record: DataPatternResponse = {
+          ...structuredClone(body),
+          id: `dest-pat-${next++}`,
+          status: 'active',
+          version: 9,
+          tenant_id: 'tenant-dest',
+        };
+        state.patterns.push(record);
+        return structuredClone(record);
+      }),
+      get: vi.fn(async (id) => {
+        const record = state.patterns.find((p) => p.id === id);
+        if (!record) throw new Error('missing pattern');
+        return structuredClone(record);
+      }),
+    },
+    profiles: {
+      list: vi.fn(async () => ({ content: structuredClone(state.profiles), last: true })),
+      create: vi.fn(async (body) => {
+        const record: DataProfileResponse = {
+          ...structuredClone(body),
+          id: `dest-prof-${next++}`,
+          type: 'custom',
+          profile_status: 'active',
+          tenant_id: 'tenant-dest',
+        };
+        state.profiles.push(record);
+        return structuredClone(record);
+      }),
+      get: vi.fn(async (id) => {
+        const record = state.profiles.find((p) => p.id === id);
+        if (!record) throw new Error('missing profile');
+        return structuredClone(record);
+      }),
+    },
+  } satisfies DlpTransferApi;
+  return { api, state };
+}
+
+function sourceApi(extra: Seed = {}) {
+  return memoryApi({
+    dictionaries: [srcDictionary(), ...(extra.dictionaries ?? [])],
+    patterns: [srcPattern(), srcPredefined(), ...(extra.patterns ?? [])],
+    profiles: [srcProfile(), ...(extra.profiles ?? [])],
+  });
+}
+
+async function sourceEnvelope(extra: Seed = {}): Promise<DlpResourcesBackup> {
+  return (await backupDlpResources(sourceApi(extra).api, '100')).backup;
+}
+
+describe('backupDlpResources', () => {
+  it('exports custom resources with dependency closure, sorted and complete', async () => {
+    const { backup, skipped } = await backupDlpResources(sourceApi().api, '100');
+    expect(skipped).toEqual([]);
+    expect(backup.version).toBe(1);
+    expect(backup.resourceType).toBe('dlp-resources');
+    expect(backup.source).toEqual({ tsgId: '100' });
+    expect(backup.dictionaries.map((d) => d.name)).toEqual(['Keywords']);
+    expect(backup.patterns.map((p) => p.name)).toEqual(['Custom Regex', 'SSN']);
+    expect(backup.profiles.map((p) => p.name)).toEqual(['Profile One']);
+  });
+
+  it('embeds referenced dependencies even when only profiles are selected', async () => {
+    const { backup } = await backupDlpResources(sourceApi().api, '100', {
+      resources: ['profiles'],
+    });
+    expect(backup.dictionaries.map((d) => d.name)).toEqual(['Keywords']);
+    expect(backup.patterns.map((p) => p.name)).toEqual(['Custom Regex', 'SSN']);
+    expect(backup.profiles).toHaveLength(1);
+  });
+
+  it('selects only the requested primary resources', async () => {
+    const { backup } = await backupDlpResources(sourceApi().api, '100', {
+      resources: ['patterns'],
+    });
+    expect(backup.patterns.map((p) => p.name)).toEqual(['Custom Regex']);
+    expect(backup.dictionaries).toEqual([]);
+    expect(backup.profiles).toEqual([]);
+  });
+
+  it('excludes retired patterns and predefined resources from primary selection', async () => {
+    const retired: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'dead',
+      name: 'Dead',
+      status: 'deleted',
+    };
+    const { backup } = await backupDlpResources(sourceApi({ patterns: [retired] }).api, '100', {
+      resources: ['patterns', 'dictionaries'],
+    });
+    expect(backup.patterns.map((p) => p.name)).toEqual(['Custom Regex']);
+  });
+
+  it('fails on a profile with a multi-profile rule unless skipUnsupported', async () => {
+    const multi: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-2',
+      name: 'Multi',
+      detection_rules: [{ rule_type: 'multi_profile', multi_profile: { data_profile_ids: [1] } }],
+    };
+    await expect(backupDlpResources(sourceApi({ profiles: [multi] }).api, '100')).rejects.toThrow(
+      /Profiles cannot be exported: Multi \(Unsupported detection rule type: multi_profile\); exclude unsupported profiles explicitly with --skip-unsupported/,
+    );
+    const { backup, skipped } = await backupDlpResources(
+      sourceApi({ profiles: [multi] }).api,
+      '100',
+      { skipUnsupported: true },
+    );
+    expect(skipped).toEqual([
+      { profile: 'Multi', reason: expect.stringContaining('multi_profile') },
+    ]);
+    expect(backup.profiles.map((p) => p.name)).toEqual(['Profile One']);
+  });
+
+  it('reports every unsupported profile in one failure, not one at a time', async () => {
+    const multi: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-m',
+      name: 'Multi',
+      detection_rules: [{ rule_type: 'multi_profile', multi_profile: { data_profile_ids: [1] } }],
+    };
+    const ghost: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-g',
+      name: 'Ghost',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: { rule_item: { detection_technique: 'regex', id: 'nope' } },
+        },
+      ],
+    };
+    const seed = { profiles: [multi, ghost] };
+    await expect(backupDlpResources(sourceApi(seed).api, '100')).rejects.toThrow(
+      /Multi \(Unsupported detection rule type: multi_profile\); Ghost \(references an unknown data pattern: nope\)/,
+    );
+    const { skipped } = await backupDlpResources(sourceApi(seed).api, '100', {
+      skipUnsupported: true,
+    });
+    expect(skipped.map((item) => item.profile).sort()).toEqual(['Ghost', 'Multi']);
+  });
+
+  it('fails on a direct EDM dataset reference unless skipUnsupported', async () => {
+    const direct: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-3',
+      name: 'Direct EDM',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: {
+            rule_item: { detection_technique: 'edm', edm_dataset_id: 'ds-1' },
+          },
+        },
+      ],
+    };
+    await expect(backupDlpResources(sourceApi({ profiles: [direct] }).api, '100')).rejects.toThrow(
+      /EDM dataset directly/,
+    );
+  });
+
+  it('fails when a profile references an unknown resource id', async () => {
+    const ghost: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-4',
+      name: 'Ghost',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: { rule_item: { detection_technique: 'regex', id: 'nope' } },
+        },
+      ],
+    };
+    await expect(backupDlpResources(sourceApi({ profiles: [ghost] }).api, '100')).rejects.toThrow(
+      /unknown data pattern: nope/,
+    );
+  });
+
+  it('fails when a custom dictionary comes back without keywords', async () => {
+    const bare = { ...srcDictionary(), keywords: undefined };
+    const { api } = memoryApi({ dictionaries: [bare] });
+    await expect(backupDlpResources(api, '100', { resources: ['dictionaries'] })).rejects.toThrow(
+      /keywords were not returned/,
+    );
+  });
+
+  it('fails on duplicate custom names', async () => {
+    const twin = { ...srcPattern(), id: 'src-pat-9' };
+    await expect(
+      backupDlpResources(sourceApi({ patterns: [twin] }).api, '100', { resources: ['patterns'] }),
+    ).rejects.toThrow(/duplicate data pattern names/);
+  });
+
+  it('rejects an unknown resource kind and an empty inventory', async () => {
+    await expect(
+      backupDlpResources(sourceApi().api, '100', { resources: ['nope' as never] }),
+    ).rejects.toThrow(/resources must name/);
+    await expect(backupDlpResources(memoryApi().api, '100')).rejects.toThrow(
+      /No matching DLP resources/,
+    );
+    await expect(backupDlpResources(sourceApi().api, '')).rejects.toThrow(/TSG ID is required/);
+  });
+
+  it('refuses inventories that do not advance or exceed limits', async () => {
+    const stuck = memoryApi().api;
+    stuck.patterns.list = vi.fn(async () => ({ content: [], last: false })) as never;
+    await expect(backupDlpResources(stuck, '100')).rejects.toThrow(/did not advance/);
+
+    const big = memoryApi().api;
+    big.dictionaries.list = vi.fn(async () => ({
+      content: Array.from({ length: 5001 }, (_, i) => ({ id: `d${i}`, name: `d${i}` })),
+      last: false,
+    })) as never;
+    await expect(backupDlpResources(big, '100')).rejects.toThrow(/safety limit/);
+
+    const endless = memoryApi().api;
+    endless.patterns.list = vi.fn(async ({ page }) => ({
+      content: [{ id: `p${page}`, name: `p${page}` }],
+      last: false,
+    })) as never;
+    await expect(backupDlpResources(endless, '100', { maxPages: 2 })).rejects.toThrow(
+      /increase --max-pages/,
+    );
+    await expect(backupDlpResources(memoryApi().api, '100', { maxPages: 0 })).rejects.toThrow(
+      /maxPages/,
+    );
+  });
+
+  it('requests the live-verified stable name sort for every inventory', async () => {
+    const { api } = sourceApi();
+    await backupDlpResources(api, '100');
+    expect(api.dictionaries.list).toHaveBeenCalledWith({
+      page: 0,
+      size: 100,
+      sort: ['name,asc'],
+      keywords: true,
+    });
+    for (const kind of ['patterns', 'profiles'] as const)
+      expect(api[kind].list).toHaveBeenCalledWith({ page: 0, size: 100, sort: ['name,asc'] });
+  });
+
+  it('rejects overlapping pages observed live without exposing resource content or silently deduplicating', async () => {
+    const { api } = memoryApi();
+    const records = Array.from({ length: 100 }, (_, i) => ({
+      ...srcPattern(),
+      id: `p${i}`,
+      name: `Private keyword ${i}`,
+    }));
+    api.patterns.list = vi.fn(async ({ page }) => ({
+      content: page === 0 ? records : [records[99]],
+      last: page === 1,
+      number: page,
+      size: 100,
+      totalPages: 2,
+      totalElements: 101,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      'Inventory of data patterns contains duplicate resource IDs; retry the operation',
+    );
+    expect(api.patterns.list).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    undefined,
+    null,
+    '',
+    '   ',
+  ])('rejects an inventory resource with missing ID %s', async (id) => {
+    const { api } = memoryApi({ patterns: [{ ...srcPattern(), id }] });
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(/missing resource ID/);
+  });
+
+  it.each([
+    { number: 1 },
+    { size: 0 },
+    { numberOfElements: 2 },
+    { first: false },
+    { empty: true },
+    { pageable: { pageNumber: 1 } },
+    { pageable: { pageSize: 101 } },
+    { pageable: { offset: 100 } },
+    { totalPages: -1 },
+    { totalElements: 1.5 },
+    { totalPages: 0 },
+    { totalPages: 2, totalElements: 1 },
+    { totalElements: 2 },
+    { totalPages: 2, last: true },
+    { totalPages: 1, last: false },
+    { totalElements: 1, last: false },
+  ])('rejects inconsistent supplied page metadata %j', async (metadata) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async () => ({
+      content: [srcPattern()],
+      last: true,
+      ...metadata,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+
+  it.each([
+    'totalPages',
+    'totalElements',
+  ] as const)('rejects changing %s between pages', async (field) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async ({ page }) => ({
+      content: Array.from({ length: 100 }, (_, i) => ({ ...srcPattern(), id: `p${page}-${i}` })),
+      last: false,
+      [field]: page === 0 ? 200 : 201,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+    expect(api.patterns.list).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    'all',
+    'totalPages',
+    'totalElements',
+    'none',
+  ] as const)('accepts complete distinct pages with %s optional metadata', async (mode) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async ({ page }) => {
+      const content = Array.from({ length: page === 0 ? 100 : 1 }, (_, i) => ({
+        ...srcPattern(),
+        id: `p${page}-${i}`,
+        name: `Pattern ${page}-${i}`,
+      }));
+      const metadata =
+        mode === 'all'
+          ? {
+              number: page,
+              size: 100,
+              numberOfElements: content.length,
+              first: page === 0,
+              empty: false,
+              last: page === 1,
+              totalElements: 101,
+              totalPages: 2,
+              pageable: { pageNumber: page, pageSize: 100, offset: page * 100 },
+            }
+          : mode === 'totalPages'
+            ? { totalPages: 2 }
+            : mode === 'totalElements'
+              ? { totalElements: 101 }
+              : {};
+      return { content, ...metadata };
+    }) as never;
+    const { backup } = await backupDlpResources(api, '100', { resources: ['patterns'] });
+    expect(backup.patterns).toHaveLength(101);
+    expect(api.patterns.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('accepts the live dictionary page-size cap and snake_case metadata across pages', async () => {
+    const { api } = memoryApi();
+    api.dictionaries.list = vi.fn(async ({ page }) => ({
+      content: Array.from({ length: page === 0 ? 50 : 1 }, (_, i) => ({
+        ...srcDictionary(),
+        id: `dict-${page}-${i}`,
+        name: `Dictionary ${page}-${i}`,
+      })),
+      number: page,
+      size: 50,
+      total_pages: 2,
+      total_elements: 51,
+      number_of_elements: page === 0 ? 50 : 1,
+      last: page === 1,
+      pageable: { page_number: page, page_size: 50, offset: page * 50 },
+    })) as never;
+    const { backup } = await backupDlpResources(api, '100', { resources: ['dictionaries'] });
+    expect(backup.dictionaries).toHaveLength(51);
+    expect(api.dictionaries.list).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    { totalPages: 1, total_pages: 2 },
+    { totalElements: 1, total_elements: 2 },
+    { numberOfElements: 1, number_of_elements: 2 },
+    { pageable: { pageNumber: 0, page_number: 1 } },
+    { pageable: { pageSize: 50, page_size: 100 } },
+    { size: 100, pageable: { page_size: 50 } },
+    { size: 50.5 },
+    { total_elements: -1 },
+    { number_of_elements: 2 },
+  ])('rejects inconsistent snake/camel page metadata %j', async (metadata) => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async () => ({
+      content: [srcPattern()],
+      last: true,
+      ...metadata,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+
+  it('rejects a page-size cap that changes during a sweep', async () => {
+    const { api } = memoryApi();
+    api.patterns.list = vi.fn(async ({ page }) => ({
+      content: [{ ...srcPattern(), id: `p${page}` }],
+      last: false,
+      size: page === 0 ? 50 : 25,
+    })) as never;
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+
+  it('accepts empty Spring pages with zero totals', async () => {
+    const { api } = sourceApi();
+    api.dictionaries.list = vi.fn(async () => ({
+      content: [],
+      totalPages: 0,
+      totalElements: 0,
+      number: 0,
+      size: 100,
+      empty: true,
+      first: true,
+      last: true,
+    })) as never;
+    api.profiles.list = vi.fn(async () => ({ content: [], totalPages: 0 })) as never;
+    const { backup } = await backupDlpResources(api, '100', { resources: ['patterns'] });
+    expect(backup.patterns).toHaveLength(1);
+  });
+
+  it('refuses mixed tenant identities in the inventory', async () => {
+    const foreign = { ...srcPattern(), id: 'src-pat-8', name: 'Other', tenant_id: 'tenant-b' };
+    await expect(backupDlpResources(sourceApi({ patterns: [foreign] }).api, '100')).rejects.toThrow(
+      /mixed DLP tenant identities/,
+    );
+  });
+});
+
+describe('planDlpResourcesRestore', () => {
+  it('plans a cross-tenant restore: create, resolve and stage order', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.dictionaries).toEqual([
+      expect.objectContaining({ name: 'Keywords', action: 'create' }),
+    ]);
+    expect(plan.patterns).toEqual([
+      expect.objectContaining({ name: 'Custom Regex', action: 'create' }),
+      expect.objectContaining({ name: 'SSN', action: 'resolve' }),
+    ]);
+    expect(plan.profiles).toEqual([
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    ]);
+  });
+
+  it('fails when a referenced predefined pattern is missing, naming the mapping remedy', async () => {
+    const envelope = await sourceEnvelope();
+    await expect(planDlpResourcesRestore(memoryApi().api, envelope, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN \(no candidates\); bind each with --pattern-map "<source-name>=<destination-name>"/,
+    );
+  });
+
+  it('auto-resolves a renamed predefined pattern by identity (same id and technique)', async () => {
+    const envelope = await sourceEnvelope();
+    const renamed: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'src-pat-pre',
+      name: 'Social Security Numbers',
+      version: 7,
+    };
+    const { api } = memoryApi({ patterns: [renamed] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.patterns).toContainEqual(
+      expect.objectContaining({ name: 'Social Security Numbers', action: 'resolve' }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    const profileBody = api.profiles.create.mock.calls[0][0];
+    const leaves = (
+      profileBody.detection_rules?.[0] as {
+        expression_tree?: { sub_expressions?: Array<{ rule_item?: Record<string, unknown> }> };
+      }
+    ).expression_tree?.sub_expressions?.map((node) => node.rule_item);
+    expect(leaves?.[2]).toEqual(
+      expect.objectContaining({ id: 'src-pat-pre', name: 'Social Security Numbers', version: 7 }),
+    );
+  });
+
+  it('never identity-binds across differing techniques', async () => {
+    const envelope = await sourceEnvelope();
+    const impostor: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'src-pat-pre',
+      name: 'Different Detector',
+      detection_config: { technique: 'regex' },
+    };
+    const { api } = memoryApi({ patterns: [impostor] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN/,
+    );
+  });
+
+  it('reports every predefined miss at once with ranked same-technique candidates', async () => {
+    const envelope = await sourceEnvelope();
+    const patterns = [
+      ...structuredClone(envelope.patterns),
+      {
+        ...srcPredefined(),
+        id: 'src-pat-net',
+        name: 'Internet - ipv4',
+        detection_config: { technique: 'regex' },
+      },
+    ];
+    const nearMiss: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'dest-net',
+      name: 'Internet - IPv4',
+      detection_config: { technique: 'regex' },
+    };
+    const { api } = memoryApi({ patterns: [nearMiss] });
+    await expect(planDlpResourcesRestore(api, { ...envelope, patterns }, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN \(no candidates\); Internet - ipv4 \(candidates: "Internet - IPv4"\); bind each with --pattern-map/,
+    );
+  });
+
+  it('binds a predefined reference through --pattern-map when catalogs differ', async () => {
+    const envelope = await sourceEnvelope();
+    const renamed: DataPatternResponse = {
+      ...destPredefined(),
+      id: 'dest-ssn',
+      name: 'Social Security Numbers',
+      version: 11,
+    };
+    const { api } = memoryApi({ patterns: [renamed] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', {
+      patternMap: { SSN: 'Social Security Numbers' },
+    });
+    expect(plan.patterns).toContainEqual(
+      expect.objectContaining({ name: 'Social Security Numbers', action: 'map' }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.patterns).toContainEqual({
+      name: 'Social Security Numbers',
+      action: 'mapped',
+      id: 'dest-ssn',
+    });
+    const profileBody = api.profiles.create.mock.calls[0][0];
+    const leaves = (
+      profileBody.detection_rules?.[0] as {
+        expression_tree?: { sub_expressions?: Array<{ rule_item?: Record<string, unknown> }> };
+      }
+    ).expression_tree?.sub_expressions?.map((node) => node.rule_item);
+    expect(leaves?.[2]).toEqual(
+      expect.objectContaining({ id: 'dest-ssn', name: 'Social Security Numbers', version: 11 }),
+    );
+  });
+
+  it('requires --pattern-map for tenant-bound techniques and honors the mapping', async () => {
+    const envelope = await sourceEnvelope({ patterns: [srcEdm()] });
+    const destEdm: DataPatternResponse = {
+      id: 'dest-edm',
+      name: 'Dest EDM',
+      type: 'custom',
+      status: 'active',
+      version: 4,
+      tenant_id: 'tenant-dest',
+      detection_config: { technique: 'edm' },
+    };
+    const { api } = memoryApi({ patterns: [destPredefined(), destEdm] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /tenant-bound detection technique: EDM SSN/,
+    );
+    const plan = await planDlpResourcesRestore(api, envelope, '200', {
+      patternMap: { 'EDM SSN': 'Dest EDM' },
+    });
+    expect(plan.patterns).toContainEqual(
+      expect.objectContaining({ name: 'Dest EDM', action: 'map' }),
+    );
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { patternMap: { Ghost: 'Dest EDM' } }),
+    ).rejects.toThrow(/absent from the backup: Ghost/);
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { patternMap: { 'EDM SSN': 'Nope' } }),
+    ).rejects.toThrow(/Missing mapped destination data pattern: Nope/);
+  });
+
+  it('refuses unknown cross-tenant references in pattern bodies', async () => {
+    const envelope = await sourceEnvelope();
+    const patterns = structuredClone(envelope.patterns);
+    const custom = patterns.find((p) => p.name === 'Custom Regex');
+    if (!custom) throw new Error('fixture');
+    custom.matching_rules = { ...custom.matching_rules, linked_id: 'foreign' };
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, { ...envelope, patterns }, '200')).rejects.toThrow(
+      /Unsupported cross-tenant reference in pattern Custom Regex/,
+    );
+  });
+
+  it('fails when a profile references a resource absent from the backup', async () => {
+    const envelope = await sourceEnvelope();
+    const profiles = structuredClone(envelope.profiles);
+    profiles[0].detection_rules = [
+      {
+        rule_type: 'expression_tree',
+        expression_tree: { rule_item: { detection_technique: 'regex', id: 'ghost' } },
+      },
+    ];
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, { ...envelope, profiles }, '200')).rejects.toThrow(
+      /references a resource absent from the backup: Profile One/,
+    );
+  });
+
+  it('applies profile conflict policy: error, skip, and verify with missing dependencies', async () => {
+    const envelope = await sourceEnvelope();
+    const conflicting: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'dest-prof-9',
+      tenant_id: 'tenant-dest',
+    };
+    const { api } = memoryApi({ patterns: [destPredefined()], profiles: [conflicting] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /already exists: Profile One/,
+    );
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { onConflict: 'skip' });
+    expect(plan.profiles).toEqual([expect.objectContaining({ action: 'skip' })]);
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { onConflict: 'verify' }),
+    ).rejects.toThrow(/cannot be verified without its destination dependencies/);
+  });
+
+  it('refuses a differing destination dictionary and suggests a prefix', async () => {
+    const envelope = await sourceEnvelope();
+    const different: DictionaryResponse = { ...srcDictionary(), id: 'dest-d', keywords: ['other'] };
+    const { api } = memoryApi({ patterns: [destPredefined()], dictionaries: [different] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Destination dictionary differs: Keywords; use --name-prefix/,
+    );
+  });
+
+  it('refuses a differing destination pattern and suggests a prefix', async () => {
+    const envelope = await sourceEnvelope();
+    const different: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'dest-x',
+      tenant_id: 'tenant-dest',
+      matching_rules: { regexes: [{ regex: 'b+', weight: 2 }] },
+    };
+    const { api } = memoryApi({ patterns: [destPredefined(), different] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Destination data pattern differs: Custom Regex; use --name-prefix/,
+    );
+  });
+
+  it('plans a create when the destination name collides only with a retired pattern', async () => {
+    const envelope = await sourceEnvelope();
+    const archived: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'dead-1',
+      status: 'deleted',
+      tenant_id: 'tenant-dest',
+    };
+    const { api } = memoryApi({ patterns: [destPredefined(), archived] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.patterns).toContainEqual(
+      expect.objectContaining({ name: 'Custom Regex', action: 'create' }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+  });
+
+  it('validates options and envelope shape', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { namePrefix: 'bad' }),
+    ).rejects.toThrow(/Invalid --name-prefix/);
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { onConflict: 'update' as never }),
+    ).rejects.toThrow(/Invalid conflict policy/);
+    await expect(planDlpResourcesRestore(api, envelope, '')).rejects.toThrow(
+      /Destination TSG ID is required/,
+    );
+    await expect(planDlpResourcesRestore(api, { nope: true }, '200')).rejects.toThrow();
+  });
+
+  it('checks tenant identity in both directions', async () => {
+    const envelope = await sourceEnvelope();
+    const sameTenant = memoryApi({
+      patterns: [{ ...destPredefined(), tenant_id: 'tenant-src' }],
+    });
+    await expect(planDlpResourcesRestore(sameTenant.api, envelope, '200')).rejects.toThrow(
+      /report the source DLP tenant/,
+    );
+    const otherTenant = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(otherTenant.api, envelope, '100')).rejects.toThrow(
+      /does not match the backup source/,
+    );
+  });
+});
+
+describe('restoreDlpResources', () => {
+  it('restores staged resources with remapped identities and verifies read-back', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { namePrefix: 'mig-' });
+    const result = await restoreDlpResources(api, plan);
+    expect(result.error).toBeUndefined();
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries).toEqual([
+      { name: 'mig-Keywords', action: 'created', id: expect.any(String) },
+    ]);
+    expect(result.patterns).toEqual([
+      { name: 'mig-Custom Regex', action: 'created', id: expect.any(String) },
+      { name: 'SSN', action: 'resolved', id: 'dest-pat-pre' },
+    ]);
+    expect(result.profiles).toEqual([
+      { name: 'mig-Profile One', action: 'created', id: expect.any(String) },
+    ]);
+    expect(api.dictionaries.create).toHaveBeenCalledWith({
+      metadata: expect.objectContaining({ name: 'mig-Keywords', original_file_name: 'kw.txt' }),
+      file: 'alpha\nbeta\n',
+      includeKeywords: true,
+    });
+    const profileBody = api.profiles.create.mock.calls[0][0];
+    const leaves = (
+      profileBody.detection_rules?.[0] as {
+        expression_tree?: { sub_expressions?: Array<{ rule_item?: Record<string, unknown> }> };
+      }
+    ).expression_tree?.sub_expressions?.map((node) => node.rule_item);
+    expect(leaves).toEqual([
+      expect.objectContaining({ name: 'mig-Custom Regex', version: 9 }),
+      expect.objectContaining({ name: 'mig-Keywords' }),
+      expect.objectContaining({ id: 'dest-pat-pre', name: 'SSN', version: 7 }),
+    ]);
+    expect(leaves?.[0]?.id).toBe(result.patterns[0].id);
+    expect(leaves?.[1]?.id).toBe(result.dictionaries[0].id);
+  });
+
+  it('is resumable: a second pass reuses, resolves and verifies without writes', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const first = await restoreDlpResources(
+      api,
+      await planDlpResourcesRestore(api, envelope, '200'),
+    );
+    expect(first.complete).toBe(true);
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { onConflict: 'verify' });
+    const writesBefore =
+      api.dictionaries.create.mock.calls.length + api.patterns.create.mock.calls.length;
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries).toEqual([expect.objectContaining({ action: 'reused' })]);
+    expect(result.patterns.map((p) => p.action)).toEqual(['reused', 'resolved']);
+    expect(result.profiles).toEqual([expect.objectContaining({ action: 'verified' })]);
+    expect(api.dictionaries.create.mock.calls.length + api.patterns.create.mock.calls.length).toBe(
+      writesBefore,
+    );
+    expect(api.profiles.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips conflicting profiles under --on-conflict skip', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await restoreDlpResources(api, await planDlpResourcesRestore(api, envelope, '200'));
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { onConflict: 'skip' });
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.profiles).toEqual([expect.objectContaining({ action: 'skipped' })]);
+    expect(api.profiles.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops before any write when the destination changed after planning', async () => {
+    const envelope = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    state.profiles.push({ ...srcProfile(), id: 'raced', tenant_id: 'tenant-dest' });
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toMatch(/data profile changed after planning: Profile One/);
+    expect(api.dictionaries.create).not.toHaveBeenCalled();
+    expect(api.patterns.create).not.toHaveBeenCalled();
+    expect(api.profiles.create).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed read-back verification and the writes that completed', async () => {
+    const envelope = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    api.patterns.get.mockImplementation(async (id: string) => {
+      const record = state.patterns.find((p) => p.id === id);
+      if (!record) throw new Error('missing pattern');
+      return { ...structuredClone(record), matching_rules: { regexes: [] } };
+    });
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toMatch(/Restored data pattern did not verify: Custom Regex/);
+    expect(result.dictionaries).toEqual([expect.objectContaining({ action: 'created' })]);
+    expect(api.profiles.create).not.toHaveBeenCalled();
+  });
+
+  it('fails dictionary verification when keywords do not round-trip', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    api.dictionaries.get.mockImplementation(async () => ({
+      ...srcDictionary(),
+      id: 'dest-dict-x',
+      keywords: ['tampered'],
+    }));
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toMatch(/Restored dictionary did not verify: Keywords/);
+  });
+
+  it('publishes only sanitized error messages', async () => {
+    const envelope = await sourceEnvelope();
+    const withStatus = memoryApi({ patterns: [destPredefined()] });
+    const planA = await planDlpResourcesRestore(withStatus.api, envelope, '200');
+    withStatus.api.dictionaries.create.mockRejectedValue(
+      Object.assign(new Error('response body with keywords'), { statusCode: 500 }),
+    );
+    const resultA = await restoreDlpResources(withStatus.api, planA);
+    expect(resultA.error).toBe(
+      'API request failed (HTTP 500); verify destination state before retrying',
+    );
+
+    const opaque = memoryApi({ patterns: [destPredefined()] });
+    const planB = await planDlpResourcesRestore(opaque.api, envelope, '200');
+    opaque.api.dictionaries.create.mockRejectedValue(new Error('ECONNREFUSED secret-host'));
+    const resultB = await restoreDlpResources(opaque.api, planB);
+    expect(resultB.error).toBe('Restore stopped; verify destination state before retrying');
+  });
+});
+
+const srcPreDict = (): DictionaryResponse => ({
+  id: 'src-dict-pre',
+  name: 'Legal Terms',
+  type: 'predefined',
+  category: 'Legal',
+  region_name: 'us',
+});
+const preDictProfile = (): DataProfileResponse => ({
+  id: 'src-prof-legal',
+  name: 'Legal Profile',
+  type: 'custom',
+  profile_status: 'active',
+  profile_type: 'advanced',
+  tenant_id: 'tenant-src',
+  detection_rules: [
+    {
+      rule_type: 'expression_tree',
+      expression_tree: {
+        rule_item: { detection_technique: 'dictionary', id: 'src-dict-pre', name: 'Legal Terms' },
+      },
+    },
+  ],
+});
+
+describe('version and lifecycle fidelity', () => {
+  it('fails export when a leaf pins a pattern version the catalog no longer holds', async () => {
+    const moved = { ...srcPattern(), version: 5 };
+    const { api } = memoryApi({
+      dictionaries: [srcDictionary()],
+      patterns: [moved, srcPredefined()],
+      profiles: [srcProfile()],
+    });
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(
+      /references data pattern version 2, but the catalog holds version 5/,
+    );
+    const { skipped } = await backupDlpResources(api, '100', { skipUnsupported: true });
+    expect(skipped).toEqual([
+      { profile: 'Profile One', reason: expect.stringContaining('catalog holds version 5') },
+    ]);
+  });
+
+  it('fails export when a leaf pins an unobserved dictionary version', async () => {
+    const pinned: DataProfileResponse = {
+      ...preDictProfile(),
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: {
+            rule_item: {
+              detection_technique: 'dictionary',
+              id: 'src-dict-1',
+              name: 'Keywords',
+              version: 2,
+            },
+          },
+        },
+      ],
+    };
+    await expect(backupDlpResources(sourceApi({ profiles: [pinned] }).api, '100')).rejects.toThrow(
+      /version-pinned dictionary/,
+    );
+  });
+
+  it('fails verification when a created record reads back in a retired state', async () => {
+    const envelope = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    api.patterns.get.mockImplementation(async (id: string) => {
+      const record = state.patterns.find((p) => p.id === id);
+      if (!record) throw new Error('missing pattern');
+      return { ...structuredClone(record), status: 'disabled' as const };
+    });
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toMatch(/Restored data pattern did not verify: Custom Regex/);
+
+    const again = memoryApi({ patterns: [destPredefined()] });
+    const planB = await planDlpResourcesRestore(again.api, envelope, '200');
+    again.api.profiles.get.mockImplementation(async (id: string) => {
+      const record = again.state.profiles.find((p) => p.id === id);
+      if (!record) throw new Error('missing profile');
+      return { ...structuredClone(record), profile_status: 'disabled' as const };
+    });
+    const resultB = await restoreDlpResources(again.api, planB);
+    expect(resultB.complete).toBe(false);
+    expect(resultB.error).toMatch(/Restored data profile did not verify: Profile One/);
+  });
+});
+
+describe('predefined dictionary resolution', () => {
+  const legalSeed: Seed = { dictionaries: [srcPreDict()], profiles: [preDictProfile()] };
+
+  it('embeds the reference and resolves it in the destination', async () => {
+    const envelope = await sourceEnvelope(legalSeed);
+    expect(envelope.dictionaries.map((d) => d.name)).toEqual(['Keywords', 'Legal Terms']);
+    const destPreDict: DictionaryResponse = {
+      id: 'dest-dict-pre',
+      name: 'Legal Terms',
+      type: 'predefined',
+      category: 'Legal',
+      region_name: 'us',
+    };
+    const { api } = memoryApi({ patterns: [destPredefined()], dictionaries: [destPreDict] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.dictionaries).toContainEqual(
+      expect.objectContaining({ name: 'Legal Terms', action: 'resolve' }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries).toContainEqual({
+      name: 'Legal Terms',
+      action: 'resolved',
+      id: 'dest-dict-pre',
+    });
+    const legalBody = api.profiles.create.mock.calls
+      .map(([body]) => body)
+      .find((body) => body.name === 'Legal Profile');
+    expect(
+      (legalBody?.detection_rules?.[0] as { expression_tree?: { rule_item?: { id?: string } } })
+        .expression_tree?.rule_item?.id,
+    ).toBe('dest-dict-pre');
+  });
+
+  it('fails when the predefined dictionary is missing or not predefined in the destination', async () => {
+    const envelope = await sourceEnvelope(legalSeed);
+    await expect(
+      planDlpResourcesRestore(memoryApi({ patterns: [destPredefined()] }).api, envelope, '200'),
+    ).rejects.toThrow(/Missing predefined destination dictionary: Legal Terms/);
+    const imposter: DictionaryResponse = {
+      ...srcPreDict(),
+      id: 'dest-custom',
+      type: 'custom',
+      keywords: ['x'],
+    };
+    await expect(
+      planDlpResourcesRestore(
+        memoryApi({ patterns: [destPredefined()], dictionaries: [imposter] }).api,
+        envelope,
+        '200',
+      ),
+    ).rejects.toThrow(/Missing predefined destination dictionary: Legal Terms/);
+  });
+});
+
+describe('verify-mismatch detection', () => {
+  it('refuses --on-conflict verify when the destination diverges from the plan', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const first = await restoreDlpResources(
+      api,
+      await planDlpResourcesRestore(api, envelope, '200'),
+    );
+    expect(first.complete).toBe(true);
+    const drifted = structuredClone(envelope);
+    drifted.profiles[0].description = 'changed detection intent';
+    await expect(
+      planDlpResourcesRestore(api, drifted, '200', { onConflict: 'verify' }),
+    ).rejects.toThrow(/does not match restore plan: Profile One/);
+  });
+});
+
+describe('retired dependencies and unexported detection content', () => {
+  it('refuses a profile referencing a retired pattern; skipUnsupported excludes it', async () => {
+    const archived: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'src-pat-old',
+      name: 'old_archived',
+      status: 'deleted',
+    };
+    const dependent: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-old',
+      name: 'Old Profile',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: {
+            rule_item: { detection_technique: 'regex', id: 'src-pat-old', name: 'old_archived' },
+          },
+        },
+      ],
+    };
+    const seed = { patterns: [archived], profiles: [dependent] };
+    await expect(backupDlpResources(sourceApi(seed).api, '100')).rejects.toThrow(
+      /references a retired data pattern: old_archived/,
+    );
+    const { backup, skipped } = await backupDlpResources(sourceApi(seed).api, '100', {
+      skipUnsupported: true,
+    });
+    expect(skipped).toContainEqual({
+      profile: 'Old Profile',
+      reason: expect.stringContaining('retired data pattern'),
+    });
+    expect(backup.patterns.map((p) => p.name)).not.toContain('old_archived');
+    expect(backup.profiles.map((p) => p.name)).not.toContain('Old Profile');
+  });
+
+  it('refuses a profile without exported detection rules (basic profile)', async () => {
+    const basic: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-basic',
+      name: 'Basic Clone',
+      profile_type: 'basic',
+      detection_rules: null,
+    };
+    await expect(backupDlpResources(sourceApi({ profiles: [basic] }).api, '100')).rejects.toThrow(
+      /Basic Clone \(has no exported detection rules/,
+    );
+    const { backup, skipped } = await backupDlpResources(
+      sourceApi({ profiles: [basic] }).api,
+      '100',
+      { skipUnsupported: true },
+    );
+    expect(skipped).toContainEqual({
+      profile: 'Basic Clone',
+      reason: expect.stringContaining('no exported detection rules'),
+    });
+    expect(backup.profiles.map((p) => p.name)).toEqual(['Profile One']);
+  });
+
+  it('treats a pattern without exported detection content as unresolvable', async () => {
+    const copy: DataPatternResponse = {
+      ...srcPattern(),
+      id: 'src-pat-copy',
+      name: 'Copy - DEA',
+      matching_rules: { regexes: null, proximity_keywords: ['DEA'], proximity_distance: 200 },
+    };
+    const envelope = await sourceEnvelope({ patterns: [copy] });
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Data pattern has no exported detection content \(a copy of a predefined pattern\): Copy - DEA/,
+    );
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toContainEqual(
+      expect.objectContaining({
+        name: 'Copy - DEA',
+        reason: expect.stringContaining('not exported by the API'),
+      }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.patterns.map((p) => p.name)).not.toContain('Copy - DEA');
+  });
+});
+
+describe('predefined reference stubs and candidate quality', () => {
+  it('embeds predefined references as slim stubs, never predefined content', async () => {
+    const envelope = await sourceEnvelope({
+      dictionaries: [srcPreDict()],
+      profiles: [preDictProfile()],
+    });
+    const ssn = envelope.patterns.find((p) => p.type === 'predefined');
+    expect(Object.keys(ssn ?? {}).sort()).toEqual([
+      'detection_config',
+      'id',
+      'name',
+      'type',
+      'version',
+    ]);
+    expect(ssn?.detection_config).toEqual({ technique: 'ml' });
+    const legal = envelope.dictionaries.find((d) => d.type === 'predefined');
+    expect(Object.keys(legal ?? {}).sort()).toEqual(['id', 'name', 'type']);
+  });
+
+  it('ranks candidates by strong affinity only, deduplicated and capped', async () => {
+    const envelope = await sourceEnvelope();
+    const mk = (
+      id: string,
+      name: string,
+      extra: Partial<DataPatternResponse> = {},
+    ): DataPatternResponse => ({ ...destPredefined(), id, name, ...extra });
+    const { api } = memoryApi({
+      patterns: [
+        mk('c1', 'ssn'),
+        mk('c2', 'US SSN Numbers'),
+        mk('c3', 'US SSN Numbers'),
+        mk('c4', 'Social Security'),
+        mk('c5', 'UK SSN', { status: 'deleted' }),
+        mk('c6', 'SSN Regex', { detection_config: { technique: 'regex' } }),
+        mk('c7', 'EU SSN Records'),
+        mk('c8', 'Global SSN Directory'),
+      ],
+    });
+    // Four names qualify (one exact, three containment); the cap keeps three.
+    await expect(planDlpResourcesRestore(api, envelope, '200')).rejects.toThrow(
+      /Missing predefined destination data patterns: SSN \(candidates: "ssn", "EU SSN Records", "Global SSN Directory"\)/,
+    );
+  });
+});
+
+describe('skip-unresolved and progress', () => {
+  it('skips unresolved references and their dependent profiles, restoring the rest', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi();
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toEqual([
+      expect.objectContaining({
+        kind: 'pattern',
+        name: 'SSN',
+        reason: expect.stringContaining('no identity or name match'),
+      }),
+    ]);
+    expect(plan.profiles).toEqual([
+      expect.objectContaining({ action: 'skip', reason: 'unresolved references: SSN' }),
+    ]);
+    const events: Array<Record<string, unknown>> = [];
+    const result = await restoreDlpResources(api, plan, {
+      onProgress: (event) => events.push(event as never),
+    });
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries).toEqual([
+      expect.objectContaining({ name: 'Keywords', action: 'created' }),
+    ]);
+    expect(result.patterns).toEqual([
+      expect.objectContaining({ name: 'Custom Regex', action: 'created' }),
+    ]);
+    expect(result.profiles).toEqual([
+      { name: 'Profile One', action: 'skipped', reason: 'unresolved references: SSN' },
+    ]);
+    expect(result.unresolved).toHaveLength(1);
+    expect(events[0]).toEqual({ phase: 'recheck' });
+    expect(events).toContainEqual({ phase: 'stage', stage: 'patterns', total: 1 });
+    expect(events).toContainEqual({
+      phase: 'item',
+      stage: 'profiles',
+      name: 'Profile One',
+      action: 'skipped',
+      index: 1,
+      total: 1,
+    });
+  });
+
+  it('skips tenant-bound patterns without a map and their dependents', async () => {
+    const edmProfile: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'src-prof-edm',
+      name: 'EDM Profile',
+      detection_rules: [
+        {
+          rule_type: 'expression_tree',
+          expression_tree: {
+            rule_item: {
+              detection_technique: 'edm',
+              id: 'src-pat-edm',
+              name: 'EDM SSN',
+              version: 1,
+            },
+          },
+        },
+      ],
+    };
+    const envelope = await sourceEnvelope({ patterns: [srcEdm()], profiles: [edmProfile] });
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toContainEqual(
+      expect.objectContaining({ name: 'EDM SSN', reason: expect.stringContaining('tenant-bound') }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({ name: 'EDM Profile', action: 'skip' }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    );
+  });
+
+  it('skips a missing predefined dictionary and its dependents', async () => {
+    const envelope = await sourceEnvelope({
+      dictionaries: [srcPreDict()],
+      profiles: [preDictProfile()],
+    });
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { skipUnresolved: true });
+    expect(plan.unresolved).toContainEqual(
+      expect.objectContaining({ kind: 'dictionary', name: 'Legal Terms' }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({
+        name: 'Legal Profile',
+        action: 'skip',
+        reason: 'unresolved references: Legal Terms',
+      }),
+    );
+    expect(plan.profiles).toContainEqual(
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    );
+  });
+
+  it('still fails on ids absent from the backup even with skip-unresolved', async () => {
+    const envelope = await sourceEnvelope();
+    const profiles = structuredClone(envelope.profiles);
+    profiles[0].detection_rules = [
+      {
+        rule_type: 'expression_tree',
+        expression_tree: { rule_item: { detection_technique: 'regex', id: 'ghost' } },
+      },
+    ];
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(
+      planDlpResourcesRestore(api, { ...envelope, profiles }, '200', { skipUnresolved: true }),
+    ).rejects.toThrow(/absent from the backup/);
+  });
+
+  it('emits inventory progress for backup and plan', async () => {
+    const backupEvents: Array<Record<string, unknown>> = [];
+    await backupDlpResources(sourceApi().api, '100', {
+      onProgress: (event) => backupEvents.push(event),
+    });
+    expect(backupEvents).toEqual([{ phase: 'inventories' }]);
+    const planEvents: Array<Record<string, unknown>> = [];
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await planDlpResourcesRestore(api, await sourceEnvelope(), '200', {
+      onProgress: (event) => planEvents.push(event as never),
+    });
+    expect(planEvents).toEqual([{ phase: 'inventories' }]);
+  });
+
+  it('narrates the full stage order during a successful restore', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    const events: Array<Record<string, unknown>> = [];
+    const result = await restoreDlpResources(api, plan, {
+      onProgress: (event) => events.push(event as never),
+    });
+    expect(result.complete).toBe(true);
+    expect(events.map((event) => event.phase)).toEqual([
+      'recheck',
+      'stage',
+      'item',
+      'stage',
+      'item',
+      'item',
+      'stage',
+      'item',
+    ]);
+    expect(events[1]).toEqual({ phase: 'stage', stage: 'dictionaries', total: 1 });
+    expect(events[4]).toEqual(
+      expect.objectContaining({ stage: 'patterns', action: 'created', index: 1, total: 2 }),
+    );
+    expect(events[5]).toEqual(
+      expect.objectContaining({ stage: 'patterns', name: 'SSN', action: 'resolved', index: 2 }),
+    );
+    expect(events[7]).toEqual(
+      expect.objectContaining({ stage: 'profiles', name: 'Profile One', action: 'created' }),
+    );
+  });
+});
+
+describe('compareEcho', () => {
+  it('tolerates server-normalized supported confidence levels, reported not failed', () => {
+    const normalized = compareEcho(
+      { detection_config: { technique: 'regex', supported_confidence_levels: ['high'] } },
+      { detection_config: { technique: 'regex', supported_confidence_levels: ['high', 'low'] } },
+    );
+    expect(normalized.matches).toBe(true);
+    expect(normalized.serverAdded).toContain('body.detection_config.supported_confidence_levels');
+    const lost = compareEcho(
+      { detection_config: { supported_confidence_levels: ['high', 'medium'] } },
+      { detection_config: { supported_confidence_levels: ['high', 'low'] } },
+    );
+    expect(lost.matches).toBe(false);
+  });
+
+  it('unifies null and absent, reports server additions, ignores top-level metadata', () => {
+    const result = compareEcho(
+      { a: 1, b: null, nested: { keep: 'x' } },
+      { a: 1, nested: { keep: 'x', added: 'y' }, id: 'server', audit_metadata: {} },
+    );
+    expect(result.matches).toBe(true);
+    expect(result.serverAdded).toEqual(['body.nested.added']);
+  });
+
+  it('fails on changed values, missing fields, unknown top-level additions and array drift', () => {
+    expect(compareEcho({ a: 1 }, { a: 2 }).matches).toBe(false);
+    expect(compareEcho({ a: 1 }, {}).matches).toBe(false);
+    expect(compareEcho({ list: [1, 2] }, { list: [1] }).matches).toBe(false);
+    expect(compareEcho({ list: [1] }, { list: [2] }).differences).toEqual(['body.list[0]']);
+    const stranger = compareEcho({ a: 1 }, { a: 1, surprise: true });
+    expect(stranger.matches).toBe(true);
+    expect(stranger.serverAdded).toEqual(['body.surprise']);
+  });
+});
+
+describe('live dictionary upload fidelity (2026-09-11)', () => {
+  it.each([
+    'csv',
+    'CSV',
+  ])('adds one header to %s while preserving literal quotes and first keyword', async (extension) => {
+    // Live API consumes the CSV header but retains quote characters literally.
+    // This intentionally is not an RFC4180 encoder. See transfer.md acceptance log.
+    const dictionary = {
+      ...srcDictionary(),
+      keywords: ['"alpha"', 'bravo'],
+      dictionary_metadata: { original_file_name: `sample.${extension}` },
+    };
+    const source = memoryApi({ dictionaries: [dictionary] });
+    const { backup } = await backupDlpResources(source.api, 'source', {
+      resources: ['dictionaries'],
+    });
+    const dest = memoryApi();
+    dest.api.dictionaries.create.mockImplementationOnce(async ({ metadata, file }) => {
+      expect(file).toBe('keywords\n"alpha"\nbravo\n');
+      const record = {
+        ...dictionary,
+        ...metadata,
+        id: 'created-csv',
+        keywords: String(file).trimEnd().split('\n').slice(1),
+      };
+      dest.state.dictionaries.push(record);
+      return record;
+    });
+    const plan = await planDlpResourcesRestore(dest.api, backup, 'destination');
+    const result = await restoreDlpResources(dest.api, plan);
+    expect(result.complete).toBe(true);
+    expect(dest.api.dictionaries.get).toHaveBeenCalledWith('created-csv', {
+      includeKeywords: true,
+    });
+  });
+
+  it.each([
+    { file: 'words.csv', words: ['secret,word'] },
+    { file: 'words.txt', words: ['secret\nword'] },
+    { file: 'words.txt', words: ['secret\rword'] },
+    { file: 'words.txt', words: [''] },
+    { file: 'words.txt', words: [] },
+    { file: 'words.json', words: ['secret'] },
+  ])('refuses unsupported uploads before any create without exposing words ($file)', async ({
+    file,
+    words,
+  }) => {
+    const source = memoryApi({
+      dictionaries: [
+        { ...srcDictionary(), keywords: words, dictionary_metadata: { original_file_name: file } },
+      ],
+    });
+    const { backup } = await backupDlpResources(source.api, 'source', {
+      resources: ['dictionaries'],
+    });
+    const dest = memoryApi();
+    await expect(planDlpResourcesRestore(dest.api, backup, 'destination')).rejects.toThrow(
+      /^Dictionary/,
+    );
+    await expect(planDlpResourcesRestore(dest.api, backup, 'destination')).rejects.not.toThrow(
+      /secret/,
+    );
+    expect(dest.api.dictionaries.create).not.toHaveBeenCalled();
+    expect(dest.api.patterns.create).not.toHaveBeenCalled();
+    expect(dest.api.profiles.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('review regressions', () => {
+  it('reuses an exact legacy dictionary without requiring a new upload format', async () => {
+    const dictionary = {
+      ...srcDictionary(),
+      dictionary_metadata: { original_file_name: 'legacy.data' },
+    };
+    const source = memoryApi({ dictionaries: [dictionary] });
+    const { backup } = await backupDlpResources(source.api, 'source', {
+      resources: ['dictionaries'],
+    });
+    const dest = memoryApi({ dictionaries: [{ ...dictionary, id: 'dest-legacy' }] });
+    const plan = await planDlpResourcesRestore(dest.api, backup, 'destination');
+    const result = await restoreDlpResources(dest.api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.dictionaries[0].action).toBe('reused');
+    expect(dest.api.dictionaries.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    false,
+    true,
+  ])('refuses an impossible Spring page shape with totals only (empty last: %s)', async (emptyLast) => {
+    const source = memoryApi();
+    source.api.dictionaries.list.mockImplementation(async ({ page }: { page: number }) => ({
+      content:
+        page === 0
+          ? emptyLast
+            ? Array.from({ length: 100 }, (_, i) => ({
+                ...srcDictionary(),
+                id: `dict-${i}`,
+                name: `Dict ${i}`,
+              }))
+            : [srcDictionary()]
+          : [],
+      totalPages: 2,
+      last: page === 1,
+    }));
+    await expect(backupDlpResources(source.api, 'source')).rejects.toThrow(
+      /inconsistent pagination metadata/,
+    );
+  });
+});
+
+describe('restore receipt and reference safety regressions', () => {
+  const kinds = ['dictionaries', 'patterns', 'profiles'] as const;
+  const leaf = (backup: DlpResourcesBackup, index: number): Record<string, unknown> => {
+    const rule = backup.profiles[0].detection_rules?.[0] as {
+      expression_tree: { sub_expressions: Array<{ rule_item: Record<string, unknown> }> };
+    };
+    return rule.expression_tree.sub_expressions[index].rule_item;
+  };
+
+  it.each(
+    kinds,
+  )('retains the confirmed %s POST receipt when GET fails and stops later stages', async (kind) => {
+    const backup = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    api[kind].get.mockRejectedValue(
+      Object.assign(new Error('PRIVATE-KEYWORDS'), { statusCode: 503 }),
+    );
+    const result = await restoreDlpResources(api, plan);
+    const created = state[kind].at(-1);
+    expect(result.complete).toBe(false);
+    expect(result.unverifiedCreates).toEqual([{ kind, name: created?.name, id: created?.id }]);
+    expect(result.error).toContain('HTTP 503');
+    expect(result.error).toContain(`id ${created?.id}`);
+    expect(JSON.stringify(result)).not.toContain('PRIVATE-KEYWORDS');
+    expect(result[kind]).not.toContainEqual(
+      expect.objectContaining({ action: 'created', id: created?.id }),
+    );
+    for (const later of kinds.slice(kinds.indexOf(kind) + 1))
+      expect(api[later].create).not.toHaveBeenCalled();
+  });
+
+  it.each(
+    kinds.flatMap((kind) => [undefined, 'wrong-resource'].map((id) => ({ kind, id }))),
+  )('rejects missing or mismatched GET identity after $kind POST (GET id $id)', async ({
+    kind,
+    id,
+  }) => {
+    const backup = await sourceEnvelope();
+    const { api, state } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    api[kind].get.mockImplementation(async () => ({ ...state[kind].at(-1), id }) as never);
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    const created = state[kind].at(-1);
+    expect(result.unverifiedCreates).toEqual([{ kind, name: created?.name, id: created?.id }]);
+    expect(result.error).toContain('did not verify');
+    for (const later of kinds.slice(kinds.indexOf(kind) + 1))
+      expect(api[later].create).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes an opaque GET error from a verified create without leaking its message', async () => {
+    const backup = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    api.dictionaries.get.mockRejectedValue(new Error('PRIVATE-KEYWORDS'));
+    const result = await restoreDlpResources(api, plan);
+    expect(result.unverifiedCreates).toEqual([
+      { kind: 'dictionaries', name: 'Keywords', id: 'dest-dict-0' },
+    ]);
+    expect(result.error).toContain('Restore stopped');
+    expect(result.error).not.toContain('PRIVATE-KEYWORDS');
+  });
+
+  it.each([
+    'name fallback',
+    'explicit map',
+  ])('rejects a predefined technique mismatch through %s before writes', async (mode) => {
+    const backup = await sourceEnvelope();
+    const { api } = memoryApi({
+      patterns: [{ ...destPredefined(), detection_config: { technique: 'regex' } }],
+    });
+    await expect(
+      planDlpResourcesRestore(
+        api,
+        backup,
+        '200',
+        mode === 'explicit map' ? { patternMap: { SSN: 'SSN' } } : {},
+      ),
+    ).rejects.toThrow(/detection technique differs/);
+    for (const kind of kinds) expect(api[kind].create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { index: 0, patch: { detection_technique: 'ml' } },
+    { index: 0, patch: { id: 'src-dict-1' } },
+    { index: 1, patch: { id: 'src-pat-1' } },
+    { index: 0, patch: { version: 77 } },
+    { index: 1, patch: { version: 2 } },
+  ])('rejects malformed v1 source references before deferred dependency creates (%j)', async ({
+    index,
+    patch,
+  }) => {
+    const backup = await sourceEnvelope();
+    Object.assign(leaf(backup, index), patch);
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, backup, '200')).rejects.toThrow(/technique|version/);
+    for (const kind of kinds) expect(api[kind].create).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate source IDs across dependency kinds', async () => {
+    const backup = await sourceEnvelope();
+    backup.dictionaries[0].id = backup.patterns[0].id;
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, backup, '200')).rejects.toThrow(
+      /duplicate dependency identities/,
+    );
+    expect(api.dictionaries.list).not.toHaveBeenCalled();
+  });
+
+  it('refuses to export a pattern leaf whose technique disagrees with its source', async () => {
+    const { api } = sourceApi({ patterns: [] });
+    const profile = srcProfile();
+    const source = { profiles: [profile] } as DlpResourcesBackup;
+    leaf(source, 0).detection_technique = 'ml';
+    api.profiles.list.mockResolvedValue({ content: [profile], last: true });
+    await expect(backupDlpResources(api, '100')).rejects.toThrow(/different detection technique/);
+  });
+
+  it.each([
+    'basic',
+    'empty',
+    'absent',
+  ] as const)('rejects known non-round-trippable %s profiles before dependency writes', async (mode) => {
+    const backup = await sourceEnvelope();
+    if (mode === 'basic') backup.profiles[0].profile_type = 'basic';
+    else backup.profiles[0].detection_rules = mode === 'empty' ? [] : undefined;
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(planDlpResourcesRestore(api, backup, '200')).rejects.toThrow(
+      /basic writes|no exported detection rules/,
+    );
+    for (const kind of kinds) expect(api[kind].create).not.toHaveBeenCalled();
+  });
+
+  it('preserves nominal dictionary revision 1 through create and read-only resume', async () => {
+    const source = sourceApi();
+    const profile = source.state.profiles[0];
+    const input = { profiles: [profile] } as DlpResourcesBackup;
+    leaf(input, 1).version = 1;
+    const { backup } = await backupDlpResources(source.api, '100');
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    const plan = await planDlpResourcesRestore(api, backup, '200');
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(true);
+    expect(result.unverifiedCreates).toEqual([]);
+    const body = { profiles: [api.profiles.create.mock.calls[0][0]] } as DlpResourcesBackup;
+    expect(leaf(body, 1)).toMatchObject({ id: 'dest-dict-0', version: 1 });
+    const resumed = await planDlpResourcesRestore(api, backup, '200', { onConflict: 'verify' });
+    const verified = await restoreDlpResources(api, resumed);
+    expect(verified.complete).toBe(true);
+    expect(verified.profiles[0].action).toBe('verified');
+    for (const kind of kinds) expect(api[kind].create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('reconcile conflict policy', () => {
+  const conflictOn = (api: DlpTransferApi, name: string): void => {
+    const real = api.profiles.create;
+    api.profiles.create = vi.fn(async (body) => {
+      if (body.name === name) throw Object.assign(new Error('conflict'), { statusCode: 409 });
+      return real(body);
+    });
+  };
+
+  it('gives an archived-name create 409 a unique suffix and verifies it', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    conflictOn(api, 'Profile One');
+    const plan = await planDlpResourcesRestore(api, envelope, '200', { onConflict: 'reconcile' });
+    expect(plan.suffixOnConflict).toBe(true);
+    expect(plan.profiles).toEqual([
+      expect.objectContaining({ name: 'Profile One', action: 'create' }),
+    ]);
+    const result = await restoreDlpResources(api, plan, { suffixGenerator: () => 'abc123' });
+    expect(result.complete).toBe(true);
+    expect(result.profiles).toContainEqual(
+      expect.objectContaining({
+        action: 'created',
+        name: 'Profile One-abc123',
+        renamedFrom: 'Profile One',
+      }),
+    );
+  });
+
+  it('does not suffix outside reconcile — a create 409 fails safe', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    conflictOn(api, 'Profile One');
+    const plan = await planDlpResourcesRestore(api, envelope, '200');
+    expect(plan.suffixOnConflict).toBe(false);
+    const result = await restoreDlpResources(api, plan);
+    expect(result.complete).toBe(false);
+    expect(result.error).toMatch(/HTTP 409/);
+  });
+
+  it('routes an active-name duplicate through verify semantics (requirement #1)', async () => {
+    const envelope = await sourceEnvelope();
+    const conflicting: DataProfileResponse = {
+      ...srcProfile(),
+      id: 'dest-prof-9',
+      tenant_id: 'tenant-dest',
+    };
+    const { api } = memoryApi({ patterns: [destPredefined()], profiles: [conflicting] });
+    // reconcile treats an active-name match exactly as verify: it must reconcile
+    // against destination dependencies (here absent), never blindly create.
+    await expect(
+      planDlpResourcesRestore(api, envelope, '200', { onConflict: 'reconcile' }),
+    ).rejects.toThrow(/cannot be verified without its destination dependencies/);
+  });
+
+  it('truncates a long base name so the suffixed name fits 32 chars', async () => {
+    const longName = 'Profile Name Twenty Eight Ch';
+    const envelope = await sourceEnvelope({
+      profiles: [{ ...srcProfile(), id: 'src-prof-long', name: longName }],
+    });
+    const filtered = {
+      ...envelope,
+      profiles: envelope.profiles.filter((p) => p.name === longName),
+    };
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    conflictOn(api, longName);
+    const plan = await planDlpResourcesRestore(api, filtered, '200', { onConflict: 'reconcile' });
+    const result = await restoreDlpResources(api, plan, { suffixGenerator: () => 'deadbe' });
+    expect(result.complete).toBe(true);
+    const created = result.profiles.find((p) => p.renamedFrom === longName);
+    expect(created?.name.length).toBeLessThanOrEqual(32);
+    expect(created?.name.endsWith('-deadbe')).toBe(true);
+  });
+
+  it('rejects an invalid conflict policy', async () => {
+    const envelope = await sourceEnvelope();
+    const { api } = memoryApi({ patterns: [destPredefined()] });
+    await expect(
+      // @ts-expect-error invalid policy value
+      planDlpResourcesRestore(api, envelope, '200', { onConflict: 'nope' }),
+    ).rejects.toThrow(/Invalid conflict policy/);
+  });
+});

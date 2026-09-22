@@ -1,8 +1,20 @@
-import type { AIGatewayWindowOptions } from '@cdot65/prisma-airs-sdk';
+import {
+  AI_GW_GROUP_COLUMNS,
+  AI_GW_GROUP_DIMENSIONS,
+  type AIGatewayChartOptions,
+  type AIGatewayGroupOptions,
+  type AIGatewayWindowOptions,
+  redactAIGatewaySecrets,
+} from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { CliUsageError } from '../../renderer/index.js';
-import { addReadOutput, runDetail, showHelpOnEmpty } from './shared.js';
+import { addReadOutput, failAiGateway, runDetail, showHelpOnEmpty } from './shared.js';
 import { parseDateOption, parseIntegerOption } from './structured-input.js';
+import {
+  addChartFilterOptions,
+  type ChartFilterFlags,
+  chartFiltersFrom,
+} from './telemetry-filters.js';
 
 interface WindowFlags {
   columns?: string;
@@ -33,7 +45,7 @@ function windowFrom(opts: WindowFlags): AIGatewayWindowOptions {
   return window;
 }
 
-function parsePositiveInteger(value: unknown, flag: string): number {
+export function parsePositiveInteger(value: unknown, flag: string): number {
   try {
     const parsed = parseIntegerOption(value);
     if (parsed <= 0) throw new CliUsageError('Expected a positive integer');
@@ -62,17 +74,70 @@ function registerMetric(
   method:
     | 'errorTrends'
     | 'errors'
-    | 'latency'
-    | 'requests'
     | 'rescuedRetries'
-    | 'tokens'
     | 'userTrends'
-    | 'users',
+    | 'users'
+    | 'errorCategoryTrends'
+    | 'groupedErrors'
+    | 'filterBoundaries',
 ): void {
   const command = addWindowOptions(telemetry.command(name).description(description));
   command.action((opts: WindowFlags) =>
-    runDetail(command, opts, (client) => client.telemetry[method](windowFrom(opts))),
+    runDetail(command, opts, async (client) => {
+      const result = await client.telemetry[method](windowFrom(opts));
+      return method === 'filterBoundaries'
+        ? redactAIGatewaySecrets('telemetry.filterBoundaries', result, 'response')
+        : result;
+    }),
   );
+}
+
+function registerFilteredMetric(
+  telemetry: Command,
+  name: 'latency' | 'requests' | 'tokens',
+  description: string,
+): void {
+  const command = addChartFilterOptions(
+    addWindowOptions(telemetry.command(name).description(description)),
+  );
+  command.action(async (opts: WindowFlags & ChartFilterFlags) => {
+    let options: AIGatewayChartOptions;
+    try {
+      options = { ...windowFrom(opts), ...chartFiltersFrom(opts) };
+    } catch (error) {
+      failAiGateway(error);
+    }
+    await runDetail(command, opts, (client) => client.telemetry[name](options));
+  });
+}
+
+const groupDimensions = [...AI_GW_GROUP_DIMENSIONS, 'status_code', 'users'] as const;
+type GroupDimension = (typeof groupDimensions)[number];
+type GroupColumn = (typeof AI_GW_GROUP_COLUMNS)[number];
+
+function isGroupDimension(value: string): value is GroupDimension {
+  return groupDimensions.some((dimension) => dimension === value);
+}
+
+function isGroupColumn(value: string): value is GroupColumn {
+  return AI_GW_GROUP_COLUMNS.some((column) => column === value);
+}
+
+/** CLI syntax only: retain the SDK's dimension/column lists and filter schema as authority. */
+function groupOptionsFrom(
+  dimension: GroupDimension,
+  opts: WindowFlags & ChartFilterFlags,
+): AIGatewayGroupOptions {
+  const options: AIGatewayGroupOptions = { ...windowFrom(opts), ...chartFiltersFrom(opts) };
+  if (opts.columns !== undefined) {
+    if (dimension === 'users') throw new CliUsageError('User grouping does not support --columns');
+    const columns = opts.columns.split(',').map((column) => column.trim());
+    if (!columns.every(isGroupColumn)) {
+      throw new CliUsageError(`Invalid --columns: choose from ${AI_GW_GROUP_COLUMNS.join(', ')}`);
+    }
+    options.columns = columns;
+  }
+  return options;
 }
 
 /** Register all SDK telemetry reads except the legacy cost renderer. */
@@ -89,6 +154,24 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
 
   registerMetric(telemetry, 'error-trends', 'Get error trends', 'errorTrends');
   registerMetric(telemetry, 'errors', 'Get error count', 'errors');
+  registerMetric(
+    telemetry,
+    'error-category-trends',
+    'Get errors by HTTP status',
+    'errorCategoryTrends',
+  );
+  registerMetric(
+    telemetry,
+    'grouped-errors',
+    'Get HTTP error counts by time bucket',
+    'groupedErrors',
+  );
+  registerMetric(
+    telemetry,
+    'filter-boundaries',
+    'Get available analytics filters and bounds',
+    'filterBoundaries',
+  );
 
   const feedback = showHelpOnEmpty(
     telemetry.command('feedback').description('Inspect model feedback telemetry'),
@@ -106,24 +189,36 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
     );
   }
 
-  const groupBy = addWindowOptions(
-    telemetry
-      .command('group-by <dimension>')
-      .description('Aggregate telemetry by provider, model, status, or another SDK dimension')
-      .option('--columns <names>', 'Comma-separated aggregate columns'),
-  );
-  groupBy.action((dimension: string, opts: WindowFlags) =>
-    runDetail(groupBy, opts, (client) =>
-      client.telemetry.groupBy(dimension as never, {
-        ...windowFrom(opts),
-        ...(opts.columns
-          ? { columns: opts.columns.split(',').map((value) => value.trim()) as never }
-          : {}),
-      }),
+  const groupBy = addChartFilterOptions(
+    addWindowOptions(
+      telemetry
+        .command('group-by <dimension>')
+        .description(`Aggregate telemetry by ${groupDimensions.join(', ')}`)
+        .option('--columns <names>', 'Comma-separated aggregate columns (not supported for users)'),
     ),
   );
+  groupBy.action(async (dimension: string, opts: WindowFlags & ChartFilterFlags) => {
+    let options: AIGatewayGroupOptions;
+    try {
+      if (!isGroupDimension(dimension)) {
+        throw new CliUsageError(
+          `Invalid grouping dimension: choose from ${groupDimensions.join(', ')}`,
+        );
+      }
+      options = groupOptionsFrom(dimension, opts);
+    } catch (error) {
+      failAiGateway(error);
+    }
+    await runDetail(groupBy, opts, (client) => {
+      if (dimension === 'users') return client.telemetry.byUser(options);
+      if (dimension === 'status_code') return client.telemetry.byStatusCode(options);
+      // Narrow without an unchecked cast after the pre-client validation above.
+      if (isGroupDimension(dimension)) return client.telemetry.groupBy(dimension, options);
+      throw new CliUsageError('Invalid grouping dimension');
+    });
+  });
 
-  registerMetric(telemetry, 'latency', 'Get latency telemetry', 'latency');
+  registerFilteredMetric(telemetry, 'latency', 'Get latency telemetry');
 
   const logs = showHelpOnEmpty(telemetry.command('logs').description('Inspect request logs'));
   const logsList = addWindowOptions(
@@ -131,14 +226,16 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
       .command('list')
       .description('List request logs')
       .option('--page-size <n>', 'Rows per response', '50')
+      .option('--current-page <n>', 'Zero-based transaction page', '0')
       .option('--status-code <code>', 'Filter by HTTP status')
       .option('--trace-id <id>', 'Return one trace id'),
   );
-  logsList.action((opts: WindowFlags & { pageSize?: string }) =>
+  logsList.action((opts: WindowFlags & { pageSize?: string; currentPage?: string }) =>
     runDetail(logsList, opts, (client) =>
       client.telemetry.logs({
         ...windowFrom(opts),
         pageSize: parsePositiveInteger(opts.pageSize ?? '50', '--page-size'),
+        currentPage: parseNonnegativePage(opts.currentPage ?? '0'),
         ...(opts.statusCode
           ? { statusCode: parsePositiveInteger(opts.statusCode, '--status-code') }
           : {}),
@@ -147,9 +244,15 @@ export function registerAiGatewayTelemetryReads(telemetry: Command): void {
     ),
   );
 
-  registerMetric(telemetry, 'requests', 'Get request count', 'requests');
+  registerFilteredMetric(telemetry, 'requests', 'Get request count');
   registerMetric(telemetry, 'rescued-retries', 'Get rescued retry telemetry', 'rescuedRetries');
-  registerMetric(telemetry, 'tokens', 'Get token usage', 'tokens');
+  registerFilteredMetric(telemetry, 'tokens', 'Get token usage');
   registerMetric(telemetry, 'user-trends', 'Get user trends', 'userTrends');
   registerMetric(telemetry, 'users', 'Get unique-user count', 'users');
+}
+
+function parseNonnegativePage(value: string): number {
+  if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))
+    throw new CliUsageError('--current-page must be a nonnegative safe integer');
+  return Number(value);
 }

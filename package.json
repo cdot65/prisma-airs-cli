@@ -1,8 +1,8 @@
 {
   "name": "@cdot65/prisma-airs-cli",
   "packageManager": "pnpm@10.6.5",
-  "version": "4.1.0",
-  "description": "CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits",
+  "version": "7.0.1",
+  "description": "CLI and library for Palo Alto Prisma AIRS \u2014 guardrail refinement, AI red teaming, model security scanning, profile audits",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,15 +10,17 @@
     "dist"
   ],
   "bin": {
-    "airs": "dist/cli/index.js"
+    "airs-cli": "dist/cli/index.js"
   },
   "scripts": {
     "build": "tsup",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "pnpm audit:prod && pnpm run build",
     "dev": "tsx src/cli/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:release": "node --test .github/scripts/*.test.mjs",
+    "audit:prod": "pnpm audit --prod --audit-level low",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:e2e:aigateway": "vitest run --config vitest.e2e.config.ts tests/e2e/aigateway-cli.e2e.spec.ts",
     "lint": "biome check --config-path config .",
@@ -49,11 +51,11 @@
     "local:dev:topics": "tsx src/cli/index.ts runtime topics list --all --output yaml",
     "local:dev:doctor": "tsx src/cli/index.ts doctor --output markdown",
     "local:link": "pnpm run build && pnpm link --global",
-    "local:link:check": "airs --version",
+    "local:link:check": "airs-cli --version",
     "local:unlink": "pnpm uninstall --global @cdot65/prisma-airs-cli"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^20.17.0 || ^22.13.0 || >=23.5.0"
   },
   "repository": {
     "type": "git",
@@ -61,13 +63,12 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@cdot65/prisma-airs-sdk": "0.20.0",
+    "@cdot65/prisma-airs-sdk": "0.33.0",
     "@inquirer/prompts": "^8.3.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
-    "dotenv": "^17.3.1",
-    "js-yaml": "^4.1.1",
-    "nanoid": "^5.0.0",
+    "js-yaml": "^4.3.2",
+    "nanoid": "^5.1.16",
     "p-limit": "^6.0.0",
     "zod": "^3.24.0"
   },
@@ -88,6 +89,6 @@
     "docx": "^9.6.1",
     "pdf-lib": "^1.17.1",
     "piexifjs": "^1.0.6",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.4"
   }
 }

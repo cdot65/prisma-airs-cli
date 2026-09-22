@@ -9,7 +9,7 @@ sidebar_label: prompt-sets
 List custom prompt sets
 
 ```text
-airs redteam prompt-sets list [options]
+airs-cli redteam prompt-sets list [options]
 ```
 
 #### Options
@@ -27,7 +27,7 @@ airs redteam prompt-sets list [options]
 *List all prompt sets*
 
 ```bash
-airs redteam prompt-sets list
+airs-cli redteam prompt-sets list
 ```
 
 ```text
@@ -48,7 +48,7 @@ d68a14f5-cea3-4047-bedb-ae5726ba20d2
 Get prompt set details
 
 ```text
-airs redteam prompt-sets get [options] <uuid>
+airs-cli redteam prompt-sets get [options] <uuid>
 ```
 
 #### Arguments
@@ -69,7 +69,7 @@ Info shows as unavailable rather than failing the whole command.
 *
 
 ```bash
-airs redteam prompt-sets get 00000000-0000-0000-0000-000000000002
+airs-cli redteam prompt-sets get 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -100,7 +100,7 @@ Version Info:
 Create a new prompt set
 
 ```text
-airs redteam prompt-sets create [options]
+airs-cli redteam prompt-sets create [options]
 ```
 
 #### Options
@@ -115,7 +115,7 @@ airs redteam prompt-sets create [options]
 *Create an empty prompt set (populate later with `upload` or `prompts add`)*
 
 ```bash
-airs redteam prompt-sets create --name "example-promptset" --description "Example prompt set for docs"
+airs-cli redteam prompt-sets create --name "example-promptset" --description "Example prompt set for docs"
 ```
 
 ```text
@@ -134,7 +134,7 @@ Prompt set created: 00000000-0000-0000-0000-000000000002
 Update a prompt set
 
 ```text
-airs redteam prompt-sets update [options] <uuid>
+airs-cli redteam prompt-sets update [options] <uuid>
 ```
 
 #### Arguments
@@ -153,7 +153,7 @@ airs redteam prompt-sets update [options] <uuid>
 *Update a prompt set's description (name + description are the only mutable fields)*
 
 ```bash
-airs redteam prompt-sets update 00000000-0000-0000-0000-000000000002 --description "Example prompt set for docs (updated)"
+airs-cli redteam prompt-sets update 00000000-0000-0000-0000-000000000002 --description "Example prompt set for docs (updated)"
 ```
 
 ```text
@@ -179,7 +179,7 @@ Prompt Set Detail:
 Archive a prompt set
 
 ```text
-airs redteam prompt-sets archive [options] <uuid>
+airs-cli redteam prompt-sets archive [options] <uuid>
 ```
 
 #### Arguments
@@ -197,7 +197,7 @@ airs redteam prompt-sets archive [options] <uuid>
 *Archive a prompt set (soft-delete; `--no-archive` re-activates). There is no hard `delete` subcommand.*
 
 ```bash
-airs redteam prompt-sets archive 00000000-0000-0000-0000-000000000002
+airs-cli redteam prompt-sets archive 00000000-0000-0000-0000-000000000002
 ```
 
 ```text
@@ -214,7 +214,7 @@ Prompt set 00000000-0000-0000-0000-000000000002 archived.
 Download CSV template for a prompt set
 
 ```text
-airs redteam prompt-sets download [options] <uuid>
+airs-cli redteam prompt-sets download [options] <uuid>
 ```
 
 #### Arguments
@@ -232,7 +232,7 @@ airs redteam prompt-sets download [options] <uuid>
 *Save CSV template (header + one sample row) to a local file*
 
 ```bash
-airs redteam prompt-sets download 00000000-0000-0000-0000-000000000001 --output-file template.csv
+airs-cli redteam prompt-sets download 00000000-0000-0000-0000-000000000001 --output-file template.csv
 ```
 
 ```text
@@ -253,7 +253,7 @@ Template saved to template.csv
 Upload CSV prompts to a prompt set
 
 ```text
-airs redteam prompt-sets upload [options] <uuid> <file>
+airs-cli redteam prompt-sets upload [options] <uuid> <file>
 ```
 
 #### Arguments
@@ -266,7 +266,7 @@ airs redteam prompt-sets upload [options] <uuid> <file>
 *Bulk-upload prompts from a CSV (header `prompt,goal` — goal optional, AI-generated if blank)*
 
 ```bash
-airs redteam prompt-sets upload 00000000-0000-0000-0000-000000000002 prompts-upload.csv
+airs-cli redteam prompt-sets upload 00000000-0000-0000-0000-000000000002 prompts-upload.csv
 ```
 
 ```text

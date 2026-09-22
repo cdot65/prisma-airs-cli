@@ -8,7 +8,7 @@ Prisma AIRS CLI integrates with Palo Alto Prisma AIRS AI Red Team to run adversa
 
 ## Overview
 
-The `airs redteam` command group provides full access to Red Team operations:
+The `airs-cli redteam` command group provides full access to Red Team operations:
 
 - **Scan** -- launch static, dynamic, or custom prompt set scans
 - **Status** -- monitor running scans
@@ -31,10 +31,11 @@ The `airs redteam` command group provides full access to Red Team operations:
 |------|-------------|
 | `STATIC` | Runs AIRS-maintained adversarial attack patterns from the attack library |
 | `DYNAMIC` | Goal-driven multi-turn attacks using an adversarial agent |
-| `CUSTOM` | Runs your custom prompt sets (created with `airs redteam prompt-sets create` / `upload`) |
+| `CUSTOM` | Runs your custom prompt sets (created with `airs-cli redteam prompt-sets create` / `upload`) |
 
 ## Sub-pages
 
+- [Environment Dashboard](../cli/redteam/dashboard.md) — CLI 5.1.0 read-only HTML/Markdown report with actual verified CLI output
 - **[End-to-End Walkthrough](end-to-end-walkthrough.md)** -- tutorial: onboard a target, run a STATIC scan, pull the report, with every command + response
 - [Running Scans](scanning.md) -- launch scans, monitor progress, view reports
 - [Managing Targets](targets.md) -- CRUD operations for red team targets, auth validation, metadata, templates

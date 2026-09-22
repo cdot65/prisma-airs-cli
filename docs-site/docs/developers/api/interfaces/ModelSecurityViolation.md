@@ -1,6 +1,6 @@
 # Interface: ModelSecurityViolation
 
-Defined in: src/airs/types.ts:869
+Defined in: src/airs/types.ts:876
 
 Normalized violation from a scan.
 
@@ -10,7 +10,7 @@ Normalized violation from a scan.
 
 > **description**: `string`
 
-Defined in: src/airs/types.ts:871
+Defined in: src/airs/types.ts:878
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:871
 
 > **file**: `string`
 
-Defined in: src/airs/types.ts:874
+Defined in: src/airs/types.ts:881
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:874
 
 > **ruleDescription**: `string`
 
-Defined in: src/airs/types.ts:876
+Defined in: src/airs/types.ts:883
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:876
 
 > **ruleInstanceState**: `string`
 
-Defined in: src/airs/types.ts:877
+Defined in: src/airs/types.ts:884
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:877
 
 > **ruleName**: `string`
 
-Defined in: src/airs/types.ts:875
+Defined in: src/airs/types.ts:882
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:875
 
 > **threat**: `string`
 
-Defined in: src/airs/types.ts:872
+Defined in: src/airs/types.ts:879
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:872
 
 > **threatDescription**: `string`
 
-Defined in: src/airs/types.ts:873
+Defined in: src/airs/types.ts:880
 
 ***
 
@@ -66,4 +66,4 @@ Defined in: src/airs/types.ts:873
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:870
+Defined in: src/airs/types.ts:877

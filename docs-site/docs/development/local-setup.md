@@ -15,36 +15,34 @@ cd prisma-airs-cli
 pnpm install
 ```
 
-## Environment
+## Credentials
+
+Register a tenant with the source entry point; the CLI reads no environment variables:
 
 ```bash
-cp .env.example .env
+pnpm dev tenant create dev      # prompts for TSG ID, client ID, and a hidden client secret
+pnpm dev tenant switch dev
+pnpm dev tenant set dev airsApiKey
+pnpm dev doctor
 ```
 
-Edit `.env` with your credentials:
-
-| Variable | Required | What it's for |
-|----------|:--------:|-------------|
-| `PANW_AI_SEC_API_KEY` | Yes | Prisma AIRS Scan API key |
-| `PANW_MGMT_CLIENT_ID` | Yes | AIRS Management OAuth2 client ID |
-| `PANW_MGMT_CLIENT_SECRET` | Yes | AIRS Management OAuth2 client secret |
-| `PANW_MGMT_TSG_ID` | Yes | Tenant Service Group ID |
+Live e2e scripts use the selected tenant (or `AIRS_E2E_TENANT=<name>`).
 
 :::note[Tests run without credentials]
 Unit and integration tests use MSW mocks — you only need real credentials for actual AIRS operations.
 :::
 
-## Register `airs` command
+## Register `airs-cli` command
 
-To make the `airs` binary available globally from your source checkout:
+To make the `airs-cli` binary available globally from your source checkout:
 
 ```bash
 pnpm run build
 pnpm link --global
-airs --version   # 4.0.0
+airs-cli --version   # 4.0.0
 ```
 
-After making code changes, re-run `pnpm run build` for the linked `airs` command to reflect them. `pnpm run dev` doesn't require a build step.
+After making code changes, re-run `pnpm run build` for the linked `airs-cli` command to reflect them. `pnpm run dev` doesn't require a build step.
 
 ## Development Commands
 

@@ -1,15 +1,11 @@
 import type { Command } from 'commander';
 import { SdkDataPatternsService } from '../../../airs/dlp/data-patterns.js';
 import { registerPageAliases, resolvePageParams } from '../../pagination.js';
-import {
-  dlpPatterns,
-  fail,
-  type OutputFormat,
-  resolveOutput,
-  usageError,
-} from '../../renderer/index.js';
+import { dlpPatterns, fail, resolveOutput, usageError } from '../../renderer/index.js';
 import { buildPatternBody, repeatable } from './build-body.js';
+import { loadDlpClientOptions } from './config.js';
 import { buildMergePatch, parseBody } from './patch.js';
+import { predefinedFlag, visibleRecords } from './visibility.js';
 
 function listFlags<T extends Command>(cmd: T): T {
   cmd
@@ -53,18 +49,19 @@ async function resolveWriteBody(opts: Record<string, unknown>): Promise<unknown>
 export function register(dlp: Command): void {
   const group = dlp.command('patterns').description('DLP data patterns (full CRUD)');
 
-  const listCmd = listFlags(group.command('list').description('List data patterns'));
+  const listCmd = predefinedFlag(
+    listFlags(group.command('list').description('List data patterns (tenant-created by default)')),
+  );
   listCmd.action(async (opts) => {
     try {
       const { page, size } = resolvePageParams(listCmd, opts);
-      const svc = new SdkDataPatternsService();
+      const svc = new SdkDataPatternsService(await loadDlpClientOptions());
       const result = opts.all
-        ? await svc.listAll({ size, sort: opts.sort, max: Number(opts.max) })
-        : undefined;
+        ? await svc.listAll({ size, sort: opts.sort ?? ['name,asc'], max: Number(opts.max) })
+        : (await svc.list({ page, size, sort: opts.sort ?? ['name,asc'] })).content;
+      const visible = visibleRecords(result, opts.includePredefined);
       dlpPatterns.renderList(
-        result
-          ? { content: result, totalElements: result.length }
-          : await svc.list({ page, size, sort: opts.sort }),
+        { content: visible, totalElements: visible.length },
         await resolveOutput(listCmd, opts),
       );
     } catch (err) {
@@ -72,18 +69,21 @@ export function register(dlp: Command): void {
     }
   });
 
-  writeFlags(group.command('create').description('Create a data pattern')).action(async (opts) => {
-    try {
-      const body = await resolveWriteBody(opts);
-      dlpPatterns.renderCreated(
-        // biome-ignore lint/suspicious/noExplicitAny: body shape verified by SDK Zod
-        await new SdkDataPatternsService().create(body as any),
-        opts.output as OutputFormat,
-      );
-    } catch (err) {
-      usageError(err instanceof Error ? err.message : String(err));
-    }
-  });
+  writeFlags(group.command('create').description('Create a data pattern')).action(
+    async (opts, command) => {
+      try {
+        const format = await resolveOutput(command, opts);
+        const body = await resolveWriteBody(opts);
+        dlpPatterns.renderCreated(
+          // biome-ignore lint/suspicious/noExplicitAny: body shape verified by SDK Zod
+          await new SdkDataPatternsService(await loadDlpClientOptions()).create(body as any),
+          format,
+        );
+      } catch (err) {
+        usageError(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
 
   const getCmd = group
     .command('get <id>')
@@ -92,7 +92,7 @@ export function register(dlp: Command): void {
     .action(async (id, opts) => {
       try {
         dlpPatterns.renderGet(
-          await new SdkDataPatternsService().get(id),
+          await new SdkDataPatternsService(await loadDlpClientOptions()).get(id),
           await resolveOutput(getCmd, opts),
         );
       } catch (err) {
@@ -101,13 +101,14 @@ export function register(dlp: Command): void {
     });
 
   writeFlags(group.command('replace <id>').description('Full-replace a data pattern (PUT)')).action(
-    async (id, opts) => {
+    async (id, opts, command) => {
       try {
+        const format = await resolveOutput(command, opts);
         const body = await resolveWriteBody(opts);
         dlpPatterns.renderReplaced(
           // biome-ignore lint/suspicious/noExplicitAny: body shape verified by SDK Zod
-          await new SdkDataPatternsService().replace(id, body as any),
-          opts.output as OutputFormat,
+          await new SdkDataPatternsService(await loadDlpClientOptions()).replace(id, body as any),
+          format,
         );
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));
@@ -126,8 +127,9 @@ export function register(dlp: Command): void {
     .option('--set <k=v...>', 'Set scalar field (repeatable)', repeatable)
     .option('--clear <key...>', 'Clear field via merge-patch null (repeatable)', repeatable)
     .option('--output <fmt>', 'Output format', 'pretty')
-    .action(async (id, opts) => {
+    .action(async (id, opts, command) => {
       try {
+        const format = await resolveOutput(command, opts);
         if (opts.bodyFile && (opts.set || opts.clear)) {
           throw new Error('--body-file is mutually exclusive with --set/--clear');
         }
@@ -136,8 +138,8 @@ export function register(dlp: Command): void {
           : buildMergePatch({ set: opts.set, clear: opts.clear });
         dlpPatterns.renderPatched(
           // biome-ignore lint/suspicious/noExplicitAny: buildMergePatch returns Record<string, unknown>, cast for patch()
-          await new SdkDataPatternsService().patch(id, body as any),
-          opts.output as OutputFormat,
+          await new SdkDataPatternsService(await loadDlpClientOptions()).patch(id, body as any),
+          format,
         );
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));
@@ -149,7 +151,7 @@ export function register(dlp: Command): void {
     .description('Soft-delete (archive) a data pattern')
     .action(async (id) => {
       try {
-        await new SdkDataPatternsService().delete(id);
+        await new SdkDataPatternsService(await loadDlpClientOptions()).delete(id);
         dlpPatterns.renderArchived(id);
       } catch (err) {
         fail(err);

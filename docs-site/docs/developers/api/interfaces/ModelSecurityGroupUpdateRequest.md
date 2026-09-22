@@ -1,6 +1,6 @@
 # Interface: ModelSecurityGroupUpdateRequest
 
-Defined in: src/airs/types.ts:751
+Defined in: src/airs/types.ts:755
 
 Request to update a security group.
 
@@ -10,7 +10,7 @@ Request to update a security group.
 
 > `optional` **description?**: `string`
 
-Defined in: src/airs/types.ts:753
+Defined in: src/airs/types.ts:757
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:753
 
 > `optional` **name?**: `string`
 
-Defined in: src/airs/types.ts:752
+Defined in: src/airs/types.ts:756

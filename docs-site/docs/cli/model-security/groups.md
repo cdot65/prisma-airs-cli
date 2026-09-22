@@ -9,7 +9,7 @@ sidebar_label: groups
 List security groups
 
 ```text
-airs model-security groups list [options]
+airs-cli model-security groups list [options]
 ```
 
 #### Options
@@ -32,7 +32,7 @@ airs model-security groups list [options]
 *List security groups*
 
 ```bash
-airs model-security groups list
+airs-cli model-security groups list
 ```
 
 ```text
@@ -57,7 +57,7 @@ fd1a4209-32d0-4a1a-bd40-cde35104dc39
 Get security group details
 
 ```text
-airs model-security groups get [options] <uuid>
+airs-cli model-security groups get [options] <uuid>
 ```
 
 #### Arguments
@@ -75,7 +75,7 @@ airs model-security groups get [options] <uuid>
 *Pretty output (fallback `pretty`; no output override in this example)*
 
 ```bash
-airs model-security groups get 00000000-0000-0000-0000-000000000001
+airs-cli model-security groups get 00000000-0000-0000-0000-000000000001
 ```
 
 ```text
@@ -101,7 +101,7 @@ Security Group Detail:
 Create a security group
 
 ```text
-airs model-security groups create [options]
+airs-cli model-security groups create [options]
 ```
 
 #### Options
@@ -115,7 +115,7 @@ airs model-security groups create [options]
 *Create from body fixture (see docs/cli/examples/model-security/group-create.json)*
 
 ```bash
-airs model-security groups create --config docs/cli/examples/model-security/group-create.json
+airs-cli model-security groups create --config docs/cli/examples/model-security/group-create.json
 ```
 
 ```text
@@ -143,7 +143,7 @@ Security Group Detail:
 Update a security group
 
 ```text
-airs model-security groups update [options] <uuid>
+airs-cli model-security groups update [options] <uuid>
 ```
 
 #### Arguments
@@ -162,7 +162,7 @@ airs model-security groups update [options] <uuid>
 *Update the description (use --name to rename)*
 
 ```bash
-airs model-security groups update 00000000-0000-0000-0000-000000000001 --description "Throwaway group — updated description for docs capture"
+airs-cli model-security groups update 00000000-0000-0000-0000-000000000001 --description "Throwaway group — updated description for docs capture"
 ```
 
 ```text
@@ -190,7 +190,7 @@ Security Group Detail:
 Delete a security group
 
 ```text
-airs model-security groups delete [options] <uuid>
+airs-cli model-security groups delete [options] <uuid>
 ```
 
 #### Arguments
@@ -202,7 +202,7 @@ airs model-security groups delete [options] <uuid>
 *Delete a security group by UUID*
 
 ```bash
-airs model-security groups delete 00000000-0000-0000-0000-000000000001
+airs-cli model-security groups delete 00000000-0000-0000-0000-000000000001
 ```
 
 ```text

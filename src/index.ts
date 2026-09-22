@@ -155,3 +155,37 @@ export type {
   TestResult,
   UserInput,
 } from './core/types.js';
+export type { GatewayReportClient, GatewayReportOptions } from './reports/aigateway.js';
+export { collectGatewayEnvironmentReport } from './reports/aigateway.js';
+export {
+  renderEnvironmentReportHtml,
+  renderEnvironmentReportMarkdown,
+} from './reports/environment-render.js';
+export { writeReportFile } from './reports/io.js';
+export type {
+  RedTeamEnvironmentReport,
+  RedTeamReportClient,
+  RedTeamReportTable,
+} from './reports/redteam.js';
+export { collectRedTeamEnvironmentReport } from './reports/redteam.js';
+export { renderRedTeamReportHtml, renderRedTeamReportMarkdown } from './reports/redteam-render.js';
+export { renderRuntimeReportHtml, renderRuntimeReportMarkdown } from './reports/render.js';
+export { collectRuntimeDailyReport } from './reports/runtime.js';
+export type {
+  EnvironmentReport,
+  EnvironmentReportTable,
+  ReportApplication,
+  ReportDailyTelemetry,
+  ReportFinding,
+  ReportFormat,
+  ReportPriority,
+  ReportProfile,
+  ReportRegisteredApp,
+  ReportSessionSummary,
+  ReportSeverity,
+  ReportSource,
+  ReportSourceStatus,
+  RuntimeDailyReport,
+  RuntimeReportClient,
+  RuntimeReportOptions,
+} from './reports/types.js';

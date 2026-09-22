@@ -70,8 +70,8 @@ export function registerCreateCommand(parent: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime topics create --name "Financial Advice" --description "Requests for personal investment advice" --examples "Should I buy TSLA stock?" "How should I invest my savings?"',
-        'airs runtime topics create --name "Legal Advice" --description "Requests for legal counsel" --examples "Can I sue my landlord?" "Draft a contract for me" --output json',
+        'airs-cli runtime topics create --name "Financial Advice" --description "Requests for personal investment advice" --examples "Should I buy TSLA stock?" "How should I invest my savings?"',
+        'airs-cli runtime topics create --name "Legal Advice" --description "Requests for legal counsel" --examples "Can I sue my landlord?" "Draft a contract for me" --output json',
       ),
     );
   registerDeprecatedAlias(cmd, {

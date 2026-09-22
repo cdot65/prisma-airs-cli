@@ -8,7 +8,7 @@ Prisma AIRS CLI integrates with Palo Alto Prisma AIRS AI Model Security to manag
 
 ## Overview
 
-The `airs model-security` command group provides access to Model Security operations:
+The `airs-cli model-security` command group provides access to Model Security operations:
 
 - **Groups** — manage security groups that define scanning policies per source type
 - **Rules** — browse available security rules (read-only, managed by AIRS)
@@ -52,80 +52,80 @@ posture without re-running a scan.
 
 ```bash
 # Auto-detects uv or pip, creates a project/venv, installs the package
-airs model-security install
+airs-cli model-security install
 
 # Or install with only AWS extras
-airs model-security install --extras aws
+airs-cli model-security install --extras aws
 ```
 
 ### 1. List available groups
 
 ```bash
-airs model-security groups list
+airs-cli model-security groups list
 
 # Structured output (table, csv, json, yaml)
-airs model-security groups list --output table
+airs-cli model-security groups list --output table
 ```
 
 ### 2. Browse security rules
 
 ```bash
-airs model-security rules list
-airs model-security rules get <uuid>
+airs-cli model-security rules list
+airs-cli model-security rules get <uuid>
 ```
 
 ### 3. Configure rule enforcement
 
 ```bash
 # View current rule instances in a group
-airs model-security rule-instances list <groupUuid>
+airs-cli model-security rule-instances list <groupUuid>
 
 # Update a rule instance state
 echo '{"state": "BLOCKING"}' > update.json
-airs model-security rule-instances update <groupUuid> <instanceUuid> --config update.json
+airs-cli model-security rule-instances update <groupUuid> <instanceUuid> --config update.json
 ```
 
 ### 4. Create custom groups
 
 ```bash
 echo '{"name": "Strict S3 Policy", "source_type": "S3"}' > group.json
-airs model-security groups create --config group.json
+airs-cli model-security groups create --config group.json
 ```
 
 ### 5. Inspect scan results
 
 ```bash
 # List scans
-airs model-security scans list
+airs-cli model-security scans list
 
 # View evaluations for a scan
-airs model-security scans evaluations <scanUuid>
+airs-cli model-security scans evaluations <scanUuid>
 
 # View violations
-airs model-security scans violations <scanUuid>
+airs-cli model-security scans violations <scanUuid>
 
 # View scanned files
-airs model-security scans files <scanUuid>
+airs-cli model-security scans files <scanUuid>
 ```
 
 ### 6. Organize with labels
 
 ```bash
-airs model-security labels add <scanUuid> --labels '[{"key":"env","value":"prod"}]'
-airs model-security labels keys
+airs-cli model-security labels add <scanUuid> --labels '[{"key":"env","value":"prod"}]'
+airs-cli model-security labels keys
 ```
 
 ### 7. Browse the model catalog
 
 ```bash
 # List scanned models
-airs model-security models list
+airs-cli model-security models list
 
 # Drill into a model → its versions → the files in a version
-airs model-security models get <modelUuid>
-airs model-security models versions <modelUuid>
-airs model-security models version <modelVersionUuid>
-airs model-security models files <modelVersionUuid>
+airs-cli model-security models get <modelUuid>
+airs-cli model-security models versions <modelUuid>
+airs-cli model-security models version <modelVersionUuid>
+airs-cli model-security models files <modelVersionUuid>
 ```
 
 :::tip[Exact command syntax]

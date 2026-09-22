@@ -6,14 +6,14 @@ sidebar_label: models
 
 Browse the scanned **model catalog** (read-only): models, their versions, and the
 files within each version. Credentials are shared with the other Model Security
-commands (`PANW_MGMT_*`).
+commands (the tenant's `mgmt*` keys).
 
 ### model-security models list
 
 List models in the catalog.
 
 ```text
-airs model-security models list [options]
+airs-cli model-security models list [options]
 ```
 
 #### Options
@@ -21,6 +21,8 @@ airs model-security models list [options]
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
 | `--search <text>` | No | — | Filter by search text |
+| `--start <iso>` | No | — | Creation window start, ISO timestamp |
+| `--end <iso>` | No | — | Creation window end; must not precede start |
 | `--search-query <text>` | No | — | Filter by model UUID or name |
 | `--sort-field <field>` | No | — | Sort field: `created_at`, `updated_at` |
 | `--sort-order <order>` | No | — | Sort order: `asc`, `desc` |
@@ -33,8 +35,9 @@ airs model-security models list [options]
 #### Examples
 
 ```bash
-airs model-security models list
-airs model-security models list --search-query llama --sort-field updated_at --sort-order desc
+airs-cli model-security models list
+airs-cli model-security models list --start 2026-08-09T00:00:00Z --end 2026-09-08T00:00:00Z --output json
+airs-cli model-security models list --search-query llama --sort-field updated_at --sort-order desc
 ```
 
 ### model-security models get
@@ -42,7 +45,7 @@ airs model-security models list --search-query llama --sort-field updated_at --s
 Get a single model by UUID.
 
 ```text
-airs model-security models get <uuid> [options]
+airs-cli model-security models get <uuid> [options]
 ```
 
 | Flag | Required | Default | Description |
@@ -54,7 +57,7 @@ airs model-security models get <uuid> [options]
 List the versions of a model.
 
 ```text
-airs model-security models versions <modelUuid> [options]
+airs-cli model-security models versions <modelUuid> [options]
 ```
 
 | Flag | Required | Default | Description |
@@ -69,7 +72,7 @@ airs model-security models versions <modelUuid> [options]
 Get a single model version by UUID (includes last-eval summary).
 
 ```text
-airs model-security models version <uuid> [options]
+airs-cli model-security models version <uuid> [options]
 ```
 
 | Flag | Required | Default | Description |
@@ -81,7 +84,7 @@ airs model-security models version <uuid> [options]
 List the files scanned in a model version.
 
 ```text
-airs model-security models files <modelVersionUuid> [options]
+airs-cli model-security models files <modelVersionUuid> [options]
 ```
 
 | Flag | Required | Default | Description |

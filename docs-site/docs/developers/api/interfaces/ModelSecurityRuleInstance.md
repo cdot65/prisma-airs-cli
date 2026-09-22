@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRuleInstance
 
-Defined in: src/airs/types.ts:804
+Defined in: src/airs/types.ts:808
 
 Normalized rule instance within a security group.
 
@@ -10,7 +10,7 @@ Normalized rule instance within a security group.
 
 > **createdAt**: `string`
 
-Defined in: src/airs/types.ts:809
+Defined in: src/airs/types.ts:813
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:809
 
 > **fieldValues**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:812
+Defined in: src/airs/types.ts:816
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:812
 
 > **rule**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:811
+Defined in: src/airs/types.ts:815
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:811
 
 > **securityGroupUuid**: `string`
 
-Defined in: src/airs/types.ts:806
+Defined in: src/airs/types.ts:810
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:806
 
 > **securityRuleUuid**: `string`
 
-Defined in: src/airs/types.ts:807
+Defined in: src/airs/types.ts:811
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:807
 
 > **state**: `string`
 
-Defined in: src/airs/types.ts:808
+Defined in: src/airs/types.ts:812
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:808
 
 > **updatedAt**: `string`
 
-Defined in: src/airs/types.ts:810
+Defined in: src/airs/types.ts:814
 
 ***
 
@@ -66,4 +66,4 @@ Defined in: src/airs/types.ts:810
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:805
+Defined in: src/airs/types.ts:809

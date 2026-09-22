@@ -1,6 +1,6 @@
 # Interface: RedTeamService
 
-Defined in: src/airs/types.ts:548
+Defined in: src/airs/types.ts:552
 
 Contract for AI Red Team scan operations.
 
@@ -10,7 +10,7 @@ Contract for AI Red Team scan operations.
 
 > **abortScan**(`jobId`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:652
+Defined in: src/airs/types.ts:656
 
 Abort a running scan.
 
@@ -30,7 +30,7 @@ Abort a running scan.
 
 > **acceptEula**(`eulaContent`): `Promise`\<[`EulaStatus`](EulaStatus.md)\>
 
-Defined in: src/airs/types.ts:554
+Defined in: src/airs/types.ts:558
 
 Accept the EULA.
 
@@ -50,7 +50,7 @@ Accept the EULA.
 
 > **createAdapter**(`request`, `validate?`): `Promise`\<[`RedTeamAdapterDetail`](RedTeamAdapterDetail.md)\>
 
-Defined in: src/airs/types.ts:712
+Defined in: src/airs/types.ts:716
 
 #### Parameters
 
@@ -72,7 +72,7 @@ Defined in: src/airs/types.ts:712
 
 > **createChannel**(`request`): `Promise`\<[`RedTeamChannel`](RedTeamChannel.md)\>
 
-Defined in: src/airs/types.ts:690
+Defined in: src/airs/types.ts:694
 
 Create a network broker channel.
 
@@ -92,7 +92,7 @@ Create a network broker channel.
 
 > **createDevices**(`tenantId`, `request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:565
+Defined in: src/airs/types.ts:569
 
 Create devices for an instance.
 
@@ -116,7 +116,7 @@ Create devices for an instance.
 
 > **createInstance**(`request`): `Promise`\<[`InstanceResponse`](InstanceResponse.md)\>
 
-Defined in: src/airs/types.ts:557
+Defined in: src/airs/types.ts:561
 
 Create an instance.
 
@@ -136,7 +136,7 @@ Create an instance.
 
 > **createScan**(`request`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)\>
 
-Defined in: src/airs/types.ts:621
+Defined in: src/airs/types.ts:625
 
 Create a red team scan job.
 
@@ -186,7 +186,7 @@ Create a red team scan job.
 
 > **createTarget**(`request`, `opts?`): `Promise`\<[`RedTeamTargetDetail`](RedTeamTargetDetail.md)\>
 
-Defined in: src/airs/types.ts:593
+Defined in: src/airs/types.ts:597
 
 Create a red team target.
 
@@ -210,7 +210,7 @@ Create a red team target.
 
 > **deleteAdapter**(`uuid`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:722
+Defined in: src/airs/types.ts:726
 
 #### Parameters
 
@@ -228,7 +228,7 @@ Defined in: src/airs/types.ts:722
 
 > **deleteDevices**(`tenantId`, `serialNumbers`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:575
+Defined in: src/airs/types.ts:579
 
 Delete devices by serial numbers.
 
@@ -252,7 +252,7 @@ Delete devices by serial numbers.
 
 > **deleteInstance**(`tenantId`): `Promise`\<[`InstanceResponse`](InstanceResponse.md)\>
 
-Defined in: src/airs/types.ts:563
+Defined in: src/airs/types.ts:567
 
 Delete an instance.
 
@@ -272,7 +272,7 @@ Delete an instance.
 
 > **deleteTarget**(`uuid`): `Promise`\<`void`\>
 
-Defined in: src/airs/types.ts:606
+Defined in: src/airs/types.ts:610
 
 Delete a red team target.
 
@@ -292,7 +292,7 @@ Delete a red team target.
 
 > **getAdapter**(`uuid`): `Promise`\<[`RedTeamAdapterDetail`](RedTeamAdapterDetail.md)\>
 
-Defined in: src/airs/types.ts:711
+Defined in: src/airs/types.ts:715
 
 #### Parameters
 
@@ -310,7 +310,7 @@ Defined in: src/airs/types.ts:711
 
 > **getCategories**(): `Promise`\<[`RedTeamCategory`](RedTeamCategory.md)[]\>
 
-Defined in: src/airs/types.ts:673
+Defined in: src/airs/types.ts:677
 
 List available attack categories.
 
@@ -324,7 +324,7 @@ List available attack categories.
 
 > **getChannel**(`channelId`): `Promise`\<[`RedTeamChannel`](RedTeamChannel.md)\>
 
-Defined in: src/airs/types.ts:688
+Defined in: src/airs/types.ts:692
 
 Get a network broker channel by ID.
 
@@ -344,7 +344,7 @@ Get a network broker channel by ID.
 
 > **getChannelStats**(): `Promise`\<[`RedTeamChannelStats`](RedTeamChannelStats.md)\>
 
-Defined in: src/airs/types.ts:694
+Defined in: src/airs/types.ts:698
 
 Get network broker channel statistics.
 
@@ -358,7 +358,7 @@ Get network broker channel statistics.
 
 > **getCustomReport**(`jobId`): `Promise`\<[`RedTeamCustomReport`](RedTeamCustomReport.md)\>
 
-Defined in: src/airs/types.ts:661
+Defined in: src/airs/types.ts:665
 
 Get custom attack report.
 
@@ -378,7 +378,7 @@ Get custom attack report.
 
 > **getDynamicReport**(`jobId`): `Promise`\<[`RedTeamDynamicReport`](RedTeamDynamicReport.md)\>
 
-Defined in: src/airs/types.ts:658
+Defined in: src/airs/types.ts:662
 
 Get dynamic scan report.
 
@@ -398,7 +398,7 @@ Get dynamic scan report.
 
 > **getEulaContent**(): `Promise`\<[`EulaContent`](EulaContent.md)\>
 
-Defined in: src/airs/types.ts:550
+Defined in: src/airs/types.ts:554
 
 Get EULA content.
 
@@ -412,7 +412,7 @@ Get EULA content.
 
 > **getEulaStatus**(): `Promise`\<[`EulaStatus`](EulaStatus.md)\>
 
-Defined in: src/airs/types.ts:552
+Defined in: src/airs/types.ts:556
 
 Get EULA acceptance status.
 
@@ -426,7 +426,7 @@ Get EULA acceptance status.
 
 > **getInstance**(`tenantId`): `Promise`\<[`InstanceDetail`](InstanceDetail.md)\>
 
-Defined in: src/airs/types.ts:559
+Defined in: src/airs/types.ts:563
 
 Get instance details.
 
@@ -446,7 +446,7 @@ Get instance details.
 
 > **getLanguages**(`management?`): `Promise`\<[`RedTeamLanguages`](RedTeamLanguages.md)\>
 
-Defined in: src/airs/types.ts:697
+Defined in: src/airs/types.ts:701
 
 List tenant languages (data plane, or management plane when `management`).
 
@@ -466,7 +466,7 @@ List tenant languages (data plane, or management plane when `management`).
 
 > **getRegistryCredentials**(): `Promise`\<[`RegistryCredentials`](RegistryCredentials.md)\>
 
-Defined in: src/airs/types.ts:577
+Defined in: src/airs/types.ts:581
 
 Get or create registry credentials.
 
@@ -480,7 +480,7 @@ Get or create registry credentials.
 
 > **getScan**(`jobId`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)\>
 
-Defined in: src/airs/types.ts:633
+Defined in: src/airs/types.ts:637
 
 Get scan status by job ID.
 
@@ -500,7 +500,7 @@ Get scan status by job ID.
 
 > **getStaticReport**(`jobId`): `Promise`\<[`RedTeamStaticReport`](RedTeamStaticReport.md)\>
 
-Defined in: src/airs/types.ts:655
+Defined in: src/airs/types.ts:659
 
 Get static scan report.
 
@@ -520,7 +520,7 @@ Get static scan report.
 
 > **getTarget**(`uuid`): `Promise`\<[`RedTeamTargetDetail`](RedTeamTargetDetail.md)\>
 
-Defined in: src/airs/types.ts:590
+Defined in: src/airs/types.ts:594
 
 Get target details.
 
@@ -540,7 +540,7 @@ Get target details.
 
 > **getTargetMetadata**(): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:582
+Defined in: src/airs/types.ts:586
 
 Get target field metadata.
 
@@ -554,7 +554,7 @@ Get target field metadata.
 
 > **getTargetProfile**(`uuid`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:612
+Defined in: src/airs/types.ts:616
 
 Get target profile.
 
@@ -574,7 +574,7 @@ Get target profile.
 
 > **getTargetProfileErrorLogs**(`targetId`, `opts?`): `Promise`\<\{ `logs`: [`RedTeamErrorLog`](RedTeamErrorLog.md)[]; `totalItems?`: `number`; \}\>
 
-Defined in: src/airs/types.ts:699
+Defined in: src/airs/types.ts:703
 
 List target-profile error logs.
 
@@ -608,7 +608,7 @@ List target-profile error logs.
 
 > **getTargetTemplates**(): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:584
+Defined in: src/airs/types.ts:588
 
 Get provider-specific target templates.
 
@@ -622,7 +622,7 @@ Get provider-specific target templates.
 
 > **listAdapters**(`opts?`): `Promise`\<\{ `adapters`: [`RedTeamAdapterListItem`](RedTeamAdapterListItem.md)[]; `totalItems?`: `number`; \}\>
 
-Defined in: src/airs/types.ts:705
+Defined in: src/airs/types.ts:709
 
 #### Parameters
 
@@ -640,7 +640,7 @@ Defined in: src/airs/types.ts:705
 
 > **listAllAdapters**(`opts?`): `Promise`\<[`RedTeamAdapterListItem`](RedTeamAdapterListItem.md)[]\>
 
-Defined in: src/airs/types.ts:708
+Defined in: src/airs/types.ts:712
 
 #### Parameters
 
@@ -658,7 +658,7 @@ Defined in: src/airs/types.ts:708
 
 > **listAllChannels**(`opts?`): `Promise`\<[`RedTeamChannel`](RedTeamChannel.md)[]\>
 
-Defined in: src/airs/types.ts:686
+Defined in: src/airs/types.ts:690
 
 #### Parameters
 
@@ -676,7 +676,7 @@ Defined in: src/airs/types.ts:686
 
 > **listAllScans**(`opts?`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)[]\>
 
-Defined in: src/airs/types.ts:643
+Defined in: src/airs/types.ts:647
 
 #### Parameters
 
@@ -712,7 +712,7 @@ Defined in: src/airs/types.ts:643
 
 > **listAttacks**(`jobId`, `opts?`): `Promise`\<\{ `attacks`: [`RedTeamAttack`](RedTeamAttack.md)[]; `totalItems?`: `number`; \}\>
 
-Defined in: src/airs/types.ts:664
+Defined in: src/airs/types.ts:668
 
 List attacks from a static/dynamic scan.
 
@@ -742,7 +742,7 @@ List attacks from a static/dynamic scan.
 
 > **listChannels**(`opts?`): `Promise`\<\{ `channels`: [`RedTeamChannel`](RedTeamChannel.md)[]; `totalItems?`: `number`; \}\>
 
-Defined in: src/airs/types.ts:683
+Defined in: src/airs/types.ts:687
 
 List network broker channels.
 
@@ -762,7 +762,7 @@ List network broker channels.
 
 > **listCustomAttacks**(`jobId`, `opts?`): `Promise`\<[`RedTeamCustomAttack`](RedTeamCustomAttack.md)[]\>
 
-Defined in: src/airs/types.ts:670
+Defined in: src/airs/types.ts:674
 
 List attacks from a custom prompt set scan.
 
@@ -788,7 +788,7 @@ List attacks from a custom prompt set scan.
 
 > **listScans**(`opts?`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)[]\>
 
-Defined in: src/airs/types.ts:636
+Defined in: src/airs/types.ts:640
 
 List recent scans with optional filters.
 
@@ -826,7 +826,7 @@ List recent scans with optional filters.
 
 > **listTargets**(): `Promise`\<[`RedTeamTarget`](RedTeamTarget.md)[]\>
 
-Defined in: src/airs/types.ts:587
+Defined in: src/airs/types.ts:591
 
 List configured red team targets.
 
@@ -840,7 +840,7 @@ List configured red team targets.
 
 > **probeTarget**(`request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:609
+Defined in: src/airs/types.ts:613
 
 Probe a target connection.
 
@@ -860,7 +860,7 @@ Probe a target connection.
 
 > **updateAdapter**(`uuid`, `overrides`, `validate?`): `Promise`\<[`RedTeamAdapterDetail`](RedTeamAdapterDetail.md)\>
 
-Defined in: src/airs/types.ts:717
+Defined in: src/airs/types.ts:721
 
 Read-modify-write: merges overrides onto the current record (upstream PUT is full-replacement).
 
@@ -888,7 +888,7 @@ Read-modify-write: merges overrides onto the current record (upstream PUT is ful
 
 > **updateChannel**(`channelId`, `request`): `Promise`\<[`RedTeamChannel`](RedTeamChannel.md)\>
 
-Defined in: src/airs/types.ts:692
+Defined in: src/airs/types.ts:696
 
 Update a network broker channel.
 
@@ -912,7 +912,7 @@ Update a network broker channel.
 
 > **updateDevices**(`tenantId`, `request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:570
+Defined in: src/airs/types.ts:574
 
 Update devices (PATCH).
 
@@ -936,7 +936,7 @@ Update devices (PATCH).
 
 > **updateInstance**(`tenantId`, `request`): `Promise`\<[`InstanceResponse`](InstanceResponse.md)\>
 
-Defined in: src/airs/types.ts:561
+Defined in: src/airs/types.ts:565
 
 Update an instance.
 
@@ -960,7 +960,7 @@ Update an instance.
 
 > **updateTarget**(`uuid`, `request`, `opts?`): `Promise`\<[`RedTeamTargetDetail`](RedTeamTargetDetail.md)\>
 
-Defined in: src/airs/types.ts:599
+Defined in: src/airs/types.ts:603
 
 Update a red team target.
 
@@ -988,7 +988,7 @@ Update a red team target.
 
 > **updateTargetProfile**(`uuid`, `request`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: src/airs/types.ts:615
+Defined in: src/airs/types.ts:619
 
 Update target profile.
 
@@ -1012,7 +1012,7 @@ Update target profile.
 
 > **validateAdapter**(`request`): `Promise`\<[`RedTeamAdapterValidationResult`](RedTeamAdapterValidationResult.md)\>
 
-Defined in: src/airs/types.ts:724
+Defined in: src/airs/types.ts:728
 
 Run a script end-to-end through the broker channel; returns an execution outcome.
 
@@ -1032,7 +1032,7 @@ Run a script end-to-end through the broker channel; returns an execution outcome
 
 > **validateTargetAuth**(`request`): `Promise`\<[`TargetAuthValidationResult`](TargetAuthValidationResult.md)\>
 
-Defined in: src/airs/types.ts:580
+Defined in: src/airs/types.ts:584
 
 Validate target auth credentials.
 
@@ -1052,7 +1052,7 @@ Validate target auth credentials.
 
 > **waitForCompletion**(`jobId`, `onProgress?`, `intervalMs?`): `Promise`\<[`RedTeamJob`](RedTeamJob.md)\>
 
-Defined in: src/airs/types.ts:676
+Defined in: src/airs/types.ts:680
 
 Poll until scan completes. Calls onProgress for status updates.
 

@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 import { AirsScanService, RateLimitedScanService } from '../../airs/scanner.js';
 import type { ScanService } from '../../airs/types.js';
 import { runtimeInitOptions } from '../../config/client-options.js';
+import { assertScannerCredentials } from '../../config/credentials.js';
 import { loadConfig } from '../../config/loader.js';
 import { computeMetrics } from '../../core/metrics.js';
 import { loadPrompts } from '../../core/prompt-loader.js';
@@ -61,9 +62,9 @@ export function registerEvalCommand(parent: Command): void {
     .addHelpText(
       'after',
       examples(
-        'airs runtime topics eval --profile prod-guard --prompts eval.csv --topic "Financial Advice"',
-        'airs runtime topics eval --profile prod-guard --prompts eval.csv --output json',
-        'airs runtime topics eval --profile prod-guard --prompts eval.csv --rate 5 --concurrency 3',
+        'airs-cli runtime topics eval --profile prod-guard --prompts eval.csv --topic "Financial Advice"',
+        'airs-cli runtime topics eval --profile prod-guard --prompts eval.csv --output json',
+        'airs-cli runtime topics eval --profile prod-guard --prompts eval.csv --rate 5 --concurrency 3',
       ),
     );
   registerDeprecatedAlias(cmd, {
@@ -79,9 +80,7 @@ export function registerEvalCommand(parent: Command): void {
       const csvContent = await readFile(opts.prompts, 'utf-8');
       const { cases, intent } = loadPrompts(csvContent, (msg) => ui.status(`Warning: ${msg}`));
 
-      if (!config.airsApiKey && !config.airsApiToken) {
-        fail(new Error('PANW_AI_SEC_API_KEY or PANW_AI_SEC_API_TOKEN is required'));
-      }
+      assertScannerCredentials(config);
       let scanner: ScanService = new AirsScanService(runtimeInitOptions(config));
       if (opts.rate) {
         scanner = new RateLimitedScanService(scanner, Number.parseInt(opts.rate, 10));

@@ -153,8 +153,24 @@ describe('buildFilteringProfileBody', () => {
 });
 
 describe('buildProfileBody', () => {
+  const patterns = [
+    { id: 'p1', name: 'First', version: 3, technique: 'regex', confidenceLevels: ['high', 'low'] },
+    {
+      id: 'p2',
+      name: 'Second',
+      version: 2,
+      technique: 'weighted_regex',
+      confidenceLevels: ['high'],
+    },
+  ];
   it('requires --name', () => {
     expect(() => buildProfileBody({})).toThrow(/--name/);
+  });
+
+  it('enforces the live 32-character profile-name boundary', () => {
+    expect(buildProfileBody({ name: 'A'.repeat(32) }).name).toBe('A'.repeat(32));
+    expect(() => buildProfileBody({ name: 'A'.repeat(33) })).toThrow(/at most 32 characters/);
+    expect(() => buildProfileBody({ name: '   ' })).toThrow(/nonblank string/);
   });
 
   it('defaults profile_type=advanced', () => {
@@ -165,18 +181,52 @@ describe('buildProfileBody', () => {
   });
 
   it('builds expression_tree from --pattern-id with default OR combinator', () => {
-    const body = buildProfileBody({ name: 'X', patternId: ['p1', 'p2'] });
+    const body = buildProfileBody({ name: 'X', patternId: ['p1', 'p2'] }, patterns);
     const rules = (
       body.detection_rules as { rule_type: string; expression_tree: { operator_type: string } }[]
     )[0];
     expect(rules.rule_type).toBe('expression_tree');
-    expect(rules.expression_tree.operator_type).toBe('or');
+    expect(rules.expression_tree).toEqual({
+      operator_type: 'or',
+      sub_expressions: patterns.map((pattern) => ({
+        rule_item: {
+          id: pattern.id,
+          name: pattern.name,
+          version: pattern.version,
+          detection_technique: pattern.technique,
+          confidence_level: 'high',
+          supported_confidence_levels: pattern.confidenceLevels,
+          match_type: 'include',
+          occurrence_operator_type: 'more_than_equal_to',
+          occurrence_count: 1,
+        },
+      })),
+    });
   });
 
   it('uses custom combinator', () => {
-    const body = buildProfileBody({ name: 'X', patternId: ['p1'], combinator: 'AND' });
+    const body = buildProfileBody({ name: 'X', patternId: ['p1'], combinator: 'AND' }, patterns);
     const rules = (body.detection_rules as { expression_tree: { operator_type: string } }[])[0];
     expect(rules.expression_tree.operator_type).toBe('and');
+  });
+
+  it('requires every pattern to resolve and rejects unsupported confidence', () => {
+    expect(() => buildProfileBody({ name: 'X', patternId: ['missing'] }, patterns)).toThrow(
+      /must resolve/,
+    );
+    expect(() =>
+      buildProfileBody({ name: 'X', patternId: ['p2'], confidence: 'low' }, patterns),
+    ).toThrow(/not supported/);
+  });
+
+  it('rejects basic writes and invalid confidence before building rules', () => {
+    expect(() => buildProfileBody({ name: 'X', profileType: 'basic' })).toThrow(
+      /Basic profile writes are unsupported/,
+    );
+    expect(() => buildProfileBody({ name: 'X', profileType: 'unknown' })).toThrow(
+      /must be advanced/,
+    );
+    expect(() => buildProfileBody({ name: 'X', confidence: 'unknown' })).toThrow(/--confidence/);
   });
 
   it('rejects invalid combinator', () => {

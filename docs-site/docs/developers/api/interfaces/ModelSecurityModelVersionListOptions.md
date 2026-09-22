@@ -1,6 +1,6 @@
 # Interface: ModelSecurityModelVersionListOptions
 
-Defined in: src/airs/types.ts:964
+Defined in: src/airs/types.ts:973
 
 Filter options for listing model versions.
 
@@ -10,7 +10,7 @@ Filter options for listing model versions.
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:967
+Defined in: src/airs/types.ts:976
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:967
 
 > `optional` **skip?**: `number`
 
-Defined in: src/airs/types.ts:966
+Defined in: src/airs/types.ts:975
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: src/airs/types.ts:966
 
 > `optional` **sortOrder?**: `string`
 
-Defined in: src/airs/types.ts:965
+Defined in: src/airs/types.ts:974

@@ -1,12 +1,29 @@
 # AI Agent Instructions — Prisma AIRS CLI
 
-This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use the `airs` CLI to interact with Palo Alto Prisma AIRS. It is a machine-readable reference — not user documentation. For human docs see the documentation site <https://cdot65.github.io/prisma-airs-cli/> (Docusaurus source in `docs-site/`).
+This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use the `airs-cli` CLI to interact with Palo Alto Prisma AIRS. It is a machine-readable reference — not user documentation. For human docs see the documentation site <https://cdot65.github.io/prisma-airs-cli/> (Docusaurus source in `docs-site/`).
 
 ---
 
 ## Quick Context
 
-`airs` is a CLI for Palo Alto Prisma AIRS AI security platform. It covers:
+### DLP remediation (CLI 5.9.1 / SDK 0.30.1)
+
+Dictionary creates work with SCM display region labels such as `United States`; a generic
+400 never proves missing entitlement. CSV uploads consume a header and retain literal quote
+characters; TXT has no header. Restore reconstructs the correct format and verifies every
+keyword. All transfer inventories sort by name, honor the observed 50-record cap and
+snake_case pagination, and reject duplicates/count drift. Profile `--pattern-id` resolves
+actual pattern metadata into `sub_expressions[].rule_item`; basic writes and names over the
+live 32-character limit refuse before OAuth. Keep transfer fail-closed and never update/delete.
+Published SDK 0.30.1 provides sanitized problem diagnostics. Exact evidence, supported classes,
+and limitations: `docs-site/docs/runtime/dlp/transfer.md`. Do not reuse earlier sparse-catalog
+or entitlement hypotheses as current facts.
+
+### AgentGuard browser API additions (CLI 5.4.1 / SDK 0.29.0)
+
+`airs-cli agentguard scans list`, `scans vulnerabilities <scanUuid>`, `stats`, `rules list`, and `report` provide read-only AI Supply Chain agent/skill telemetry using Management OAuth. Reports are HTML by default or Markdown, use private no-clobber CWD files, and contain aggregates only. Finding content requires `--include-content`; debug bodies are omitted. Only `30_DAYS` statistics are verified. Rules pagination reports page length, so `--all` must continue until a short/empty page. Failed scans may contain null summaries/durations; null metrics are unknown, never zero. Use `scripts/e2e-agentguard.mjs` for read-only live acceptance. CLI 5.4.1 requires registry-published SDK 0.29.0; never publish with a local link override.
+
+`airs-cli` is a CLI for Palo Alto Prisma AIRS AI security platform. It covers:
 
 1. **Runtime Security** — scan prompts against AIRS security profiles, manage profiles/topics/API keys
 2. **Guardrail Optimization** — atomic `runtime topics` commands for custom topic guardrails, driven by an external agent loop (no LLM layer; see the [guardrails docs](https://cdot65.github.io/prisma-airs-cli/runtime/guardrails/overview/))
@@ -15,48 +32,66 @@ This document instructs AI agents (Claude Code, Gemini CLI, etc.) on how to use 
 5. **Model Security** — ML model supply chain scanning, security groups, rules, violations
 6. **Backup & Restore** — export/import AIRS configuration (targets, etc.) to/from local JSON/YAML files (subcommands under `redteam targets`)
 
-The binary is `airs`. Four top-level command groups: `runtime`, `redteam`, `aigateway`, `model-security` (backup/restore live under `redteam targets`), plus utility commands `airs config` (config file management), `airs doctor` (env/credential/connectivity diagnostics), and `airs completion <shell>`. Global flags: `--debug` logs all AIRS/SCM API requests and responses to `~/.prisma-airs/debug-api-<timestamp>.jsonl` (secrets redacted); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
+The binary is `airs-cli`. Five product command groups: `runtime`, `redteam`, `aigateway`, `model-security`, `agentguard` (backup/restore live under `redteam targets`), plus utility commands `airs-cli tenant` (the only configuration surface), `airs-cli doctor` (tenant/credential/connectivity diagnostics), and `airs-cli completion <shell>`. Global flags: `--debug` writes a new private `./debug-api-<timestamp>-<unique suffix>.jsonl` in the current working directory (secrets redacted; no automatic pruning); `--quiet` suppresses status/decorative output (data and errors still print). Every `list` command accepts alias `ls`; hard `delete` commands accept `rm`. Soft removal is named `archive` and never receives `rm`.
 
 ---
 
 ## Authentication
 
-Different commands require different credentials. Set these as environment variables or in `~/.prisma-airs/config.json`.
+DLP tenant authentication requires CLI 5.7.1+: all four `runtime dlp` CRUD groups now
+use the shared config loader and `managementClientOptions`, including named-tenant
+JSON credentials and endpoint overrides. DLP writes resolve `--output` before mutation.
+Regression: `tests/integration/dlp-tenant-auth.spec.ts` exercises CLI/SDK OAuth through
+a local HTTP server, also against built artifacts in the consumer Node matrix.
+Recovery from the 5.7.0 missing-client-ID failure preserves prior evidence and registrations:
+`docs-site/docs/runtime/dlp/tenant-auth-recovery.md`. Do not export secrets to work around it.
+
+Different commands require different credentials. Store them in the selected tenant JSON file; credential environment variables are ignored.
+
+For named tenants, `airs-cli tenant create <name>` guides the user through TSG ID, OAuth
+client ID, and a hidden client secret. `--config <path>` still registers an existing
+file without modifying it. Automated creation uses `--tsg-id`, `--client-id`, and
+`--client-secret-stdin`; never put secrets in arguments. Use
+`airs-cli tenant set <name> <key> [value]` to edit one setting. Omit secret values for hidden
+prompts or pipe them with `--stdin`. Named tenant edits do not switch selection, cannot
+change the pinned TSG ID, and require writable configs. Run `airs-cli tenant switch <name>`
+to activate; `read` redacts credentials and `delete` retains the config file.
 
 ### Credential Sets
 
-| Credential Set | Environment Variables | Used By |
+Configuration comes **only** from the selected tenant's JSON file; environment variables and
+`.env` files are ignored (`airs-cli doctor` lists any still set). Keys use camelCase.
+
+| Credential Set | Tenant file keys | Used By |
 |---|---|---|
-| **Scanner API** | `PANW_AI_SEC_API_KEY` | `runtime scan`, `runtime bulk-scan`, `runtime topics eval` |
-| **Management API** (OAuth2) | `PANW_MGMT_CLIENT_ID`, `PANW_MGMT_CLIENT_SECRET`, `PANW_MGMT_TSG_ID` | All CRUD commands (profiles, topics, api-keys, customer-apps), all redteam, aigateway, and model-security commands, `backup`, `restore` |
+| **Scanner API** | `airsApiKey` (or `airsApiToken`) | `runtime scan`, `runtime bulk-scan`, `runtime topics eval` |
+| **SCM OAuth2** | `mgmtClientId`, `mgmtClientSecret`, `mgmtTsgId` (+ `mgmtTokenEndpoint`) | Every other command: management CRUD, DLP, redteam, model-security, agentguard, aigateway, `backup`, `restore` |
 
-### Optional Management Endpoints
-
-| Variable | Purpose |
-|---|---|
-| `PANW_MGMT_ENDPOINT` | Override management API base URL |
-| `PANW_MGMT_TOKEN_ENDPOINT` | Override OAuth2 token URL |
-| `PANW_AI_GW_DATA_ENDPOINT` | Override AI Gateway scoped data-plane URL |
-| `PANW_AI_GW_ADMIN_ENDPOINT` | Override AI Gateway tenant admin-plane URL |
-| `PANW_AI_GW_TOKEN_ENDPOINT` | Override AI Gateway OAuth2 token URL (defaults to management token URL) |
+There is one OAuth credential set and one token endpoint per tenant; no product has its own.
+Optional base-URL overrides (`mgmtEndpoint`, `dlpEndpoint`, `redTeam*Endpoint`,
+`modelSec*Endpoint`, `agentGuard*Endpoint`, `aiGwDataEndpoint`, `aiGwAdminEndpoint`,
+`iamEndpoint`) default to SDK constants and never affect authentication. Doctor checks Node,
+tenant selection, config file (with TSG pin), ignored environment variables, both credential
+sets, and one authenticated call per API; statuses are pass/warn/fail/skip and only `fail`
+exits 1. Tenant selection for a job or container is isolated with `PRISMA_AIRS_TENANTS_PATH`.
 
 ### Verifying Credentials
 
 ```bash
 # Scanner API — should return scan result
-airs runtime scan --profile <profile-name> "test prompt"
+airs-cli runtime scan --profile <profile-name> "test prompt"
 
 # Management API — should return list of profiles
-airs runtime profiles list
+airs-cli runtime profiles list
 
 # Red Team — should return targets
-airs redteam targets list
+airs-cli redteam targets list
 
 # AI Gateway — should return workspaces visible to your role scope
-airs aigateway workspaces list
+airs-cli aigateway workspaces list
 
 # Model Security — should return groups
-airs model-security groups list
+airs-cli model-security groups list
 ```
 
 ---
@@ -77,10 +112,10 @@ All list commands accept `--output <format>`:
 
 ```bash
 # Get parseable JSON output
-airs runtime profiles list --output json
-airs redteam targets list --output json
-airs aigateway workspaces list --output json
-airs model-security groups list --output json
+airs-cli runtime profiles list --output json
+airs-cli redteam targets list --output json
+airs-cli aigateway workspaces list --output json
+airs-cli model-security groups list --output json
 ```
 
 **Output discipline**: stdout carries data only; status/decorative output goes to stderr, so `--output json | jq` always parses. Add `--quiet` to suppress status output entirely.
@@ -95,11 +130,28 @@ airs model-security groups list --output json
 
 ### Runtime — Scanning
 
+#### Daily environment report (read-only)
+
+```bash
+airs-cli runtime report [--output html|markdown] [--output-file <new-path|->] [--title <text>] [--max-pages <1-100>] [--strict]
+```
+
+Uses Management API OAuth through SDK reads only. Defaults to a unique timestamped HTML file
+in CWD; Markdown also defaults to CWD. `--output-file -` explicitly streams the artifact.
+Files are private (0600), atomic and no-clobber; credentials remain read-only. Report artifact
+formats are independent of terminal output preferences. `--debug` / enabled SDK debug are
+refused for report privacy. Partial sources remain visible; `--strict` returns 1 after writing
+when any source is incomplete. All sources unavailable also returns 1. No numeric health score,
+historical snapshot, availability SLA, or daily detector/token rollup is fabricated.
+
+Library: `src/reports/` separates SDK collection/evidence analysis, HTML/Markdown rendering,
+and private file publication. Real examples and limitations: `docs-site/docs/runtime/daily-report.md`.
+
 #### Scan a single prompt
 
 ```bash
-airs runtime scan --profile <profile-name> "<prompt>"
-airs runtime scan --profile <profile-name> --response "<response>" "<prompt>"
+airs-cli runtime scan --profile <profile-name> "<prompt>"
+airs-cli runtime scan --profile <profile-name> --response "<response>" "<prompt>"
 ```
 
 **Required:** `--profile`, `<prompt>` argument
@@ -112,7 +164,7 @@ Report ID, Detections list
 #### Bulk scan from file
 
 ```bash
-airs runtime bulk-scan --profile <profile-name> --file <file> [--output-file <csv>] [--session-id <id>] [--batch-size <n>]
+airs-cli runtime bulk-scan --profile <profile-name> --file <file> [--output-file <csv>] [--session-id <id>] [--batch-size <n>]
 ```
 
 **Required:** `--profile`, `--file`
@@ -143,7 +195,7 @@ by dead local processes.
 #### Resume polling
 
 ```bash
-airs runtime resume-poll <stateFile> [--output-file <csv>]
+airs-cli runtime resume-poll <stateFile> [--output-file <csv>]
 ```
 
 Resumes submitted items, safely resubmits only definitely unaccepted `pending` items, restores
@@ -153,7 +205,7 @@ prompt/result correlation, and atomically rebuilds the CSV. It refuses to resubm
 #### Generate DLP test files
 
 ```bash
-airs runtime dlp generate [--types pdf,png,jpeg,svg,docx] [--count <n>] [--out <dir>] [--techniques all|<ids>] [--seed <n>] [--output pretty|json]
+airs-cli runtime dlp generate [--types pdf,png,jpeg,svg,docx] [--count <n>] [--out <dir>] [--techniques all|<ids>] [--seed <n>] [--output pretty|json]
 ```
 
 Generates clean carrier files and "dirty" copies with **synthetic** sensitive data embedded
@@ -174,11 +226,11 @@ All CRUD commands require Management API credentials.
 #### Security Profiles
 
 ```bash
-airs runtime profiles list [--limit <n>] [--offset <n>] [--output <format>]
-airs runtime profiles get <nameOrId> [--output <pretty|json|yaml>]
-airs runtime profiles create --name <name> [protection flags...]
-airs runtime profiles update <profileId> [protection flags...]
-airs runtime profiles delete <profileId> [--force --updated-by <email>]
+airs-cli runtime profiles list [--limit <n>] [--offset <n>] [--output <format>]
+airs-cli runtime profiles get <nameOrId> [--output <pretty|json|yaml>]
+airs-cli runtime profiles create --name <name> [protection flags...]
+airs-cli runtime profiles update <profileId> [protection flags...]
+airs-cli runtime profiles delete <profileId> [--force --updated-by <email>]
 ```
 
 **`create`** requires `--name`. All protection flags are optional — omitted sections get AIRS defaults.
@@ -214,37 +266,37 @@ airs runtime profiles delete <profileId> [--force --updated-by <email>]
 
 ```bash
 # Create with multiple protections
-airs runtime profiles create --name "Prod Firewall" \
+airs-cli runtime profiles create --name "Prod Firewall" \
   --prompt-injection block \
   --toxic-content "high:block, moderate:alert" \
   --malicious-code block \
   --agent-security block
 
 # Update only one setting (everything else preserved)
-airs runtime profiles update <profileId> --toxic-content "high:alert"
+airs-cli runtime profiles update <profileId> --toxic-content "high:alert"
 ```
 
 #### Custom Topics
 
 ```bash
-airs runtime topics list [--limit <n>] [--offset <n>] [--output <format>]
-airs runtime topics get <nameOrId> [--output pretty|json|yaml]
-airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
-airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
-airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
-airs runtime topics revert --profile <name> --name <name> [--output json]
-airs runtime topics sample [--output-file <path>]
-airs runtime topics update <topicId> --config <json-file>
-airs runtime topics delete <topicId> [--force --updated-by <email>]
+airs-cli runtime topics list [--limit <n>] [--offset <n>] [--output <format>]
+airs-cli runtime topics get <nameOrId> [--output pretty|json|yaml]
+airs-cli runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
+airs-cli runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
+airs-cli runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
+airs-cli runtime topics revert --profile <name> --name <name> [--output json]
+airs-cli runtime topics sample [--output-file <path>]
+airs-cli runtime topics update <topicId> --config <json-file>
+airs-cli runtime topics delete <topicId> [--force --updated-by <email>]
 ```
 
 #### API Keys
 
 ```bash
-airs runtime api-keys list [--limit <n>] [--output <format>]
-airs runtime api-keys create --config <json-file>
-airs runtime api-keys regenerate <apiKeyId> --interval <n> --unit <unit> [--updated-by <email>]
-airs runtime api-keys delete <apiKeyName> --updated-by <email>
+airs-cli runtime api-keys list [--limit <n>] [--output <format>]
+airs-cli runtime api-keys create --config <json-file>
+airs-cli runtime api-keys regenerate <apiKeyId> --interval <n> --unit <unit> [--updated-by <email>]
+airs-cli runtime api-keys delete <apiKeyName> --updated-by <email>
 ```
 
 `--unit` values: `hours`, `days`, `months`
@@ -252,11 +304,11 @@ airs runtime api-keys delete <apiKeyName> --updated-by <email>
 #### Customer Apps
 
 ```bash
-airs runtime customer-apps list [--limit <n>] [--output <format>]
-airs runtime customer-apps get <appName>
-airs runtime customer-apps update <appId> --config <json-file>
-airs runtime customer-apps delete <appName> --updated-by <email>
-airs runtime customer-apps consumption [appName] [--time-interval <7|30|60>] [--output <format>]
+airs-cli runtime customer-apps list [--limit <n>] [--output <format>]
+airs-cli runtime customer-apps get <appName>
+airs-cli runtime customer-apps update <appId> --config <json-file>
+airs-cli runtime customer-apps delete <appName> --updated-by <email>
+airs-cli runtime customer-apps consumption [appName] [--time-interval <7|30|60>] [--output <format>]
 ```
 
 `consumption` reports per-app token consumption + violation breakdown from the SCM dashboard. `appName` is the literal scan-payload `metadata.app_name` (may differ from the SCM-registered customer-app name); omit it to report every dashboard bucket. `--time-interval` window in days: `7`, `30`, or `60` (default `30`).
@@ -264,18 +316,46 @@ airs runtime customer-apps consumption [appName] [--time-interval <7|30|60>] [--
 #### Deployment Profiles (read-only)
 
 ```bash
-airs runtime deployment-profiles list [--unactivated] [--output <format>]
+airs-cli runtime deployment-profiles list [--unactivated] [--output <format>]
 ```
 
-(There is no standalone DLP-profile listing command — DLP profile names are supplied to a profile via the `--dlp-profiles` flag on `profiles create`/`update`.)
+Inspect Enterprise DLP dependencies with `airs-cli runtime dlp profiles list --all --output json`
+and `profiles get <id> --output json` under that same `runtime dlp` group. Patterns and
+dictionaries have separate command groups. CRUD inspection is not a complete dependency backup.
 
-#### Scan Logs
+Runtime profile restore's `--on-missing-dlp basic` (CLI 5.7.0+) explicitly allows replacing
+unresolved custom DLP with Basic detection; default is `error`. Built-in Basic needs no map.
+Explicit `--dlp-map` bindings take priority. If any custom dependency in a profile remains
+unresolved, all custom DLP in that profile is replaced; inspect `dlpFallbacks.replaced`.
+Actions/masking are preserved, unsafe combinations fail, and API/inventory failures never
+trigger fallback. Never claim this MVP clones custom DLP resources or preserves their semantics.
+
+`--on-conflict verify` (CLI 5.7.0+) resolves destination dependencies and checks existing
+profiles without updating them, failing preflight on mismatches; only missing profiles are
+created. Use it to inspect recovery from a partial restore, not blind `skip` or `update`.
+Verification accepts only allowlisted server additions omitted from source policies,
+reports them in `serverDefaults`, and never ignores explicitly configured severity values.
+This includes observed per-category toxicity confidence, blocked-topic reference severity,
+topic-guardrails severity and blocked contextual-grounding severity. Full live acceptance:
+`scripts/e2e-full-runtime-migration.mjs --execute --source NAME --destination NAME
+--expect-source-tsg ID --expect-tsg ID`; requires empty destination profiles/topics unless
+explicit `--resume` is supplied. It retains restored resources and leaves destination selected.
+Copy-and-paste commands and receipts: `docs-site/docs/runtime/profile-migration-workflow.md`.
+Human restore output has one resource per row; JSON/YAML retain full identifiers and paths.
+
+#### SCM Dashboard and Sessions (CLI 5.0 / SDK 0.26)
+
+Use `runtime dashboard {applications,application,application-violations,top-applications,violations-trend,apps-list}` and `runtime sessions {list,chart,get,transaction,scan-content}` for read-only OAuth retrieval. The dashboard host defaults separately to `https://api.apps.paloaltonetworks.com/aisec`; override via `mgmtDashboardEndpoint` / `PANW_MGMT_DASHBOARD_ENDPOINT`. Preserve composite application/session identity, zero sub-request indexes, and session-vs-detector count semantics. Session list `--all` validates pagination; stored content requires exactly one of `--show-content` or private `--output-file`.
+
+`runtime report` now uses seven sources: daily application overview, profiles, registered apps, session inventory, session chart, top application violations and severity trend. Schema 2 replaces `logs` with `sessions` and adds `dailyTelemetry`. Default budget: 40 pages/source, 25 sessions/page and 100 application/configuration records/page. Never automatically fetch transaction attributes or stored content for deliverables. Debug dashboard/content bodies are always omitted.
+
+#### Scan Logs — broken, under refactor
 
 ```bash
-airs runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|threat>] [--limit <n>] [--offset <n>] [--output <format>]
+airs-cli runtime scan-logs query --interval <n> --unit <unit> [--filter <all|benign|threat>] [--limit <n>] [--offset <n>] [--output <format>]
 ```
 
-**Required:** `--interval`, `--unit`
+**Required:** `--interval`, `--unit`. Legacy command now exits 1 with migration guidance and performs no query. The SDK class remains deprecated for compatibility, but empty HTTP 200/400 observations must not be presented as zero activity. Use the verified session workflow above; its response schema differs.
 
 ---
 
@@ -286,7 +366,7 @@ The guardrail workflow uses atomic commands designed for external agent loops (s
 #### Create or update a topic
 
 ```bash
-airs runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
+airs-cli runtime topics create --name <name> --description <desc> --examples <ex1> <ex2> [--output json]
 ```
 
 Validates AIRS constraints (name length, description length, example limits) and upserts by name. If a topic with the same name exists, it is updated.
@@ -296,7 +376,7 @@ Validates AIRS constraints (name length, description length, example limits) and
 #### Assign topic to profile
 
 ```bash
-airs runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
+airs-cli runtime topics apply --profile <name> --name <name> --intent <block|allow> [--output json]
 ```
 
 Additive — preserves existing topics already assigned to the profile.
@@ -306,19 +386,19 @@ Additive — preserves existing topics already assigned to the profile.
 #### Evaluate topic against prompt set
 
 ```bash
-airs runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
+airs-cli runtime topics eval --profile <name> --prompts <csv> --topic <name> [--output json]
 ```
 
 Scans a static CSV prompt set against the profile, computes metrics (TPR, TNR, coverage, F1), and returns FP/FN details.
 
-**CSV format:** Three required columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). All rows must have the same intent. Run `airs runtime topics sample` for an example.
+**CSV format:** Three required columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). All rows must have the same intent. Run `airs-cli runtime topics sample` for an example.
 
 **Auth:** Scanner API + Management API
 
 #### Print sample CSV
 
 ```bash
-airs runtime topics sample [--output-file <path>]
+airs-cli runtime topics sample [--output-file <path>]
 ```
 
 Writes a sample CSV to stdout (or to a file with `--output`) showing the three-column format with both block and allow intent examples.
@@ -326,7 +406,7 @@ Writes a sample CSV to stdout (or to a file with `--output`) showing the three-c
 #### Remove topic from profile and delete it
 
 ```bash
-airs runtime topics revert --profile <name> --name <name> [--output json]
+airs-cli runtime topics revert --profile <name> --name <name> [--output json]
 ```
 
 Removes the topic from the profile and deletes the topic definition.
@@ -337,18 +417,36 @@ Removes the topic from the profile and deletes the topic definition.
 
 ### AI Gateway
 
-All AI Gateway commands use Management API OAuth2 credentials. The data and admin planes
+CLI 5.3.0 pins published SDK 0.28.0. Since CLI 5.3.0,
+`airs-cli aigateway report --workspace <slug|uuid|name>` (previously `dashboard`, still an alias)
+collects 25 read-only feeds into offline HTML (default) or Markdown (`--output markdown`).
+Files default to CWD, private 0600, never overwrite; `--output-file -` streams the deliverable.
+Use `--days 1` or paired `--start`/`--end`, `--max-pages 40` (50 transactions/page), and
+`--strict` to exit 1 after delivering incomplete evidence. Debug is refused before I/O.
+Only aggregates are retained, not keys, raw logs, request content or identities.
+Atomic additions: `telemetry error-category-trends`, `telemetry grouped-errors`,
+`telemetry filter-boundaries` (sensitive data redacted), `organisations info --tsg-id <id>`
+(settings redacted), `guardrails catalog`, and `telemetry logs list --current-page <0-based>`.
+See `docs-site/docs/cli/aigateway/dashboard.md` and `dashboard-examples.md` for verified output.
+
+AI Gateway management commands use Management API OAuth2 credentials. Runtime `aigateway inference`
+commands instead require `PANW_AI_GW_INFERENCE_ENDPOINT` and `PANW_AI_GW_INFERENCE_API_KEY`, or
+their `aiGwInferenceEndpoint` / `aiGwInferenceApiKey` config counterparts. No runtime key flag is
+accepted; commands do not alter config. Models come from `--model`, a JSON `--file`, or
+`PANW_AI_GW_INFERENCE_MODEL` / `PANW_AI_GW_EMBEDDING_MODEL`. `--stream --output json` emits JSONL,
+not one JSON document. Runtime bodies are omitted from debug logs, and retries default to zero.
+The management data and admin planes
 require different SCM grants: data-plane reads show only active workspaces in the caller's role
 scope, while admin-plane reads and all writes require tenant-root AI Gateway admin access.
 
 #### Workspaces
 
 ```bash
-airs aigateway workspaces list [--plane <data|admin>] [--status <active|archived>] [--all] [--output <format>]
-airs aigateway workspaces get <uuidOrSlug> [--plane <data|admin>] [--output <pretty|json|yaml>]
-airs aigateway workspaces create --name <name> --scope-name <scope> [workspace flags...] [--output <pretty|json|yaml>]
-airs aigateway workspaces update <uuidOrSlug> [workspace flags...] [--output <pretty|json|yaml>]
-airs aigateway workspaces archive <uuidOrSlug> [--force]
+airs-cli aigateway workspaces list [--plane <data|admin>] [--status <active|archived>] [--all] [--output <format>]
+airs-cli aigateway workspaces get <uuidOrSlug> [--plane <data|admin>] [--output <pretty|json|yaml>]
+airs-cli aigateway workspaces create --name <name> --scope-name <scope> [workspace flags...] [--output <pretty|json|yaml>]
+airs-cli aigateway workspaces update <uuidOrSlug> [workspace flags...] [--output <pretty|json|yaml>]
+airs-cli aigateway workspaces archive <uuidOrSlug> [--force]
 ```
 
 Shared workspace write flags: `--description`, `--icon`, `--metadata <json>`,
@@ -370,13 +468,13 @@ requires at least one write flag.
 #### Resources, mutations, and telemetry
 
 ```bash
-airs aigateway configs list --workspace <workspaceUuid> --output json
-airs aigateway providers get <providerId> --output json
-airs aigateway integrations models list <integrationId> --output json
-airs aigateway mcp integrations capabilities list <integrationId> --output json
-airs aigateway deployments get <deploymentId> --output json
-airs aigateway telemetry cost --workspace <slug> [--days <n>] [--output <pretty|json|yaml>]
-airs aigateway telemetry logs list --workspace <slug> --status-code 446 --output json
+airs-cli aigateway configs list --workspace <workspaceUuid> --output json
+airs-cli aigateway providers get <providerId> --output json
+airs-cli aigateway integrations models list <integrationId> --output json
+airs-cli aigateway mcp integrations capabilities list <integrationId> --output json
+airs-cli aigateway deployments get <deploymentId> --output json
+airs-cli aigateway telemetry cost --workspace <slug> [--days <n>] [--output <pretty|json|yaml>]
+airs-cli aigateway telemetry logs list --workspace <slug> --status-code 446 --output json
 ```
 
 Collection resources are `api-keys service|user`, `audit-logs`, `configs`, `deployments`,
@@ -402,26 +500,41 @@ slug.
 
 All red team commands require Management API credentials.
 
+#### Environment report (originally CLI 5.1.0 / SDK 0.27.0)
+
+CLI 5.3.0 uses `report`; CLI 5.2.0 and earlier use `dashboard`,
+retained as a compatibility alias. No job ID means an environment report.
+
+`airs-cli redteam report [--output html|markdown] [--output-file <new-path|->]
+[--max-pages <1-100>] [--title <text>] [--strict]` collects seven read-only SDK feeds.
+Default artifacts are private (0600), no-clobber files in CWD. Debug logging is refused.
+The existing `redteam report <jobId>` remains the individual scan report. Dashboard statistics
+use an unverified server-default window; only scan creation timestamps are filtered locally
+to 24 hours. Missing/partial sources are explicit; strict exits 1 after delivering partial output.
+GET quota uses SDK 0.27.0's additive `getQuotaSummary()`. SDK 0.26.0 lacks that method
+and reports quota unavailable without falling back to POST. See the dashboard CLI docs
+for real command output and verification evidence.
+
 #### Scans
 
 ```bash
 # Launch scan
-airs redteam scan --target <uuid> --name <name> [--type <STATIC|DYNAMIC|CUSTOM>] [--categories <json>] [--prompt-sets <uuids>] [--no-wait]
+airs-cli redteam scan --target <uuid> --name <name> [--type <STATIC|DYNAMIC|CUSTOM>] [--categories <json>] [--prompt-sets <uuids>] [--no-wait]
 
 # Check status
-airs redteam status <jobId>
+airs-cli redteam status <jobId>
 
 # View report
-airs redteam report <jobId> [--attacks] [--severity <level>] [--limit <n>]
+airs-cli redteam report <jobId> [--attacks] [--severity <level>] [--limit <n>]
 
 # List scans
-airs redteam list [--status <status>] [--type <type>] [--target <uuid>] [--limit <n>] [--output <format>]
+airs-cli redteam list [--status <status>] [--type <type>] [--target <uuid>] [--limit <n>] [--output <format>]
 
 # Abort scan
-airs redteam abort <jobId>
+airs-cli redteam abort <jobId>
 
 # List attack categories
-airs redteam categories
+airs-cli redteam categories
 ```
 
 **Scan types:**
@@ -434,18 +547,18 @@ airs redteam categories
 #### Targets
 
 ```bash
-airs redteam targets list [--output <format>]
-airs redteam targets get <uuid>
-airs redteam targets create --config <json-file> [--validate]
-airs redteam targets update <uuid> --config <json-file> [--validate]
-airs redteam targets delete <uuid>
-airs redteam targets probe --config <json-file>
-airs redteam targets profile <uuid>
-airs redteam targets update-profile <uuid> --config <json-file>
-airs redteam targets validate-auth --auth-type <HEADERS|BASIC_AUTH|OAUTH2> --config <json-file> [--target-id <uuid>]
-airs redteam targets metadata
-airs redteam targets init <provider> [--output-file <file>]
-airs redteam targets templates
+airs-cli redteam targets list [--output <format>]
+airs-cli redteam targets get <uuid>
+airs-cli redteam targets create --config <json-file> [--validate]
+airs-cli redteam targets update <uuid> --config <json-file> [--validate]
+airs-cli redteam targets delete <uuid>
+airs-cli redteam targets probe --config <json-file>
+airs-cli redteam targets profile <uuid>
+airs-cli redteam targets update-profile <uuid> --config <json-file>
+airs-cli redteam targets validate-auth --auth-type <HEADERS|BASIC_AUTH|OAUTH2> --config <json-file> [--target-id <uuid>]
+airs-cli redteam targets metadata
+airs-cli redteam targets init <provider> [--output-file <file>]
+airs-cli redteam targets templates
 ```
 
 `--validate` tests the connection before saving.
@@ -480,12 +593,12 @@ airs redteam targets templates
 #### Custom Target Adapters
 
 ```bash
-airs redteam adapter list [--limit <n>] [--offset <n>] [--search <text>] [--output <format>]
-airs redteam adapter get <uuid> [--output <pretty|json|yaml>]
-airs redteam adapter create --name <name> --prompt <text> (--script-file <path> | --script-b64 <b64>) [adapter flags...]
-airs redteam adapter update <uuid> --prompt <text> [adapter flags...]
-airs redteam adapter delete <uuid> [--force]
-airs redteam adapter validate --channel <uuid> --prompt <text> (--script-file <path> | --script-b64 <b64>) [--variables <json>] [--adapter <uuid>]
+airs-cli redteam adapter list [--limit <n>] [--offset <n>] [--search <text>] [--output <format>]
+airs-cli redteam adapter get <uuid> [--output <pretty|json|yaml>]
+airs-cli redteam adapter create --name <name> --prompt <text> (--script-file <path> | --script-b64 <b64>) [adapter flags...]
+airs-cli redteam adapter update <uuid> --prompt <text> [adapter flags...]
+airs-cli redteam adapter delete <uuid> [--force]
+airs-cli redteam adapter validate --channel <uuid> --prompt <text> (--script-file <path> | --script-b64 <b64>) [--variables <json>] [--adapter <uuid>]
 ```
 
 Adapter flags include `--description`, `--channel <uuid>`, `--variables <json>`, and `--draft`.
@@ -505,40 +618,40 @@ Adapter flags include `--description`, `--channel <uuid>`, `--variables <json>`,
 #### Prompt Sets
 
 ```bash
-airs redteam prompt-sets list [--output <format>]
-airs redteam prompt-sets get <uuid>
-airs redteam prompt-sets create --name <name> [--description <desc>]
-airs redteam prompt-sets update <uuid> [--name <name>] [--description <desc>]
-airs redteam prompt-sets archive <uuid> [--unarchive]
-airs redteam prompt-sets download <uuid> [--output-file <path>]
-airs redteam prompt-sets upload <uuid> <csv-file>
+airs-cli redteam prompt-sets list [--output <format>]
+airs-cli redteam prompt-sets get <uuid>
+airs-cli redteam prompt-sets create --name <name> [--description <desc>]
+airs-cli redteam prompt-sets update <uuid> [--name <name>] [--description <desc>]
+airs-cli redteam prompt-sets archive <uuid> [--unarchive]
+airs-cli redteam prompt-sets download <uuid> [--output-file <path>]
+airs-cli redteam prompt-sets upload <uuid> <csv-file>
 ```
 
 #### Individual Prompts
 
 ```bash
-airs redteam prompts list <setUuid> [--limit <n>]
-airs redteam prompts get <setUuid> <promptUuid>
-airs redteam prompts add <setUuid> --prompt <text> [--goal <text>]
-airs redteam prompts update <setUuid> <promptUuid> [--prompt <text>] [--goal <text>]
-airs redteam prompts delete <setUuid> <promptUuid>
+airs-cli redteam prompts list <setUuid> [--limit <n>]
+airs-cli redteam prompts get <setUuid> <promptUuid>
+airs-cli redteam prompts add <setUuid> --prompt <text> [--goal <text>]
+airs-cli redteam prompts update <setUuid> <promptUuid> [--prompt <text>] [--goal <text>]
+airs-cli redteam prompts delete <setUuid> <promptUuid>
 ```
 
 #### Properties
 
 ```bash
-airs redteam properties list [--output <format>]
-airs redteam properties create --name <name>
-airs redteam properties values <name>
-airs redteam properties add-value --name <name> --value <value>
+airs-cli redteam properties list [--output <format>]
+airs-cli redteam properties create --name <name>
+airs-cli redteam properties values <name>
+airs-cli redteam properties add-value --name <name> --value <value>
 ```
 
 #### EULA
 
 ```bash
-airs redteam eula status            # Check EULA acceptance status
-airs redteam eula content           # Display EULA content
-airs redteam eula accept [--force]
+airs-cli redteam eula status            # Check EULA acceptance status
+airs-cli redteam eula content           # Display EULA content
+airs-cli redteam eula accept [--force]
 ```
 
 `eula accept` only displays the EULA unless `--force` is passed; with `--force` it accepts the current EULA content. Red Team operations may require an accepted EULA.
@@ -548,10 +661,10 @@ airs redteam eula accept [--force]
 Manage Red Team instances (per-tenant provisioning).
 
 ```bash
-airs redteam instances create --tsg-id <id> --tenant-id <id> --app-id <id> --region <region>
-airs redteam instances get <tenantId>
-airs redteam instances update <tenantId> --tsg-id <id> --app-id <id> --region <region>
-airs redteam instances delete <tenantId>
+airs-cli redteam instances create --tsg-id <id> --tenant-id <id> --app-id <id> --region <region>
+airs-cli redteam instances get <tenantId>
+airs-cli redteam instances update <tenantId> --tsg-id <id> --app-id <id> --region <region>
+airs-cli redteam instances delete <tenantId>
 ```
 
 #### Devices
@@ -559,15 +672,15 @@ airs redteam instances delete <tenantId>
 Manage Red Team devices for an instance (keyed by `<tenantId>`).
 
 ```bash
-airs redteam devices create <tenantId> --config <json-file>          # JSON device request
-airs redteam devices update <tenantId> --config <json-file>          # PATCH device request
-airs redteam devices delete <tenantId> --serial-numbers <sn1,sn2>    # comma-separated serials
+airs-cli redteam devices create <tenantId> --config <json-file>          # JSON device request
+airs-cli redteam devices update <tenantId> --config <json-file>          # PATCH device request
+airs-cli redteam devices delete <tenantId> --serial-numbers <sn1,sn2>    # comma-separated serials
 ```
 
 #### Registry Credentials
 
 ```bash
-airs redteam registry-credentials
+airs-cli redteam registry-credentials
 ```
 
 Get or create registry credentials (no options).
@@ -581,11 +694,11 @@ All model security commands require Management API credentials.
 #### Security Groups
 
 ```bash
-airs model-security groups list [--source-types <types>] [--search <query>] [--sort-field <field>] [--sort-dir <asc|desc>] [--enabled-rules <uuids>] [--limit <n>] [--output <format>]
-airs model-security groups get <uuid>
-airs model-security groups create --config <json-file>
-airs model-security groups update <uuid> [--name <name>] [--description <desc>]
-airs model-security groups delete <uuid>
+airs-cli model-security groups list [--source-types <types>] [--search <query>] [--sort-field <field>] [--sort-dir <asc|desc>] [--enabled-rules <uuids>] [--limit <n>] [--output <format>]
+airs-cli model-security groups get <uuid>
+airs-cli model-security groups create --config <json-file>
+airs-cli model-security groups update <uuid> [--name <name>] [--description <desc>]
+airs-cli model-security groups delete <uuid>
 ```
 
 **Group config JSON:**
@@ -603,16 +716,16 @@ Source types: `LOCAL`, `S3`, `GCS`, `AZURE`, `HUGGING_FACE`
 #### Rules (read-only)
 
 ```bash
-airs model-security rules list [--source-type <type>] [--search <query>] [--limit <n>] [--output <format>]
-airs model-security rules get <uuid>
+airs-cli model-security rules list [--source-type <type>] [--search <query>] [--limit <n>] [--output <format>]
+airs-cli model-security rules get <uuid>
 ```
 
 #### Rule Instances
 
 ```bash
-airs model-security rule-instances list <groupUuid> [--security-rule-uuid <uuid>] [--state <DISABLED|ALLOWING|BLOCKING>] [--limit <n>]
-airs model-security rule-instances get <groupUuid> <instanceUuid>
-airs model-security rule-instances update <groupUuid> <instanceUuid> --config <json-file>
+airs-cli model-security rule-instances list <groupUuid> [--security-rule-uuid <uuid>] [--state <DISABLED|ALLOWING|BLOCKING>] [--limit <n>]
+airs-cli model-security rule-instances get <groupUuid> <instanceUuid>
+airs-cli model-security rule-instances update <groupUuid> <instanceUuid> --config <json-file>
 ```
 
 **Rule instance update JSON:**
@@ -626,24 +739,24 @@ airs model-security rule-instances update <groupUuid> <instanceUuid> --config <j
 #### Scans
 
 ```bash
-airs model-security scans list [--eval-outcome <outcome>] [--source-type <type>] [--scan-origin <origin>] [--search <query>] [--limit <n>] [--output <format>]
-airs model-security scans get <uuid>
-airs model-security scans create --config <json-file>
-airs model-security scans evaluations <scanUuid> [--limit <n>]
-airs model-security scans evaluation <uuid>
-airs model-security scans violations <scanUuid> [--limit <n>]
-airs model-security scans violation <uuid>
-airs model-security scans files <scanUuid> [--type <type>] [--result <result>] [--limit <n>]
+airs-cli model-security scans list [--eval-outcome <outcome>] [--source-type <type>] [--scan-origin <origin>] [--search <query>] [--limit <n>] [--output <format>]
+airs-cli model-security scans get <uuid>
+airs-cli model-security scans create --config <json-file>
+airs-cli model-security scans evaluations <scanUuid> [--limit <n>]
+airs-cli model-security scans evaluation <uuid>
+airs-cli model-security scans violations <scanUuid> [--limit <n>]
+airs-cli model-security scans violation <uuid>
+airs-cli model-security scans files <scanUuid> [--type <type>] [--result <result>] [--limit <n>]
 ```
 
 #### Labels
 
 ```bash
-airs model-security labels add <scanUuid> --labels '<json-array>'
-airs model-security labels set <scanUuid> --labels '<json-array>'
-airs model-security labels delete <scanUuid> --keys <key1,key2>
-airs model-security labels keys [--limit <n>]
-airs model-security labels values <key> [--limit <n>]
+airs-cli model-security labels add <scanUuid> --labels '<json-array>'
+airs-cli model-security labels set <scanUuid> --labels '<json-array>'
+airs-cli model-security labels delete <scanUuid> --keys <key1,key2>
+airs-cli model-security labels keys [--limit <n>]
+airs-cli model-security labels values <key> [--limit <n>]
 ```
 
 **Labels JSON format:** `[{"key":"env","value":"prod"},{"key":"team","value":"ml"}]`
@@ -651,7 +764,7 @@ airs model-security labels values <key> [--limit <n>]
 #### PyPI Auth
 
 ```bash
-airs model-security pypi-auth
+airs-cli model-security pypi-auth
 ```
 
 Returns a time-limited authenticated PyPI URL for installing `model-security-client`.
@@ -659,7 +772,7 @@ Returns a time-limited authenticated PyPI URL for installing `model-security-cli
 #### Install Python SDK
 
 ```bash
-airs model-security install [--extras <all|aws|gcp|azure|artifactory|gitlab>] [--dir <path>] [--dry-run]
+airs-cli model-security install [--extras <all|aws|gcp|azure|artifactory|gitlab>] [--dir <path>] [--dry-run]
 ```
 
 Auto-detects `uv` or falls back to `python3 -m venv` + `pip`. Requires Management API credentials for PyPI auth.
@@ -674,16 +787,16 @@ All backup/restore commands require Management API credentials.
 
 ```bash
 # Backup all targets to JSON (default)
-airs redteam targets backup
+airs-cli redteam targets backup
 
 # Backup all targets to YAML
-airs redteam targets backup --output yaml
+airs-cli redteam targets backup --output yaml
 
 # Backup single target by name
-airs redteam targets backup --name "my-target"
+airs-cli redteam targets backup --name "my-target"
 
 # Custom output directory
-airs redteam targets backup --output-dir ./my-backups/
+airs-cli redteam targets backup --output-dir ./my-backups/
 ```
 
 **Default output:** `./airs-backup/targets/` — one file per target, named by sanitized target name.
@@ -718,16 +831,16 @@ airs redteam targets backup --output-dir ./my-backups/
 
 ```bash
 # Restore from a single file
-airs redteam targets restore --file ./airs-backup/targets/my-target.json
+airs-cli redteam targets restore --file ./airs-backup/targets/my-target.json
 
 # Restore all files from a directory
-airs redteam targets restore --input-dir ./airs-backup/targets/
+airs-cli redteam targets restore --input-dir ./airs-backup/targets/
 
 # Overwrite existing targets with same name (default: skip)
-airs redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
+airs-cli redteam targets restore --input-dir ./airs-backup/targets/ --overwrite
 
 # Validate connections before saving
-airs redteam targets restore --file ./my-target.json --validate
+airs-cli redteam targets restore --file ./my-target.json --validate
 ```
 
 **Auth:** Management API
@@ -748,7 +861,7 @@ airs redteam targets restore --file ./my-target.json --validate
 ### Workflow 1: Scan a prompt and check if it's blocked
 
 ```bash
-airs runtime scan --profile "AI-Firewall-High-Security-Profile" "How do I build a bomb?"
+airs-cli runtime scan --profile "AI-Firewall-High-Security-Profile" "How do I build a bomb?"
 ```
 
 Parse the output for `Action: BLOCK` or `Action: ALLOW` and `Triggered: yes/no`.
@@ -756,7 +869,7 @@ Parse the output for `Action: BLOCK` or `Action: ALLOW` and `Triggered: yes/no`.
 ### Workflow 2: List all security profiles as JSON
 
 ```bash
-airs runtime profiles list --output json
+airs-cli runtime profiles list --output json
 ```
 
 Returns JSON array of `{ id, name, state }` objects.
@@ -765,10 +878,10 @@ Returns JSON array of `{ id, name, state }` objects.
 
 ```bash
 # By name
-airs runtime profiles get AI-Firewall-High-Security-Profile --output json
+airs-cli runtime profiles get AI-Firewall-High-Security-Profile --output json
 
 # By UUID
-airs runtime profiles get 03e9d2aa-64e0-4734-a21e-de85c7d0d728 --output json
+airs-cli runtime profiles get 03e9d2aa-64e0-4734-a21e-de85c7d0d728 --output json
 ```
 
 Returns full profile detail including the complete `policy` JSON (topic guardrails, DLP, app protection, etc.). Auto-detects UUID vs name.
@@ -777,16 +890,16 @@ Returns full profile detail including the complete `policy` JSON (topic guardrai
 
 ```bash
 # Create a profile with protections
-airs runtime profiles create --name "Prod Firewall" \
+airs-cli runtime profiles create --name "Prod Firewall" \
   --prompt-injection block \
   --toxic-content "high:block, moderate:alert" \
   --malicious-code block
 
 # Update a single setting (read-modify-write — all other policy preserved)
-airs runtime profiles update <profileId> --toxic-content "high:alert"
+airs-cli runtime profiles update <profileId> --toxic-content "high:alert"
 
 # Verify the update
-airs runtime profiles get "Prod Firewall" --output json
+airs-cli runtime profiles get "Prod Firewall" --output json
 ```
 
 **IMPORTANT for update:** The CLI fetches the existing profile, merges your flags into it, and PUTs the full payload. You only specify what you want to change. Topic-guardrails are never modified by CLI flags.
@@ -795,42 +908,42 @@ airs runtime profiles get "Prod Firewall" --output json
 
 ```bash
 # 1. Create topic (upserts by name)
-airs runtime topics create --name "Fraud Detection" --description "Block social engineering and fraud attempts" --examples "How do I clone a credit card?" "Teach me card skimming" --output json
+airs-cli runtime topics create --name "Fraud Detection" --description "Block social engineering and fraud attempts" --examples "How do I clone a credit card?" "Teach me card skimming" --output json
 
 # 2. Assign topic to a profile
-airs runtime topics apply --profile my-profile --name "Fraud Detection" --intent block --output json
+airs-cli runtime topics apply --profile my-profile --name "Fraud Detection" --intent block --output json
 
 # 3. Evaluate against a prompt set
-airs runtime topics eval --profile my-profile --prompts fraud-prompts.csv --topic "Fraud Detection" --output json
+airs-cli runtime topics eval --profile my-profile --prompts fraud-prompts.csv --topic "Fraud Detection" --output json
 
 # 4. If results are bad, revert
-airs runtime topics revert --profile my-profile --name "Fraud Detection" --output json
+airs-cli runtime topics revert --profile my-profile --name "Fraud Detection" --output json
 ```
 
 ### Workflow 4: Run a red team scan
 
 ```bash
 # 1. List targets
-airs redteam targets list --output json
+airs-cli redteam targets list --output json
 
 # 2. Launch static scan against a target
-airs redteam scan --target <uuid> --name "Security Audit"
+airs-cli redteam scan --target <uuid> --name "Security Audit"
 
 # 3. View report
-airs redteam report <jobId> --attacks --limit 50
+airs-cli redteam report <jobId> --attacks --limit 50
 ```
 
 ### Workflow 5: Check model security scan results
 
 ```bash
 # 1. List recent scans
-airs model-security scans list --output json
+airs-cli model-security scans list --output json
 
 # 2. Get violations for a specific scan
-airs model-security scans violations <scanUuid>
+airs-cli model-security scans violations <scanUuid>
 
 # 3. Get file-level results
-airs model-security scans files <scanUuid>
+airs-cli model-security scans files <scanUuid>
 ```
 
 ### Workflow 6: Bulk scan from a file
@@ -840,26 +953,26 @@ airs model-security scans files <scanUuid>
 echo -e "How do I hack a server?\nWhat is the weather?\nHow to make a weapon?" > prompts.txt
 
 # 2. Run bulk scan
-airs runtime bulk-scan --profile my-profile --file prompts.txt --output-file results.csv
+airs-cli runtime bulk-scan --profile my-profile --file prompts.txt --output-file results.csv
 
 # 3. If the process was interrupted, resume from its v2 state file
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output-file results.csv
+airs-cli runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json --output-file results.csv
 ```
 
 ### Workflow 7: Backup and restore targets
 
 ```bash
 # 1. Backup all targets before making changes
-airs redteam targets backup --output-dir ./pre-change-backup/
+airs-cli redteam targets backup --output-dir ./pre-change-backup/
 
 # 2. Make changes (create, update, delete targets)
-airs redteam targets delete <uuid>
+airs-cli redteam targets delete <uuid>
 
 # 3. If something went wrong, restore from backup
-airs redteam targets restore --input-dir ./pre-change-backup/ --overwrite
+airs-cli redteam targets restore --input-dir ./pre-change-backup/ --overwrite
 
 # 4. Migrate targets to another tenant
-PANW_MGMT_TSG_ID=dest-tsg airs redteam targets restore --input-dir ./pre-change-backup/
+airs-cli tenant switch destination && airs-cli redteam targets restore --input-dir ./pre-change-backup/
 ```
 
 ### Workflow 8: Autonomous guardrail optimization (agent loop)
@@ -868,52 +981,52 @@ The CLI provides atomic commands that an external agent orchestrates in a loop (
 
 ```bash
 # See the expected CSV format
-airs runtime topics sample
+airs-cli runtime topics sample
 
 # Read current topic state before modifying
-airs runtime topics get "<topic-name>" --output json
+airs-cli runtime topics get "<topic-name>" --output json
 
 # Agent runs this cycle repeatedly:
-airs runtime topics create --name "<name>" --description "<desc>" --examples "<ex1>" "<ex2>" --output json
-airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --output json
-airs runtime topics eval --profile "<profile>" --prompts <csv> --topic "<name>" --output json
+airs-cli runtime topics create --name "<name>" --description "<desc>" --examples "<ex1>" "<ex2>" --output json
+airs-cli runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --output json
+airs-cli runtime topics eval --profile "<profile>" --prompts <csv> --topic "<name>" --output json
 
 # If regression, revert to best-known definition:
-airs runtime topics create --name "<name>" --description "<best-desc>" --examples "<best-ex1>" "<best-ex2>" --output json
-airs runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --output json
+airs-cli runtime topics create --name "<name>" --description "<best-desc>" --examples "<best-ex1>" "<best-ex2>" --output json
+airs-cli runtime topics apply --profile "<profile>" --name "<name>" --intent <block|allow> --output json
 ```
 
-**CSV format:** Three columns — `prompt`, `expected` (belongs to topic category: true/false), `intent` (block/allow). Run `airs runtime topics sample` to see an example.
+**CSV format:** Three columns — `prompt`, `expected` (belongs to topic category: true/false), `intent` (block/allow). Run `airs-cli runtime topics sample` to see an example.
 
 ### Workflow 9: Inspect and manage AI Gateway workspaces
 
 ```bash
 # Scoped active workspaces (data plane)
-airs aigateway workspaces list --output json
+airs-cli aigateway workspaces list --output json
 
 # Whole tenant, including archived workspaces (admin plane)
-airs aigateway workspaces list --all --output json
+airs-cli aigateway workspaces list --all --output json
 
 # Create, partially update, and inspect cost
-airs aigateway workspaces create --name Production --scope-name ws_production_bx7qw0 --output json
-airs aigateway workspaces update <slug> --description "Production workloads" --output json
-airs aigateway telemetry cost --workspace <slug> --days 30 --output json
+airs-cli aigateway workspaces create --name Production --scope-name ws_production_bx7qw0 --output json
+airs-cli aigateway workspaces update <slug> --description "Production workloads" --output json
+airs-cli aigateway telemetry cost --workspace <slug> --days 30 --output json
 
 # Archive (soft delete)
-airs aigateway workspaces archive <slug> --force
+airs-cli aigateway workspaces archive <slug> --force
 ```
 
 ### Workflow 10: Create and validate a Red Team adapter
 
 ```bash
 # Inspect ONLINE broker channels first
-airs redteam network-broker channels list --output json
+airs-cli redteam network-broker channels list --output json
 
 # Create a draft adapter without executing it
-airs redteam adapter create --name my-adapter --script-file ./adapter.py --prompt "Hello" --draft
+airs-cli redteam adapter create --name my-adapter --script-file ./adapter.py --prompt "Hello" --draft
 
 # Validate through an ONLINE channel without saving
-airs redteam adapter validate --script-file ./adapter.py --channel <channelUuid> \
+airs-cli redteam adapter validate --script-file ./adapter.py --channel <channelUuid> \
   --prompt "Hello" --variables '[{"key":"endpoint","value":"http://agent:8080","type":"VAR"}]'
 ```
 
@@ -945,7 +1058,7 @@ airs redteam adapter validate --script-file ./adapter.py --channel <channelUuid>
 7. **AI Gateway has two authorization planes.** Data-plane reads are role-scoped; admin-plane reads and every workspace write require the tenant-root grant.
 8. **AI Gateway workspace deletion archives rather than destroys.** Query archived rows through the admin plane.
 9. **Adapter updates are full-replacement upstream.** Use the CLI's read-modify-write command and include every variable when passing `--variables`.
-10. **Config priority:** CLI flags > env vars > `~/.prisma-airs/config.json` > defaults.
+10. **Config priority:** explicit supported CLI overrides > selected tenant JSON file > defaults.
 
 ---
 
@@ -967,4 +1080,4 @@ Location: `~/.prisma-airs/config.json`
 }
 ```
 
-All fields are optional — env vars and CLI flags take precedence.
+Required fields depend on the operation. Register this file with `airs-cli tenant create NAME --config PATH`, then select the tenant. Environment credentials are ignored.

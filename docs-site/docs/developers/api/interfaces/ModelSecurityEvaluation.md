@@ -1,6 +1,6 @@
 # Interface: ModelSecurityEvaluation
 
-Defined in: src/airs/types.ts:858
+Defined in: src/airs/types.ts:865
 
 Normalized rule evaluation from a scan.
 
@@ -10,7 +10,7 @@ Normalized rule evaluation from a scan.
 
 > **result**: `string`
 
-Defined in: src/airs/types.ts:860
+Defined in: src/airs/types.ts:867
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:860
 
 > **ruleDescription**: `string`
 
-Defined in: src/airs/types.ts:864
+Defined in: src/airs/types.ts:871
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:864
 
 > **ruleInstanceState**: `string`
 
-Defined in: src/airs/types.ts:865
+Defined in: src/airs/types.ts:872
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:865
 
 > **ruleInstanceUuid**: `string`
 
-Defined in: src/airs/types.ts:862
+Defined in: src/airs/types.ts:869
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:862
 
 > **ruleName**: `string`
 
-Defined in: src/airs/types.ts:863
+Defined in: src/airs/types.ts:870
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:863
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:859
+Defined in: src/airs/types.ts:866
 
 ***
 
@@ -58,4 +58,4 @@ Defined in: src/airs/types.ts:859
 
 > **violationCount**: `number`
 
-Defined in: src/airs/types.ts:861
+Defined in: src/airs/types.ts:868

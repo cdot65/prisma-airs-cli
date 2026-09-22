@@ -1,39 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { commandHint } from '../cli/invocation.js';
 import { type Config, ConfigSchema } from './schema.js';
+import {
+  readTenantConfigFile,
+  readTenantStore,
+  type TenantEntry,
+  tenantStorePath,
+} from './tenants.js';
 
 function expandHome(p: string): string {
   return p.startsWith('~') ? join(homedir(), p.slice(1)) : p;
-}
-
-function fromEnv(): Record<string, unknown> {
-  const env = process.env;
-  return {
-    airsApiKey: env.PANW_AI_SEC_API_KEY,
-    airsApiToken: env.PANW_AI_SEC_API_TOKEN,
-    airsApiEndpoint: env.PANW_AI_SEC_API_ENDPOINT,
-    airsNumRetries: env.PANW_AI_SEC_NUM_RETRIES,
-    mgmtClientId: env.PANW_MGMT_CLIENT_ID,
-    mgmtClientSecret: env.PANW_MGMT_CLIENT_SECRET,
-    mgmtTsgId: env.PANW_MGMT_TSG_ID,
-    mgmtEndpoint: env.PANW_MGMT_ENDPOINT,
-    mgmtTokenEndpoint: env.PANW_MGMT_TOKEN_ENDPOINT,
-    dlpEndpoint: env.PANW_DLP_ENDPOINT,
-    redTeamDataEndpoint: env.PANW_RED_TEAM_DATA_ENDPOINT,
-    redTeamMgmtEndpoint: env.PANW_RED_TEAM_MGMT_ENDPOINT,
-    redTeamTokenEndpoint: env.PANW_RED_TEAM_TOKEN_ENDPOINT,
-    redTeamNetworkBrokerEndpoint: env.PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT,
-    modelSecDataEndpoint: env.PANW_MODEL_SEC_DATA_ENDPOINT,
-    modelSecMgmtEndpoint: env.PANW_MODEL_SEC_MGMT_ENDPOINT,
-    modelSecTokenEndpoint: env.PANW_MODEL_SEC_TOKEN_ENDPOINT,
-    aiGwDataEndpoint: env.PANW_AI_GW_DATA_ENDPOINT,
-    aiGwAdminEndpoint: env.PANW_AI_GW_ADMIN_ENDPOINT,
-    aiGwTokenEndpoint: env.PANW_AI_GW_TOKEN_ENDPOINT,
-    scanConcurrency: env.SCAN_CONCURRENCY,
-    defaultOutput: env.PANW_CLI_OUTPUT,
-    dataDir: env.DATA_DIR,
-  };
 }
 
 async function fromFile(path: string): Promise<Record<string, unknown>> {
@@ -50,62 +28,83 @@ function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
- * Resolve the config file path: explicit param > PRISMA_AIRS_CONFIG_PATH env
- * var > ~/.prisma-airs/config.json.
+ * Where configuration comes from. `explicit` is the library API (a caller-supplied
+ * file); the CLI always resolves through the tenant registry.
  */
-export function resolveConfigFilePath(configFilePath?: string): string {
-  if (configFilePath) return configFilePath;
-  const envPath = process.env.PRISMA_AIRS_CONFIG_PATH;
-  if (envPath) return expandHome(envPath);
-  return join(homedir(), '.prisma-airs', 'config.json');
+export type ConfigContext =
+  | { selection: 'explicit'; path: string; registryPath: string }
+  | { selection: 'tenant'; path: string; tenant: TenantEntry; registryPath: string }
+  | { selection: 'none'; registryPath: string; registered: string[] };
+
+export function noTenantSelectedMessage(registered: string[]): string {
+  return commandHint(
+    registered.length
+      ? `No tenant selected. Run 'airs-cli tenant switch <name>' (registered: ${registered.join(', ')})`
+      : "No tenant selected. Run 'airs-cli tenant create <name>' and then 'airs-cli tenant switch <name>'",
+  );
 }
 
+export class NoTenantSelectedError extends Error {
+  constructor(registered: string[]) {
+    super(noTenantSelectedMessage(registered));
+    this.name = 'NoTenantSelectedError';
+  }
+}
+
+/** Resolve the config source: explicit param, else the selected tenant, else none. */
+export function resolveConfigContext(configFilePath?: string): ConfigContext {
+  const registryPath = tenantStorePath();
+  if (configFilePath) {
+    return { path: expandHome(configFilePath), selection: 'explicit', registryPath };
+  }
+  const store = readTenantStore();
+  const tenant = store.tenants.find((entry) => entry.name === store.active);
+  if (tenant) return { path: tenant.configPath, selection: 'tenant', tenant, registryPath };
+  return { selection: 'none', registryPath, registered: store.tenants.map((entry) => entry.name) };
+}
+
+/** Config file path in force; throws when no tenant is selected. */
+export function resolveConfigFilePath(configFilePath?: string): string {
+  const context = resolveConfigContext(configFilePath);
+  if (context.selection === 'none') throw new NoTenantSelectedError(context.registered);
+  return context.path;
+}
+
+async function readConfigSource(configFilePath?: string): Promise<Record<string, unknown>> {
+  const context = resolveConfigContext(configFilePath);
+  if (context.selection === 'none') throw new NoTenantSelectedError(context.registered);
+  if (context.selection === 'explicit') return fromFile(context.path);
+  return readTenantConfigFile(context.path, context.tenant.tsgId);
+}
+
+/**
+ * Load the effective config: CLI overrides > selected tenant file > defaults.
+ * The environment is never consulted.
+ */
 export async function loadConfig(
   cliOverrides: Record<string, unknown> = {},
   configFilePath?: string,
 ): Promise<Config> {
-  const filePath = resolveConfigFilePath(configFilePath);
-  const fileConfig = await fromFile(filePath);
-  const envConfig = fromEnv();
-
-  // Priority: CLI > env > file > defaults
-  const merged = {
-    ...stripUndefined(fileConfig),
-    ...stripUndefined(envConfig),
-    ...stripUndefined(cliOverrides),
-  };
-
+  const fileConfig = await readConfigSource(configFilePath);
+  const merged = { ...stripUndefined(fileConfig), ...stripUndefined(cliOverrides) };
   const config = ConfigSchema.parse(merged);
-
-  return {
-    ...config,
-    dataDir: expandHome(config.dataDir),
-  };
+  return { ...config, dataDir: expandHome(config.dataDir) };
 }
 
-export type ConfigSource = 'env' | 'file' | 'default';
+export type ConfigSource = 'file' | 'default';
 
 export interface ConfigEntry {
   value: unknown;
   source: ConfigSource;
 }
 
-/**
- * Compute the effective config (env > file > defaults — no CLI overrides)
- * with per-key source tracking. Keys are exactly the ConfigSchema keys.
- */
+/** Effective config (file > defaults, no CLI overrides) with per-key source tracking. */
 export async function inspectConfig(configFilePath?: string): Promise<Record<string, ConfigEntry>> {
-  const filePath = resolveConfigFilePath(configFilePath);
-  const fileConfig = stripUndefined(await fromFile(filePath));
-  const envConfig = stripUndefined(fromEnv());
-
-  const merged = { ...fileConfig, ...envConfig };
-  const config = ConfigSchema.parse(merged) as Record<string, unknown>;
-
+  const fileConfig = stripUndefined(await readConfigSource(configFilePath));
+  const config = ConfigSchema.parse(fileConfig) as Record<string, unknown>;
   const entries: Record<string, ConfigEntry> = {};
   for (const key of Object.keys(ConfigSchema.shape)) {
-    const source: ConfigSource = key in envConfig ? 'env' : key in fileConfig ? 'file' : 'default';
-    entries[key] = { value: config[key], source };
+    entries[key] = { value: config[key], source: key in fileConfig ? 'file' : 'default' };
   }
   return entries;
 }

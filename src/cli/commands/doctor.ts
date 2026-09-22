@@ -4,17 +4,35 @@ import { init, Scanner } from '@cdot65/prisma-airs-sdk';
 import type { Command } from 'commander';
 import { aiGatewayGrantHint, SdkAiGatewayService } from '../../airs/aigateway.js';
 import { SdkManagementService } from '../../airs/management.js';
-import { aiGatewayClientOptions, runtimeInitOptions } from '../../config/client-options.js';
 import {
+  aiGatewayClientOptions,
+  managementClientOptions,
+  runtimeInitOptions,
+} from '../../config/client-options.js';
+import {
+  MANAGEMENT_CREDENTIAL_KEYS,
+  SCANNER_CREDENTIAL_KEYS,
+  settingRemedy,
+} from '../../config/credentials.js';
+import { ignoredEnvironment, SDK_DIAGNOSTIC_ENV_VARS } from '../../config/env.js';
+import {
+  type ConfigContext,
   type ConfigEntry,
   inspectConfig,
   loadConfig,
-  resolveConfigFilePath,
+  resolveConfigContext,
 } from '../../config/loader.js';
+import { type Config, ConfigSchema, RETIRED_CONFIG_KEYS } from '../../config/schema.js';
+import { tenantStorePath } from '../../config/tenants.js';
 import { examples } from '../examples.js';
+import { commandHint } from '../invocation.js';
 import { type BulletKind, formatOutput, resolveOutput, ui } from '../renderer/index.js';
 
-export type DoctorStatus = 'pass' | 'warn' | 'fail';
+/**
+ * `skip` marks a check that could not run because an optional prerequisite is
+ * absent (no scanner key, a failed earlier check). It never affects the exit code.
+ */
+export type DoctorStatus = 'pass' | 'warn' | 'fail' | 'skip';
 
 export interface DoctorCheck {
   name: string;
@@ -26,59 +44,203 @@ export interface DoctorCheck {
 /** Time box for each network check. */
 export const DOCTOR_TIMEOUT_MS = 5000;
 
-const MIN_NODE_MAJOR = 20;
+export const SUPPORTED_NODE_VERSIONS = '^20.17.0 || ^22.13.0 || >=23.5.0';
+
+/** Check names in report order; also the order of `runDoctor()` results. */
+export const DOCTOR_CHECK_NAMES = [
+  'Node.js version',
+  'Tenant',
+  'Config file',
+  'Environment',
+  'Scanner credentials',
+  'Management credentials',
+  'Scanner API',
+  'Management OAuth',
+  'AI Gateway API',
+] as const;
+
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function notEvaluated(name: string): DoctorCheck {
+  return { name, status: 'skip', detail: 'not evaluated — fix the failed checks above first' };
+}
 
 // ---------------------------------------------------------------------------
-// Pure checks
+// Local checks
 // ---------------------------------------------------------------------------
 
-/** Check 1: Node.js runtime version >= 20. */
+/** Check 1: the runtime satisfies the production dependency engine intersection. */
 export function checkNodeVersion(version: string = process.version): DoctorCheck {
-  const major = Number.parseInt(version.replace(/^v/, ''), 10);
-  if (Number.isFinite(major) && major >= MIN_NODE_MAJOR) {
-    return { name: 'Node.js version', status: 'pass', detail: `${version} (>= 20 required)` };
+  const match = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
+  const [major, minor, patch] = match ? match.slice(1).map(Number) : [];
+  const supported =
+    [major, minor, patch].every(Number.isSafeInteger) &&
+    ((major === 20 && minor >= 17) ||
+      (major === 22 && minor >= 13) ||
+      (major === 23 && minor >= 5) ||
+      major >= 24);
+  if (supported) {
+    return {
+      name: 'Node.js version',
+      status: 'pass',
+      detail: `${version} (${SUPPORTED_NODE_VERSIONS} required)`,
+    };
   }
   return {
     name: 'Node.js version',
     status: 'fail',
-    detail: `${version} is below the required Node ${MIN_NODE_MAJOR}`,
-    hint: `Upgrade to Node ${MIN_NODE_MAJOR}+ (e.g. via nvm or your package manager)`,
+    detail: `${version} does not satisfy ${SUPPORTED_NODE_VERSIONS}`,
+    hint: 'Use a supported Node runtime: 20.17+, 22.13+, or 24+ (e.g. via nvm or your package manager)',
   };
 }
 
-/** Check 2: config file — absent is fine (env-only setups), malformed is not. */
-export async function checkConfigFile(filePath: string): Promise<DoctorCheck> {
-  const name = 'Config file';
-  let raw: string;
-  try {
-    raw = await readFile(filePath, 'utf-8');
-  } catch {
+/** Check 2: which tenant every other command will use. Nothing works without one. */
+export function checkTenant(context: ConfigContext): DoctorCheck {
+  const name = 'Tenant';
+  if (context.selection === 'tenant') {
     return {
       name,
-      status: 'warn',
-      detail: `not found at ${filePath} — using env vars and defaults`,
-      hint: "Create one with 'airs config set <key> <value>' (optional)",
+      status: 'pass',
+      detail: `${context.tenant.name} (TSG ${context.tenant.tsgId}) selected in ${context.registryPath}`,
     };
   }
+  if (context.selection === 'explicit') {
+    return { name, status: 'pass', detail: `explicit config path — ${context.path}` };
+  }
+  return {
+    name,
+    status: 'fail',
+    detail: context.registered.length
+      ? `no tenant selected (registered: ${context.registered.join(', ')})`
+      : `no tenants registered in ${context.registryPath}`,
+    hint: context.registered.length
+      ? "Run 'airs-cli tenant switch <name>'"
+      : "Run 'airs-cli tenant create <name>' (prompts for TSG ID, client ID and secret), then 'airs-cli tenant switch <name>'",
+  };
+}
+
+/** Tenant check when the registry itself cannot be read; nothing after it can be trusted. */
+export function tenantRegistryFailure(err: unknown, registryPath: string): DoctorCheck {
+  return {
+    name: 'Tenant',
+    status: 'fail',
+    detail: errMessage(err),
+    hint: `Restore or remove ${registryPath}; PRISMA_AIRS_CONFIG_PATH bypasses the registry meanwhile`,
+  };
+}
+
+/**
+ * Check 3: the selected config file. A tenant file must parse, validate, and carry
+ * the pinned TSG. Keys from retired releases are reported as ignored.
+ */
+export async function checkConfigFile(context: ConfigContext): Promise<DoctorCheck> {
+  const name = 'Config file';
+  if (context.selection === 'none') return notEvaluated(name);
+  const { path } = context;
+  let raw: string;
   try {
-    const parsed = JSON.parse(raw);
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {
-        name,
-        status: 'fail',
-        detail: `${filePath} is not a JSON object`,
-        hint: 'Fix or delete the file — it must contain a single JSON object',
-      };
-    }
-    return { name, status: 'pass', detail: `valid JSON at ${filePath}` };
+    raw = await readFile(path, 'utf-8');
   } catch {
     return {
       name,
       status: 'fail',
-      detail: `${filePath} is not valid JSON`,
-      hint: 'Fix or delete the file, then re-run doctor',
+      detail: `not found at ${path}`,
+      hint:
+        context.selection === 'tenant'
+          ? `Restore the file, or register another with 'airs-cli tenant create <name> --config <path>' and delete '${context.tenant.name}'`
+          : 'Create the file or pass an existing one',
     };
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {
+      name,
+      status: 'fail',
+      detail: `${path} is not valid JSON`,
+      hint: 'Fix the file, then re-run doctor',
+    };
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {
+      name,
+      status: 'fail',
+      detail: `${path} is not a JSON object`,
+      hint: 'Fix the file — it must contain a single JSON object',
+    };
+  }
+  const result = ConfigSchema.safeParse(parsed);
+  if (!result.success) {
+    const keys = [...new Set(result.error.issues.map((issue) => issue.path.join('.') || '(root)'))];
+    return {
+      name,
+      status: 'fail',
+      detail: `${path} has invalid values for: ${keys.join(', ')}`,
+      hint: "Fix them with 'airs-cli tenant set <name> <key>' (values are never printed here)",
+    };
+  }
+  if (context.selection === 'tenant') {
+    const fileTsg = (parsed as Record<string, unknown>).mgmtTsgId;
+    if (fileTsg !== context.tenant.tsgId) {
+      return {
+        name,
+        status: 'fail',
+        detail: `${path} carries a different mgmtTsgId than the registration (TSG ${context.tenant.tsgId})`,
+        hint: "Register the file under a new tenant name with 'airs-cli tenant create <name> --config <path>'",
+      };
+    }
+  }
+  const known = new Set<string>(Object.keys(ConfigSchema.shape));
+  const ignored = Object.keys(parsed).filter((key) => !known.has(key));
+  if (ignored.length) {
+    const retired = ignored.filter((key) =>
+      (RETIRED_CONFIG_KEYS as readonly string[]).includes(key),
+    );
+    return {
+      name,
+      status: 'warn',
+      detail: `valid at ${path}; ignored ${plural(ignored.length, 'key')}: ${ignored.join(', ')}`,
+      hint: retired.length
+        ? `Every product authenticates through mgmtTokenEndpoint now (${retired.join(', ')} ignored); remove them with 'airs-cli tenant unset <name> <key>'`
+        : "Remove unknown keys with 'airs-cli tenant unset <name> <key>'",
+    };
+  }
+  return {
+    name,
+    status: 'pass',
+    detail:
+      context.selection === 'tenant'
+        ? `valid tenant config at ${path} (TSG ${context.tenant.tsgId} matches registration)`
+        : `valid JSON at ${path}`,
+  };
+}
+
+/**
+ * Check 4: the CLI reads no configuration from the environment. Anything that
+ * looks like it should configure the CLI is reported as ignored so stale shell
+ * profiles get cleaned up instead of silently doing nothing.
+ */
+export function checkEnvironment(env: NodeJS.ProcessEnv = process.env): DoctorCheck {
+  const name = 'Environment';
+  const ignored = ignoredEnvironment(env);
+  const diagnostics = SDK_DIAGNOSTIC_ENV_VARS.filter((key) => env[key]);
+  const suffix = diagnostics.length ? `; SDK diagnostics on: ${diagnostics.join(', ')}` : '';
+  if (ignored.length) {
+    return {
+      name,
+      status: 'warn',
+      detail: `ignored ${plural(ignored.length, 'variable')}: ${ignored.join(', ')}${suffix}`,
+      hint: "Configuration comes only from tenant files ('airs-cli tenant set <name> <key>'); unset these",
+    };
+  }
+  return { name, status: 'pass', detail: `no configuration variables set${suffix}` };
 }
 
 function isSet(entry: ConfigEntry | undefined): boolean {
@@ -86,40 +248,53 @@ function isSet(entry: ConfigEntry | undefined): boolean {
   return v !== undefined && v !== null && String(v) !== '';
 }
 
-/** Check 3a: scanner credential (airsApiKey) presence + source. */
-export function checkScannerCredentials(inspected: Record<string, ConfigEntry>): DoctorCheck {
+/** Check 5: scanner credential (airsApiKey or airsApiToken) presence + source. Optional. */
+export function checkScannerCredentials(
+  inspected: Record<string, ConfigEntry> | undefined,
+  context?: ConfigContext,
+): DoctorCheck {
   const name = 'Scanner credentials';
-  const key = inspected.airsApiKey;
-  if (isSet(key)) {
-    return { name, status: 'pass', detail: `airsApiKey set (${key.source})` };
+  if (!inspected) return notEvaluated(name);
+  const set = SCANNER_CREDENTIAL_KEYS.filter((key) => isSet(inspected[key]));
+  if (set.length) {
+    return {
+      name,
+      status: 'pass',
+      detail: set.map((key) => `${key} (${inspected[key].source})`).join(', '),
+    };
   }
   return {
     name,
-    status: 'fail',
-    detail: 'airsApiKey is not set',
-    hint: "Set PANW_AI_SEC_API_KEY or run 'airs config set airsApiKey <key>'",
+    status: 'skip',
+    detail: 'not configured — runtime scan, bulk-scan and topics eval are unavailable',
+    hint: settingRemedy(['airsApiKey'], context),
   };
 }
 
-const MGMT_KEYS: Array<{ key: string; envVar: string }> = [
-  { key: 'mgmtClientId', envVar: 'PANW_MGMT_CLIENT_ID' },
-  { key: 'mgmtClientSecret', envVar: 'PANW_MGMT_CLIENT_SECRET' },
-  { key: 'mgmtTsgId', envVar: 'PANW_MGMT_TSG_ID' },
-];
-
-/** Check 3b: management credential group (clientId + clientSecret + tsgId). */
-export function checkManagementCredentials(inspected: Record<string, ConfigEntry>): DoctorCheck {
+/**
+ * Check 6: the shared management credential set. Missing is a failure unless
+ * the setup is scanner-only, in which case management commands are simply
+ * unavailable (warn).
+ */
+export function checkManagementCredentials(
+  inspected: Record<string, ConfigEntry> | undefined,
+  context?: ConfigContext,
+  scannerConfigured = false,
+): DoctorCheck {
   const name = 'Management credentials';
-  const missing = MGMT_KEYS.filter(({ key }) => !isSet(inspected[key]));
+  if (!inspected) return notEvaluated(name);
+  const missing = MANAGEMENT_CREDENTIAL_KEYS.filter((key) => !isSet(inspected[key]));
   if (missing.length === 0) {
-    const detail = MGMT_KEYS.map(({ key }) => `${key} (${inspected[key].source})`).join(', ');
+    const detail = MANAGEMENT_CREDENTIAL_KEYS.map(
+      (key) => `${key} (${inspected[key].source})`,
+    ).join(', ');
     return { name, status: 'pass', detail: `set: ${detail}` };
   }
   return {
     name,
-    status: 'fail',
-    detail: `missing: ${missing.map((m) => m.key).join(', ')}`,
-    hint: `Set ${missing.map((m) => m.envVar).join(', ')} (or 'airs config set …')`,
+    status: scannerConfigured ? 'warn' : 'fail',
+    detail: `missing: ${missing.join(', ')} — management, red team, model security, AI Gateway and AgentGuard commands are unavailable`,
+    hint: settingRemedy(missing, context),
   };
 }
 
@@ -148,10 +323,6 @@ function httpStatus(err: unknown): number | undefined {
   return e?.status ?? e?.statusCode;
 }
 
-function errMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
 /**
  * The scanner SDK throws AISecSDKException without an HTTP status — auth
  * rejections surface only in the message (e.g.
@@ -161,7 +332,7 @@ const AUTH_REJECTED_PATTERN =
   /invalid api key|invalid.*oauth token|api key or oauth token|unauthorized|forbidden/i;
 
 /**
- * Check 4: scanner API reachability + key validity.
+ * Check 7: scanner API reachability + key validity.
  *
  * The probe resolves if the endpoint answered 2xx, rejects with an HTTP
  * status otherwise. 401/403 means the key was rejected; any other HTTP
@@ -175,12 +346,7 @@ export async function checkScannerApi(
 ): Promise<DoctorCheck> {
   const name = 'Scanner API';
   if (!hasKey) {
-    return {
-      name,
-      status: 'warn',
-      detail: 'skipped — no scanner API key configured',
-      hint: 'Set PANW_AI_SEC_API_KEY to enable this check',
-    };
+    return { name, status: 'skip', detail: 'skipped — no scanner credentials configured' };
   }
   try {
     const result = await withTimeout(probe(), timeoutMs);
@@ -189,7 +355,7 @@ export async function checkScannerApi(
         name,
         status: 'fail',
         detail: `timed out after ${timeoutMs}ms — network unreachable or endpoint not responding`,
-        hint: 'Check network connectivity and PANW_AI_SEC_API_ENDPOINT',
+        hint: 'Check network connectivity and the airsApiEndpoint setting',
       };
     }
     return { name, status: 'pass', detail: 'endpoint reachable, API key accepted' };
@@ -202,7 +368,7 @@ export async function checkScannerApi(
         name,
         status: 'fail',
         detail: `API key rejected${suffix}: ${message}`,
-        hint: 'Verify PANW_AI_SEC_API_KEY belongs to this tenant and is not expired',
+        hint: 'Verify airsApiKey belongs to this tenant and is not expired',
       };
     }
     if (status !== undefined) {
@@ -217,13 +383,13 @@ export async function checkScannerApi(
     return {
       name,
       status: 'fail',
-      detail: `network unreachable: ${errMessage(err)}`,
+      detail: `network unreachable: ${message}`,
       hint: 'Check network connectivity, proxy settings, and DNS',
     };
   }
 }
 
-/** Check 5: management OAuth token fetch via a minimal authenticated call. */
+/** Check 8: management OAuth token fetch via a minimal authenticated call. */
 export async function checkManagementAuth(
   probe: () => Promise<number>,
   hasCreds: boolean,
@@ -231,12 +397,7 @@ export async function checkManagementAuth(
 ): Promise<DoctorCheck> {
   const name = 'Management OAuth';
   if (!hasCreds) {
-    return {
-      name,
-      status: 'warn',
-      detail: 'skipped — management credentials not configured',
-      hint: 'Set PANW_MGMT_CLIENT_ID, PANW_MGMT_CLIENT_SECRET, PANW_MGMT_TSG_ID',
-    };
+    return { name, status: 'skip', detail: 'skipped — management credentials not configured' };
   }
   try {
     const result = await withTimeout(probe(), timeoutMs);
@@ -245,13 +406,13 @@ export async function checkManagementAuth(
         name,
         status: 'fail',
         detail: `timed out after ${timeoutMs}ms — network unreachable or endpoint not responding`,
-        hint: 'Check network connectivity and PANW_MGMT_TOKEN_ENDPOINT',
+        hint: 'Check network connectivity and the mgmtTokenEndpoint / mgmtEndpoint settings',
       };
     }
     return {
       name,
       status: 'pass',
-      detail: `OAuth token obtained, topics API answered (${result} custom topic${result === 1 ? '' : 's'})`,
+      detail: `OAuth token obtained, topics API answered (${plural(result, 'custom topic')})`,
     };
   } catch (err) {
     const status = httpStatus(err);
@@ -268,13 +429,13 @@ export async function checkManagementAuth(
       name,
       status: 'fail',
       detail,
-      hint: 'Verify PANW_MGMT_CLIENT_ID / PANW_MGMT_CLIENT_SECRET / PANW_MGMT_TSG_ID',
+      hint: 'Verify mgmtClientId / mgmtClientSecret / mgmtTsgId belong to this tenant',
     };
   }
 }
 
 /**
- * Check 6: AI Gateway reachability via the cheapest authenticated data-plane
+ * Check 9: AI Gateway reachability via the cheapest authenticated data-plane
  * read (workspace list). Shares management credentials, so it is skipped when
  * those are missing. A 403 is a grant problem — surface which grant via
  * {@link aiGatewayGrantHint}.
@@ -286,12 +447,7 @@ export async function checkAiGatewayApi(
 ): Promise<DoctorCheck> {
   const name = 'AI Gateway API';
   if (!hasCreds) {
-    return {
-      name,
-      status: 'warn',
-      detail: 'skipped — management credentials not configured',
-      hint: 'Set PANW_MGMT_CLIENT_ID, PANW_MGMT_CLIENT_SECRET, PANW_MGMT_TSG_ID',
-    };
+    return { name, status: 'skip', detail: 'skipped — management credentials not configured' };
   }
   try {
     const result = await withTimeout(probe(), timeoutMs);
@@ -300,13 +456,13 @@ export async function checkAiGatewayApi(
         name,
         status: 'fail',
         detail: `timed out after ${timeoutMs}ms — network unreachable or endpoint not responding`,
-        hint: 'Check network connectivity and PANW_AI_GW_DATA_ENDPOINT',
+        hint: 'Check network connectivity to api.apps.paloaltonetworks.com',
       };
     }
     return {
       name,
       status: 'pass',
-      detail: `endpoint reachable (${result} workspace${result === 1 ? '' : 's'} in scope)`,
+      detail: `endpoint reachable (${plural(result, 'workspace')} in scope)`,
     };
   } catch (err) {
     const status = httpStatus(err);
@@ -330,7 +486,7 @@ export async function checkAiGatewayApi(
         status !== undefined
           ? `AI Gateway API error (HTTP ${status}): ${message}`
           : `network unreachable: ${message}`,
-      hint: 'Verify credentials and PANW_AI_GW_DATA_ENDPOINT',
+      hint: 'Verify the tenant credentials and network connectivity',
     };
   }
 }
@@ -341,14 +497,20 @@ export async function checkAiGatewayApi(
 
 export interface DoctorDeps {
   nodeVersion?: string;
+  /** Explicit config file; bypasses tenant selection exactly like the library API. */
   configFilePath?: string;
+  /** Pre-resolved config source; built from `configFilePath` / the registry when omitted. */
+  context?: ConfigContext;
+  env?: NodeJS.ProcessEnv;
   inspect?: () => Promise<Record<string, ConfigEntry>>;
+  /** Effective config for the default probes; loaded lazily and only when a default probe runs. */
+  loadConfig?: () => Promise<Config>;
   /** Cheap scanner-API call; built from config when omitted. */
-  scannerProbe?: () => Promise<unknown>;
+  scannerProbe?: (config: Config) => Promise<unknown>;
   /** Minimal management call returning a count; built from config when omitted. */
-  mgmtProbe?: () => Promise<number>;
+  mgmtProbe?: (config: Config) => Promise<number>;
   /** Minimal AI Gateway call returning a workspace count; built from config when omitted. */
-  aiGwProbe?: () => Promise<number>;
+  aiGwProbe?: (config: Config) => Promise<number>;
   timeoutMs?: number;
 }
 
@@ -361,29 +523,21 @@ export interface DoctorDeps {
  * UUID is queried; an empty result (or a non-auth HTTP error) still proves
  * the key was accepted.
  */
-async function defaultScannerProbe(): Promise<unknown> {
-  const config = await loadConfig();
+async function defaultScannerProbe(config: Config): Promise<unknown> {
   init(runtimeInitOptions(config));
   const scanner = new Scanner();
   return scanner.queryByScanIds([randomUUID()]);
 }
 
-/** Default management probe: listTopics() — smallest authenticated GET. */
-async function defaultMgmtProbe(): Promise<number> {
-  const config = await loadConfig();
-  const service = new SdkManagementService({
-    clientId: config.mgmtClientId,
-    clientSecret: config.mgmtClientSecret,
-    tsgId: config.mgmtTsgId,
-    tokenEndpoint: config.mgmtTokenEndpoint,
-  });
+/** Default management probe: listTopics() — smallest authenticated GET, on the configured endpoints. */
+async function defaultMgmtProbe(config: Config): Promise<number> {
+  const service = new SdkManagementService(managementClientOptions(config));
   const topics = await service.listTopics();
   return topics.length;
 }
 
 /** Default AI Gateway probe: data-plane workspace list — smallest authenticated GET. */
-async function defaultAiGwProbe(): Promise<number> {
-  const config = await loadConfig();
+async function defaultAiGwProbe(config: Config): Promise<number> {
   const service = new SdkAiGatewayService(aiGatewayClientOptions(config));
   const workspaces = await service.listWorkspaces();
   return workspaces.length;
@@ -391,44 +545,87 @@ async function defaultAiGwProbe(): Promise<number> {
 
 /** Run all checks in order. Never throws. */
 export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorCheck[]> {
-  const configFilePath = deps.configFilePath ?? resolveConfigFilePath();
-  const inspect = deps.inspect ?? (() => inspectConfig(configFilePath));
+  const env = deps.env ?? process.env;
   const timeoutMs = deps.timeoutMs ?? DOCTOR_TIMEOUT_MS;
-
   const node = checkNodeVersion(deps.nodeVersion);
-  const configFile = await checkConfigFile(configFilePath);
 
-  let inspectedConfig: Record<string, ConfigEntry> = {};
+  let context = deps.context;
+  let tenant: DoctorCheck;
   try {
-    inspectedConfig = await inspect();
-  } catch {
-    // Malformed config already reported by the file check; creds checks
-    // proceed against an empty view.
+    context ??= resolveConfigContext(deps.configFilePath);
+    tenant = checkTenant(context);
+  } catch (err) {
+    let registryPath = 'the tenant registry';
+    try {
+      registryPath = tenantStorePath();
+    } catch {
+      // XDG_STATE_HOME itself is invalid; the message already says so.
+    }
+    tenant = tenantRegistryFailure(err, registryPath);
+  }
+  if (!context) {
+    return [node, tenant, ...DOCTOR_CHECK_NAMES.slice(2).map(notEvaluated)];
   }
 
-  const scannerCreds = checkScannerCredentials(inspectedConfig);
-  const mgmtCreds = checkManagementCredentials(inspectedConfig);
+  const configFile = await checkConfigFile(context);
+  const environment = checkEnvironment(env);
+
+  let inspected: Record<string, ConfigEntry> | undefined;
+  if (context.selection !== 'none' && configFile.status !== 'fail') {
+    try {
+      inspected = await (deps.inspect ?? (() => inspectConfig(deps.configFilePath)))();
+    } catch {
+      // Reported by the config file check.
+    }
+  }
+
+  const scannerCreds = checkScannerCredentials(inspected, context);
+  const hasScanner = scannerCreds.status === 'pass';
+  const mgmtCreds = checkManagementCredentials(inspected, context, hasScanner);
+  const hasMgmt = mgmtCreds.status === 'pass';
+
+  // Probes read the file the checks above validated, never a second registry lookup.
+  const configPath =
+    deps.configFilePath ?? (context.selection === 'none' ? undefined : context.path);
+  let configPromise: Promise<Config> | undefined;
+  const getConfig = () => {
+    configPromise ??= (deps.loadConfig ?? (() => loadConfig({}, configPath)))();
+    return configPromise;
+  };
+  const scannerProbe = deps.scannerProbe ?? defaultScannerProbe;
+  const mgmtProbe = deps.mgmtProbe ?? defaultMgmtProbe;
+  const aiGwProbe = deps.aiGwProbe ?? defaultAiGwProbe;
 
   const scannerApi = await checkScannerApi(
-    deps.scannerProbe ?? defaultScannerProbe,
-    scannerCreds.status === 'pass',
+    async () => scannerProbe(await getConfig()),
+    hasScanner,
     timeoutMs,
   );
   const mgmtAuth = await checkManagementAuth(
-    deps.mgmtProbe ?? defaultMgmtProbe,
-    mgmtCreds.status === 'pass',
+    async () => mgmtProbe(await getConfig()),
+    hasMgmt,
     timeoutMs,
   );
   const aiGwApi = await checkAiGatewayApi(
-    deps.aiGwProbe ?? defaultAiGwProbe,
-    mgmtCreds.status === 'pass',
+    async () => aiGwProbe(await getConfig()),
+    hasMgmt,
     timeoutMs,
   );
 
-  return [node, configFile, scannerCreds, mgmtCreds, scannerApi, mgmtAuth, aiGwApi];
+  return [
+    node,
+    tenant,
+    configFile,
+    environment,
+    scannerCreds,
+    mgmtCreds,
+    scannerApi,
+    mgmtAuth,
+    aiGwApi,
+  ];
 }
 
-/** Exit-code logic: warns are fine, any fail means exit 1. */
+/** Exit-code logic: warns and skips are fine, any fail means exit 1. */
 export function hasFailure(checks: DoctorCheck[]): boolean {
   return checks.some((c) => c.status === 'fail');
 }
@@ -441,7 +638,22 @@ const STATUS_KIND: Record<DoctorStatus, BulletKind> = {
   pass: 'success',
   warn: 'warn',
   fail: 'error',
+  skip: 'skip',
 };
+
+/** One-line verdict for the pretty report. */
+export function summarize(checks: DoctorCheck[]): { failed: boolean; message: string } {
+  const count = (status: DoctorStatus) => checks.filter((c) => c.status === status).length;
+  const fails = count('fail');
+  if (fails > 0) return { failed: true, message: `${plural(fails, 'check')} failed` };
+  const notes: string[] = [];
+  if (count('warn') > 0) notes.push(plural(count('warn'), 'warning'));
+  if (count('skip') > 0) notes.push(`${count('skip')} skipped`);
+  return {
+    failed: false,
+    message: notes.length ? `All checks passed (${notes.join(', ')})` : 'All checks passed',
+  };
+}
 
 function renderPretty(checks: DoctorCheck[]): void {
   ui.header('Doctor', 'Prisma AIRS CLI preflight checks');
@@ -450,30 +662,33 @@ function renderPretty(checks: DoctorCheck[]): void {
     if (check.hint) ui.dim(`    ${check.hint}`);
   }
   console.log('');
-  const fails = checks.filter((c) => c.status === 'fail').length;
-  const warns = checks.filter((c) => c.status === 'warn').length;
-  if (fails > 0) {
-    ui.error(`${fails} check${fails === 1 ? '' : 's'} failed`);
-  } else if (warns > 0) {
-    ui.success(`All checks passed (${warns} warning${warns === 1 ? '' : 's'})`);
-  } else {
-    ui.success('All checks passed');
-  }
+  const summary = summarize(checks);
+  if (summary.failed) ui.error(summary.message);
+  else ui.success(summary.message);
   console.log('');
 }
 
 export function registerDoctorCommand(program: Command): void {
   const doctor = program
     .command('doctor')
-    .description('Check credentials, config, and API connectivity (preflight)')
+    .description(
+      'Check the selected tenant, its config file, credentials, and API connectivity (preflight)',
+    )
     .option('--output <format>', 'Output format: pretty, table, markdown, csv, json, yaml')
     .addHelpText(
       'after',
-      examples('airs doctor', `airs doctor --output json | jq '.[] | select(.status != "pass")'`),
+      examples(
+        'airs-cli doctor',
+        `airs-cli doctor --output json | jq '.[] | select(.status != "pass")'`,
+      ),
     )
     .action(async (opts) => {
-      const fmt = await resolveOutput(doctor, opts);
-      const checks = await runDoctor();
+      // Doctor must run even when the selected config cannot load (that is
+      // what it diagnoses), so output resolution never touches the config.
+      const fmt = await resolveOutput(doctor, opts, { ignoreConfig: true });
+      const checks = (await runDoctor()).map((check) =>
+        check.hint ? { ...check, hint: commandHint(check.hint) } : check,
+      );
 
       if (fmt === 'pretty') {
         renderPretty(checks);

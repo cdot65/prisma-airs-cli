@@ -1,7 +1,11 @@
+import { DEFAULT_DLP_ENDPOINT } from '@cdot65/prisma-airs-sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { managementClientOptions } from '../../../../src/config/client-options.js';
+import { ConfigSchema } from '../../../../src/config/schema.js';
 
 const mockMgmtCtor = vi.fn();
-vi.mock('@cdot65/prisma-airs-sdk', () => ({
+vi.mock('@cdot65/prisma-airs-sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cdot65/prisma-airs-sdk')>()),
   ManagementClient: vi.fn().mockImplementation((opts) => {
     mockMgmtCtor(opts);
     return {
@@ -12,37 +16,36 @@ vi.mock('@cdot65/prisma-airs-sdk', () => ({
 
 beforeEach(async () => {
   mockMgmtCtor.mockReset();
-  delete process.env.PANW_DLP_ENDPOINT;
   const { _resetManagementClient } = await import('../../../../src/airs/management.js');
   _resetManagementClient();
 });
 
-describe('PANW_DLP_ENDPOINT wiring', () => {
-  it('passes dlpEndpoint to ManagementClient when set', async () => {
-    process.env.PANW_DLP_ENDPOINT = 'https://example.com';
-    const { loadConfig } = await import('../../../../src/config/loader.js');
+describe('DLP client wiring', () => {
+  it('passes the SDK default DLP endpoint so no environment override applies', async () => {
+    vi.stubEnv('PANW_DLP_ENDPOINT', 'https://legacy.example');
     const { SdkManagementService } = await import('../../../../src/airs/management.js');
-    const cfg = await loadConfig();
-    new SdkManagementService({ dlpEndpoint: cfg.dlpEndpoint });
+    const creds = { mgmtClientId: 'c', mgmtClientSecret: 's', mgmtTsgId: '1' };
+    new SdkManagementService(managementClientOptions(ConfigSchema.parse(creds)));
     expect(mockMgmtCtor).toHaveBeenCalledWith(
-      expect.objectContaining({ dlpEndpoint: 'https://example.com' }),
+      expect.objectContaining({ dlpEndpoint: DEFAULT_DLP_ENDPOINT }),
     );
+    vi.unstubAllEnvs();
   });
 
-  it('treats empty string as unset (falls back to SDK default)', async () => {
-    process.env.PANW_DLP_ENDPOINT = '';
-    const { loadConfig } = await import('../../../../src/config/loader.js');
-    const { SdkManagementService } = await import('../../../../src/airs/management.js');
-    const cfg = await loadConfig();
-    new SdkManagementService({ dlpEndpoint: cfg.dlpEndpoint });
-    expect(mockMgmtCtor).toHaveBeenCalledWith(expect.objectContaining({ dlpEndpoint: undefined }));
-  });
-
-  it('omits dlpEndpoint when env unset', async () => {
-    const { loadConfig } = await import('../../../../src/config/loader.js');
-    const { SdkManagementService } = await import('../../../../src/airs/management.js');
-    const cfg = await loadConfig();
-    new SdkManagementService({ dlpEndpoint: cfg.dlpEndpoint });
-    expect(mockMgmtCtor).toHaveBeenCalledWith(expect.objectContaining({ dlpEndpoint: undefined }));
+  it('honors a dlpEndpoint override from the tenant file', async () => {
+    const { _resetManagementClient, SdkManagementService } = await import(
+      '../../../../src/airs/management.js'
+    );
+    _resetManagementClient();
+    const config = ConfigSchema.parse({
+      mgmtClientId: 'c',
+      mgmtClientSecret: 's',
+      mgmtTsgId: '1',
+      dlpEndpoint: 'https://dlp.example',
+    });
+    new SdkManagementService(managementClientOptions(config));
+    expect(mockMgmtCtor).toHaveBeenCalledWith(
+      expect.objectContaining({ dlpEndpoint: 'https://dlp.example' }),
+    );
   });
 });

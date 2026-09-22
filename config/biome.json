@@ -1,7 +1,36 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.5/schema.json",
   "files": {
-    "includes": ["**", "!dist", "!coverage", "!site", "!docs-site", "!config"]
+    "includes": [
+      "**",
+      "!dist",
+      "!coverage",
+      "!site",
+      "!docs-site",
+      "!config",
+      "!artifacts/runtime-report",
+      "!artifacts/agentguard-e2e-*",
+      "!artifacts/tenant-profiles-e2e-*",
+      "!artifacts/full-runtime-migration-*",
+      "!airs-migration-*",
+      "!**/airs-runtime-profiles-backup-*.json",
+      "!**/airs-runtime-profiles-backup-*.yaml",
+      "!**/airs-agentguard-report-*.html",
+      "!**/airs-agentguard-report-*.md",
+      "!artifacts/runtime-dashboard",
+      "!artifacts/redteam-dashboard",
+      "!artifacts/aigateway-dashboard",
+      "!artifacts/aigateway-dashboard-tests.json",
+      "!**/airs-aigateway-report-*.html",
+      "!**/airs-aigateway-report-*.md",
+      "!artifacts/redteam-dashboard-tests.json",
+      "!artifacts/redteam-dashboard-release-tests.json",
+      "!**/airs-redteam-report-*.html",
+      "!**/airs-redteam-report-*.md",
+      "!**/debug-api-*.jsonl",
+      "!**/airs-runtime-report-*.html",
+      "!**/airs-runtime-report-*.md"
+    ]
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {

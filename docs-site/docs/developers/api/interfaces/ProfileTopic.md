@@ -1,6 +1,6 @@
 # Interface: ProfileTopic
 
-Defined in: src/airs/types.ts:13
+Defined in: src/airs/types.ts:17
 
 Enriched topic entry read from a profile's policy.
 
@@ -10,7 +10,7 @@ Enriched topic entry read from a profile's policy.
 
 > **action**: `"allow"` \| `"block"`
 
-Defined in: src/airs/types.ts:16
+Defined in: src/airs/types.ts:20
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:16
 
 > **description**: `string`
 
-Defined in: src/airs/types.ts:17
+Defined in: src/airs/types.ts:21
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:17
 
 > **examples**: `string`[]
 
-Defined in: src/airs/types.ts:18
+Defined in: src/airs/types.ts:22
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:18
 
 > **topicId**: `string`
 
-Defined in: src/airs/types.ts:14
+Defined in: src/airs/types.ts:18
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: src/airs/types.ts:14
 
 > **topicName**: `string`
 
-Defined in: src/airs/types.ts:15
+Defined in: src/airs/types.ts:19

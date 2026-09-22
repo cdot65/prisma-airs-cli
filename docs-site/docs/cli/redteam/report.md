@@ -9,7 +9,7 @@ sidebar_label: report
 View scan report
 
 ```text
-airs redteam report [options] <jobId>
+airs-cli redteam report [options] <jobId>
 ```
 
 ### Arguments
@@ -29,7 +29,7 @@ airs redteam report [options] <jobId>
 *Full scan report (STATIC scan — score, severity breakdown, categories, summary, recommendations)*
 
 ```bash
-airs redteam report 00000000-0000-0000-0000-000000000001
+airs-cli redteam report 00000000-0000-0000-0000-000000000001
 ```
 
 ```text
@@ -89,7 +89,7 @@ Set time limits and resource consumption thresholds for code execution.
 *Attack list filtered by severity*
 
 ```bash
-airs redteam report 00000000-0000-0000-0000-000000000001 --attacks --severity CRITICAL --limit 3
+airs-cli redteam report 00000000-0000-0000-0000-000000000001 --attacks --severity CRITICAL --limit 3
 ```
 
 ```text

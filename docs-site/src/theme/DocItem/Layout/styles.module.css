@@ -1,0 +1,85 @@
+.docItemContainer header + *,
+.docItemContainer article > *:first-child {
+  margin-top: 0;
+}
+
+.tocColumn {
+  display: none;
+}
+
+@media (min-width: 997px) {
+  .docItemCol {
+    max-width: 75% !important;
+    transition: max-width var(--ifm-transition-fast) ease;
+  }
+
+  .docItemColTocCollapsed {
+    max-width: calc(100% - 42px) !important;
+  }
+
+  .tocColumn {
+    display: block;
+    flex: 0 0 25%;
+    max-width: 25%;
+    padding: 0 var(--ifm-spacing-horizontal);
+    transition:
+      flex-basis var(--ifm-transition-fast) ease,
+      max-width var(--ifm-transition-fast) ease;
+  }
+
+  .tocColumnCollapsed {
+    flex-basis: 42px;
+    max-width: 42px;
+    padding: 0;
+  }
+
+  .tocPanel {
+    position: sticky;
+    top: calc(var(--ifm-navbar-height) + 1rem);
+    display: flex;
+    align-items: flex-start;
+    max-height: calc(100vh - (var(--ifm-navbar-height) + 2rem));
+  }
+
+  .tocToggle {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 40px;
+    margin: 0 8px 0 0;
+    padding: 0;
+    color: var(--ifm-color-content-secondary);
+    background: var(--docusaurus-collapse-button-bg);
+    border: 1px solid var(--ifm-toc-border-color);
+    border-radius: var(--ifm-global-radius);
+    cursor: pointer;
+    transition:
+      color var(--ifm-transition-fast) ease,
+      background-color var(--ifm-transition-fast) ease;
+  }
+
+  .tocColumnCollapsed .tocToggle {
+    margin-right: 0;
+  }
+
+  .tocToggle:hover,
+  .tocToggle:focus-visible {
+    color: var(--ifm-color-primary);
+    background: var(--docusaurus-collapse-button-bg-hover);
+  }
+
+  .tocToggleIcon {
+    display: block;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .tocContent {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .tocContent :global(.theme-doc-toc-desktop) {
+    position: static;
+    max-height: calc(100vh - (var(--ifm-navbar-height) + 2rem));
+  }
+}

@@ -8,6 +8,37 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAiGatewayClientFactoryForTest } from '../../../src/cli/commands/aigateway/shared.js';
 import { buildProgram } from '../../../src/cli/program.js';
 
+const prompt = vi.hoisted(() => ({
+  value: undefined as string | undefined,
+  piped: undefined as string | undefined,
+}));
+vi.mock('../../../src/cli/tenant-input.js', () => ({
+  promptTenantValue: async () => {
+    if (prompt.value === undefined) throw new Error('Interactive setup requires a terminal.');
+    return prompt.value;
+  },
+  readTenantStdin: async () => {
+    if (prompt.piped === undefined) throw new Error('--stdin requires piped input');
+    return prompt.piped;
+  },
+}));
+
+function stubTty(value: boolean): () => void {
+  const streams = [process.stdin, process.stderr] as Array<NodeJS.ReadStream | NodeJS.WriteStream>;
+  const previous = streams.map((stream) => Object.getOwnPropertyDescriptor(stream, 'isTTY'));
+  for (const stream of streams)
+    Object.defineProperty(stream, 'isTTY', { value, configurable: true });
+  return () => {
+    streams.forEach((stream, index) => {
+      const descriptor = previous[index];
+      if (descriptor) Object.defineProperty(stream, 'isTTY', descriptor);
+      else delete (stream as { isTTY?: boolean }).isTTY;
+    });
+  };
+}
+
+import { useTestTenant } from '../../helpers/tenant.js';
+
 const execFileAsync = promisify(execFile);
 
 const calls = {
@@ -25,6 +56,8 @@ const calls = {
   organisationUpdate: vi.fn(),
   pluginCreate: vi.fn(),
   providerCreate: vi.fn(),
+  integrationResolve: vi.fn(),
+  integrationUpdate: vi.fn(),
 };
 
 function fakeClient(): AIGatewayClient {
@@ -39,7 +72,9 @@ function fakeClient(): AIGatewayClient {
     guardrails: { create: calls.guardrailCreate },
     integrations: {
       create: calls.integrationCreate,
+      resolveProviderId: calls.integrationResolve,
       setWorkspaces: calls.integrationSetWorkspaces,
+      update: calls.integrationUpdate,
     },
     mcpIntegrations: { create: calls.mcpCreate, setWorkspaces: calls.mcpSetWorkspaces },
     organisations: { updateSelf: calls.organisationUpdate },
@@ -53,6 +88,7 @@ let restoreFactory: (() => void) | undefined;
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  await useTestTenant();
   directory = await mkdtemp(join(tmpdir(), 'airs-aigateway-cli-'));
   restoreFactory = setAiGatewayClientFactoryForTest(async () => fakeClient());
   for (const method of Object.values(calls)) method.mockResolvedValue({});
@@ -73,8 +109,253 @@ async function requestFile(value: unknown, extension = 'json'): Promise<string> 
 }
 
 async function run(...args: string[]): Promise<void> {
-  await buildProgram().parseAsync(['node', 'airs', 'aigateway', ...args]);
+  await buildProgram().parseAsync(['node', 'airs-cli', 'aigateway', ...args]);
 }
+
+async function keyFile(value: string): Promise<string> {
+  const path = join(directory, `${Math.random().toString(36).slice(2)}.key`);
+  await writeFile(path, `${value}\n`, { mode: 0o600 });
+  return path;
+}
+
+describe('integration credentials, provider slugs, and custom hosts', () => {
+  const xai = '0a9635da-bd84-11ef-9c04-1235d6b0b075';
+  const usageExit = () =>
+    vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+
+  it('resolves --ai-provider slugs through the catalog and maps --base-url/--header to the verified custom-host shape', async () => {
+    calls.integrationResolve.mockResolvedValue(xai);
+    await run(
+      'integrations',
+      'create',
+      '--organisation-id',
+      '1001464285',
+      '--ai-provider',
+      'x-ai',
+      '--name',
+      'talos7',
+      '--slug',
+      'talos7',
+      '--key-file',
+      await keyFile('sk-from-file'),
+      '--base-url',
+      'http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1',
+      '--header',
+      'x-team=ml',
+    );
+    expect(calls.integrationResolve).toHaveBeenCalledWith('x-ai');
+    expect(calls.integrationCreate).toHaveBeenCalledWith({
+      organisation_id: '1001464285',
+      ai_provider_id: xai,
+      name: 'talos7',
+      slug: 'talos7',
+      key: 'sk-from-file',
+      configurations: {
+        provider_auth_type: 'apiKey',
+        custom_host: 'http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1',
+        custom_headers: { 'x-team': 'ml' },
+      },
+    });
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).not.toContain('sk-from-file');
+  });
+
+  it('prompts for the key with hidden input in a terminal when no credential flag is given', async () => {
+    prompt.value = 'sk-from-prompt';
+    const restoreTty = stubTty(true);
+    try {
+      await run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+      );
+      expect(calls.integrationCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'sk-from-prompt' }),
+      );
+      calls.integrationCreate.mockClear();
+      await run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'b',
+        '--slug',
+        'b',
+        '--key-stdin',
+      );
+      expect(calls.integrationCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'sk-from-prompt' }),
+      );
+    } finally {
+      prompt.value = undefined;
+      restoreTty();
+    }
+  });
+
+  it('reads a piped credential with --key-stdin outside a terminal', async () => {
+    prompt.piped = 'sk-from-pipe';
+    const restoreTty = stubTty(false);
+    try {
+      await run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'c',
+        '--slug',
+        'c',
+        '--key-stdin',
+      );
+      expect(calls.integrationCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ key: 'sk-from-pipe' }),
+      );
+    } finally {
+      prompt.piped = undefined;
+      restoreTty();
+    }
+  });
+
+  it('explains the pipe form when --key-stdin has no piped input outside a terminal', async () => {
+    const exit = usageExit();
+    const restoreTty = stubTty(false);
+    await expect(
+      run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+        '--key-stdin',
+      ),
+    ).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain('--key-stdin < provider.key');
+    restoreTty();
+  });
+
+  it('refuses a credential-less create before any request and names the remedies', async () => {
+    const exit = usageExit();
+    await expect(
+      run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+      ),
+    ).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(calls.integrationCreate).not.toHaveBeenCalled();
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain('--key-file, --key-stdin (piped), --secret-mappings');
+  });
+
+  it('accepts secret mappings as the credential and warns about inline --key', async () => {
+    await run(
+      'integrations',
+      'create',
+      '--organisation-id',
+      '1001464285',
+      '--ai-provider-id',
+      xai,
+      '--name',
+      'a',
+      '--slug',
+      'a',
+      '--secret-mappings',
+      '[{"target_field":"key","secret_reference_id":"ref-1"}]',
+    );
+    expect(calls.integrationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secret_mappings: [{ target_field: 'key', secret_reference_id: 'ref-1' }],
+      }),
+    );
+    await run(
+      'integrations',
+      'create',
+      '--organisation-id',
+      '1001464285',
+      '--ai-provider-id',
+      xai,
+      '--name',
+      'b',
+      '--slug',
+      'b',
+      '--key',
+      'inline-secret',
+    );
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain('visible in shell history');
+    expect(stderr).not.toContain('inline-secret');
+  });
+
+  it.each([
+    { args: ['--key', 'x', '--key-file', '/dev/null'], message: 'only one of --key' },
+    { args: ['--ai-provider', 'x-ai', '--key', 'x'], message: 'not both' },
+    { args: ['--key', 'x', '--base-url', 'qwen:8000/v1'], message: 'Invalid --base-url' },
+    { args: ['--key-file', '/nonexistent/key'], message: 'Cannot read --key-file' },
+  ])('rejects conflicting or invalid integration input: $message', async ({ args, message }) => {
+    const exit = usageExit();
+    await expect(
+      run(
+        'integrations',
+        'create',
+        '--organisation-id',
+        '1001464285',
+        '--ai-provider-id',
+        xai,
+        '--name',
+        'a',
+        '--slug',
+        'a',
+        ...args,
+      ),
+    ).rejects.toThrow('process.exit(2)');
+    expect(exit).toHaveBeenCalledWith(2);
+    expect(calls.integrationCreate).not.toHaveBeenCalled();
+    const stderr = vi.mocked(console.error).mock.calls.flat().map(String).join('\n');
+    expect(stderr).toContain(message);
+  });
+
+  it('updates the custom host without touching the credential', async () => {
+    await run(
+      'integrations',
+      'update',
+      'e2af2b22-d1f0-44d8-a7e3-6940a98f94c1',
+      '--base-url',
+      'https://llm.example/v1',
+    );
+    expect(calls.integrationUpdate).toHaveBeenCalledWith('e2af2b22-d1f0-44d8-a7e3-6940a98f94c1', {
+      configurations: { provider_auth_type: 'apiKey', custom_host: 'https://llm.example/v1' },
+    });
+  });
+});
 
 describe('AI Gateway mutation commands', () => {
   const workspaceId = '11111111-1111-4111-8111-111111111111';
@@ -204,6 +485,8 @@ describe('AI Gateway mutation commands', () => {
       'vertex-prod',
       '--slug',
       'vertex-prod',
+      '--key-file',
+      await keyFile('vertex-service-key'),
       '--set',
       'configurations.vertex_project_id=project-1',
     );
@@ -212,6 +495,7 @@ describe('AI Gateway mutation commands', () => {
       ai_provider_id: providerCatalogId,
       name: 'vertex-prod',
       slug: 'vertex-prod',
+      key: 'vertex-service-key',
       configurations: { vertex_project_id: 'project-1' },
     });
 

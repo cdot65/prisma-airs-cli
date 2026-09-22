@@ -8,12 +8,12 @@ The four commands form a create-apply-eval-revert cycle:
 
 ```mermaid
 flowchart TD
-    Start([Agent starts]) --> Create[airs runtime topics create]
-    Create --> Apply[airs runtime topics apply]
-    Apply --> Eval[airs runtime topics eval]
+    Start([Agent starts]) --> Create[airs-cli runtime topics create]
+    Create --> Apply[airs-cli runtime topics apply]
+    Apply --> Eval[airs-cli runtime topics eval]
     Eval --> Check{Metrics improved?}
     Check -->|Yes| Keep([Keep — advance])
-    Check -->|No| Revert[airs runtime topics revert]
+    Check -->|No| Revert[airs-cli runtime topics revert]
     Revert --> Create
     Keep --> Create
 ```

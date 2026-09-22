@@ -9,7 +9,7 @@ sidebar_label: customer-apps
 List customer apps
 
 ```text
-airs runtime customer-apps list [options]
+airs-cli runtime customer-apps list [options]
 ```
 
 #### Options
@@ -27,7 +27,7 @@ airs runtime customer-apps list [options]
 *Pretty output (fallback `pretty`). Use `customer-apps get <appName>` for the complete detail record.*
 
 ```bash
-airs runtime customer-apps list --limit 2
+airs-cli runtime customer-apps list --limit 2
 ```
 
 ```text
@@ -44,7 +44,7 @@ Customer Apps:
 *JSON output — `id` and `description` are empty in the list response (the list endpoint only returns names)*
 
 ```bash
-airs runtime customer-apps list --limit 2 --output json
+airs-cli runtime customer-apps list --limit 2 --output json
 ```
 
 ```text
@@ -65,7 +65,7 @@ airs runtime customer-apps list --limit 2 --output json
 *YAML output (one sequence containing complete records)*
 
 ```bash
-airs runtime customer-apps list --limit 2 --output yaml
+airs-cli runtime customer-apps list --limit 2 --output yaml
 ```
 
 ```text
@@ -84,7 +84,7 @@ airs runtime customer-apps list --limit 2 --output yaml
 Get customer app details
 
 ```text
-airs runtime customer-apps get [options] <appName>
+airs-cli runtime customer-apps get [options] <appName>
 ```
 
 #### Arguments
@@ -104,7 +104,7 @@ No curated input/output example for this command yet.
 Update a customer app
 
 ```text
-airs runtime customer-apps update [options] <appId>
+airs-cli runtime customer-apps update [options] <appId>
 ```
 
 #### Arguments
@@ -130,7 +130,7 @@ No curated input/output example for this command yet.
 Delete a customer app
 
 ```text
-airs runtime customer-apps delete [options] <appName>
+airs-cli runtime customer-apps delete [options] <appName>
 ```
 
 #### Arguments
@@ -156,7 +156,7 @@ No curated input/output example for this command yet.
 Show per-app token consumption + violation breakdown (SCM dashboard). Omit appName to scan all apps.
 
 ```text
-airs runtime customer-apps consumption [options] [appName]
+airs-cli runtime customer-apps consumption [options] [appName]
 ```
 
 #### Arguments
@@ -175,7 +175,7 @@ airs runtime customer-apps consumption [options] [appName]
 *Pretty output (fallback `pretty`) — single app, default 30-day window. Only firing detectors are shown.*
 
 ```bash
-airs runtime customer-apps consumption example-app
+airs-cli runtime customer-apps consumption example-app
 ```
 
 ```text
@@ -204,7 +204,7 @@ example-app  (00000000-0000-0000-0000-000000000001)
 *Table output — one row per detector, app-level context repeated on every row.*
 
 ```bash
-airs runtime customer-apps consumption example-app --output table
+airs-cli runtime customer-apps consumption example-app --output table
 ```
 
 ```text
@@ -223,7 +223,7 @@ example-app │ 00000000-0000-0000-0000-000000000001 │ 2026-05-25T16:42:52Z �
 *CSV output — pipe straight into spreadsheets or BigQuery. Self-contained rows; no join needed.*
 
 ```bash
-airs runtime customer-apps consumption example-app --output csv
+airs-cli runtime customer-apps consumption example-app --output csv
 ```
 
 ```text
@@ -241,7 +241,7 @@ example-app,00000000-0000-0000-0000-000000000001,2026-05-25T16:42:52Z,37,37,2,1,
 *JSON output — one object per detector per app; full app context repeated for self-contained records.*
 
 ```bash
-airs runtime customer-apps consumption example-app --output json
+airs-cli runtime customer-apps consumption example-app --output json
 ```
 
 ```text
@@ -267,7 +267,7 @@ airs runtime customer-apps consumption example-app --output json
 *YAML output — one sequence containing detector records.*
 
 ```bash
-airs runtime customer-apps consumption example-app --output yaml
+airs-cli runtime customer-apps consumption example-app --output yaml
 ```
 
 ```text
@@ -289,19 +289,19 @@ total: 1
 *Alternate time window — `--time-interval` accepts 7, 30, or 60 days (server-enforced enum).*
 
 ```bash
-airs runtime customer-apps consumption example-app --time-interval 60
+airs-cli runtime customer-apps consumption example-app --time-interval 60
 ```
 
 *All-apps loop — omit `appName` to enumerate every dashboard application bucket (one per distinct scan-payload `app_name`, so a single registered customer-app can appear as several buckets). Errors on individual apps are reported per-app; the loop continues past failures. Zero-traffic apps render `no detector violations in window`.*
 
 ```bash
-airs runtime customer-apps consumption
+airs-cli runtime customer-apps consumption
 ```
 
 *Invalid time-interval rejected client-side before incurring an API call.*
 
 ```bash
-airs runtime customer-apps consumption example-app --time-interval 14
+airs-cli runtime customer-apps consumption example-app --time-interval 14
 ```
 
 ```text
@@ -311,7 +311,7 @@ Error: --time-interval must be 7, 30, or 60 (the API rejects other values)
 *Unknown name lists the available dashboard application names and explains that the name to use is the literal scan-payload `metadata.app_name` (which may differ from the SCM-registered customer-app name).*
 
 ```bash
-airs runtime customer-apps consumption no-such-app
+airs-cli runtime customer-apps consumption no-such-app
 ```
 
 ```text

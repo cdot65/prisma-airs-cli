@@ -1,48 +1,72 @@
-<svg width="724" height="724" viewBox="0 0 724 724" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">prisma-airs-cli icon</title>
-  <desc id="desc">A simplified Prisma AIRS shield icon with a compact command-line prompt in blue, cyan, and slate.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200">
+<defs>
+  <clipPath id="shield">
+    <path d="M600 90 C760 150 885 170 1010 175 L1010 500 C1010 770 850 985 600 1110 C350 985 190 770 190 500 L190 175 C315 170 440 150 600 90 Z"/>
+  </clipPath>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="6" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#fffdf0" stop-opacity=".92"/>
+    <stop offset=".8" stop-color="#fff" stop-opacity="1"/>
+  </linearGradient>
+</defs>
 
-  <defs>
-    <linearGradient id="shieldStroke" x1="108" y1="132" x2="508" y2="594" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A6CFF"/>
-      <stop offset="0.52" stop-color="#149BFF"/>
-      <stop offset="1" stop-color="#20C8C7"/>
-    </linearGradient>
-    <linearGradient id="airsMark" x1="200" y1="220" x2="382" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A6CFF"/>
-      <stop offset="0.58" stop-color="#18B7DC"/>
-      <stop offset="1" stop-color="#20C8C7"/>
-    </linearGradient>
-    <linearGradient id="airsWord" x1="1320" y1="245" x2="1710" y2="460" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A6CFF"/>
-      <stop offset="0.58" stop-color="#149BFF"/>
-      <stop offset="1" stop-color="#20C8C7"/>
-    </linearGradient>
-  </defs>
+<g clip-path="url(#shield)">
+  <rect width="1200" height="1200" fill="#050505"/>
 
-  <g transform="translate(80 50) scale(1.0)">
+  <!-- Incoming white beam -->
+  <polygon points="70,590 438,515 445,532 70,615"
+           fill="url(#beam)" filter="url(#glow)"/>
 
-  <g id="prisma-airs-cli-icon" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Simplified Prisma/AIRS shield outline. -->
-    <path
-      d="M116 365V255C116 242 123 230 134 224L282 138L430 224C441 230 448 242 448 255V356C448 463 382 548 282 594C246 577 212 558 182 532"
-      fill="none"
-      stroke="url(#shieldStroke)"
-      stroke-width="34"/>
+  <!-- Rainbow spectrum -->
+  <polygon points="762,535 1125,620 1125,646 762,551" fill="#f33b2f"/>
+  <polygon points="762,551 1125,646 1125,672 762,567" fill="#f58a2b"/>
+  <polygon points="762,567 1125,672 1125,698 762,583" fill="#f7e34b"/>
+  <polygon points="762,583 1125,698 1125,724 762,599" fill="#4dc56b"/>
+  <polygon points="762,599 1125,724 1125,750 762,615" fill="#55b9ec"/>
+  <polygon points="762,615 1125,750 1125,776 762,631" fill="#9b7ad6"/>
 
-    <!-- Minimal AIRS-style prism/star, reduced from the original inner mark. -->
-    <g fill="url(#airsMark)">
-      <path d="M266 214C266 260 248 289 204 302H242C260 302 274 288 274 270V216C274 209 266 208 266 214Z"/>
-      <path d="M298 214C298 260 316 289 360 302H322C304 302 290 288 290 270V216C290 209 298 208 298 214Z"/>
-      <path d="M204 338C248 351 266 380 266 426C266 432 274 431 274 424V370C274 352 260 338 242 338H204Z"/>
-      <path d="M360 338C316 351 298 380 298 426C298 432 290 431 290 424V370C290 352 304 338 322 338H360Z"/>
-      <circle cx="282" cy="320" r="22"/>
-    </g>
+  <!-- Bash terminal replacing Prisma logo -->
+  <g>
+    <!-- cyan aura -->
+    <rect x="430" y="385" width="340" height="310" rx="28"
+          fill="none" stroke="#00c0e8" stroke-width="18"
+          opacity=".18" filter="url(#glow)"/>
 
-    <!-- CLI cue, kept intentionally simple. -->
-    <path d="M154 393L213 433L154 473" fill="none" stroke="#ebdbb2" stroke-width="33"/>
-    <path d="M246 473H314" fill="none" stroke="#ebdbb2" stroke-width="33"/>
+    <!-- terminal body -->
+    <rect x="430" y="385" width="340" height="310" rx="28"
+          fill="#071216" stroke="#00c0e8" stroke-width="8"/>
+
+    <!-- title bar separator -->
+    <path d="M430 455 H770" stroke="#00c0e8" stroke-width="7"/>
+
+    <!-- terminal window controls -->
+    <circle cx="470" cy="420" r="10" fill="#00c0e8"/>
+    <circle cx="505" cy="420" r="10" fill="#00c0e8" opacity=".65"/>
+    <circle cx="540" cy="420" r="10" fill="#00c0e8" opacity=".35"/>
+
+    <!-- bash prompt: >_ -->
+    <path d="M500 525 L570 575 L500 625"
+          fill="none" stroke="#00c0e8" stroke-width="18"
+          stroke-linecap="round" stroke-linejoin="round"
+          filter="url(#glow)"/>
+    <path d="M600 625 H690"
+          fill="none" stroke="#00c0e8" stroke-width="18"
+          stroke-linecap="round" filter="url(#glow)"/>
+
+    <!-- crisp foreground -->
+    <path d="M500 525 L570 575 L500 625"
+          fill="none" stroke="#dffcff" stroke-width="8"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M600 625 H690"
+          fill="none" stroke="#dffcff" stroke-width="8"
+          stroke-linecap="round"/>
   </g>
 
-  </g>
+  <!-- interaction glows -->
+  <circle cx="442" cy="524" r="5" fill="#fff" filter="url(#glow)"/>
+  <circle cx="762" cy="583" r="5" fill="#dffcff" filter="url(#glow)"/>
+</g>
 </svg>

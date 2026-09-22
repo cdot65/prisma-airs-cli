@@ -1,19 +1,25 @@
 ---
 sidebar_label: resources and CRUD
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # AI Gateway resources and CRUD
 
-`airs aigateway` exposes the AI Gateway surface in SDK 0.20.0. Commands follow one grammar:
+For task-oriented setup, workspace creation, and integration-binding examples, start with the
+[AI Gateway workflow cheat sheet](workflows.md).
+
+`airs-cli aigateway` exposes the SDK's SCM management surface plus separate runtime inference commands
+in this local candidate. The published dependency pin remains SDK 0.20.0; see
+[candidate verification and release ordering](inference.md#validated-candidate-and-release-ordering).
+Commands follow one grammar:
 
 ```text
-airs aigateway <resource> <action> [id]
+airs-cli aigateway <resource> <action> [id]
 ```
 
 Run any group with `--help` to see its identifiers, required flags, and examples. All reads accept
 `--output pretty|table|markdown|csv|json|yaml`; JSON list output is a bare array. AI Gateway reuses
-the `PANW_MGMT_*` OAuth credentials and optionally accepts the `PANW_AI_GW_*_ENDPOINT` overrides.
+the tenant's `mgmt*` OAuth credentials and optionally honors the `aiGwDataEndpoint` / `aiGwAdminEndpoint` overrides.
 
 ## Command map
 
@@ -25,13 +31,14 @@ the `PANW_MGMT_*` OAuth credentials and optionally accepts the `PANW_AI_GW_*_END
 | `configs` | `list`, `get`, `versions`, `create`, `update`, `delete` | Data plane; delete is permanent. |
 | `deployments` | `list`, `get`, `create`, `update`, `archive`, `ping` | Admin plane; archive is soft removal. |
 | `guardrails` | `list`, `get`, `create`, `update`, `delete` | Data plane; delete is permanent. |
-| `integrations` | `list`, `get`, `create`, `update`, `delete` | Admin plane; includes `models list/set` and `workspaces list/set`. |
+| `integrations` | `providers`, `list`, `get`, `create`, `update`, `delete` | Admin plane; `providers` lists the catalog slugs; includes `models list/set` and `workspaces list/set`. |
 | `mcp integrations` | `list`, `get`, `create`, `update`, `delete` | Admin plane; includes capabilities, metadata, and workspace access. |
 | `organisations` | `self get/update`, `auth-settings get/update` | Admin plane; auth settings require the numeric TSG id. |
 | `plugins` | `list`, `create` | Admin plane; the SDK has no verified get/update/delete endpoints. |
 | `providers` | `list`, `get`, `create`, `update`, `delete` | Data plane; detail credentials are redacted by default. |
 | `telemetry` | cache, cost, errors, feedback, grouping, latency, logs, requests, retries, tokens, users | Data plane; uses workspace slug. |
-| `workspaces` | `list`, `get`, `create`, `update`, `archive` | Reads span both planes; writes use the admin plane. |
+| `scopes` | `list`, `get`, `create`, `bind`, `delete` | SCM IAM scopes (`/iam/v1`) that a workspace `scope_name` points at. `delete` is not live-verified. |
+| `workspaces` | `list`, `get`, `create`, `update`, `archive` | Reads span both planes; writes use the admin plane. `create` provisions the IAM scope, the workspace, and the scope binding in SCM's own order. |
 
 `workspace` remains an accepted compatibility alias for `workspaces`. The deprecated
 `workspace delete` spelling still archives and prints a warning; it deliberately has no `rm`
@@ -44,7 +51,7 @@ configuration. No request file is required:
 
 ```bash
 # Create a routing config
-airs aigateway configs create \
+airs-cli aigateway configs create \
   --name primary-routing \
   --workspace <workspace-uuid> \
   --set config.retry.attempts=3 \
@@ -52,14 +59,14 @@ airs aigateway configs create \
   --output json
 
 # Create a guardrail one field at a time
-airs aigateway guardrails create \
+airs-cli aigateway guardrails create \
   --name deny-risk \
   --workspace <workspace-uuid> \
   --set 'checks[0].id=prompt-injection' \
   --set actions.deny=true
 
 # Preserve existing MCP bindings while changing one workspace
-airs aigateway mcp integrations workspaces set <integration-id> \
+airs-cli aigateway mcp integrations workspaces set <integration-id> \
   --workspace-binding <workspace-id>=false \
   --global-access false \
   --preserve-existing \
@@ -76,13 +83,49 @@ The dotted path addresses the SDK request body, so config routing settings begin
 integration-specific settings begin with `configurations.`. Run the exact leaf command with
 `--help` for its named flags and known values sourced from SDK 0.20 catalogs.
 
+### Provider integrations
+
+An integration binds one provider family to your organisation and needs a credential; the
+gateway rejects a credential-less create with a generic `400 AB01`. Name the provider by catalog
+slug (`airs-cli aigateway integrations providers` lists all 77) or UUID, and keep the credential out
+of `argv`: in a terminal, omit every key flag and `create` prompts with hidden input; in
+automation, use `--key-file` or pipe it with `--key-stdin`:
+
+```bash
+# xAI, credential from a file (or --key-stdin for a secret manager pipe)
+airs-cli aigateway integrations create \
+  --organisation-id 1001464285 \
+  --ai-provider x-ai \
+  --name redtail-x --slug redtail-x \
+  --key-file ~/.secrets/xai.key
+
+# A self-hosted OpenAI-compatible endpoint (vLLM, Ollama, an in-cluster service)
+airs-cli aigateway integrations create \
+  --organisation-id 1001464285 \
+  --ai-provider open-ai \
+  --name talos7 --slug talos7 --description "Kubernetes node" \
+  --base-url http://qwen38-talos7.ai-inference.svc.cluster.local:8000/v1 \
+  --header x-team=ml \
+  --key-stdin < ~/.secrets/qwen.key        # or omit the key flags to be prompted
+
+# Move an existing integration to a new host without touching its credential
+airs-cli aigateway integrations update <integration-id> --base-url https://llm.example/v1
+```
+
+`--base-url` writes the live-verified `configurations.custom_host` shape
+(`provider_auth_type: apiKey`, `custom_host`, optional `custom_headers` from repeatable
+`--header name=value`). The host must be an absolute http(s) URL including its API prefix; the
+gateway rejects hosts that do not look resolvable. `--secret-mappings` remains the way to bind a
+stored secret reference instead of a key, and `--key` inline still works but prints a warning
+because it lands in shell history.
+
 ### File escape hatch
 
 `--file <json|yaml>` remains an optional advanced base for generated or provider-specific bodies.
 Named flags override file fields, and `--set` / `--set-string` apply last:
 
 ```bash
-airs aigateway integrations update <integration-id> \
+airs-cli aigateway integrations update <integration-id> \
   --file provider-base.yaml \
   --name vertex-production \
   --set configurations.vertex_region=us-central1
@@ -103,7 +146,7 @@ API-key create/rotate, deployment create, and deployment updates with `--rotate-
 to call the API until a secret destination is chosen:
 
 ```bash
-airs aigateway api-keys service create \
+airs-cli aigateway api-keys service create \
   --name ci-gateway \
   --organisation-id <numeric-tsg-id> \
   --workspace <workspace-uuid> \
@@ -111,13 +154,13 @@ airs aigateway api-keys service create \
   --scopes completions.write \
   --secret-output ./api-key.secret.json
 
-airs aigateway deployments create \
+airs-cli aigateway deployments create \
   --name private-gateway \
   --type production \
   --organisation-id <numeric-tsg-id> \
   --secret-output ./deployment.secret.json
 
-airs aigateway deployments update <deployment-id> \
+airs-cli aigateway deployments update <deployment-id> \
   --rotate-auth true \
   --secret-output ./rotated-deployment.secret.json
 ```
@@ -125,9 +168,10 @@ airs aigateway deployments update <deployment-id> \
 `--secret-output` reserves a new file with mode `0600` before confirmation or the API call and will
 not overwrite an existing path. API failure or declined confirmation removes that reserved file.
 `--show-secret` is available for deliberate piping. Debug API logs recursively redact tokens,
-secrets, credentials, passwords, authorization fields, and API keys. Provider detail and
-organisation authentication settings are redacted by default; their `--reveal-sensitive` flags are
-explicit opt-ins. Operation-scoped secret paths come from SDK 0.20 metadata.
+secrets, credentials, passwords, authorization fields, and API keys. API-key list/detail reads,
+provider detail, and organisation authentication settings are redacted by default; their
+`--reveal-sensitive` flags are explicit opt-ins. Operation-scoped secret paths come from SDK 0.20
+metadata.
 
 ## Deployment health
 
@@ -138,7 +182,7 @@ blocked; do not interpret the ping result as the only health signal.
 
 ## Local live-safe E2E
 
-Place management credentials in the ignored, owner-only `.env.ai-gateway.local` file and run:
+Select the tenant to test against (`airs-cli tenant switch <name>`, or set `AIRS_E2E_TENANT`), opt in with `RUN_AIGATEWAY_E2E=1`, and run:
 
 ```bash
 pnpm test:e2e:aigateway

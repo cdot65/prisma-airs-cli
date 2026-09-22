@@ -1,6 +1,7 @@
 import type { Command } from 'commander';
 import type { Format } from '../../../dlp/types.js';
-import { fail, ui, usageError } from '../../renderer/index.js';
+import { renderGenerateSummary } from '../../renderer/dlp-generate.js';
+import { fail, resolveOutput, usageError } from '../../renderer/index.js';
 
 const ALL_FORMATS: Format[] = ['pdf', 'png', 'jpeg', 'svg', 'docx'];
 
@@ -46,7 +47,7 @@ function parseTypes(value: string): Format[] {
 }
 
 export function register(parent: Command): void {
-  parent
+  const command = parent
     .command('generate')
     .description(
       'Generate clean + dirty DLP test files (synthetic sensitive data) across PDF/PNG/JPEG/SVG/DOCX',
@@ -55,7 +56,7 @@ export function register(parent: Command): void {
     .option('--count <n>', 'Clean files per type', '1')
     .option('--out <dir>', 'Output base directory', './temp')
     .option('--techniques <list>', 'all or comma list of technique ids', 'all')
-    .option('--seed <n>', 'Seed for reproducible payloads')
+    .option('--seed <n>', 'Safe integer seed for reproducible payloads')
     .option('--output <format>', 'Summary format: pretty or json', 'pretty')
     .action(async (opts) => {
       let types: Format[];
@@ -64,36 +65,27 @@ export function register(parent: Command): void {
       } catch (err) {
         usageError(err instanceof Error ? err.message : String(err));
       }
-      const count = Number.parseInt(opts.count, 10);
-      if (!Number.isInteger(count) || count < 1) {
-        usageError('--count must be a positive integer');
+      const count = Number(opts.count);
+      if (!/^\d+$/.test(opts.count) || !Number.isSafeInteger(count) || count < 1) {
+        usageError('--count must be a positive safe integer');
       }
       const techniques =
         opts.techniques === 'all'
           ? 'all'
           : (opts.techniques as string).split(',').map((t) => t.trim());
-      const seed = opts.seed === undefined ? undefined : Number.parseInt(opts.seed, 10);
+      const seed = opts.seed === undefined ? undefined : Number(opts.seed);
+      if (seed !== undefined && (!/^-?\d+$/.test(opts.seed) || !Number.isSafeInteger(seed))) {
+        usageError('--seed must be a safe integer');
+      }
 
       try {
+        // Commander can consume --output at the root even after the subcommand.
+        // Resolve the same explicit/global/config precedence as other CLI commands,
+        // before loading native dependencies or creating any files.
+        const output = await resolveOutput(command, opts, { allowed: ['pretty', 'json'] });
         const generateCorpus = await loadGenerateCorpus();
         const summary = await generateCorpus({ types, count, out: opts.out, techniques, seed });
-
-        if (opts.output === 'json') {
-          console.log(JSON.stringify(summary, null, 2));
-          return;
-        }
-
-        ui.header('DLP Test-File Generation');
-        ui.keyValue([
-          ['Output', summary.out],
-          ['Seed', summary.seed],
-          ['Clean', summary.clean],
-          ['Dirty', summary.dirty],
-          ['Manifest', summary.manifestPath],
-        ]);
-        for (const [fmt, counts] of Object.entries(summary.byFormat)) {
-          ui.dim(`${fmt.padEnd(5)} clean=${counts.clean} dirty=${counts.dirty}`);
-        }
+        renderGenerateSummary(summary, output);
       } catch (err) {
         fail(err);
       }

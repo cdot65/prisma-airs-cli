@@ -4,6 +4,14 @@ title: Data Dictionaries
 
 # Data Dictionaries
 
+:::tip[Live creation verified — September 11, 2026]
+Custom dictionary creation works with the SCM region display name, such as `United States`.
+The earlier detail-free HTTP 400 was reproduced with region codes (`GLOBAL`, `us-west-2`);
+it was not evidence of a missing entitlement. The SDK's existing multipart `json` Blob plus
+`file` upload works without classification or tags. See the [transfer acceptance log](transfer.md)
+for prod → dev round-trip evidence.
+:::
+
 Manage Dictionaries on the DLP service. Dictionaries provide keyword-list-driven detection for DLP patterns. Create and replace use multipart upload (metadata + keyword file). Full CRUD is available: list, create, get, replace, patch, delete.
 
 ## Commands
@@ -19,12 +27,14 @@ Manage Dictionaries on the DLP service. Dictionaries provide keyword-list-driven
 
 ## list
 
-List all dictionaries with optional pagination.
+List tenant-created dictionaries with optional pagination. Predefined
+(PANW-shipped) dictionaries are hidden by default; add `--include-predefined` to
+show them.
 
 ```bash
-airs runtime dlp dictionaries list
-airs runtime dlp dictionaries list --limit 50 --offset 0 --output json
-airs runtime dlp dictionaries list --keywords  # Include keyword array in output
+airs-cli runtime dlp dictionaries list
+airs-cli runtime dlp dictionaries list --limit 50 --offset 0 --output json
+airs-cli runtime dlp dictionaries list --keywords  # Include keyword array in output
 ```
 
 **Output (`--output json`)** — a bare array of complete camelCase records.
@@ -59,10 +69,10 @@ echo
 EOF
 
 # Flag-based metadata (preferred)
-airs runtime dlp dictionaries create \
+airs-cli runtime dlp dictionaries create \
   --name "project-codenames" \
   --category Confidential \
-  --region us-west-2 \
+  --region "United States" \
   --description "Internal project codenames — phonetic alphabet" \
   --file codenames.txt \
   --include-keywords
@@ -72,19 +82,25 @@ Flag reference:
 
 | Flag | Notes |
 |------|-------|
-| `--file <path>` | **Required** — keyword file (newline-delimited) |
+| `--file <path>` | **Required** — TXT: one keyword per line; CSV: one header row followed by keywords |
 | `--name <s>` | Dictionary name |
 | `--category <s>` | `Academic`, `Confidential`, `Employment`, `Financial`, `Government`, `Healthcare`, `Legal`, `Marketing`, `Source Code` |
-| `--region <s>` | Region (e.g. `us-west-2`, `GLOBAL`) |
+| `--region <s>` | Exact SCM region display name, e.g. `United States`; region codes are not equivalent |
 | `--description <s>` | Optional |
-| `--classification <s>` | Tag value (becomes `tags.classification`) |
+| `--classification <s>` | Legacy top-level metadata field; server support unverified. Does not become `tags.classification`; not required for creation |
 | `--metadata-file <path>` | JSON metadata file (overrides flat flags) |
 | `--include-keywords` | Echo parsed `keywords[]` in response |
 
 **Output (`--output json`)** — curated ack `{action: "created", id, name, type, status, version}`. Add `--include-keywords` to attach the parsed keyword list to the underlying SDK response (visible via `get <id> --keywords --output json` after create).
 
-:::warning[Known upstream issue (2026-05-24)]
-The DLP API currently returns generic HTTP 400 on `POST /v2/api/dictionaries` against live tenants. The CLI builds a correctly-formed multipart request — reproducible failure is server-side. Tracked in [cdot65/prisma-airs-sdk#162](https://github.com/cdot65/prisma-airs-sdk/issues/162) / [cdot65/prisma-airs-cli#80](https://github.com/cdot65/prisma-airs-cli/issues/80).
+:::note[Dictionary validation errors]
+API failures exit **1**. Safe problem-details fields are shown when available, for example
+`originalFileName: must not be blank`. A detail-free HTTP 400 includes a reminder to check
+the SCM region display name; it does not assert a license or entitlement problem.
+Invalid flags and malformed metadata JSON exit **2** before upload. Error output never
+includes keyword file content or rejected payload values. With `--debug`, DLP logs retain
+HTTP methods, URLs, status codes, timing, and redacted headers while omitting all request and
+response bodies. `PANW_AI_SEC_DEBUG_BODY` is disabled for DLP commands as well.
 :::
 
 ## get
@@ -92,9 +108,9 @@ The DLP API currently returns generic HTTP 400 on `POST /v2/api/dictionaries` ag
 Retrieve a single dictionary by ID.
 
 ```bash
-airs runtime dlp dictionaries get 6901...
-airs runtime dlp dictionaries get 6901... --output json
-airs runtime dlp dictionaries get 6901... --keywords  # Include keyword array
+airs-cli runtime dlp dictionaries get 6901...
+airs-cli runtime dlp dictionaries get 6901... --output json
+airs-cli runtime dlp dictionaries get 6901... --keywords  # Include keyword array
 ```
 
 **Output** — full dictionary object:
@@ -135,10 +151,10 @@ Note `dictionary_metadata.number_of_keywords` reflects the canonical server-side
 Full multipart replace of metadata + keyword file. Same flag set as `create`. The API returns 200+body in some regions, 204+empty in others — the CLI handles both.
 
 ```bash
-airs runtime dlp dictionaries replace 6901... \
+airs-cli runtime dlp dictionaries replace 6901... \
   --name "project-codenames" \
   --category Confidential \
-  --region us-west-2 \
+  --region "United States" \
   --description "Internal project codenames — updated" \
   --file codenames-v2.txt \
   --output json
@@ -152,7 +168,7 @@ JSON Merge Patch. Required fields even on patch: `category`, `name`, `original_f
 
 ```bash
 # Rename and clear description
-airs runtime dlp dictionaries patch 6901... \
+airs-cli runtime dlp dictionaries patch 6901... \
   --set name='"project-codenames-v2"' \
   --set category='"Confidential"' \
   --set original_file_name='"codenames.txt"' \
@@ -160,7 +176,7 @@ airs runtime dlp dictionaries patch 6901... \
   --output json
 
 # Or via --body-file for arbitrary metadata
-airs runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output json
+airs-cli runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output json
 ```
 
 `--body-file` is mutually exclusive with `--set/--clear`. Keywords are not affected by PATCH — use REPLACE to change the keyword file.
@@ -172,7 +188,7 @@ airs runtime dlp dictionaries patch 6901... --body-file dict-patch.json --output
 Delete a dictionary.
 
 ```bash
-airs runtime dlp dictionaries delete 6901...
+airs-cli runtime dlp dictionaries delete 6901...
 ```
 
 **Exit code** — 0 on success, 1 on error.
@@ -181,7 +197,7 @@ airs runtime dlp dictionaries delete 6901...
 
 - **Multipart upload**: CREATE and REPLACE require two files: metadata (JSON) and keyword file (plain text, newline-delimited). The CLI combines them into a multipart body; do not set `Content-Type` manually.
 - **200 vs 204 on replace**: The DLP API may return 200+body or 204+empty depending on region/configuration. The replace command handles both. After replace, always re-fetch via `get --keywords` to canonically observe the updated state.
-- **Keyword file format**: Keywords must be newline-delimited. Trailing newline is optional but recommended. Empty lines are typically ignored server-side.
+- **Keyword file format**: For TXT, put one keyword on each line. For CSV, include a header row followed by one keyword per line: the service treats the first row as a header and does not store it as a keyword. The live CSV parser preserves literal quote characters; do not apply CSV quoting or escaping to plain keyword rows. Comma-containing CSV keywords were rejected by the live API. Live probes on September 11 preserved all three TXT keywords but dropped the first keyword of a headerless CSV. Re-fetch with `get <id> --keywords --output json` to verify the stored keyword list after upload.
 - **Category values**: Valid categories are `Academic`, `Confidential`, `Employment`, `Financial`, `Government`, `Healthcare`, `Legal`, `Marketing`, `Source Code` (note the space in the last one).
 - **Patch vs Replace**: Use PATCH to update metadata only (name, description, is_case_sensitive). Use REPLACE if you need to change the keyword file or region.
 

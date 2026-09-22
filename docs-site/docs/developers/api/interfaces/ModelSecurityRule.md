@@ -1,6 +1,6 @@
 # Interface: ModelSecurityRule
 
-Defined in: src/airs/types.ts:768
+Defined in: src/airs/types.ts:772
 
 Normalized security rule.
 
@@ -10,7 +10,7 @@ Normalized security rule.
 
 > **compatibleSources**: `string`[]
 
-Defined in: src/airs/types.ts:773
+Defined in: src/airs/types.ts:777
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:773
 
 > **constantValues**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:781
+Defined in: src/airs/types.ts:785
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:781
 
 > **defaultState**: `string`
 
-Defined in: src/airs/types.ts:774
+Defined in: src/airs/types.ts:778
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:774
 
 > **defaultValues**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:782
+Defined in: src/airs/types.ts:786
 
 ***
 
@@ -42,7 +42,7 @@ Defined in: src/airs/types.ts:782
 
 > **description**: `string`
 
-Defined in: src/airs/types.ts:771
+Defined in: src/airs/types.ts:775
 
 ***
 
@@ -50,7 +50,7 @@ Defined in: src/airs/types.ts:771
 
 > **editableFields**: [`ModelSecurityRuleEditableField`](ModelSecurityRuleEditableField.md)[]
 
-Defined in: src/airs/types.ts:780
+Defined in: src/airs/types.ts:784
 
 ***
 
@@ -58,7 +58,7 @@ Defined in: src/airs/types.ts:780
 
 > **name**: `string`
 
-Defined in: src/airs/types.ts:770
+Defined in: src/airs/types.ts:774
 
 ***
 
@@ -66,7 +66,7 @@ Defined in: src/airs/types.ts:770
 
 > **remediation**: `object`
 
-Defined in: src/airs/types.ts:775
+Defined in: src/airs/types.ts:779
 
 #### description
 
@@ -86,7 +86,7 @@ Defined in: src/airs/types.ts:775
 
 > **ruleType**: `string`
 
-Defined in: src/airs/types.ts:772
+Defined in: src/airs/types.ts:776
 
 ***
 
@@ -94,4 +94,4 @@ Defined in: src/airs/types.ts:772
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:769
+Defined in: src/airs/types.ts:773

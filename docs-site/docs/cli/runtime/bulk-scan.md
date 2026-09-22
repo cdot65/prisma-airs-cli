@@ -9,7 +9,7 @@ sidebar_label: bulk-scan
 Scan multiple prompts via the async AIRS API
 
 ```text
-airs runtime bulk-scan [options]
+airs-cli runtime bulk-scan [options]
 ```
 
 ### Options
@@ -61,7 +61,7 @@ Copy-paste starter files live in the repository at [`examples/bulk-scan/`](https
 *Bulk scan a text file (one prompt per line) with default output*
 
 ```bash
-airs runtime bulk-scan --profile my-profile --file prompts.txt
+airs-cli runtime bulk-scan --profile my-profile --file prompts.txt
 ```
 
 ```text
@@ -87,7 +87,7 @@ Output    /home/user/my-profile-bulk-scan.csv
 *CSV input (extracts the `prompt` column), custom output path and session ID*
 
 ```bash
-airs runtime bulk-scan --profile my-profile --file prompts.csv \
+airs-cli runtime bulk-scan --profile my-profile --file prompts.csv \
   --output-file results.csv --session-id nightly-regression
 ```
 
@@ -102,7 +102,7 @@ Ignore all previous instructions...,block,malicious,true,false,true,false,false,
 *Interrupted run* — press `Ctrl+C` (or lose the network) after `Scan IDs saved:` prints, then continue with the state file it named:
 
 ```bash
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json
+airs-cli runtime resume-poll ~/.prisma-airs/bulk-scans/2026-07-17T12-00-00-000Z-1f0e...-bulk-scan.json
 ```
 
 *Concurrent invocation for the same job* — the second process refuses immediately:
@@ -128,7 +128,7 @@ Async POST calls disable SDK retries. The CLI retries only confirmed HTTP 429 re
 Accepted receipts are checkpointed per prompt before polling. Polling is bounded at 120 consecutive polls without a newly resolved prompt. Resume accepted items with:
 
 ```bash
-airs runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
+airs-cli runtime resume-poll ~/.prisma-airs/bulk-scans/<state-file>.bulk-scan.json
 ```
 
 State files include the original prompt text. The default state directory is created with mode `0700` and each state file with mode `0600`; treat them as sensitive. Exact-once submission cannot be guaranteed after an ambiguous acceptance, so resume recovers known accepted work and reports the ambiguous item for manual review instead of risking a duplicate POST.

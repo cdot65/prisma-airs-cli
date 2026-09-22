@@ -1,6 +1,6 @@
 # Interface: RedTeamAdapterValidateRequest
 
-Defined in: src/airs/types.ts:1524
+Defined in: src/airs/types.ts:1581
 
 ## Properties
 
@@ -8,7 +8,7 @@ Defined in: src/airs/types.ts:1524
 
 > `optional` **adapterUuid?**: `string`
 
-Defined in: src/airs/types.ts:1530
+Defined in: src/airs/types.ts:1587
 
 Resolve redacted/null variable values from this stored adapter before the run.
 
@@ -18,7 +18,7 @@ Resolve redacted/null variable values from this stored adapter before the run.
 
 > **networkBrokerChannelUuid**: `string`
 
-Defined in: src/airs/types.ts:1526
+Defined in: src/airs/types.ts:1583
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:1526
 
 > **prompt**: `string`
 
-Defined in: src/airs/types.ts:1527
+Defined in: src/airs/types.ts:1584
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:1527
 
 > **scriptB64**: `string`
 
-Defined in: src/airs/types.ts:1525
+Defined in: src/airs/types.ts:1582
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: src/airs/types.ts:1525
 
 > `optional` **variables?**: [`RedTeamAdapterVar`](RedTeamAdapterVar.md)[]
 
-Defined in: src/airs/types.ts:1528
+Defined in: src/airs/types.ts:1585

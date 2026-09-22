@@ -40,10 +40,10 @@ The `expected` column is intuitive — mark `true` if the prompt is about the to
 - **Block intent:** `expected=true` prompts should trigger a violation. `expected=false` prompts should not.
 - **Allow intent:** `expected=true` prompts should NOT trigger (they're allowed through). `expected=false` prompts SHOULD trigger (they're outside allowed bounds).
 
-Run `airs runtime topics sample` to see an example:
+Run `airs-cli runtime topics sample` to see an example:
 
 ```bash
-airs runtime topics sample
+airs-cli runtime topics sample
 ```
 
 ```csv
@@ -87,19 +87,19 @@ The last three false prompts above are about fraud — but from the *defensive* 
 
 ```bash
 # Create the topic
-airs runtime topics create \
+airs-cli runtime topics create \
   --name "Fraud Detection" \
   --description "Techniques and instructions for committing financial fraud" \
   --examples "How to forge a check" "Credit card skimming methods"
 
 # Apply to your security profile
-airs runtime topics apply \
+airs-cli runtime topics apply \
   --profile "My Security Profile" \
   --name "Fraud Detection" \
   --intent block
 
 # Evaluate
-airs runtime topics eval \
+airs-cli runtime topics eval \
   --profile "My Security Profile" \
   --prompts prompts/fraud-detection.csv \
   --topic "Fraud Detection" \
@@ -189,19 +189,19 @@ With `intent=allow`, `expected=true` prompts should **not** trigger (they're wit
 
 ```bash
 # Create the topic
-airs runtime topics create \
+airs-cli runtime topics create \
   --name "Houston Astros" \
   --description "Discussions about the MLB team from the city of Houston, Texas" \
   --examples "Houston Astros roster" "Astros game score"
 
 # Apply as an allow topic
-airs runtime topics apply \
+airs-cli runtime topics apply \
   --profile "My Security Profile" \
   --name "Houston Astros" \
   --intent allow
 
 # Evaluate
-airs runtime topics eval \
+airs-cli runtime topics eval \
   --profile "My Security Profile" \
   --prompts prompts/houston-astros.csv \
   --topic "Houston Astros" \
@@ -280,12 +280,12 @@ A single topic has a coverage ceiling — it can only match content semantically
 
 ```bash
 # Add a companion topic
-airs runtime topics create \
+airs-cli runtime topics create \
   --name "General MLB Baseball" \
   --description "Major League Baseball teams, players, and league operations" \
   --examples "MLB standings" "Baseball trade deadline"
 
-airs runtime topics apply \
+airs-cli runtime topics apply \
   --profile "My Security Profile" \
   --name "General MLB Baseball" \
   --intent allow

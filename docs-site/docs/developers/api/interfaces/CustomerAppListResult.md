@@ -1,6 +1,6 @@
 # Interface: CustomerAppListResult
 
-Defined in: src/airs/types.ts:1133
+Defined in: src/airs/types.ts:1142
 
 Paginated customer app list.
 
@@ -10,7 +10,7 @@ Paginated customer app list.
 
 > **apps**: [`CustomerAppInfo`](CustomerAppInfo.md)[]
 
-Defined in: src/airs/types.ts:1134
+Defined in: src/airs/types.ts:1143
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: src/airs/types.ts:1134
 
 > `optional` **nextOffset?**: `number`
 
-Defined in: src/airs/types.ts:1135
+Defined in: src/airs/types.ts:1144

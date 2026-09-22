@@ -36,7 +36,7 @@ The eval command resolves whether each prompt should trigger from the combinatio
 - **block intent:** `expected=true` prompts should trigger (block matching content)
 - **allow intent:** `expected=true` prompts should NOT trigger (they're within allowed bounds)
 
-Run `airs runtime topics sample` to see an example CSV.
+Run `airs-cli runtime topics sample` to see an example CSV.
 
 The prompt set should include both:
 

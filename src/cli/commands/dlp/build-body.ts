@@ -116,36 +116,95 @@ export function buildFilteringProfileBody(opts: Opts): Record<string, unknown> {
   return body;
 }
 
-/**
- * Build a Data Profile request body. Supports the simple case: a single
- * expression_tree rule that ORs (or ANDs) named pattern IDs. Complex rule
- * trees fall back to --body-file.
- */
-export function buildProfileBody(opts: Opts): Record<string, unknown> {
+export interface ResolvedProfilePattern {
+  id: string;
+  name: string;
+  version: number;
+  technique: string;
+  confidenceLevels?: string[] | null;
+}
+
+export function validateProfileType(value: unknown): void {
+  // Live 2026-09-11: POST with profile_type basic returned advanced (transfer acceptance log).
+  if (value === 'basic') {
+    throw new Error(
+      'Basic profile writes are unsupported: the API returned advanced for basic requests. Use advanced or manage basic profiles in SCM.',
+    );
+  }
+  if (value !== undefined && value !== 'advanced') {
+    throw new Error('Profile type must be advanced');
+  }
+}
+
+export function validateProfileName(name: unknown): void {
+  if (typeof name !== 'string' || !name.trim()) {
+    throw new Error('Profile name is required and must be a nonblank string');
+  }
+  // Live 2026-09-11: 32-character name created profile 11995036; 33 returned HTTP 400.
+  // docs-site/docs/runtime/dlp/transfer.md records the identical-body boundary probe.
+  // The published SDK schema allows 64; preserve the stricter observed API limit here.
+  if (name.length > 32) throw new Error('Profile name must be at most 32 characters');
+}
+
+export function validateProfileFlags(opts: Opts): void {
   if (!opts.name) throw new Error('--name is required');
-  const profileType = opts.profileType ?? 'advanced';
+  validateProfileName(opts.name);
+  validateProfileType(opts.profileType);
+  if (
+    !['and', 'or', 'not', 'and_not', 'or_not'].includes((opts.combinator ?? 'or').toLowerCase())
+  ) {
+    throw new Error('--combinator must be one of and|or|not|and_not|or_not');
+  }
+  if (!['low', 'medium', 'high'].includes(opts.confidence ?? 'high')) {
+    throw new Error('--confidence must be low|medium|high');
+  }
+}
+
+/** Pure builder: references must already have been resolved by the command's GETs. */
+export function buildProfileBody(
+  opts: Opts,
+  patterns: ResolvedProfilePattern[] = [],
+): Record<string, unknown> {
+  validateProfileFlags(opts);
   const body: Record<string, unknown> = {
     name: opts.name,
-    profile_type: profileType,
+    profile_type: 'advanced',
   };
   if (opts.description != null) body.description = opts.description;
   if (opts.granular != null) body.is_granular_data_profile = !!opts.granular;
   if (opts.patternId?.length) {
-    const op = (opts.combinator ?? 'or').toLowerCase();
-    if (!['and', 'or', 'not', 'and_not', 'or_not'].includes(op)) {
-      throw new Error(`--combinator must be one of and|or|not|and_not|or_not (got '${op}')`);
-    }
+    const confidence = opts.confidence ?? 'high';
+    const leaves = opts.patternId.map((id: string) => {
+      const pattern = patterns.find((item) => item.id === id);
+      if (!pattern)
+        throw new Error('Every --pattern-id must resolve before building profile rules');
+      if (pattern.confidenceLevels?.length && !pattern.confidenceLevels.includes(confidence)) {
+        throw new Error('Requested confidence is not supported by every referenced pattern');
+      }
+      return {
+        rule_item: {
+          id: pattern.id,
+          name: pattern.name,
+          version: pattern.version,
+          detection_technique: pattern.technique,
+          confidence_level: confidence,
+          supported_confidence_levels: pattern.confidenceLevels?.length
+            ? [...pattern.confidenceLevels]
+            : [confidence],
+          match_type: 'include',
+          occurrence_operator_type: 'more_than_equal_to',
+          occurrence_count: 1,
+        },
+      };
+    });
+    // Live 2026-09-11 source profile 11995031: sub_expressions/rule_item round-trips;
+    // the old condition_pattern/data_pattern_id shape is not a supported detection leaf.
     body.detection_rules = [
       {
         rule_type: 'expression_tree',
         expression_tree: {
-          operator_type: op,
-          condition_pattern: opts.patternId.map((id: string) => ({
-            data_pattern_id: id,
-            confidence_level: opts.confidence ?? 'high',
-            occurrence_operator_type: 'any',
-            occurrence_count: 1,
-          })),
+          operator_type: (opts.combinator ?? 'or').toLowerCase(),
+          sub_expressions: leaves,
         },
       },
     ];

@@ -18,7 +18,7 @@ export function fail(err: unknown): never {
   console.error(chalk.red(`\n  ✗ Error: ${message}`));
   if (status !== undefined) {
     console.error(chalk.red(`    HTTP ${status}`));
-    console.error(chalk.dim('    Re-run with --debug to capture full API traffic.'));
+    console.error(chalk.dim('    Re-run with --debug to capture redacted API diagnostics.'));
   }
   console.error('');
   process.exit(1);
@@ -41,6 +41,8 @@ export const OUTPUT_FORMATS: readonly OutputFormat[] = [
 
 export interface ResolveOutputOptions {
   allowed?: readonly OutputFormat[];
+  /** Configuration recovery commands must work even when the active config is unreadable. */
+  ignoreConfig?: boolean;
 }
 
 export async function resolveOutput(
@@ -53,13 +55,9 @@ export async function resolveOutput(
   while (rootCommand.parent) rootCommand = rootCommand.parent;
   const globalIsExplicit = rootCommand.getOptionValueSource?.('output') === 'cli';
   const globalOutput = globalIsExplicit ? rootCommand.opts().output : undefined;
-  let configured: string | undefined;
-  try {
-    configured = (await loadConfig()).defaultOutput;
-  } catch (error) {
-    if (process.env.PANW_CLI_OUTPUT !== undefined) configured = process.env.PANW_CLI_OUTPUT;
-    else throw error;
-  }
+  // Only the selected tenant file can supply a default format; there is no
+  // environment fallback. Commands that must run without a tenant pass ignoreConfig.
+  const configured = resolution.ignoreConfig ? undefined : (await loadConfig()).defaultOutput;
   const candidate = String(
     localIsExplicit ? opts.output : (globalOutput ?? configured ?? 'pretty'),
   );

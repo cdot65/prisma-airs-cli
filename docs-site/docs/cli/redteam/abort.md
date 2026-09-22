@@ -9,7 +9,7 @@ sidebar_label: abort
 Abort a running scan
 
 ```text
-airs redteam abort [options] <jobId>
+airs-cli redteam abort [options] <jobId>
 ```
 
 ### Arguments
@@ -21,7 +21,7 @@ airs redteam abort [options] <jobId>
 *Abort a running scan (kicked above), then confirm via `status` that it moved to ABORTED*
 
 ```bash
-airs redteam abort 00000000-0000-0000-0000-000000000004
+airs-cli redteam abort 00000000-0000-0000-0000-000000000004
 ```
 
 ```text

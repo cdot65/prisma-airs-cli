@@ -21,14 +21,34 @@ describe('AI Gateway command tree', () => {
       'configs',
       'deployments',
       'guardrails',
+      'inference',
       'integrations',
       'mcp',
       'organisations',
       'plugins',
       'providers',
+      'report',
+      'scopes',
       'telemetry',
       'workspaces',
     ]);
+  });
+
+  it('exposes IAM scope primitives so each provisioning step can be run on its own', () => {
+    const scopes = requireCommand(gateway, 'scopes');
+    expect(scopes.commands.map((command) => command.name()).sort()).toEqual([
+      'bind',
+      'create',
+      'delete',
+      'get',
+      'list',
+    ]);
+    expect(requireCommand(scopes, 'delete').aliases()).toContain('rm');
+    const create = requireCommand(requireCommand(gateway, 'workspaces'), 'create');
+    const scopeName = create.options.find((option) => option.long === '--scope-name');
+    expect(scopeName?.required).toBe(true); // takes a value…
+    expect(scopeName?.mandatory).toBe(false); // …but is no longer a required flag
+    expect(create.options.some((option) => option.long === '--existing-scope')).toBe(true);
   });
 
   it('keeps workspace as a compatibility alias for canonical workspaces', () => {
@@ -79,7 +99,7 @@ describe('AI Gateway command tree', () => {
       requireCommand(gateway, 'integrations')
         .commands.map((command) => command.name())
         .sort(),
-    ).toEqual(['create', 'delete', 'get', 'list', 'models', 'update', 'workspaces']);
+    ).toEqual(['create', 'delete', 'get', 'list', 'models', 'providers', 'update', 'workspaces']);
     expect(
       requireCommand(gateway, 'deployments')
         .commands.map((command) => command.name())
@@ -92,10 +112,13 @@ describe('AI Gateway command tree', () => {
     ).toEqual([
       'cache',
       'cost',
+      'error-category-trends',
       'error-trends',
       'errors',
       'feedback',
+      'filter-boundaries',
       'group-by',
+      'grouped-errors',
       'latency',
       'logs',
       'requests',

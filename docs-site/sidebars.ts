@@ -14,7 +14,9 @@ const sidebars: SidebarsConfig = {
       label: 'Getting Started',
       items: [
         'getting-started/installation',
+        'getting-started/command-migration',
         'getting-started/configuration',
+        'cli/tenant',
         'getting-started/quick-start',
         'getting-started/exit-codes-and-output',
       ],
@@ -27,6 +29,10 @@ const sidebars: SidebarsConfig = {
         'runtime/overview',
         'runtime/scanning',
         'runtime/config-management',
+        'runtime/profile-transfer',
+        'runtime/profile-migration-workflow',
+        'runtime/prod-dev-migration',
+        'runtime/daily-report',
         {
           type: 'category',
           label: 'Guardrail Optimization',
@@ -47,6 +53,7 @@ const sidebars: SidebarsConfig = {
             'runtime/dlp/profiles',
             'runtime/dlp/dictionaries',
             'runtime/dlp/generate',
+            'runtime/dlp/transfer',
           ],
         },
       ],
@@ -67,8 +74,13 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'AI Gateway',
-      link: { type: 'doc', id: 'cli/aigateway/resources' },
-      items: ['cli/aigateway/workspaces', 'cli/aigateway/telemetry'],
+      items: [
+        'cli/aigateway/workflows',
+        'cli/aigateway/resources',
+        'cli/aigateway/inference',
+        'cli/aigateway/workspaces',
+        'cli/aigateway/telemetry',
+      ],
     },
     {
       type: 'category',
@@ -80,6 +92,11 @@ const sidebars: SidebarsConfig = {
         'model-security/scans',
         'model-security/labels',
       ],
+    },
+    {
+      type: 'category',
+      label: 'AgentGuard',
+      items: ['cli/agentguard/index'],
     },
     {
       type: 'category',

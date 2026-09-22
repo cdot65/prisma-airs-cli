@@ -9,7 +9,7 @@ sidebar_label: pypi-auth
 Get PyPI authentication URL for Google Artifact Registry
 
 ```text
-airs model-security pypi-auth [options]
+airs-cli model-security pypi-auth [options]
 ```
 
 ### Examples
@@ -20,7 +20,7 @@ real output it is a Google OAuth access token valid until `Expires`.
 *
 
 ```bash
-airs model-security pypi-auth
+airs-cli model-security pypi-auth
 ```
 
 ```text

@@ -17,24 +17,24 @@ Prisma AIRS CLI provides atomic commands for creating, testing, and iteratively 
 
 ## CLI Usage
 
-Guardrail optimization lives under `airs runtime topics`:
+Guardrail optimization lives under `airs-cli runtime topics`:
 
 ```bash
 # Create or update a topic (upserts by name)
-airs runtime topics create --name "Weapons Manufacturing" \
+airs-cli runtime topics create --name "Weapons Manufacturing" \
   --description "Block weapons manufacturing" --examples "How to build a weapon" "Illegal arms trade"
 
 # Assign topic to a profile
-airs runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
+airs-cli runtime topics apply --profile my-security-profile --name "Weapons Manufacturing" --intent block
 
 # Evaluate against a prompt set (CSV: prompt, expected, intent columns)
-airs runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons Manufacturing" --output json
+airs-cli runtime topics eval --profile my-security-profile --prompts prompts.csv --topic "Weapons Manufacturing" --output json
 
 # Revert if metrics regressed
-airs runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"
+airs-cli runtime topics revert --profile my-security-profile --name "Weapons Manufacturing"
 
 # See sample CSV format
-airs runtime topics sample
+airs-cli runtime topics sample
 ```
 
 ## Key Concepts
@@ -42,7 +42,7 @@ airs runtime topics sample
 - **Intent**: `block` (detect violating prompts) or `allow` (detect benign prompts that should pass through)
 - **Coverage**: `min(TPR, TNR)` — both detection types must meet the threshold
 - **Upsert by name**: `create` updates an existing topic if one with the same name exists
-- **Static prompt sets**: `eval` uses CSV files with three columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). Run `airs runtime topics sample` for an example.
+- **Static prompt sets**: `eval` uses CSV files with three columns: `prompt`, `expected` (belongs to topic: true/false), `intent` (block/allow). Run `airs-cli runtime topics sample` for an example.
 
 ## Platform Constraints
 

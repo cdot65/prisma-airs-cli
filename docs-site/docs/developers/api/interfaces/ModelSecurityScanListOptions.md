@@ -1,16 +1,24 @@
 # Interface: ModelSecurityScanListOptions
 
-Defined in: src/airs/types.ts:848
+Defined in: src/airs/types.ts:852
 
 Filter options for listing scans.
 
 ## Properties
 
+### endTime?
+
+> `optional` **endTime?**: `string`
+
+Defined in: src/airs/types.ts:855
+
+***
+
 ### evalOutcome?
 
 > `optional` **evalOutcome?**: `string`
 
-Defined in: src/airs/types.ts:849
+Defined in: src/airs/types.ts:856
 
 ***
 
@@ -18,7 +26,15 @@ Defined in: src/airs/types.ts:849
 
 > `optional` **limit?**: `number`
 
-Defined in: src/airs/types.ts:854
+Defined in: src/airs/types.ts:861
+
+***
+
+### modelVersionUuid?
+
+> `optional` **modelVersionUuid?**: `string`
+
+Defined in: src/airs/types.ts:853
 
 ***
 
@@ -26,7 +42,7 @@ Defined in: src/airs/types.ts:854
 
 > `optional` **scanOrigin?**: `string`
 
-Defined in: src/airs/types.ts:851
+Defined in: src/airs/types.ts:858
 
 ***
 
@@ -34,7 +50,7 @@ Defined in: src/airs/types.ts:851
 
 > `optional` **search?**: `string`
 
-Defined in: src/airs/types.ts:852
+Defined in: src/airs/types.ts:859
 
 ***
 
@@ -42,7 +58,7 @@ Defined in: src/airs/types.ts:852
 
 > `optional` **skip?**: `number`
 
-Defined in: src/airs/types.ts:853
+Defined in: src/airs/types.ts:860
 
 ***
 
@@ -50,4 +66,12 @@ Defined in: src/airs/types.ts:853
 
 > `optional` **sourceType?**: `string`
 
-Defined in: src/airs/types.ts:850
+Defined in: src/airs/types.ts:857
+
+***
+
+### startTime?
+
+> `optional` **startTime?**: `string`
+
+Defined in: src/airs/types.ts:854

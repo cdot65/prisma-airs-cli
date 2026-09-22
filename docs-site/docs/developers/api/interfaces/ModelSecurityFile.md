@@ -1,6 +1,6 @@
 # Interface: ModelSecurityFile
 
-Defined in: src/airs/types.ts:881
+Defined in: src/airs/types.ts:888
 
 Normalized scanned file from a scan.
 
@@ -10,7 +10,7 @@ Normalized scanned file from a scan.
 
 > **formats**: `string`[]
 
-Defined in: src/airs/types.ts:885
+Defined in: src/airs/types.ts:892
 
 ***
 
@@ -18,7 +18,7 @@ Defined in: src/airs/types.ts:885
 
 > **path**: `string`
 
-Defined in: src/airs/types.ts:883
+Defined in: src/airs/types.ts:890
 
 ***
 
@@ -26,7 +26,7 @@ Defined in: src/airs/types.ts:883
 
 > **result**: `string`
 
-Defined in: src/airs/types.ts:886
+Defined in: src/airs/types.ts:893
 
 ***
 
@@ -34,7 +34,7 @@ Defined in: src/airs/types.ts:886
 
 > **type**: `string`
 
-Defined in: src/airs/types.ts:884
+Defined in: src/airs/types.ts:891
 
 ***
 
@@ -42,4 +42,4 @@ Defined in: src/airs/types.ts:884
 
 > **uuid**: `string`
 
-Defined in: src/airs/types.ts:882
+Defined in: src/airs/types.ts:889
