@@ -49,6 +49,10 @@ airs runtime profiles list
 If you're testing an unpublished change, run `pnpm install && pnpm run build && npm link` from the repo root, then use `airs` as normal.
 :::
 
+:::tip[Testing the published build in a clean container (macOS)]
+To smoke-test exactly what npm users get, without touching your host install, run `pnpm container:start && pnpm container:npm`. This opens a throwaway `node:22-alpine` shell with `@cdot65/prisma-airs-cli@latest` installed and your `~/.local/state/prisma-airs` state mounted. Set `AIRS_CLI_VERSION=x.y.z` to pin a version. See [Local Setup](./local-setup.md#container-sandbox-macos) for details.
+:::
+
 ---
 
 ## Step 2 — Runtime Security
