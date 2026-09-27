@@ -26,7 +26,7 @@ airs-cli redteam judge [options] [scanFile]
 
 ## Harness environment credentials
 
-CLI **7.1.5** supports the harness's automatic credential handoff and uses the
+CLI **7.1.5 and later** supports the harness's automatic credential handoff and uses the
 official TypeSafe JavaScript SDK. Harness **0.1.2** bundles this version.
 The new skill entrypoint runs under Node and delegates to this bundled CLI;
 Python and a separate SDK installation are not required.
@@ -60,8 +60,9 @@ unlock the native store before replacing the key. Repeatedly saving the same key
 does not repair a process permission boundary.
 
 This correction is included in **0.1.2**. Earlier alpha.4
-does not contain the revised skill instructions. The CLI implementation remains
-7.1.5; upgrading the standalone CLI alone does not update the harness skill.
+does not contain the revised skill instructions. The credential handoff remains supported in CLI **7.2.0**, bundled in the
+**0.1.3-alpha.7.mcp.1** Mac preview. Upgrading the standalone CLI alone does not
+update the harness skill.
 
 The installed entrypoint selects the environment that owns the skill, even if
 the saved default changes. Its native helper supplies the saved TypeSafe key only
@@ -289,3 +290,13 @@ A recording made against extracted inner text will fail the response-hash check.
 `unrelated_or_error` is a model disposition, not a disagreement flag or provider
 error. Inspect dispositions before committing to a full paid run; no zero-count
 or ASR accuracy guarantee is made.
+
+### Product doctor does not inspect the Harness saved key
+
+`airs cli doctor` checks the selected product tenant; `/typesafe` checks the
+selected Harness environment. A missing TypeSafe key in the former does not
+contradict a saved key in the latter. Invoke the installed skill through its Node
+entrypoint so its environment credential helper runs. A direct standalone judge
+command does not use that helper. Do not export or copy secrets as a workaround.
+Only a fresh approved probe verifies the complete live judging path; a dry run,
+saved-key status or replay does not. A probe sends scan data and can incur charges.

@@ -68,3 +68,18 @@ Inside Harness, use `airs cli ...` in the terminal or the absolute managed CLI
 path provided to agent tools. `/config` and `/model` select conversation inference
 routing; they do not change product tenants or admin policy scope. Native SSO,
 MCP authorization, and the approved Jev credential handoff are preserved.
+
+## Validate from the Harness
+
+Inside an agent shell, use the absolute `"$AIRS_MANAGED_CLI"` executable. In your
+normal terminal, use `airs cli` for the same bundled implementation:
+
+```bash
+airs cli aigateway admin-guardrails list --page-size 10 --current-page 0 --output json
+```
+
+This read uses management OAuth for the selected product tenant. If OAuth fails
+with `fetch failed`, follow the [network and sandbox checks](../../getting-started/configuration.md#oauth-fetch-failures-inside-an-agent)
+before changing credentials. Command help and a matching version verify installed
+capabilities, not live authorization. Record the command, execution context and
+sanitized result separately from build or fixture acceptance.
