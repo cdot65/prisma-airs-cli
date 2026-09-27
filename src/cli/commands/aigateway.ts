@@ -23,6 +23,7 @@ import {
   ui,
   usageError,
 } from '../renderer/index.js';
+import { registerAdminGuardrails } from './aigateway/admin-guardrails.js';
 import { registerAiGatewayInference } from './aigateway/inference.js';
 import { registerAiGatewayInventory } from './aigateway/inventory.js';
 import { parsePositiveInteger, registerAiGatewayTelemetryReads } from './aigateway/telemetry.js';
@@ -131,6 +132,7 @@ export function registerAiGatewayCommand(program: Command): void {
     .action(() => aigateway.outputHelp());
 
   registerAiGatewayInventory(aigateway);
+  registerAdminGuardrails(aigateway);
   registerAiGatewayReportCommand(aigateway);
   registerAiGatewayInference(aigateway);
 

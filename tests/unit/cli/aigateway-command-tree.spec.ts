@@ -16,6 +16,7 @@ describe('AI Gateway command tree', () => {
 
   it('exposes the canonical resource groups alphabetically', () => {
     expect(gateway.commands.map((command) => command.name()).sort()).toEqual([
+      'admin-guardrails',
       'api-keys',
       'audit-logs',
       'configs',

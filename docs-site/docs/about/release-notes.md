@@ -1,7 +1,8 @@
 # Release Notes
 
-Public npm channels as of September 20, 2026: **`latest` = 7.0.1**, **`next` = 7.1.5**.
-The 7.1 features are available with `npm install -g @cdot65/prisma-airs-cli@7.1.5`.
+Public npm channels for this release: **`latest` = 7.0.1**, **`next` = 7.2.0**.
+Install the Gateway alignment with `npm install -g @cdot65/prisma-airs-cli@7.2.0`;
+the stable Harness remains pinned to CLI 7.1.5.
 See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
 included in 7.1.2; they do not imply those intermediate versions were published to public npm.
@@ -11,6 +12,13 @@ The matching stable harness **0.1.2** is published under `latest` at
 The skill requests per-command approval for live credential-store and network
 access. This repairs the shell execution boundary; the CLI version remains 7.1.5.
 See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-airs-harness).
+
+## v7.2.0 (2026-09-27) — Official Gateway contract alignment
+
+- Adds `aigateway admin-guardrails` for explicit organisation policy CRUD, pagination and MCP mappings using SDK 0.34.0.
+- Preserves workspace guardrails, deployed user/service key routes, management OAuth and the Harness Jev credential handoff.
+- Admin list passed a read-only live check; admin mutations are specification-tested. The documented combined key collection remains denied on the tested tenant.
+- See [scope, commands and verification limits](../cli/aigateway/official-spec-alignment.md). This release is intended for the `next` channel with the matching Mac Harness preview; it does not promote the stable Harness.
 
 ## v7.1.5 (2026-09-20) — Harness judge credential handoff
 
