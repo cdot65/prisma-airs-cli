@@ -2,18 +2,38 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-// Only migration prereleases are authorized; stable promotion remains separate.
+// Stable publication requires a separate, explicitly published Forgejo release.
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 assert.match(pkg.name, /^@cdot65\/prisma-airs-(sdk|cli)$/);
-assert.match(pkg.version, /^\d+\.\d+\.\d+-forgejo\.\d+$/);
+const stable = process.env.AIRS_RELEASE_MODE === 'stable';
+if (stable) {
+  assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
+  assert.equal(process.env.GITHUB_EVENT_NAME, 'release');
+  const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+  assert.equal(event.action, 'published');
+  assert.equal(event.release.tag_name, `v${pkg.version}`);
+  assert.equal(event.release.draft, false);
+  assert.equal(event.release.prerelease, false);
+} else {
+  assert.match(pkg.version, /^\d+\.\d+\.\d+-forgejo\.\d+$/);
+}
 assert.equal(process.env.GITHUB_REF ?? process.env.FORGEJO_REF, `refs/tags/v${pkg.version}`);
 const registry = 'https://registry.npmjs.org';
-const channel = 'forgejo-preview';
+const channel = stable ? 'latest' : 'forgejo-preview';
 const url = `${registry}/${encodeURIComponent(pkg.name)}`;
 const response = await fetch(url);
 assert.equal(response.status, 200, 'Cannot snapshot existing registry state');
 const before = await response.json();
 assert.ok(!before.versions[pkg.version], 'Version already exists; never overwrite');
+if (stable && before['dist-tags'].latest) {
+  const oldParts = before['dist-tags'].latest.split('.').map(Number);
+  const newParts = pkg.version.split('.').map(Number);
+  assert.ok(oldParts.every(Number.isInteger), 'Unexpected existing latest version');
+  const difference = newParts
+    .map((value, index) => value - oldParts[index])
+    .find((value) => value !== 0);
+  assert.ok(difference > 0, 'Stable publication cannot roll back latest');
+}
 const result = spawnSync(
   'npm',
   ['publish', '--ignore-scripts', '--access', 'public', '--tag', channel, '--registry', registry],
@@ -38,4 +58,4 @@ writeFileSync(
   'release-receipt.json',
   `${JSON.stringify({ name: pkg.name, version: pkg.version, before: before['dist-tags'], after: after['dist-tags'], integrity: after.versions[pkg.version].dist.integrity }, null, 2)}\n`,
 );
-console.log('Prerelease published; all pre-existing non-preview tags preserved.');
+console.log('Publication verified; all unrelated dist-tags preserved.');
