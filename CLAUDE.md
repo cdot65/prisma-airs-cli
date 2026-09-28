@@ -28,6 +28,11 @@ pnpm test:e2e              # E2E tests (requires real creds, opt-in)
 pnpm run docker:build      # Build local image (-f docker/Dockerfile)
 pnpm run docker:run        # Run (mounts ~/.prisma-airs)
 pnpm run container:dev     # Apple-container alpine shell with repo mounted at /work (interactive)
+pnpm run container:start   # Start the Apple container system service (required before any container:* run)
+pnpm run container:stop    # Stop the service
+pnpm run container:status  # Show service status
+pnpm run container:npm     # Ephemeral node:22-alpine shell with the *published* CLI installed from npm
+                           #   (AIRS_CLI_VERSION=x.y.z pins a version; mounts ~/.local/state/prisma-airs, sets XDG_STATE_HOME)
 
 # Lint & Format (Biome config lives at config/biome.json)
 pnpm run lint              # Biome check  --config-path config

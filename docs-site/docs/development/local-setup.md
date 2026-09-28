@@ -65,6 +65,33 @@ After making code changes, re-run `pnpm run build` for the linked `airs-cli` com
 | `pnpm run format` | Format with Biome |
 | `pnpm run format:check` | Check formatting (no write) |
 | `pnpm tsc --noEmit` | Type-check |
+| `pnpm container:dev` | Interactive `node:20-alpine` shell (Apple `container`) with the repo mounted at `/work` |
+| `pnpm container:npm` | Interactive `node:22-alpine` shell with the **published** CLI installed from npm |
+| `pnpm container:start` / `stop` / `status` | Manage the Apple `container` system service |
+
+## Container Sandbox (macOS)
+
+The `container:*` scripts use Apple's [`container`](https://github.com/apple/container) runtime to give you a throwaway Linux environment on macOS. No Docker Desktop required.
+
+```bash
+pnpm container:start   # start the system service once per boot
+pnpm container:npm     # shell with the latest published CLI installed
+pnpm container:stop    # stop the service when you're done
+```
+
+`container:npm` installs `@cdot65/prisma-airs-cli@latest` inside a fresh `node:22-alpine` container and drops you into `sh`. The container is removed on exit. To test a specific published version instead:
+
+```bash
+AIRS_CLI_VERSION=4.1.0 pnpm container:npm
+```
+
+The script bind-mounts `~/.local/state/prisma-airs` at the same path inside the container and sets `XDG_STATE_HOME=~/.local/state` so the CLI resolves your host tenant state rather than `/root/.local/state`. Credentials are not mounted; pass them as `PANW_*` environment variables inside the shell, or export them before running the script and add `-e` flags as needed.
+
+`container:dev` is the source-checkout equivalent: it mounts the repo at `/work` in a `node:20-alpine` shell for testing unpublished changes on Linux.
+
+:::note[Service not running]
+If you see `XPC connection error: Connection invalid`, the system service is stopped. Run `pnpm container:start` and retry.
+:::
 
 ## Data Directories
 
