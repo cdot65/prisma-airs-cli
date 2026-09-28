@@ -2,6 +2,12 @@ name: Publish private CLI container
 on:
   push:
     tags: ['v*-forgejo.*']
+  workflow_dispatch:
+  release:
+    types: [published]
+concurrency:
+  group: private-container-release
+  cancel-in-progress: false
 jobs:
   container:
     runs-on: ubuntu-latest
@@ -16,14 +22,11 @@ jobs:
         with:
           node-version: '24'
       - run: git merge-base --is-ancestor HEAD origin/main
-      - name: Validate exact prerelease tag
-        run: |
-          node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const p=JSON.parse(fs.readFileSync("package.json")); assert.match(p.version,/^\d+\.\d+\.\d+-forgejo\.\d+$/); assert.equal(process.env.GITHUB_REF,`refs/tags/v${p.version}`);'
-          echo "IMAGE=registry.cdot.io/prisma-airs/prisma-airs-cli:$(node -p 'require("./package.json").version')" >> "$GITHUB_ENV"
+      - name: Validate exact release source
+        run: node scripts/release/container-policy.mjs
       - run: pnpm install --frozen-lockfile --store-dir /tmp/airs-pnpm-store
       - run: pnpm audit:prod
       - run: pnpm test:release
-      - uses: https://github.com/docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
       - uses: https://github.com/docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
       - uses: https://github.com/docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
@@ -48,9 +51,11 @@ jobs:
         env:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          for platform in linux/amd64 linux/arm64; do
-            docker run --rm --network none --platform "$platform" --entrypoint node \
-              --mount "type=bind,source=$PWD/.github/scripts,target=/verification,readonly" \
-              "registry.cdot.io/prisma-airs/prisma-airs-cli@$IMAGE_DIGEST" \
-              /verification/verify-dlp-consumer.mjs /app/dist/cli/index.js
-          done
+          # BuildKit supplies its userspace emulator; Talos needs no binfmt mount.
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            --build-arg "IMAGE=registry.cdot.io/prisma-airs/prisma-airs-cli@$IMAGE_DIGEST" \
+            --file docker/verify.Dockerfile --progress plain .
+      - name: Promote stable aliases only after digest verification
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: node scripts/release/container-policy.mjs promote

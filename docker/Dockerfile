@@ -12,7 +12,7 @@ COPY src/ src/
 RUN pnpm run build
 
 FROM node:20-alpine
-LABEL org.opencontainers.image.source=https://github.com/cdot65/prisma-airs-cli
+LABEL org.opencontainers.image.source=https://git.cdot.io/cdot/prisma-airs-cli
 LABEL org.opencontainers.image.licenses=Apache-2.0
 
 RUN apk add --no-cache fontconfig ttf-dejavu

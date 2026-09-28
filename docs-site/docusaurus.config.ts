@@ -102,8 +102,8 @@ const config: Config = {
           label: 'Developers',
         },
         {
-          href: 'https://github.com/cdot65/prisma-airs-cli',
-          label: 'GitHub',
+          href: 'https://git.cdot.io/cdot/prisma-airs-cli',
+          label: 'Forgejo',
           position: 'right',
         },
       ],
@@ -123,7 +123,7 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            { label: 'GitHub', href: 'https://github.com/cdot65/prisma-airs-cli' },
+            { label: 'Forgejo', href: 'https://git.cdot.io/cdot/prisma-airs-cli' },
             { label: 'npm', href: 'https://www.npmjs.com/package/@cdot65/prisma-airs-cli' },
           ],
         },
