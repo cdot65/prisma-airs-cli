@@ -20,7 +20,7 @@ jobs:
         run: |
           node --input-type=module -e 'import fs from "node:fs"; import assert from "node:assert/strict"; const p=JSON.parse(fs.readFileSync("package.json")); assert.match(p.version,/^\d+\.\d+\.\d+-forgejo\.\d+$/); assert.equal(process.env.GITHUB_REF,`refs/tags/v${p.version}`);'
           echo "IMAGE=registry.cdot.io/prisma-airs/prisma-airs-cli:$(node -p 'require("./package.json").version')" >> "$GITHUB_ENV"
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --store-dir /tmp/airs-pnpm-store
       - run: pnpm audit:prod
       - run: pnpm test:release
       - uses: https://github.com/docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
