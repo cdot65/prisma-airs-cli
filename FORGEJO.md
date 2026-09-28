@@ -28,3 +28,26 @@ git clone git@git-ssh.cdot.io:cdot/prisma-airs-cli.git
 Do not force-update a mirror until all destination-only commits and refs are
 preserved. Stop mirroring before any emergency GitHub-authority rollback, then
 reconcile both histories before resuming. Existing package versions are immutable.
+
+## Release operations
+
+Use Forgejo pull requests and wait for required checks before merging. For a
+migration prerelease, push a matching `vX.Y.Z-forgejo.N` tag after CI passes;
+`publish-prerelease.yml` writes only `forgejo-preview`. For a stable release,
+create an explicitly published non-prerelease release record on Forgejo for the
+matching stable tag. `publish-stable.yml` rejects a rollback of `latest` and
+preserves unrelated channels. Never create GitHub releases to trigger publishing.
+The CLI remains in Changesets prerelease mode during migration: use
+`pnpm changeset pre exit` and `pnpm changeset version` for its next stable release.
+
+Run **Authorize GitHub Pages release** on Forgejo's `main` after CI. It verifies
+required checks and creates an exact-source tag; the mirror triggers Pages.
+For CLI container recovery, dispatch **Publish private CLI container** on main.
+Existing image versions are verified by digest without rebuilding or overwriting. Stable container aliases are promoted only
+after both architecture checks; prereleases never move stable aliases.
+
+npm may process an accepted upload asynchronously. A verification timeout does
+not authorize replacing a version: inspect registry state and install the exact
+version before retrying. Keep the Conjur npm token and Forgejo `NPM_TOKEN` secret
+copies synchronized on rotation. The scoped Harbor publisher expires after 90
+days; rotate its escrowed credential and `HARBOR_PASSWORD` before expiry.
