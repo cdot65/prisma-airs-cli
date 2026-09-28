@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/cdot65/prisma-airs-cli/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@cdot65/prisma-airs-cli)](https://www.npmjs.com/package/@cdot65/prisma-airs-cli)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Node 20.17+ / 22.13+ / 24+](https://img.shields.io/badge/node-20.17%2B%20%7C%2022.13%2B%20%7C%2024%2B-brightgreen.svg)](https://nodejs.org/)
 
 **Command-line workflows for Palo Alto Prisma AIRS — guardrail refinement, runtime scanning, AI red teaming, AI Gateway, and model security.** Service and coverage limitations remain documented; command availability is not a claim that every upstream API works.
@@ -133,4 +133,4 @@ Configuration lives only in tenant files managed by `airs-cli tenant`; environme
 
 ## License
 
-MIT
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

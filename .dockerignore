@@ -9,3 +9,6 @@
 !src/**
 !docker/
 !docker/Dockerfile
+
+!LICENSE
+!NOTICE
