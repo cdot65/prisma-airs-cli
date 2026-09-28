@@ -33,14 +33,24 @@ jobs:
           registry: registry.cdot.io
           username: ${{ secrets.HARBOR_USERNAME }}
           password: ${{ secrets.HARBOR_PASSWORD }}
-      - name: Refuse existing version
+      - name: Resolve existing immutable version for verification-only retry
+        id: existing
+        shell: bash
         run: |
-          if docker manifest inspect "$IMAGE" >/dev/null 2>&1; then
-            echo 'Image version already exists; refusing overwrite.' >&2
+          set -euo pipefail
+          if digest=$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}' 2>image-inspect-error.txt); then
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+            echo "digest=$digest" >> "$GITHUB_OUTPUT"
+            echo 'Existing version will be verified without rebuilding or overwriting.'
+          elif grep -Eqi 'manifest unknown|not found' image-inspect-error.txt; then
+            echo 'No existing version; build may proceed.'
+          else
+            echo 'Registry lookup failed; refusing to assume the version is absent.' >&2
             exit 1
           fi
       - uses: https://github.com/docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         id: build
+        if: steps.existing.outputs.digest == ''
         with:
           context: .
           file: docker/Dockerfile
@@ -49,7 +59,7 @@ jobs:
           tags: ${{ env.IMAGE }}
       - name: Verify published digest on both architectures
         env:
-          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_DIGEST: ${{ steps.existing.outputs.digest || steps.build.outputs.digest }}
         run: |
           # BuildKit supplies its userspace emulator; Talos needs no binfmt mount.
           docker buildx build --platform linux/amd64,linux/arm64 \
@@ -57,5 +67,5 @@ jobs:
             --file docker/verify.Dockerfile --progress plain .
       - name: Promote stable aliases only after digest verification
         env:
-          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_DIGEST: ${{ steps.existing.outputs.digest || steps.build.outputs.digest }}
         run: node scripts/release/container-policy.mjs promote

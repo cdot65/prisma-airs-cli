@@ -43,7 +43,7 @@ The CLI remains in Changesets prerelease mode during migration: use
 Run **Authorize GitHub Pages release** on Forgejo's `main` after CI. It verifies
 required checks and creates an exact-source tag; the mirror triggers Pages.
 For CLI container recovery, dispatch **Publish private CLI container** on main.
-Existing image versions are refused. Stable container aliases are promoted only
+Existing image versions are verified by digest without rebuilding or overwriting. Stable container aliases are promoted only
 after both architecture checks; prereleases never move stable aliases.
 
 npm may process an accepted upload asynchronously. A verification timeout does

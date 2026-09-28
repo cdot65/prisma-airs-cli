@@ -1,0 +1,7 @@
+*
+!.github
+!.github/scripts
+!.github/scripts/**
+!docker
+!docker/verify.Dockerfile
+!docker/verify.Dockerfile.dockerignore
