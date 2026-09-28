@@ -2,7 +2,7 @@
   <img alt="Prisma AIRS CLI shield with terminal and spectrum" src="https://raw.githubusercontent.com/cdot65/prisma-airs-cli/main/docs-site/static/img/logo.svg" width="320">
 </p>
 
-[![CI](https://git.cdot.io/cdot/prisma-airs-cli/actions/workflows/ci.yml/badge.svg)](https://git.cdot.io/cdot/prisma-airs-cli/actions?workflow=ci.yml)
+[![CI](https://git.cdot.io/cdot/prisma-airs-cli/badges/workflows/ci.yml/badge.svg)](https://git.cdot.io/cdot/prisma-airs-cli/actions?workflow=ci.yml)
 [![npm](https://img.shields.io/npm/v/@cdot65/prisma-airs-cli)](https://www.npmjs.com/package/@cdot65/prisma-airs-cli)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![Node 20.17+ / 22.13+ / 24+](https://img.shields.io/badge/node-20.17%2B%20%7C%2022.13%2B%20%7C%2024%2B-brightgreen.svg)](https://nodejs.org/)
