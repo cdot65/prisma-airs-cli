@@ -21,7 +21,7 @@ const result = spawnSync(
 );
 assert.equal(result.status, 0, 'npm publish failed');
 let after;
-for (let i = 0; i < 12; i++) {
+for (let i = 0; i < 120; i++) {
   const r = await fetch(url, { headers: { 'cache-control': 'no-cache' } });
   assert.equal(r.status, 200);
   after = await r.json();
