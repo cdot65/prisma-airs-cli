@@ -58,9 +58,9 @@ test('an older queued rerun reevaluates tags after the newer release', () => {
   assert.deepEqual(promotionAliases('4.3.0', afterNewTag), []);
 });
 
-test('workflow separates exact-version publication from serialized post-build promotion', () => {
+test('archived GitHub workflow separates exact-version publication from serialized post-build promotion', () => {
   const workflow = load(
-    readFileSync(new URL('../workflows/docker-publish.yml', import.meta.url), 'utf8'),
+    readFileSync(new URL('../workflows/docker-publish.yml.disabled', import.meta.url), 'utf8'),
   );
   const build = workflow.jobs['build-and-push'];
   const promotion = workflow.jobs['promote-aliases'];
@@ -87,14 +87,28 @@ test('workflow separates exact-version publication from serialized post-build pr
   assert.match(promote.with.script, /execFileSync/);
 });
 
-test('production audit gates CI, npm publication, and container publication', () => {
+test('archived GitHub workflows preserve production audit gates', () => {
   for (const workflowName of ['ci', 'publish', 'docker-publish']) {
     const workflow = load(
-      readFileSync(new URL(`../workflows/${workflowName}.yml`, import.meta.url), 'utf8'),
+      readFileSync(new URL(`../workflows/${workflowName}.yml.disabled`, import.meta.url), 'utf8'),
     );
     assert.ok(
       Object.values(workflow.jobs).some((job) =>
         job.steps?.some((step) => step.run === 'pnpm audit:prod'),
+      ),
+    );
+  }
+});
+
+// Active workflows must retain the production audit gate after the host migration.
+test('Forgejo CI and npm publication retain production audit', () => {
+  for (const name of ['ci', 'publish-prerelease']) {
+    const workflow = load(
+      readFileSync(new URL(`../../.forgejo/workflows/${name}.yml`, import.meta.url), 'utf8'),
+    );
+    assert.ok(
+      Object.values(workflow.jobs).some((job) =>
+        job.steps?.some((step) => step.run?.includes('pnpm audit:prod')),
       ),
     );
   }

@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "forgejo",
+  "initialVersions": {
+    "@cdot65/prisma-airs-cli": "7.2.0"
+  },
+  "changesets": ["apache-license-alignment"]
+}

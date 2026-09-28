@@ -1,7 +1,7 @@
 {
   "name": "@cdot65/prisma-airs-cli",
   "packageManager": "pnpm@10.6.5",
-  "version": "7.2.0",
+  "version": "7.2.1-forgejo.0",
   "description": "CLI and library for Palo Alto Prisma AIRS \u2014 guardrail refinement, AI red teaming, model security scanning, profile audits",
   "type": "module",
   "main": "dist/index.js",
@@ -61,7 +61,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/cdot65/prisma-airs-cli.git"
+    "url": "git+https://git.cdot.io/cdot/prisma-airs-cli.git"
   },
   "license": "Apache-2.0",
   "dependencies": {
@@ -93,5 +93,8 @@
     "pdf-lib": "^1.17.1",
     "piexifjs": "^1.0.6",
     "sharp": "^0.35.4"
+  },
+  "bugs": {
+    "url": "https://git.cdot.io/cdot/prisma-airs-cli/issues"
   }
 }

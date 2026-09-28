@@ -1,0 +1,31 @@
+name: Publish migration prerelease
+on:
+  push:
+    tags: ['v*-forgejo.*']
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: https://github.com/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: https://github.com/actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - name: Require release source on canonical main
+        run: git merge-base --is-ancestor HEAD origin/main
+      - uses: https://github.com/pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint && pnpm run format:check && pnpm tsc --noEmit
+      - run: pnpm test:coverage && pnpm test:release && pnpm audit:prod
+      - run: pnpm run build
+      - name: Publish bounded migration prerelease
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: node scripts/release/publish-prerelease.mjs
