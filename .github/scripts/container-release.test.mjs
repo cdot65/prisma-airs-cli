@@ -102,7 +102,7 @@ test('archived GitHub workflows preserve production audit gates', () => {
 
 // Active workflows must retain the production audit gate after the host migration.
 test('Forgejo CI and npm publication retain production audit', () => {
-  for (const name of ['ci', 'publish-prerelease']) {
+  for (const name of ['ci', 'publish-prerelease', 'container']) {
     const workflow = load(
       readFileSync(new URL(`../../.forgejo/workflows/${name}.yml`, import.meta.url), 'utf8'),
     );
