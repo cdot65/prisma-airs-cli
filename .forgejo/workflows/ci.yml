@@ -24,6 +24,7 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - run: node scripts/release/test-publish-boundary.mjs
       - run: pnpm install --frozen-lockfile --store-dir /tmp/airs-pnpm-store
       - run: pnpm run lint
       - run: pnpm run format:check

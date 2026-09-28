@@ -53,7 +53,7 @@ pnpm run docs:serve        # docs:api + serve docs-site locally
 
 **Always cut versions via `pnpm changeset version`. Never hand-edit `package.json`.**
 
-This repo keeps **no root change-log file** — changesets are configured with `"changelog": false` (`.changeset/config.json`), so `changeset version` only bumps `package.json` and consumes the queued `.changeset/*.md` files; it does not generate a change log. User-facing release notes are hand-maintained in `docs-site/docs/about/release-notes.md` plus the GitHub Release body.
+This repo keeps **no root change-log file** — changesets are configured with `"changelog": false` (`.changeset/config.json`), so `changeset version` only bumps `package.json` and consumes the queued `.changeset/*.md` files; it does not generate a change log. User-facing release notes are hand-maintained in `docs-site/docs/about/release-notes.md` plus the Forgejo Release body.
 
 Workflow when shipping a release:
 
@@ -61,7 +61,7 @@ Workflow when shipping a release:
 2. Commit `package.json` + the deleted changeset files together: `chore(release): X.Y.Z — <short title>`.
 3. Update `docs-site/docs/about/release-notes.md` with the user-facing notes for this version.
 4. Tag `vX.Y.Z` and push commit + tag.
-5. `gh release create vX.Y.Z --title "vX.Y.Z — <title>" --notes ...` — this fires `.github/workflows/publish.yml`, which runs lint/typecheck/test/build and `npm publish` via OIDC.
+5. Publish the matching non-prerelease release record in Forgejo. `.forgejo/workflows/publish-stable.yml` runs the release gates and publishes using the Conjur-backed npm credential. GitHub releases do not publish packages. See `FORGEJO.md` for prerelease channels, Pages dispatch and token rotation.
 
 For hotfixes that should bypass all queued changesets and ship only one fix: add only the hotfix's changeset, branch off the release tag (not `main`), run `pnpm changeset version`, release, then rebase/merge back. Manual `package.json` edits are only acceptable as a last resort (e.g. the queued backlog is corrupted) and must be paired with a follow-up cleanup PR.
 

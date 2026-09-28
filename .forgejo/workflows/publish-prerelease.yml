@@ -21,6 +21,7 @@ jobs:
       - name: Require release source on canonical main
         run: git merge-base --is-ancestor HEAD origin/main
       - uses: https://github.com/pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+      - run: node scripts/release/test-publish-boundary.mjs
       - run: pnpm install --frozen-lockfile --store-dir /tmp/airs-pnpm-store
       - run: pnpm run lint && pnpm run format:check && pnpm tsc --noEmit
       - run: pnpm test:coverage && pnpm test:release && pnpm audit:prod
