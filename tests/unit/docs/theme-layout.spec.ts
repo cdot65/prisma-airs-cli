@@ -16,22 +16,13 @@ describe('documentation sidebar layout', () => {
     expect(css).not.toMatch(/\.theme-doc-sidebar-container\s*\{[^}]*order:/s);
   });
 
-  it('adds an independent desktop collapse control to the right on-page navigation', async () => {
-    const [layout, styles] = await Promise.all([
-      readFile(
-        new URL('../../../docs-site/src/theme/DocItem/Layout/index.tsx', import.meta.url),
-        'utf8',
-      ),
-      readFile(
-        new URL('../../../docs-site/src/theme/DocItem/Layout/styles.module.css', import.meta.url),
-        'utf8',
-      ),
-    ]);
-
-    expect(layout).toContain("aria-label={tocCollapsed ? 'Expand on-page navigation'");
-    expect(layout).toContain('aria-expanded={!tocCollapsed}');
-    expect(layout).toContain('{docTOC.desktop}');
-    expect(styles).toContain('.tocColumnCollapsed');
-    expect(styles).toContain('@media (min-width: 997px)');
+  it('retains document navigation and a readable full-width article layout', async () => {
+    const layout = await readFile(
+      new URL('../../../docs-site/src/theme/DocItem/Layout/index.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(layout).toContain('<DocBreadcrumbs />');
+    expect(layout).toContain('<DocItemPaginator />');
+    expect(layout).toContain('<DocItemTOCMobile />');
   });
 });
