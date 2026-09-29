@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="Prisma AIRS CLI shield with terminal and spectrum" src="https://raw.githubusercontent.com/cdot65/prisma-airs-cli/main/docs-site/static/img/logo.svg" width="320">
+  <img alt="Prisma AIRS CLI shield with terminal and spectrum" src="https://raw.githubusercontent.com/cdot65/prisma-airs-cli/main/docs-site/static/img/brand-logo.png" width="320">
 </p>
 
 [CI on Forgejo](https://git.cdot.io/cdot/prisma-airs-cli/actions?workflow=ci.yml)
