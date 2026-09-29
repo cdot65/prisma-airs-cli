@@ -1,7 +1,6 @@
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
-// Gruvbox dark (hard contrast) syntax theme — see src/css/prism-gruvbox.js
-import gruvboxTheme from './src/css/prism-gruvbox';
+import airsTheme from './src/css/prism-airs';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -9,7 +8,7 @@ const config: Config = {
   title: 'Prisma AIRS CLI',
   tagline:
     'CLI and library for Palo Alto Prisma AIRS — guardrail refinement, AI red teaming, model security scanning, profile audits',
-  favicon: 'img/logo.svg',
+  favicon: 'img/brand-logo.png',
 
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
@@ -60,7 +59,11 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/social-card.png',
+    mermaid: {theme: {light: 'dark', dark: 'dark'}, options: {themeVariables: {
+      background: '#030609', primaryColor: '#061b29', primaryTextColor: '#f5f8fa',
+      primaryBorderColor: '#00ddf2', lineColor: '#8999a6', secondaryColor: '#0b293b', tertiaryColor: '#061b29',
+    }}},
+    image: 'img/brand-logo.png',
     docs: {
       sidebar: {
         hideable: true,
@@ -75,7 +78,7 @@ const config: Config = {
       title: 'Prisma AIRS CLI',
       logo: {
         alt: 'Prisma AIRS CLI',
-        src: 'img/logo.svg',
+        src: 'img/brand-logo.png',
       },
       items: [
         {
@@ -131,8 +134,8 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} cdot65. Built with Docusaurus.`,
     },
     prism: {
-      theme: gruvboxTheme,
-      darkTheme: gruvboxTheme,
+      theme: airsTheme,
+      darkTheme: airsTheme,
       additionalLanguages: ['bash', 'json', 'yaml', 'python', 'powershell', 'toml', 'diff'],
     },
   } satisfies Preset.ThemeConfig,
