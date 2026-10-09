@@ -1,0 +1,44 @@
+{
+  "verifiedAt": "2026-10-09T19:21:06.840809+00:00",
+  "version": "7.3.0",
+  "sdkVersion": "0.35.0",
+  "distTags": {
+    "latest": "7.0.1",
+    "next": "7.3.0",
+    "forgejo-preview": "7.2.1-forgejo.0"
+  },
+  "releaseCommit": "7a54e46eee4f7914d610bc78d2f98dd7de09fbfe",
+  "releaseUrl": "https://github.com/cdot65/prisma-airs-cli/releases/tag/v7.3.0",
+  "workflowUrl": "https://github.com/cdot65/prisma-airs-cli/actions/runs/37978916679",
+  "workflowConclusion": "success",
+  "registry": "https://registry.npmjs.org",
+  "dist": {
+    "shasum": "0410e2afb96ba08d614bca5cca6ea38c98ad9b47",
+    "tarball": "https://registry.npmjs.org/@cdot65/prisma-airs-cli/-/prisma-airs-cli-7.3.0.tgz",
+    "fileCount": 9,
+    "integrity": "sha512-76DHTFckOeegMT5PqwjbKrfDGHmgMoHtDHQeXEsDH+SMCALpFCWdVGbUwiF5FwxbHB7os7pXINtiU/4KPR4yPA==",
+    "signatures": [
+      {
+        "sig": "MEQCIEV9FG85OgE9dO+DcPJIjv4tcrGm9M25BIUHjPiVJe3MAiAzJx/CIWEpl1rzXZSEXC/zsvILp734HVkjEpUz6/gADQ==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "sig": "MEUCIAcAMJBhKfBRdTBLwzc0Sx0ubimTl+Lvo8n5yNOeQeX4AiEAr43jhYBRztKJunABlYNIRx+XjJ8ekMBEWOA42DOBi/I="
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@cdot65%2fprisma-airs-cli@7.3.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 948843
+  },
+  "publishedTarballMatchesValidatedCandidate": true,
+  "cleanRegistryInstall": "pass",
+  "publicConsumerVerification": "pass",
+  "publicNativeDlpVerification": "pass",
+  "publicSdkCapabilityVerification": "pass",
+  "claudeCodeFeatureReviewScore": 9.4
+}

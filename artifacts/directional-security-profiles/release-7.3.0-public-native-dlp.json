@@ -1,0 +1,87 @@
+{
+  "generatedAt": "2026-10-09T19:20:34.163Z",
+  "cliVersion": "7.3.0",
+  "sdkVersion": "0.35.0",
+  "nodeVersion": "v22.23.2",
+  "sharpVersion": "0.35.5",
+  "libvipsVersion": "8.18.7",
+  "customFontConfiguration": false,
+  "runtimeWarnings": [],
+  "passed": true,
+  "cases": [
+    {
+      "name": "installed CLI version matches its package",
+      "passed": true
+    },
+    {
+      "name": "all five native formats: JSON stdout, 5 clean + 21 dirty, manifest and 26 signatures",
+      "passed": true
+    },
+    {
+      "name": "global JSON and quiet preserve structured output",
+      "passed": true
+    },
+    {
+      "name": "file default JSON is respected",
+      "passed": true
+    },
+    {
+      "name": "environment variables are ignored; the tenant file pretty default wins",
+      "passed": true
+    },
+    {
+      "name": "explicit pretty overrides environment JSON and quiet preserves per-format data",
+      "passed": true
+    },
+    {
+      "name": "invalid --output yaml exits 2 before filesystem mutation",
+      "passed": true
+    },
+    {
+      "name": "invalid --output invalid exits 2 before filesystem mutation",
+      "passed": true
+    },
+    {
+      "name": "invalid --count 7junk exits 2 before filesystem mutation",
+      "passed": true
+    },
+    {
+      "name": "invalid --seed NaN exits 2 before filesystem mutation",
+      "passed": true
+    },
+    {
+      "name": "invalid --seed 1.5 exits 2 before filesystem mutation",
+      "passed": true
+    }
+  ],
+  "fixtureCleanup": "complete",
+  "summary": {
+    "clean": 5,
+    "dirty": 21,
+    "out": "<temporary-corpus>",
+    "manifestPath": "<temporary-corpus>/manifest.json",
+    "seed": 431,
+    "byFormat": {
+      "pdf": {
+        "clean": 1,
+        "dirty": 5
+      },
+      "png": {
+        "clean": 1,
+        "dirty": 4
+      },
+      "jpeg": {
+        "clean": 1,
+        "dirty": 4
+      },
+      "svg": {
+        "clean": 1,
+        "dirty": 4
+      },
+      "docx": {
+        "clean": 1,
+        "dirty": 4
+      }
+    }
+  }
+}

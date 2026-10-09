@@ -1,0 +1,61 @@
+{
+  "@cdot65/prisma-airs-cli": {
+    "id": "@cdot65/prisma-airs-cli@7.3.0",
+    "name": "@cdot65/prisma-airs-cli",
+    "version": "7.3.0",
+    "size": 215810,
+    "unpackedSize": 948843,
+    "shasum": "0410e2afb96ba08d614bca5cca6ea38c98ad9b47",
+    "integrity": "sha512-76DHTFckOeegMT5PqwjbKrfDGHmgMoHtDHQeXEsDH+SMCALpFCWdVGbUwiF5FwxbHB7os7pXINtiU/4KPR4yPA==",
+    "filename": "cdot65-prisma-airs-cli-7.3.0.tgz",
+    "files": [
+      {
+        "path": "LICENSE",
+        "size": 10935,
+        "mode": 420
+      },
+      {
+        "path": "NOTICE",
+        "size": 449,
+        "mode": 420
+      },
+      {
+        "path": "README.md",
+        "size": 10766,
+        "mode": 420
+      },
+      {
+        "path": "dist/chunk-MSJLN2PD.js",
+        "size": 174512,
+        "mode": 420
+      },
+      {
+        "path": "dist/cli/index.js",
+        "size": 643410,
+        "mode": 493
+      },
+      {
+        "path": "dist/dlp-5XKWITZX.js",
+        "size": 19876,
+        "mode": 420
+      },
+      {
+        "path": "dist/index.d.ts",
+        "size": 83575,
+        "mode": 420
+      },
+      {
+        "path": "dist/index.js",
+        "size": 1579,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 3741,
+        "mode": 420
+      }
+    ],
+    "entryCount": 9,
+    "bundled": []
+  }
+}

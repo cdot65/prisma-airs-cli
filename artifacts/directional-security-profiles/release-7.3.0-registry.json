@@ -1,0 +1,140 @@
+{
+  "_id": "@cdot65/prisma-airs-cli@7.3.0",
+  "bin": {
+    "airs-cli": "dist/cli/index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/cdot65/prisma-airs-cli/issues"
+  },
+  "dist": {
+    "shasum": "0410e2afb96ba08d614bca5cca6ea38c98ad9b47",
+    "tarball": "https://registry.npmjs.org/@cdot65/prisma-airs-cli/-/prisma-airs-cli-7.3.0.tgz",
+    "fileCount": 9,
+    "integrity": "sha512-76DHTFckOeegMT5PqwjbKrfDGHmgMoHtDHQeXEsDH+SMCALpFCWdVGbUwiF5FwxbHB7os7pXINtiU/4KPR4yPA==",
+    "signatures": [
+      {
+        "sig": "MEQCIEV9FG85OgE9dO+DcPJIjv4tcrGm9M25BIUHjPiVJe3MAiAzJx/CIWEpl1rzXZSEXC/zsvILp734HVkjEpUz6/gADQ==",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "sig": "MEUCIAcAMJBhKfBRdTBLwzc0Sx0ubimTl+Lvo8n5yNOeQeX4AiEAr43jhYBRztKJunABlYNIRx+XjJ8ekMBEWOA42DOBi/I="
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@cdot65%2fprisma-airs-cli@7.3.0",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 948843
+  },
+  "main": "dist/index.js",
+  "name": "@cdot65/prisma-airs-cli",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": "^20.17.0 || ^22.13.0 || >=23.5.0"
+  },
+  "gitHead": "7a54e46eee4f7914d610bc78d2f98dd7de09fbfe",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "tsx src/cli/index.ts",
+    "lint": "biome check --config-path config .",
+    "test": "vitest run",
+    "build": "tsup",
+    "format": "biome format --write --config-path config .",
+    "docs:api": "typedoc",
+    "lint:fix": "biome check --write --config-path config .",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "build:tsc": "tsc",
+    "audit:prod": "pnpm audit --prod --audit-level low",
+    "docker:run": "docker run --rm -v ~/.prisma-airs:/root/.prisma-airs prisma-airs-cli:local",
+    "docs:build": "pnpm docs:api && pnpm -C docs-site build",
+    "docs:serve": "pnpm docs:api && pnpm -C docs-site start",
+    "local:link": "pnpm run build && pnpm link --global",
+    "test:watch": "vitest",
+    "local:setup": "pnpm install && pnpm run build",
+    "local:smoke": "pnpm run build && pnpm local:built:version && pnpm local:built:help",
+    "docker:build": "docker build -f docker/Dockerfile -t prisma-airs-cli:local .",
+    "docs:install": "pnpm -C docs-site install",
+    "format:check": "biome format --config-path config .",
+    "local:unlink": "pnpm uninstall --global @cdot65/prisma-airs-cli",
+    "test:release": "node --test .github/scripts/*.test.mjs",
+    "container:dev": "container run --rm -it -v \"$PWD\":/work -w /work node:20-alpine sh",
+    "test:coverage": "vitest run --coverage",
+    "local:dev:help": "tsx src/cli/index.ts --help",
+    "prepublishOnly": "node scripts/check-directional-sdk.mjs && pnpm audit:prod && pnpm run build",
+    "local:built:help": "node dist/cli/index.js --help",
+    "local:dev:doctor": "tsx src/cli/index.ts doctor --output markdown",
+    "local:dev:topics": "tsx src/cli/index.ts runtime topics list --all --output yaml",
+    "local:link:check": "airs-cli --version",
+    "docker:push:arm64": "./docker/docker-push-arm64.sh",
+    "docker:build:amd64": "docker buildx build -f docker/Dockerfile --platform linux/amd64 --load -t prisma-airs-cli:local-amd64 .",
+    "docker:build:arm64": "docker buildx build -f docker/Dockerfile --platform linux/arm64 --load -t prisma-airs-cli:local-arm64 .",
+    "local:dev:profiles": "tsx src/cli/index.ts runtime profiles list --output json",
+    "test:e2e:aigateway": "vitest run --config vitest.e2e.config.ts tests/e2e/aigateway-cli.e2e.spec.ts",
+    "local:built:version": "node dist/cli/index.js --version"
+  },
+  "version": "7.3.0",
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "41bebec0-fd54-4118-9302-6a9954c8276b"
+    }
+  },
+  "homepage": "https://github.com/cdot65/prisma-airs-cli#readme",
+  "repository": {
+    "url": "git+https://github.com/cdot65/prisma-airs-cli.git",
+    "type": "git"
+  },
+  "_npmVersion": "11.19.0",
+  "description": "CLI and library for Palo Alto Prisma AIRS \u2014 guardrail refinement, AI red teaming, model security scanning, profile audits",
+  "directories": {},
+  "maintainers": [
+    {
+      "name": "cdot65",
+      "email": "calvin@cdot.io"
+    }
+  ],
+  "_nodeVersion": "24.21.0",
+  "dependencies": {
+    "zod": "^3.24.0",
+    "chalk": "^5.6.2",
+    "nanoid": "^5.1.16",
+    "js-yaml": "^4.3.2",
+    "p-limit": "^6.0.0",
+    "commander": "^14.0.3",
+    "@typesafe-ai/sdk": "0.6.0",
+    "@inquirer/prompts": "^8.3.0",
+    "@cdot65/prisma-airs-sdk": "0.35.0"
+  },
+  "_hasShrinkwrap": false,
+  "packageManager": "pnpm@10.6.5",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "tsup": "^8.5.1",
+    "vitest": "^3.0.0",
+    "typedoc": "^0.28.19",
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@biomejs/biome": "^2.4.4",
+    "@types/js-yaml": "^4.0.9",
+    "@changesets/cli": "^2.31.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "typedoc-plugin-markdown": "^4.11.0"
+  },
+  "optionalDependencies": {
+    "docx": "^9.6.1",
+    "sharp": "^0.35.5",
+    "pdf-lib": "^1.17.1",
+    "piexifjs": "^1.0.6"
+  },
+  "_npmOperationalInternal": {
+    "host": "s3://npm-registry-packages-npm-production",
+    "tmp": "tmp/prisma-airs-cli_7.3.0_1791573545579_0.02950167075144927"
+  }
+}

@@ -56,5 +56,5 @@
   "limitations": [
     "Directional mutations and migration are transport-tested; live service writes were not performed."
   ],
-  "publication": "ready; publication receipt is recorded separately after completion"
+  "publication": "published and verified from public npm; see publication-7.3.0.json"
 }
