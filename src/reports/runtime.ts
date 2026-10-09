@@ -8,6 +8,7 @@ import type {
   SecurityProfile,
   ViolationSeverityCounts,
 } from '@cdot65/prisma-airs-sdk';
+import { profileProtectionLocations } from '../airs/profile-policy.js';
 import type {
   ReportFinding,
   ReportSeverity,
@@ -437,6 +438,20 @@ export async function collectRuntimeDailyReport(
             : null,
         timeoutActions,
         storageMasking,
+        protectionConfigurations: profileProtectionLocations(profile.policy)
+          .filter((location) => location.active)
+          .map((location) => {
+            const sections = [
+              'model-protection',
+              'agent-protection',
+              'app-protection',
+              'data-protection',
+            ].filter((key) => {
+              const value = location.configuration[key];
+              return value != null && typeof value === 'object' && Object.keys(value).length > 0;
+            });
+            return `AI[${location.index}] ${label(location.profile['model-type'])} / ${label(location.direction ?? 'legacy')}: ${sections.join(', ') || 'No modeled protection sections returned'}`;
+          }),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

@@ -1,0 +1,97 @@
+{
+  "duration_api_ms": 174486,
+  "stop_reason": "end_turn",
+  "session_id": "d99b7a23-6196-4ec7-a5e4-c93ef77b1fdb",
+  "total_cost_usd": 3.4945315,
+  "usage": {
+    "input_tokens": 50,
+    "cache_creation_input_tokens": 47259,
+    "cache_read_input_tokens": 5438133,
+    "output_tokens": 12105,
+    "output_tokens_details": {
+      "thinking_tokens": 4612
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 47259,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 4149,
+        "cache_read_input_tokens": 231692,
+        "cache_creation_input_tokens": 679,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 679
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "modelUsage": {
+    "claude-opus-5": {
+      "inputTokens": 50,
+      "outputTokens": 12105,
+      "cacheReadInputTokens": 5438133,
+      "cacheCreationInputTokens": 47259,
+      "webSearchRequests": 0,
+      "costUSD": 3.4945315,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "thinkingTokens": 4612,
+      "canonicalModel": "claude-opus-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "is_error": false,
+  "num_turns": 36,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "I verified every claimed correction directly against the frozen files rather than taking the summary at face value.\n\n## Score: 9.4 / 10\n\n## Verification of the corrections (all confirmed)\n\n| My prior finding | Status | Evidence I checked |\n|---|---|---|\n| Missing changeset / release notes | Fixed | `.changeset/directional-security-profiles.md` (minor, discloses the SDK block); `release-notes.md:16-22` Unreleased entry with an explicit **Release dependency** paragraph. `package.json:4` still `7.2.0` \u2014 no manual bump. |\n| Unverified tree | Fixed | `/tmp/directional-full-tests.log:249-250` \u2192 137 files / 2087 tests passed; `/tmp/directional-built-tests.log` \u2192 21/21 against the **built** CLI via `AIRS_CLI_ENTRY`; `/tmp/directional-tsc.log` empty; `/tmp/directional-lint.log:95` 7 warnings, all `noNonNullAssertion` in the unrelated `runtime-commands.spec.ts`. |\n| Absent direction silently created | Fixed, more strictly than I asked | `profile-policy.ts:107-110` refuses an absent direction; `allowMissingDirection` is passed `true` only for the clone-validated shared-only path (`profile-builder.ts:389`, `:409`), so omitted directions survive global edits. `management.ts:146` uses the default (false), so topic writes refuse too. |\n| Exit-code inconsistency (1 vs 2) | Fixed | `ProfilePolicyError` (`profile-policy.ts:8`) \u2192 `common.ts:14` \u2192 `usageError`. Integration asserts `2` at `:283`, `:398`, `:430`, `:456/458`, `:496`. |\n| Inactive legacy block escaped the revert guard | Fixed | `getProfileTopics(..., { includeInactive })` (`management.ts:223-246`); `topics-revert.ts:42-56` uses it **before** the PUT and delete; a retained legacy ref has `direction === undefined` so it trips the refusal. Covered at `topics-revert.spec.ts:67` and end-to-end at integration `:464-501`. |\n| `malicious-code-detection` in directions | Fixed correctly | `buildAppProtection` (`profile-builder.ts:96`) uses `malicious-code` only when a direction is selected; `mergeSettings` (`:371`) defaults new blocks to `malicious-code`; legacy flag creation keeps the old spelling. `validateOverrides` (`:329`) injects a name only into the throwaway validation copy. |\n| Empty flag-only directional create | Fixed | `profile-builder.ts:248-251` refuses it and points at `--config`. |\n| Untested safety branches | Fixed | `management.spec.ts:1510` (location provenance + 4 active vs 5 including inactive), `:1533` (guardrail/topic severity preservation + duplicate identity refusal), `:1555` (absent direction + legacy refusals); `runtime-profiles.spec.ts:750` proves a directional omitted\u2192null drift is caught, i.e. `canonicalPolicy`'s directional skip cannot erase it. |\n| Library exports / readable output | Fixed | `src/index.ts:14-18` exports `PROFILE_DIRECTIONS`, `isDirectionalProfile`, `profileProtectionLocations`; `renderer/runtime.ts:146-152` adds a `Protection locations` row alongside the full policy. |\n| Injected-default risk not stated in operator terms | Fixed | `profile-transfer.md:293-296` states that an injected per-direction default makes read-back and `--on-conflict verify` fail with already-created resources left in place, and that the fixture alone does not justify normalizing it. |\n\nUnrequested hardening I also noticed: `selectAiProfile` (`profile-policy.ts:78`) no longer synthesizes an AI entry when `--ai-profile-index 0` is given explicitly against an empty policy.\n\nThe capability gate is demonstrably two-sided: `/tmp/directional-registry-capability.log` shows a clean registry-`0.34.0` install failing the assertion with the intended message, and `prepublishOnly` (`package.json:19`) runs it before `audit:prod` and `build`.\n\n## Remaining findings (all minor)\n\n1. **Trivial \u2014 empty direction block on a shared-only flag create.** `profiles create --name X --direction response --no-mask-data-in-storage` passes `hasAnyProtectionFlag`, so `profile-builder.ts:247-263` still emits `'content-type-configurations': { response: {} }`. The direction selector does nothing useful there. Defensible (it is an explicit opt-in to `per_content_type`, and the SDK schema permits empty direction objects), but the new guard doesn't cover this shape.\n2. **Evidence nit \u2014 the passing half of the clean-install check isn't captured.** `/tmp/directional-clean-local-install.log` records only `added 2 packages`; the `check.mjs` success line is not in any log, unlike the registry refusal. The script at `/tmp/airs-directional-sdk/clean-local/check.mjs` is byte-identical to the registry one, so the claim is consistent, but the artifact asymmetry is worth noting since it is the one check that proves capability rather than refusal.\n3. **Cosmetic \u2014 prose wrap.** `docs-site/docs/cli/runtime/profiles.md:48-49` breaks mid-sentence (\"Selecting a direction on a legacy / update refuses; / use complete JSON\u2026\"). Renders fine as a paragraph.\n\nNo required implementation or acceptance work remains for the directional feature itself.\n\n## Material limitations (distinguished from completeness)\n\n**Permitted and disclosed release dependency (not a defect):** the SDK containing the directional schemas is unpublished. Tested artifact `/tmp/airs-directional-sdk/cdot65-prisma-airs-sdk-0.34.0.tgz`, sha256 `844aec52\u2026a947df`; `package.json:64` and `pnpm-lock.yaml:170` keep registry `0.34.0` with a registry integrity hash and no override. Pinning the real published version, refreshing the lockfile, and re-running the capability check from a clean registry install remain outstanding by design, and `prepublishOnly` enforces that.\n\n**Separate pre-existing release issue (not caused or worsened by this change):** Verdaccio implements no audit endpoint, and the public-registry fallback reports `sharp@0.35.4` / CVE-2026-96889 (`/tmp/directional-public-audit.log`). `sharp` is a direct dependency of the DLP test-file generator (`package.json:91`, range `^0.35.4`), untouched by these 42 modified files; since the range already admits the patched `0.35.5`, this is a lockfile refresh rather than a code change. It will block `prepublishOnly` via `audit:prod` independently of the directional work.\n\n**Genuinely unverifiable here:** live directional service writes, live cross-tenant migration, and whether the service injects per-direction defaults \u2014 which, if it does, will fail read-back/verify exactly as the docs now state. Per-direction server-default allowances were deliberately not granted, which is the spec-mandated conservative choice.\n\n**My own scope:** read-only review. I did not execute any test, build, or install; the check results above are my reading of the recorded logs plus direct source verification, and the snapshot SHA256 `c6b91d8a\u20269767c3` in the artifact is recorded, not recomputed by me.",
+  "ttft_ms": 1654,
+  "type": "result",
+  "duration_ms": 175034,
+  "uuid": "33e4bcc0-1381-4d1f-8b37-9e0f619d9352",
+  "ttft_stream_ms": 1401,
+  "time_to_request_ms": 106,
+  "first_content_frame_ms": 1401,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

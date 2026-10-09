@@ -13,10 +13,14 @@ import type {
   CustomTopic as SdkCustomTopic,
 } from '@cdot65/prisma-airs-sdk';
 
+import type { ProfileSelector } from './profile-policy.js';
+
 /** Enriched topic entry read from a profile's policy. */
 export interface ProfileTopic {
   topicId: string;
   topicName: string;
+  direction?: string;
+  aiProfileIndex?: number;
   action: 'allow' | 'block';
   description: string;
   examples: string[];
@@ -1078,6 +1082,7 @@ export interface ModelSecurityService {
 
 /** Normalized security profile. */
 export interface SecurityProfileInfo {
+  dlpTenantId?: string;
   profileId: string;
   profileName: string;
   revision?: number;
@@ -1267,15 +1272,21 @@ export interface ManagementService {
     topicId: string,
     topicName: string,
     action: 'allow' | 'block',
+    selector?: ProfileSelector,
   ): Promise<void>;
   /** Assign multiple topics to a security profile's topic-guardrails. */
   assignTopicsToProfile(
     profileName: string,
     topics: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' }>,
     guardrailAction?: 'allow' | 'block',
+    selector?: ProfileSelector,
   ): Promise<void>;
   /** List all topics configured in a profile with full details. */
-  getProfileTopics(profileName: string): Promise<ProfileTopic[]>;
+  getProfileTopics(
+    profileName: string,
+    selector?: ProfileSelector,
+    options?: { includeInactive?: boolean },
+  ): Promise<ProfileTopic[]>;
 
   /** Get a single security profile by UUID. */
   getProfile(profileId: string): Promise<SecurityProfileInfo>;

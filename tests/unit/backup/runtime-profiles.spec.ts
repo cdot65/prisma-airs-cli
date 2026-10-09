@@ -1,4 +1,5 @@
 import type { CustomTopic, SecurityProfile } from '@cdot65/prisma-airs-sdk';
+import { PROFILE_DIRECTIONS } from '../../../src/airs/profile-policy.js';
 import {
   backupRuntimeProfiles,
   type ProfileTransferApi,
@@ -6,6 +7,8 @@ import {
   type RuntimeProfilesBackup,
   restoreRuntimeProfiles,
 } from '../../../src/backup/runtime-profiles.js';
+import directionalFixture from '../../fixtures/directional-security-profile.json';
+import { required } from '../../helpers/required.js';
 
 const sourceTopic: CustomTopic = {
   topic_id: 'source-topic',
@@ -60,7 +63,6 @@ const archive = (): RuntimeProfilesBackup => ({
   profiles: [profile()],
   topics: [structuredClone(sourceTopic)],
 });
-
 function memoryApi() {
   const state = { profiles: [] as SecurityProfile[], topics: [] as CustomTopic[] };
   const api = {
@@ -108,7 +110,6 @@ function memoryApi() {
   } satisfies ProfileTransferApi;
   return { api, state };
 }
-
 function withDlp(): RuntimeProfilesBackup {
   const input = archive();
   const policy = input.profiles[0].policy;
@@ -132,7 +133,6 @@ function withDlp(): RuntimeProfilesBackup {
   };
   return input;
 }
-
 describe('verified restore recovery', () => {
   it('verifies existing policies with rewritten topic IDs and creates only missing profiles', async () => {
     const { api, state } = memoryApi();
@@ -155,7 +155,6 @@ describe('verified restore recovery', () => {
     expect(api.topics.create).not.toHaveBeenCalled();
     expect(state.profiles[0]).toEqual(existing);
   });
-
   it.each([
     'policy',
     'active',
@@ -176,7 +175,6 @@ describe('verified restore recovery', () => {
     expect(api.profiles.update).not.toHaveBeenCalled();
     expect(api.topics.create).not.toHaveBeenCalled();
   });
-
   it('rechecks existing profile state after planning without writing on a concurrent change', async () => {
     const { api, state } = memoryApi();
     const input = archive();
@@ -192,7 +190,6 @@ describe('verified restore recovery', () => {
     expect(api.profiles.update).not.toHaveBeenCalled();
     expect(api.topics.create).not.toHaveBeenCalled();
   });
-
   it('records omitted server-added severity in creation and subsequent verification', async () => {
     const { api, state } = memoryApi();
     const input = archive();
@@ -228,7 +225,6 @@ describe('verified restore recovery', () => {
     expect((await restoreRuntimeProfiles(api, plan)).profiles[0].action).toBe('verified');
   });
 });
-
 describe('Basic DLP preservation and explicit fallback', () => {
   it('accepts only the observed absent-to-null database-security normalization', async () => {
     const { api, state } = memoryApi();
@@ -410,7 +406,6 @@ describe('Basic DLP preservation and explicit fallback', () => {
     expect(api.dataProfiles.list).not.toHaveBeenCalled();
   });
 });
-
 describe('Runtime profile backup', () => {
   it('exports latest policies and exact topic revisions, preserving unknown settings', async () => {
     const { api, state } = memoryApi();
@@ -484,7 +479,6 @@ describe('Runtime profile backup', () => {
     await expect(backupRuntimeProfiles(api, '100')).rejects.toThrow('no policy');
   });
 });
-
 describe('Runtime profile cross-tenant restore', () => {
   it('refuses DLP bindings changed between planning and execution', async () => {
     const { api } = memoryApi();
@@ -675,5 +669,165 @@ describe('Runtime profile cross-tenant restore', () => {
     const { api } = memoryApi();
     await expect(planRuntimeProfilesRestore(api, input, '200')).rejects.toThrow();
     expect(api.profiles.list).not.toHaveBeenCalled();
+  });
+});
+describe('directional Runtime transfer', () => {
+  function directional(custom = false): SecurityProfile {
+    const source: SecurityProfile = structuredClone(directionalFixture);
+    for (const direction of PROFILE_DIRECTIONS) {
+      const configuration = required(
+        required(
+          required(required(source.policy)['ai-security-profiles'])[0][
+            'content-type-configurations'
+          ],
+        )[direction],
+      );
+      required(configuration['model-protection']).push({
+        name: 'topic-guardrails',
+        action: 'allow',
+        severity: 'high',
+        'topic-list': [
+          {
+            action: 'block',
+            topic: [
+              {
+                topic_id: required(sourceTopic.topic_id),
+                topic_name: sourceTopic.topic_name,
+                revision: sourceTopic.revision,
+                severity: 'low',
+                future: false,
+              },
+            ],
+          },
+        ],
+      });
+      configuration.future_setting = { enabled: false, values: [] };
+      if (custom)
+        required(required(configuration['data-protection'])['data-leak-detection']).member = [
+          { text: 'Custom DLP', id: 'source-dlp', version: '1' },
+        ];
+    }
+    return source;
+  }
+  it('discovers recursive topics in all directions and round trips Basic DLP without a catalog', async () => {
+    const source = memoryApi();
+    source.state.profiles.push(directional());
+    source.state.topics.push(structuredClone(sourceTopic));
+    const backup = await backupRuntimeProfiles(source.api, '100');
+    expect(backup.profiles[0]).toEqual(source.state.profiles[0]);
+    expect(backup.topics).toEqual([sourceTopic]);
+    const destination = memoryApi();
+    const plan = await planRuntimeProfilesRestore(destination.api, backup, '200');
+    expect(destination.api.dataProfiles.list).not.toHaveBeenCalled();
+    expect(plan.topics).toHaveLength(1);
+    const result = await restoreRuntimeProfiles(destination.api, plan);
+    expect(result.complete).toBe(true);
+    const expected = structuredClone(required(source.state.profiles[0].policy));
+    const topic = destination.state.topics[0];
+    for (const direction of PROFILE_DIRECTIONS) {
+      const ref = required(
+        required(
+          required(
+            required(
+              required(
+                required(
+                  required(expected['ai-security-profiles'])[0]['content-type-configurations'],
+                )[direction],
+              )['model-protection'],
+            ).at(-1),
+          )['topic-list'],
+        )[0].topic,
+      )[0];
+      ref.topic_id = required(topic.topic_id);
+      ref.revision = topic.revision;
+    }
+    expect(destination.state.profiles[0].policy).toEqual(expected);
+    const verified = await planRuntimeProfilesRestore(destination.api, backup, '200', {
+      onConflict: 'verify',
+    });
+    expect((await restoreRuntimeProfiles(destination.api, verified)).complete).toBe(true);
+  });
+  it('detects omitted-to-null drift in a direction between planning and execution', async () => {
+    const destination = memoryApi();
+    const input = { ...archive(), profiles: [directional()] };
+    delete required(
+      required(
+        required(input.profiles[0].policy?.['ai-security-profiles'])[0][
+          'content-type-configurations'
+        ]?.response,
+      )['data-protection'],
+    )['database-security'];
+    const result = await restoreRuntimeProfiles(
+      destination.api,
+      await planRuntimeProfilesRestore(destination.api, input, '200'),
+    );
+    expect(result.complete).toBe(true);
+    const plan = await planRuntimeProfilesRestore(destination.api, input, '200', {
+      onConflict: 'verify',
+    });
+    const protection = required(
+      required(
+        required(destination.state.profiles[0].policy?.['ai-security-profiles'])[0][
+          'content-type-configurations'
+        ]?.response,
+      )['data-protection'],
+    );
+    protection['database-security'] = null;
+    const failed = await restoreRuntimeProfiles(destination.api, plan);
+    expect(failed.complete).toBe(false);
+    expect(failed.error).toContain('changed after planning');
+    expect(destination.api.profiles.update).not.toHaveBeenCalled();
+  });
+
+  it('remaps custom DLP identities and versions in all directions', async () => {
+    const backup = { ...archive(), profiles: [directional(true)] };
+    const destination = memoryApi();
+    const plan = await planRuntimeProfilesRestore(destination.api, backup, '200', {
+      dlpMap: { 'Custom DLP': 'Destination DLP' },
+    });
+    expect(plan.dlpMappings).toHaveLength(1);
+    expect((await restoreRuntimeProfiles(destination.api, plan)).complete).toBe(true);
+    for (const direction of PROFILE_DIRECTIONS) {
+      expect(
+        required(
+          required(
+            required(
+              required(
+                required(required(destination.state.profiles[0].policy)['ai-security-profiles'])[0][
+                  'content-type-configurations'
+                ],
+              )[direction],
+            )['data-protection'],
+          )['data-leak-detection'],
+        ).member,
+      ).toEqual([{ text: 'Destination DLP', id: 'dest-dlp', version: '5' }]);
+    }
+  });
+  it('fails closed for unresolved DLP in each direction and explicitly falls back across the whole profile', async () => {
+    const backup = { ...archive(), profiles: [directional(true)] };
+    const destination = memoryApi();
+    await expect(planRuntimeProfilesRestore(destination.api, backup, '200')).rejects.toThrow(/DLP/);
+    expect(destination.api.profiles.create).not.toHaveBeenCalled();
+    const plan = await planRuntimeProfilesRestore(destination.api, backup, '200', {
+      onMissingDlp: 'basic',
+    });
+    const result = await restoreRuntimeProfiles(destination.api, plan);
+    expect(result.complete).toBe(true);
+    for (const direction of PROFILE_DIRECTIONS) {
+      const detection = required(
+        required(
+          required(
+            required(
+              required(required(destination.state.profiles[0].policy)['ai-security-profiles'])[0][
+                'content-type-configurations'
+              ],
+            )[direction],
+          )['data-protection'],
+        )['data-leak-detection'],
+      );
+      expect(detection.member).toEqual([{ text: 'sensitive content', id: '', version: '2' }]);
+      expect(detection.action).toBe('block');
+      expect(Object.hasOwn(detection, 'mask-data-inline')).toBe(direction !== 'tool-response');
+    }
   });
 });

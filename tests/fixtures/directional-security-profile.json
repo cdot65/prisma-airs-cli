@@ -1,0 +1,276 @@
+{
+  "active": true,
+  "created_by": "fixture@example.invalid",
+  "csp_id": "123456",
+  "dlp_tenant_id": "8259670718644550000",
+  "last_modified_ts": "2026-10-09T11:50:51Z",
+  "policy": {
+    "ai-security-profiles": [
+      {
+        "content-type-configurations": {
+          "prompt": {
+            "agent-protection": [],
+            "app-protection": {
+              "alert-url-category": {},
+              "allow-url-category": {},
+              "block-url-category": {},
+              "default-url-category": {
+                "member": ["malicious"]
+              },
+              "malicious-code-protection": {
+                "action": "block",
+                "name": "malicious-code",
+                "severity": "high"
+              },
+              "url-detected-action": "block",
+              "url-detected-severity": "low"
+            },
+            "data-protection": {
+              "data-leak-detection": {
+                "action": "block",
+                "mask-data-inline": true,
+                "member": [
+                  {
+                    "id": "",
+                    "text": "sensitive content",
+                    "version": "2"
+                  }
+                ]
+              },
+              "database-security": null
+            },
+            "model-protection": [
+              {
+                "action": "block",
+                "name": "prompt-injection",
+                "severity": "medium"
+              },
+              {
+                "action": "high:block, moderate:allow",
+                "name": "toxic-content",
+                "severity-by-confidence": {
+                  "high": "medium",
+                  "moderate": "low"
+                }
+              }
+            ]
+          },
+          "response": {
+            "agent-protection": [],
+            "app-protection": {
+              "alert-url-category": {},
+              "allow-url-category": {},
+              "block-url-category": {},
+              "default-url-category": {
+                "member": ["malicious"]
+              },
+              "malicious-code-protection": {
+                "action": "block",
+                "name": "malicious-code",
+                "severity": "high"
+              },
+              "url-detected-action": "block",
+              "url-detected-severity": "low"
+            },
+            "data-protection": {
+              "data-leak-detection": {
+                "action": "block",
+                "mask-data-inline": true,
+                "member": [
+                  {
+                    "id": "",
+                    "text": "sensitive content",
+                    "version": "2"
+                  }
+                ]
+              },
+              "database-security": [
+                {
+                  "name": "database-security-create",
+                  "action": "block",
+                  "severity": "medium"
+                },
+                {
+                  "name": "database-security-read",
+                  "action": "block",
+                  "severity": "low"
+                },
+                {
+                  "name": "database-security-update",
+                  "action": "block",
+                  "severity": "medium"
+                },
+                {
+                  "name": "database-security-delete",
+                  "action": "block",
+                  "severity": "high"
+                }
+              ]
+            },
+            "model-protection": [
+              {
+                "action": "high:block, moderate:allow",
+                "name": "toxic-content",
+                "severity-by-confidence": {
+                  "high": "medium",
+                  "moderate": "low"
+                }
+              }
+            ]
+          },
+          "tool-call": {
+            "agent-protection": [],
+            "app-protection": {
+              "alert-url-category": {},
+              "allow-url-category": {},
+              "block-url-category": {},
+              "default-url-category": {
+                "member": ["malicious"]
+              },
+              "malicious-code-protection": {
+                "action": "block",
+                "name": "malicious-code",
+                "severity": "high"
+              },
+              "url-detected-action": "block",
+              "url-detected-severity": "low"
+            },
+            "data-protection": {
+              "data-leak-detection": {
+                "action": "block",
+                "mask-data-inline": true,
+                "member": [
+                  {
+                    "id": "",
+                    "text": "sensitive content",
+                    "version": "2"
+                  }
+                ]
+              },
+              "database-security": [
+                {
+                  "name": "database-security-create",
+                  "action": "block",
+                  "severity": "medium"
+                },
+                {
+                  "name": "database-security-read",
+                  "action": "block",
+                  "severity": "low"
+                },
+                {
+                  "name": "database-security-update",
+                  "action": "block",
+                  "severity": "medium"
+                },
+                {
+                  "name": "database-security-delete",
+                  "action": "block",
+                  "severity": "high"
+                }
+              ]
+            },
+            "model-protection": [
+              {
+                "action": "block",
+                "name": "prompt-injection",
+                "severity": "medium"
+              },
+              {
+                "action": "high:block, moderate:allow",
+                "name": "toxic-content",
+                "severity-by-confidence": {
+                  "high": "medium",
+                  "moderate": "low"
+                }
+              }
+            ]
+          },
+          "tool-response": {
+            "agent-protection": [],
+            "app-protection": {
+              "alert-url-category": {},
+              "allow-url-category": {},
+              "block-url-category": {},
+              "default-url-category": {
+                "member": ["malicious"]
+              },
+              "malicious-code-protection": {
+                "action": "block",
+                "name": "malicious-code",
+                "severity": "high"
+              },
+              "url-detected-action": "block",
+              "url-detected-severity": "low"
+            },
+            "data-protection": {
+              "data-leak-detection": {
+                "action": "block",
+                "member": [
+                  {
+                    "id": "",
+                    "text": "sensitive content",
+                    "version": "2"
+                  }
+                ]
+              },
+              "database-security": [
+                {
+                  "name": "database-security-create",
+                  "action": "block",
+                  "severity": "medium"
+                },
+                {
+                  "name": "database-security-read",
+                  "action": "block",
+                  "severity": "low"
+                },
+                {
+                  "name": "database-security-update",
+                  "action": "block",
+                  "severity": "medium"
+                },
+                {
+                  "name": "database-security-delete",
+                  "action": "block",
+                  "severity": "high"
+                }
+              ]
+            },
+            "model-protection": [
+              {
+                "action": "block",
+                "name": "prompt-injection",
+                "severity": "medium"
+              },
+              {
+                "action": "high:block, moderate:allow",
+                "name": "toxic-content",
+                "severity-by-confidence": {
+                  "high": "medium",
+                  "moderate": "low"
+                }
+              }
+            ]
+          }
+        },
+        "content-type-mode": "per_content_type",
+        "model-configuration": {
+          "enable-full-conversation-inspection": false,
+          "latency": {
+            "inline-timeout-action": "block",
+            "max-inline-latency": 5
+          },
+          "mask-data-in-storage": false
+        },
+        "model-type": "default"
+      }
+    ],
+    "dlp-data-profiles": []
+  },
+  "profile_id": "550e8400-e29b-41d4-a716-446655440000",
+  "profile_name": "Directionality Test",
+  "revision": 1,
+  "tsg_id": "100",
+  "updated_by": "fixture@example.invalid"
+}

@@ -1,4 +1,18 @@
-import type { CreateSecurityProfileRequest, Policy } from '@cdot65/prisma-airs-sdk';
+import {
+  type CreateSecurityProfileRequest,
+  type Policy,
+  PolicySchema,
+} from '@cdot65/prisma-airs-sdk';
+
+import {
+  type ProfileDirection,
+  type ProfileSelector,
+  profileProtectionLocations,
+  selectAiProfile,
+  selectProfileProtections,
+  sharedProfileSettings,
+  validateProfileSelector,
+} from '../../airs/profile-policy.js';
 
 /**
  * Parsed CLI flag values for profile create/update commands.
@@ -7,6 +21,9 @@ export interface ProfileFlags {
   // Identity
   name: string;
   active?: boolean;
+  direction?: ProfileDirection;
+  aiProfileIndex?: number;
+  enableFullConversationInspection?: boolean;
 
   // Model protection
   promptInjection?: string;
@@ -76,7 +93,7 @@ function buildAppProtection(flags: Partial<ProfileFlags>): Record<string, unknow
 
   if (flags.maliciousCode) {
     ap['malicious-code-protection'] = {
-      name: 'malicious-code-detection',
+      name: flags.direction ? 'malicious-code' : 'malicious-code-detection',
       action: flags.maliciousCode,
     };
     hasAny = true;
@@ -115,8 +132,13 @@ function buildDataProtection(flags: Partial<ProfileFlags>): Record<string, unkno
   const dp: Record<string, unknown> = {};
   let hasAny = false;
 
-  if (flags.dlpAction) {
-    const dld: Record<string, unknown> = { action: flags.dlpAction };
+  if (
+    flags.dlpAction !== undefined ||
+    flags.dlpProfiles !== undefined ||
+    flags.maskDataInline !== undefined
+  ) {
+    const dld: Record<string, unknown> = {};
+    if (flags.dlpAction !== undefined) dld.action = flags.dlpAction;
     const profiles = parseList(flags.dlpProfiles);
     if (profiles) {
       dld.member = profiles.map((text) => ({ text }));
@@ -170,14 +192,17 @@ function hasAnyProtectionFlag(flags: Partial<ProfileFlags>): boolean {
     flags.blockUrlCategories ||
     flags.alertUrlCategories ||
     flags.agentSecurity ||
-    flags.dlpAction ||
+    flags.dlpAction !== undefined ||
+    flags.dlpProfiles !== undefined ||
+    flags.maskDataInline !== undefined ||
     flags.dbSecurityCreate ||
     flags.dbSecurityRead ||
     flags.dbSecurityUpdate ||
     flags.dbSecurityDelete ||
     flags.inlineTimeoutAction ||
     flags.maxInlineLatency != null ||
-    flags.maskDataInStorage != null
+    flags.maskDataInStorage != null ||
+    flags.enableFullConversationInspection != null
   );
 }
 
@@ -204,17 +229,39 @@ function buildModelConfiguration(flags: Partial<ProfileFlags>): Record<string, u
     config['mask-data-in-storage'] = flags.maskDataInStorage;
   }
 
+  if (flags.enableFullConversationInspection !== undefined)
+    config['enable-full-conversation-inspection'] = flags.enableFullConversationInspection;
   return config;
 }
 
 /** Build a full CreateSecurityProfileRequest from CLI flags (used by `create`). */
 export function buildProfileRequest(flags: ProfileFlags): CreateSecurityProfileRequest {
+  validateProfileSelector(flags);
+  if (flags.aiProfileIndex !== undefined)
+    throw new Error('--ai-profile-index is only supported on updates');
   const request: CreateSecurityProfileRequest = {
     profile_name: flags.name,
     active: flags.active ?? true,
   };
 
-  if (hasAnyProtectionFlag(flags)) {
+  if (flags.direction) {
+    if (!hasAnyProtectionFlag(flags))
+      throw new Error(
+        'Directional flag creation requires at least one protection or shared setting; use --config for an empty policy',
+      );
+    const config = buildModelConfiguration(flags);
+    const shared = extractSharedSettings(config);
+    request.policy = {
+      'ai-security-profiles': [
+        {
+          'model-type': 'default',
+          'content-type-mode': 'per_content_type',
+          'model-configuration': shared,
+          'content-type-configurations': { [flags.direction]: config },
+        },
+      ],
+    };
+  } else if (hasAnyProtectionFlag(flags)) {
     const modelConfig = buildModelConfiguration(flags);
     // AIRS UI requires these sections to exist — crashes with "is not iterable" otherwise
     if (!modelConfig['app-protection']) {
@@ -250,133 +297,122 @@ export function buildProfileRequest(flags: ProfileFlags): CreateSecurityProfileR
 
 /** Build a partial Policy from flags (used by `update` — merged into existing). */
 export function buildProfileOverrides(flags: Partial<ProfileFlags>): Policy | undefined {
+  validateProfileSelector(flags);
   if (!hasAnyProtectionFlag(flags)) return undefined;
-
-  const modelConfig = buildModelConfiguration(flags);
-  return {
-    'ai-security-profiles': [
-      {
-        'model-type': 'default',
-        'model-configuration': modelConfig,
-      },
-    ],
-  } as Policy;
+  const config = buildModelConfiguration(flags);
+  const maliciousCode = (config['app-protection'] as Record<string, unknown> | undefined)?.[
+    'malicious-code-protection'
+  ] as Record<string, unknown> | undefined;
+  if (maliciousCode) delete maliciousCode.name;
+  if (flags.direction) {
+    const shared = extractSharedSettings(config);
+    return validateOverrides({
+      'ai-security-profiles': [
+        {
+          'model-configuration': shared,
+          'content-type-configurations': { [flags.direction]: config },
+        },
+      ],
+    });
+  }
+  return validateOverrides({ 'ai-security-profiles': [{ 'model-configuration': config }] });
 }
 
-/**
- * Deep-merge overrides INTO the existing policy.
- *
- * Merge rules:
- * - model-protection: keyed merge by `name`, preserves unmentioned items
- * - topic-guardrails: NEVER modified by flags — always preserved from existing
- * - app-protection: field-level overlay, preserves unmentioned fields
- * - agent-protection: keyed merge by `name`
- * - data-protection: field-level overlay; database-security merged by `name`
- * - latency: field-level overlay
- * - dlp-data-profiles: preserved unless overridden
- */
+/** Validate flag patches with SDK schemas, supplying required DLP action only in the validation copy. */
+function validateOverrides(policy: Policy): Policy {
+  const validation = structuredClone(policy);
+  for (const location of profileProtectionLocations(validation)) {
+    const detection = location.configuration['data-protection']?.['data-leak-detection'];
+    if (detection && detection.action === undefined) detection.action = '';
+    const maliciousCode = location.configuration['app-protection']?.['malicious-code-protection'];
+    if (maliciousCode && maliciousCode.name === undefined)
+      maliciousCode.name = 'malicious-code-detection';
+  }
+  PolicySchema.parse(validation);
+  return policy;
+}
+
+/** Move global settings out of directional protection blocks. */
+function extractSharedSettings(config: Record<string, unknown>): Record<string, unknown> {
+  const shared: Record<string, unknown> = {};
+  for (const key of ['latency', 'mask-data-in-storage', 'enable-full-conversation-inspection']) {
+    if (Object.hasOwn(config, key)) {
+      shared[key] = config[key];
+      delete config[key];
+    }
+  }
+  return shared;
+}
+
+/** Recursively overlay flags; detector arrays merge by name, retaining nested metadata. */
+function mergeSettings(base: Record<string, unknown>, patch: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(patch)) {
+    if (
+      Array.isArray(value) &&
+      ['model-protection', 'agent-protection', 'database-security'].includes(key)
+    ) {
+      const items = (base[key] ?? []) as Record<string, unknown>[];
+      for (const item of value as Record<string, unknown>[]) {
+        const matches = items.filter((entry) => entry.name === item.name);
+        if (matches.length > 1)
+          throw new Error(`Ambiguous detector identity: ${String(item.name)}`);
+        if (matches[0]) mergeSettings(matches[0], item);
+        else items.push(structuredClone(item));
+      }
+      base[key] = items;
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const existing = base[key];
+      const target =
+        existing && typeof existing === 'object' && !Array.isArray(existing)
+          ? (existing as Record<string, unknown>)
+          : {};
+      mergeSettings(target, value as Record<string, unknown>);
+      if (key === 'malicious-code-protection' && target.name === undefined)
+        target.name = 'malicious-code';
+      base[key] = target;
+    } else base[key] = structuredClone(value);
+  }
+}
+
+/** Merge one explicitly selected entry/direction and its shared settings, preserving all others. */
 export function mergeProfilePolicy(
   existing: Record<string, unknown> | undefined,
   overrides: Policy | undefined,
+  selector: ProfileSelector = {},
 ): Policy {
-  const base = structuredClone(existing ?? {}) as Record<string, unknown>;
-  if (!overrides) return base as Policy;
-
-  const overrideProfiles = (overrides as Record<string, unknown>)['ai-security-profiles'] as
-    | Record<string, unknown>[]
-    | undefined;
-  if (!overrideProfiles?.length) return base as Policy;
-
-  // Ensure base has ai-security-profiles structure
-  if (!base['ai-security-profiles']) {
-    base['ai-security-profiles'] = [{ 'model-type': 'default', 'model-configuration': {} }];
-  }
-  const baseProfiles = base['ai-security-profiles'] as Record<string, unknown>[];
-  const baseConfig = (baseProfiles[0]['model-configuration'] ?? {}) as Record<string, unknown>;
-  const overConfig = (overrideProfiles[0]['model-configuration'] ?? {}) as Record<string, unknown>;
-
-  // Merge model-protection (keyed by name, topic-guardrails preserved)
-  if (overConfig['model-protection']) {
-    const baseMp = (baseConfig['model-protection'] ?? []) as Record<string, unknown>[];
-    const overMp = overConfig['model-protection'] as Record<string, unknown>[];
-
-    for (const overItem of overMp) {
-      const existing = baseMp.find((b) => b.name === overItem.name);
-      if (existing) {
-        Object.assign(existing, overItem);
-      } else {
-        baseMp.push(overItem);
-      }
+  validateProfileSelector(selector);
+  const base = structuredClone(existing ?? {}) as Policy;
+  if (!overrides) {
+    if (selector.direction !== undefined || selector.aiProfileIndex !== undefined) {
+      const profile = selectAiProfile(base, selector);
+      if (selector.direction !== undefined)
+        selectProfileProtections(structuredClone(profile), selector.direction, true);
     }
-    baseConfig['model-protection'] = baseMp;
+    return base;
   }
-
-  // Merge app-protection (field-level overlay)
-  if (overConfig['app-protection']) {
-    const baseAp = (baseConfig['app-protection'] ?? {}) as Record<string, unknown>;
-    const overAp = overConfig['app-protection'] as Record<string, unknown>;
-    Object.assign(baseAp, overAp);
-    baseConfig['app-protection'] = baseAp;
+  const patch = overrides['ai-security-profiles']?.[0];
+  if (!patch) return base;
+  const profile = selectAiProfile(base, selector);
+  const configuration = structuredClone(patch['model-configuration'] ?? {});
+  const shared = extractSharedSettings(configuration);
+  const directions = Object.keys(patch['content-type-configurations'] ?? {});
+  const direction = directions[0] as ProfileDirection | undefined;
+  if (directions.length > 1) throw new Error('Flag overrides must select one direction');
+  // An explicit selector also validates layout for global-only writes.
+  if (direction || selector.direction || Object.keys(configuration).length) {
+    const protectionPatch = direction
+      ? (patch['content-type-configurations']?.[direction] ?? {})
+      : configuration;
+    const target = selectProfileProtections(
+      Object.keys(protectionPatch).length ? profile : structuredClone(profile),
+      direction ?? selector.direction,
+      Object.keys(protectionPatch).length === 0,
+    );
+    mergeSettings(
+      target,
+      direction ? (patch['content-type-configurations']?.[direction] ?? {}) : configuration,
+    );
   }
-
-  // Merge agent-protection (keyed by name)
-  if (overConfig['agent-protection']) {
-    const baseAgp = (baseConfig['agent-protection'] ?? []) as Record<string, unknown>[];
-    const overAgp = overConfig['agent-protection'] as Record<string, unknown>[];
-
-    for (const overItem of overAgp) {
-      const existing = baseAgp.find((b) => b.name === overItem.name);
-      if (existing) {
-        Object.assign(existing, overItem);
-      } else {
-        baseAgp.push(overItem);
-      }
-    }
-    baseConfig['agent-protection'] = baseAgp;
-  }
-
-  // Merge data-protection (field-level overlay, database-security by name)
-  if (overConfig['data-protection']) {
-    const baseDp = (baseConfig['data-protection'] ?? {}) as Record<string, unknown>;
-    const overDp = overConfig['data-protection'] as Record<string, unknown>;
-
-    // data-leak-detection: overlay
-    if (overDp['data-leak-detection']) {
-      baseDp['data-leak-detection'] = overDp['data-leak-detection'];
-    }
-
-    // database-security: merge by name
-    if (overDp['database-security']) {
-      const baseDb = (baseDp['database-security'] ?? []) as Record<string, unknown>[];
-      const overDb = overDp['database-security'] as Record<string, unknown>[];
-
-      for (const overItem of overDb) {
-        const existing = baseDb.find((b) => b.name === overItem.name);
-        if (existing) {
-          Object.assign(existing, overItem);
-        } else {
-          baseDb.push(overItem);
-        }
-      }
-      baseDp['database-security'] = baseDb;
-    }
-
-    baseConfig['data-protection'] = baseDp;
-  }
-
-  // Merge latency (field-level overlay)
-  if (overConfig.latency) {
-    const baseLat = (baseConfig.latency ?? {}) as Record<string, unknown>;
-    const overLat = overConfig.latency as Record<string, unknown>;
-    Object.assign(baseLat, overLat);
-    baseConfig.latency = baseLat;
-  }
-
-  // Merge mask-data-in-storage
-  if (overConfig['mask-data-in-storage'] != null) {
-    baseConfig['mask-data-in-storage'] = overConfig['mask-data-in-storage'];
-  }
-
-  baseProfiles[0]['model-configuration'] = baseConfig;
-  return base as Policy;
+  if (Object.keys(shared).length) mergeSettings(sharedProfileSettings(profile), shared);
+  return base;
 }

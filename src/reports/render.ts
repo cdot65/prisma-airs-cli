@@ -71,6 +71,7 @@ function tables(report: RuntimeDailyReport): Table[] {
         'Active',
         'Timeout action',
         'Storage masking',
+        'Protection configurations',
         'Last modified (UTC)',
       ],
       rows: report.profiles.map((profile) => [
@@ -79,6 +80,7 @@ function tables(report: RuntimeDailyReport): Table[] {
         profile.active === null ? 'Unknown' : profile.active ? 'Yes' : 'No',
         profile.timeoutActions.join(', ') || 'Unknown',
         profile.storageMasking,
+        profile.protectionConfigurations.join('; ') || 'Unknown',
         profile.modified,
       ]),
       note: 'Latest returned revision per profile name. These are current settings, not a record of changes during the daily window.',

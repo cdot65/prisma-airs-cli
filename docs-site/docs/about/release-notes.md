@@ -1,7 +1,7 @@
 # Release Notes
 
-Public npm channels for this release: **`latest` = 7.0.1**, **`next` = 7.2.0**.
-Install the Gateway alignment with `npm install -g @cdot65/prisma-airs-cli@7.2.0`;
+Public npm channels for this release: **`latest` = 7.0.1**, **`next` = 7.3.0**.
+Install directional profiles and Gateway alignment with `npm install -g @cdot65/prisma-airs-cli@7.3.0`;
 the stable Harness remains pinned to CLI 7.1.5.
 See [installation](../getting-started/installation.mdx) and the
 [judge workflow](../cli/redteam/judge.md). Entries for 7.1.0 and 7.1.1 describe changes
@@ -12,6 +12,16 @@ The matching stable harness **0.1.2** is published under `latest` at
 The skill requests per-command approval for live credential-store and network
 access. This repairs the shell execution boundary; the CLI version remains 7.1.5.
 See [installation](../getting-started/installation.mdx#use-the-bundled-judge-in-airs-harness).
+
+## v7.3.0 (2026-10-09) — Directional Runtime security profiles
+
+- Adds `--direction` and `--ai-profile-index` selectors for profile protection and topic edits while preserving the legacy layout and all unmentioned fields.
+- Supports complete JSON create/update in both layouts, validates local input before OAuth, and preserves explicit false masking/conversation flags.
+- Discovers and remaps topic/DLP references in every direction; reports and readable profile detail identify each protection location. Directional verification remains strict about omissions and severities.
+- Topic revert checks retained legacy references and uses normal deletion checks in both layouts.
+- Pins published SDK **0.35.0** and verifies its directional schemas before publishing. Local transport tests cover profile mutations; live service acceptance is not claimed.
+- Licenses project-owned code under Apache-2.0 and ships `LICENSE` and `NOTICE`; previously published MIT releases retain their license.
+- Updates optional `sharp` to 0.35.5 in the lockfile and Docusaurus to 3.10.2. This release uses the `next` channel; the stable Harness remains unchanged.
 
 ## v7.2.0 (2026-09-27) — Official Gateway contract alignment
 

@@ -5,11 +5,17 @@
  * Palo Alto Prisma AIRS custom topic guardrails.
  */
 
+export { SdkManagementService } from './airs/management.js';
+export { SdkModelSecurityService } from './airs/modelsecurity.js';
+export type { ProfileDirection, ProfileSelector } from './airs/profile-policy.js';
 // ---------------------------------------------------------------------------
 // AIRS integration — scan prompts and manage topics/profiles via SDK
 // ---------------------------------------------------------------------------
-export { SdkManagementService } from './airs/management.js';
-export { SdkModelSecurityService } from './airs/modelsecurity.js';
+export {
+  isDirectionalProfile,
+  PROFILE_DIRECTIONS,
+  profileProtectionLocations,
+} from './airs/profile-policy.js';
 export { SdkPromptSetService } from './airs/promptsets.js';
 export { SdkRedTeamService } from './airs/redteam.js';
 export type { PollRetryOptions } from './airs/runtime.js';

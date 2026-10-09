@@ -65,6 +65,7 @@
 - [MutationResponse](interfaces/MutationResponse.md)
 - [PaginationOptions](interfaces/PaginationOptions.md)
 - [PollRetryOptions](interfaces/PollRetryOptions.md)
+- [ProfileSelector](interfaces/ProfileSelector.md)
 - [ProfileTopic](interfaces/ProfileTopic.md)
 - [PromptDetail](interfaces/PromptDetail.md)
 - [PromptSetDetail](interfaces/PromptSetDetail.md)
@@ -138,6 +139,7 @@
 - [BulkScanAction](type-aliases/BulkScanAction.md)
 - [ConsumptionTimeInterval](type-aliases/ConsumptionTimeInterval.md)
 - [GatewayReportClient](type-aliases/GatewayReportClient.md)
+- [ProfileDirection](type-aliases/ProfileDirection.md)
 - [RedTeamReportClient](type-aliases/RedTeamReportClient.md)
 - [ReportFormat](type-aliases/ReportFormat.md)
 - [ReportPriority](type-aliases/ReportPriority.md)
@@ -146,6 +148,7 @@
 
 ## Variables
 
+- [PROFILE\_DIRECTIONS](variables/PROFILE_DIRECTIONS.md)
 - [SDK\_ASYNC\_BATCH\_SIZE](variables/SDK_ASYNC_BATCH_SIZE.md)
 
 ## Functions
@@ -155,7 +158,9 @@
 - [collectRuntimeDailyReport](functions/collectRuntimeDailyReport.md)
 - [computeCategoryBreakdown](functions/computeCategoryBreakdown.md)
 - [computeMetrics](functions/computeMetrics.md)
+- [isDirectionalProfile](functions/isDirectionalProfile.md)
 - [loadConfig](functions/loadConfig.md)
+- [profileProtectionLocations](functions/profileProtectionLocations.md)
 - [readBackupDir](functions/readBackupDir.md)
 - [readBackupFile](functions/readBackupFile.md)
 - [renderEnvironmentReportHtml](functions/renderEnvironmentReportHtml.md)

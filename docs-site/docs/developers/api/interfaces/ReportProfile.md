@@ -28,6 +28,14 @@ Defined in: src/reports/types.ts:71
 
 ***
 
+### protectionConfigurations
+
+> **protectionConfigurations**: `string`[]
+
+Defined in: src/reports/types.ts:77
+
+***
+
 ### revision
 
 > **revision**: `number` \| `null`

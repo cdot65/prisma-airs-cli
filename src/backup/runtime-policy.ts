@@ -1,4 +1,5 @@
 import type { SecurityProfile } from '@cdot65/prisma-airs-sdk';
+import { isDirectionalProfile } from '../airs/profile-policy.js';
 
 type ObjectValue = Record<string, unknown>;
 function object(value: unknown): value is ObjectValue {
@@ -41,7 +42,13 @@ export function compareRuntimePolicies(
         const field = `${path}.${key}`;
         if (!Object.hasOwn(source, key) && Object.hasOwn(target, key)) {
           const model = /^policy\.ai-security-profiles\[\d+\]\.model-configuration/;
-          const relative = path.replace(model, 'model');
+          const entryIndex = /^policy\.ai-security-profiles\[(\d+)\]/.exec(path)?.[1];
+          const entry =
+            entryIndex === undefined
+              ? undefined
+              : expected?.['ai-security-profiles']?.[Number(entryIndex)];
+          const relative =
+            entry && !isDirectionalProfile(entry) ? path.replace(model, 'model') : path;
           let allowed: unknown;
           if (relative === 'model.data-protection' && key === 'database-security') allowed = null;
           if (key === 'severity') {

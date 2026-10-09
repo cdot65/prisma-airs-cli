@@ -8,6 +8,7 @@ import {
   SecurityProfileSchema,
 } from '@cdot65/prisma-airs-sdk';
 import { z } from 'zod';
+import { isDirectionalProfile, profileProtectionLocations } from '../airs/profile-policy.js';
 import { compareRuntimePolicies } from './runtime-policy.js';
 
 /** Only SDK operations required for portable Runtime profile configuration. */
@@ -237,11 +238,8 @@ function dlpReferences(
       throw new Error('Invalid embedded DLP reference');
     refs.push({ value: entry, name: entry.name, kind: 'embedded' });
   }
-  for (const entry of Array.isArray(policy['ai-security-profiles'])
-    ? policy['ai-security-profiles']
-    : []) {
-    if (!object(entry) || !object(entry['model-configuration'])) continue;
-    const protection = entry['model-configuration']['data-protection'];
+  for (const { configuration } of profileProtectionLocations(policy)) {
+    const protection = configuration['data-protection'];
     if (!object(protection) || !object(protection['data-leak-detection'])) continue;
     const members = protection['data-leak-detection'].member;
     if (!Array.isArray(members)) continue;
@@ -267,8 +265,8 @@ function basicFallback(policy: SecurityProfile['policy']): SecurityProfile['poli
   const result = structuredClone(policy);
   const customNames = new Set(dlpReferences(result).map((ref) => ref.name));
   let converted = false;
-  for (const entry of result?.['ai-security-profiles'] ?? []) {
-    const detection = entry['model-configuration']?.['data-protection']?.['data-leak-detection'];
+  for (const { configuration } of profileProtectionLocations(result)) {
+    const detection = configuration['data-protection']?.['data-leak-detection'];
     if (!detection?.member?.some((member) => customNames.has(member.text))) continue;
     if (!['block', 'allow', ''].includes(detection.action))
       throw new Error('Cannot safely fall back to Basic: unsupported DLP action');
@@ -561,6 +559,7 @@ function canonical(value: unknown): string {
 function canonicalPolicy(policy: SecurityProfile['policy']): string {
   const value = structuredClone(policy);
   for (const entry of value?.['ai-security-profiles'] ?? []) {
+    if (isDirectionalProfile(entry)) continue;
     const protection = entry['model-configuration']?.['data-protection'];
     if (protection && !('database-security' in protection)) protection['database-security'] = null;
   }

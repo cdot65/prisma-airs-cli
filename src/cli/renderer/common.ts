@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { dump } from 'js-yaml';
+import { ProfilePolicyError } from '../../airs/profile-policy.js';
 import { loadConfig } from '../../config/loader.js';
 
 export function renderError(message: string): void {
@@ -10,7 +11,7 @@ export function renderError(message: string): void {
 export class CliUsageError extends Error {}
 
 export function fail(err: unknown): never {
-  if (err instanceof CliUsageError) usageError(err.message);
+  if (err instanceof CliUsageError || err instanceof ProfilePolicyError) usageError(err.message);
   const message = err instanceof Error ? err.message : String(err);
   const status =
     (err as { status?: number; statusCode?: number })?.status ??

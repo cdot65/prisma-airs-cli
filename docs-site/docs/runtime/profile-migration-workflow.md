@@ -230,3 +230,45 @@ coverage. Configuration migration, recovery, packaging and preservation checks p
 The remaining gap is intentional: custom Enterprise DLP profiles, patterns and dictionaries
 are not cloned, and Basic fallback cannot preserve their detection semantics. Full DLP
 dependency migration and post-migration scanner-efficacy tests remain separate work.
+
+
+## Directional profile transfer
+
+Backup and restore preserve both the legacy `model-configuration` protection layout
+and the directional `content-type-configurations` layout. Topic references are
+discovered recursively; DLP members are resolved and remapped in prompt, response,
+tool-call, and tool-response configurations as well as retained legacy blocks.
+Basic DLP (`sensitive content` with the built-in identity) needs no Enterprise DLP map.
+
+```bash
+airs-cli runtime profiles backup Directional --output-file ./directional-backup.json
+airs-cli tenant switch destination
+airs-cli runtime profiles restore ./directional-backup.json --dry-run --expect-tsg 200 --on-missing-dlp error --output json
+airs-cli runtime profiles restore ./directional-backup.json --expect-tsg 200 --on-missing-dlp error --force
+```
+
+Substitute your destination TSG ID. For custom DLP, add explicit bindings such as
+`--dlp-map 'Source DLP=Destination DLP'` to the restore commands. `--on-missing-dlp basic` remains an explicit loss
+of custom DLP semantics: if any custom dependency is unresolved, all custom DLP in
+that profile is replaced across directions. Actions, masking, and unrelated settings
+survive, and unsafe action/masking combinations still refuse before profile writes.
+Inventory failures never trigger fallback.
+
+Read-back comparison preserves explicit severities, nulls, empty arrays/objects,
+omitted masks, false conversation inspection, unknown additive fields, AI entry
+identity, and missing directions. Existing evidenced server-default allowances remain
+restricted to legacy paths; the directional capture does not authorize equivalent
+normalization in a direction. Changed actions, removed directions, and unexpected
+fields fail verification. Layout conversion is a separate complete JSON replacement,
+not a side effect of backup, restore, or a `--direction` flag.
+
+See [profile layout and SDK availability](../cli/runtime/profiles.md#sdk-availability)
+before releasing this CLI support. These behaviors have deterministic mocked
+transport coverage; no directional live mutation or cross-tenant service acceptance
+is claimed by these tests.
+
+
+Operational limit: if the service injects an omitted per-direction severity or other
+unverified default, read-back and `--on-conflict verify` fail after any already-created
+resources remain in place. Inspect the reported differences; this implementation
+intentionally does not normalize those fields based only on the captured fixture.

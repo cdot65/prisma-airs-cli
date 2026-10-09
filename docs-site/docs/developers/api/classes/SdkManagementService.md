@@ -1,6 +1,6 @@
 # Class: SdkManagementService
 
-Defined in: src/airs/management.ts:31
+Defined in: src/airs/management.ts:40
 
 Wraps the SDK's ManagementClient to implement our ManagementService interface.
 OAuth2 token management, caching, and retry are handled by the SDK.
@@ -15,7 +15,7 @@ OAuth2 token management, caching, and retry are handled by the SDK.
 
 > **new SdkManagementService**(`opts?`): `SdkManagementService`
 
-Defined in: src/airs/management.ts:34
+Defined in: src/airs/management.ts:43
 
 #### Parameters
 
@@ -31,9 +31,9 @@ Defined in: src/airs/management.ts:34
 
 ### assignTopicsToProfile()
 
-> **assignTopicsToProfile**(`profileName`, `topics`, `guardrailAction?`): `Promise`\<`void`\>
+> **assignTopicsToProfile**(`profileName`, `topics`, `guardrailAction?`, `selector?`): `Promise`\<`void`\>
 
-Defined in: src/airs/management.ts:104
+Defined in: src/airs/management.ts:119
 
 Sets one or more custom topics on a profile's topic-guardrails config.
 Replaces any existing topics — previous runs' stale topics are cleared.
@@ -57,6 +57,10 @@ it defaults to revision 0 (original content), not the latest.
 
 `"allow"` \| `"block"`
 
+##### selector?
+
+[`ProfileSelector`](../interfaces/ProfileSelector.md) = `{}`
+
 #### Returns
 
 `Promise`\<`void`\>
@@ -69,9 +73,9 @@ it defaults to revision 0 (original content), not the latest.
 
 ### assignTopicToProfile()
 
-> **assignTopicToProfile**(`profileName`, `topicId`, `topicName`, `action`): `Promise`\<`void`\>
+> **assignTopicToProfile**(`profileName`, `topicId`, `topicName`, `action`, `selector?`): `Promise`\<`void`\>
 
-Defined in: src/airs/management.ts:86
+Defined in: src/airs/management.ts:95
 
 Sets a single custom topic on a profile's topic-guardrails config.
 Delegates to [assignTopicsToProfile](#assigntopicstoprofile) for backward compatibility.
@@ -94,6 +98,10 @@ Delegates to [assignTopicsToProfile](#assigntopicstoprofile) for backward compat
 
 `"allow"` \| `"block"`
 
+##### selector?
+
+[`ProfileSelector`](../interfaces/ProfileSelector.md)
+
 #### Returns
 
 `Promise`\<`void`\>
@@ -108,7 +116,7 @@ Delegates to [assignTopicsToProfile](#assigntopicstoprofile) for backward compat
 
 > **createApiKey**(`request`): `Promise`\<[`ApiKeyInfo`](../interfaces/ApiKeyInfo.md)\>
 
-Defined in: src/airs/management.ts:339
+Defined in: src/airs/management.ts:380
 
 #### Parameters
 
@@ -130,7 +138,7 @@ Defined in: src/airs/management.ts:339
 
 > **createProfile**(`request`): `Promise`\<[`SecurityProfileInfo`](../interfaces/SecurityProfileInfo.md)\>
 
-Defined in: src/airs/management.ts:285
+Defined in: src/airs/management.ts:321
 
 Create a security profile.
 
@@ -154,7 +162,7 @@ Create a security profile.
 
 > **createTopic**(`request`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: src/airs/management.ts:38
+Defined in: src/airs/management.ts:47
 
 Create a new custom topic.
 
@@ -178,7 +186,7 @@ Create a new custom topic.
 
 > **deleteApiKey**(`apiKeyName`, `updatedBy`): `Promise`\<[`DeleteResponse`](../interfaces/DeleteResponse.md)\>
 
-Defined in: src/airs/management.ts:349
+Defined in: src/airs/management.ts:390
 
 #### Parameters
 
@@ -204,7 +212,7 @@ Defined in: src/airs/management.ts:349
 
 > **deleteCustomerApp**(`appName`, `updatedBy`): `Promise`\<[`CustomerAppInfo`](../interfaces/CustomerAppInfo.md)\>
 
-Defined in: src/airs/management.ts:396
+Defined in: src/airs/management.ts:437
 
 #### Parameters
 
@@ -230,7 +238,7 @@ Defined in: src/airs/management.ts:396
 
 > **deleteProfile**(`profileId`): `Promise`\<[`DeleteResponse`](../interfaces/DeleteResponse.md)\>
 
-Defined in: src/airs/management.ts:298
+Defined in: src/airs/management.ts:339
 
 Delete a security profile.
 
@@ -254,7 +262,7 @@ Delete a security profile.
 
 > **deleteTopic**(`topicId`): `Promise`\<`void`\>
 
-Defined in: src/airs/management.ts:46
+Defined in: src/airs/management.ts:55
 
 Delete a custom topic by ID.
 
@@ -278,7 +286,7 @@ Delete a custom topic by ID.
 
 > **forceDeleteProfile**(`profileId`, `updatedBy`): `Promise`\<[`DeleteResponse`](../interfaces/DeleteResponse.md)\>
 
-Defined in: src/airs/management.ts:303
+Defined in: src/airs/management.ts:344
 
 Force-delete a security profile (removes from referencing policies).
 
@@ -306,7 +314,7 @@ Force-delete a security profile (removes from referencing policies).
 
 > **forceDeleteTopic**(`topicId`, `updatedBy?`): `Promise`\<[`DeleteResponse`](../interfaces/DeleteResponse.md)\>
 
-Defined in: src/airs/management.ts:50
+Defined in: src/airs/management.ts:59
 
 Force-delete a custom topic (removes from all referencing profiles).
 
@@ -334,7 +342,7 @@ Force-delete a custom topic (removes from all referencing profiles).
 
 > **getCustomerApp**(`appName`): `Promise`\<[`CustomerAppInfo`](../interfaces/CustomerAppInfo.md)\>
 
-Defined in: src/airs/management.ts:383
+Defined in: src/airs/management.ts:424
 
 #### Parameters
 
@@ -356,7 +364,7 @@ Defined in: src/airs/management.ts:383
 
 > **getCustomerAppConsumption**(`appName`, `opts?`): `Promise`\<[`CustomerAppConsumption`](../interfaces/CustomerAppConsumption.md)\>
 
-Defined in: src/airs/management.ts:435
+Defined in: src/airs/management.ts:476
 
 Get per-app token consumption + violation breakdown from the SCM dashboard endpoints.
 
@@ -384,7 +392,7 @@ Get per-app token consumption + violation breakdown from the SCM dashboard endpo
 
 > **getProfile**(`profileId`): `Promise`\<[`SecurityProfileInfo`](../interfaces/SecurityProfileInfo.md)\>
 
-Defined in: src/airs/management.ts:256
+Defined in: src/airs/management.ts:292
 
 Get a single security profile by UUID.
 
@@ -408,7 +416,7 @@ Get a single security profile by UUID.
 
 > **getProfileByName**(`profileName`): `Promise`\<[`SecurityProfileInfo`](../interfaces/SecurityProfileInfo.md)\>
 
-Defined in: src/airs/management.ts:261
+Defined in: src/airs/management.ts:297
 
 Get a single security profile by name (returns highest revision).
 
@@ -430,9 +438,9 @@ Get a single security profile by name (returns highest revision).
 
 ### getProfileTopics()
 
-> **getProfileTopics**(`profileName`): `Promise`\<[`ProfileTopic`](../interfaces/ProfileTopic.md)[]\>
+> **getProfileTopics**(`profileName`, `selector?`, `options?`): `Promise`\<[`ProfileTopic`](../interfaces/ProfileTopic.md)[]\>
 
-Defined in: src/airs/management.ts:184
+Defined in: src/airs/management.ts:223
 
 List all topics configured in a profile with full details.
 
@@ -441,6 +449,16 @@ List all topics configured in a profile with full details.
 ##### profileName
 
 `string`
+
+##### selector?
+
+[`ProfileSelector`](../interfaces/ProfileSelector.md)
+
+##### options?
+
+###### includeInactive?
+
+`boolean`
 
 #### Returns
 
@@ -456,7 +474,7 @@ List all topics configured in a profile with full details.
 
 > **getTopic**(`topicId`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: src/airs/management.ts:68
+Defined in: src/airs/management.ts:77
 
 Get a single custom topic by ID.
 
@@ -480,7 +498,7 @@ Get a single custom topic by ID.
 
 > **getTopicByName**(`topicName`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: src/airs/management.ts:75
+Defined in: src/airs/management.ts:84
 
 Get a single custom topic by name.
 
@@ -504,7 +522,7 @@ Get a single custom topic by name.
 
 > **listAllApiKeys**(`opts?`): `Promise`\<[`ApiKeyInfo`](../interfaces/ApiKeyInfo.md)[]\>
 
-Defined in: src/airs/management.ts:333
+Defined in: src/airs/management.ts:374
 
 #### Parameters
 
@@ -532,7 +550,7 @@ Defined in: src/airs/management.ts:333
 
 > **listAllCustomerApps**(`opts?`): `Promise`\<[`CustomerAppInfo`](../interfaces/CustomerAppInfo.md)[]\>
 
-Defined in: src/airs/management.ts:377
+Defined in: src/airs/management.ts:418
 
 #### Parameters
 
@@ -560,7 +578,7 @@ Defined in: src/airs/management.ts:377
 
 > **listAllProfiles**(`opts?`): `Promise`\<[`SecurityProfileInfo`](../interfaces/SecurityProfileInfo.md)[]\>
 
-Defined in: src/airs/management.ts:276
+Defined in: src/airs/management.ts:312
 
 Walk all security-profile pages.
 
@@ -584,7 +602,7 @@ Walk all security-profile pages.
 
 > **listApiKeys**(`opts?`): `Promise`\<[`ApiKeyListResult`](../interfaces/ApiKeyListResult.md)\>
 
-Defined in: src/airs/management.ts:323
+Defined in: src/airs/management.ts:364
 
 #### Parameters
 
@@ -606,7 +624,7 @@ Defined in: src/airs/management.ts:323
 
 > **listConsumptionApps**(`opts?`): `Promise`\<[`ConsumptionAppListEntry`](../interfaces/ConsumptionAppListEntry.md)[]\>
 
-Defined in: src/airs/management.ts:401
+Defined in: src/airs/management.ts:442
 
 List dashboard application buckets - the canonical apps source for consumption reporting.
 
@@ -641,7 +659,7 @@ per distinct scan-payload `metadata.app_name` per registered customer-app. Disti
 
 > **listCustomerApps**(`opts?`): `Promise`\<[`CustomerAppListResult`](../interfaces/CustomerAppListResult.md)\>
 
-Defined in: src/airs/management.ts:367
+Defined in: src/airs/management.ts:408
 
 #### Parameters
 
@@ -663,7 +681,7 @@ Defined in: src/airs/management.ts:367
 
 > **listDeploymentProfiles**(`opts?`): `Promise`\<[`DeploymentProfileInfo`](../interfaces/DeploymentProfileInfo.md)[]\>
 
-Defined in: src/airs/management.ts:509
+Defined in: src/airs/management.ts:550
 
 #### Parameters
 
@@ -687,7 +705,7 @@ Defined in: src/airs/management.ts:509
 
 > **listLatestTopics**(`opts?`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>[]\>
 
-Defined in: src/airs/management.ts:59
+Defined in: src/airs/management.ts:68
 
 List latest topic revisions with client-side grouping in the SDK.
 
@@ -711,7 +729,7 @@ List latest topic revisions with client-side grouping in the SDK.
 
 > **listProfiles**(`opts?`): `Promise`\<[`SecurityProfileListResult`](../interfaces/SecurityProfileListResult.md)\>
 
-Defined in: src/airs/management.ts:266
+Defined in: src/airs/management.ts:302
 
 List security profiles.
 
@@ -735,7 +753,7 @@ List security profiles.
 
 > **listTopics**(): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>[]\>
 
-Defined in: src/airs/management.ts:55
+Defined in: src/airs/management.ts:64
 
 List all custom topics.
 
@@ -753,7 +771,7 @@ List all custom topics.
 
 > **queryScanLogs**(`opts`): `Promise`\<[`ScanLogQueryResult`](../interfaces/ScanLogQueryResult.md)\>
 
-Defined in: src/airs/management.ts:520
+Defined in: src/airs/management.ts:561
 
 #### Parameters
 
@@ -775,7 +793,7 @@ Defined in: src/airs/management.ts:520
 
 > **regenerateApiKey**(`apiKeyId`, `request`): `Promise`\<[`ApiKeyInfo`](../interfaces/ApiKeyInfo.md)\>
 
-Defined in: src/airs/management.ts:344
+Defined in: src/airs/management.ts:385
 
 #### Parameters
 
@@ -801,7 +819,7 @@ Defined in: src/airs/management.ts:344
 
 > **updateCustomerApp**(`appId`, `request`): `Promise`\<[`CustomerAppInfo`](../interfaces/CustomerAppInfo.md)\>
 
-Defined in: src/airs/management.ts:388
+Defined in: src/airs/management.ts:429
 
 #### Parameters
 
@@ -827,7 +845,7 @@ Defined in: src/airs/management.ts:388
 
 > **updateProfile**(`profileId`, `request`): `Promise`\<[`SecurityProfileInfo`](../interfaces/SecurityProfileInfo.md)\>
 
-Defined in: src/airs/management.ts:290
+Defined in: src/airs/management.ts:328
 
 Update a security profile.
 
@@ -855,7 +873,7 @@ Update a security profile.
 
 > **updateTopic**(`topicId`, `request`): `Promise`\<`objectOutputType`\<\{ `active`: `ZodOptional`\<`ZodBoolean`\>; `created_by`: `ZodOptional`\<`ZodString`\>; `created_ts`: `ZodOptional`\<`ZodString`\>; `description`: `ZodString`; `examples`: `ZodDefault`\<`ZodArray`\<`ZodString`, `"many"`\>\>; `last_modified_ts`: `ZodOptional`\<`ZodString`\>; `revision`: `ZodNumber`; `topic_id`: `ZodOptional`\<`ZodString`\>; `topic_name`: `ZodString`; `updated_by`: `ZodOptional`\<`ZodString`\>; \}, `ZodTypeAny`, `"passthrough"`\>\>
 
-Defined in: src/airs/management.ts:42
+Defined in: src/airs/management.ts:51
 
 Update an existing custom topic by ID.
 

@@ -4,6 +4,90 @@ sidebar_label: profiles
 
 # runtime profiles
 
+## Legacy and directional policies
+
+Legacy profiles keep protections and shared settings under
+`policy.ai-security-profiles[].model-configuration`. Directional profiles keep shared
+latency, storage masking, and conversation inspection there, and put protections in
+`content-type-configurations` with `content-type-mode: per_content_type`. Existing
+legacy profiles need no migration. Directions are `prompt`, `response`, `tool-call`,
+and `tool-response`; the service may omit directions or individual detectors.
+
+```bash
+# Existing legacy flag behavior
+airs-cli runtime profiles create --name Legacy --prompt-injection block
+
+# A new profile with response-specific protections
+airs-cli runtime profiles create --name Directional --direction response \
+  --toxic-content 'high:block, moderate:allow' \
+  --no-enable-full-conversation-inspection --output json
+
+# Edit only response protections; preserve all other directions and detector severities
+airs-cli runtime profiles update Directional --direction response \
+  --toxic-content 'high:alert, moderate:allow' --no-mask-data-inline
+
+# Shared settings need no direction
+airs-cli runtime profiles update Directional --max-inline-latency 8 \
+  --no-mask-data-in-storage --no-enable-full-conversation-inspection
+
+# Complete JSON create or deliberate layout replacement
+airs-cli runtime profiles create --config ./directional.json --output json
+airs-cli runtime profiles update Legacy --config ./directional.json --output json
+```
+
+`--config` uses the SDK request shape (`profile_name`, `active`, `policy`), validates
+before OAuth, and supplies a complete replacement on update. It supports both layouts
+and is exclusive with identity, protection, shared-setting, and selector flags.
+`--name` is required for flag-based creation; JSON creation reads `profile_name` from
+its file. JSON/YAML output retains the full policy and distinguishes directions.
+Response metadata `dlp_tenant_id` is exposed as optional `dlpTenantId`; GET may omit it.
+
+Protection edits on existing directional profiles require `--direction`, even when
+only one direction is present. Protection and topic edits require that selected
+direction to exist; add a missing direction with a complete `--config` replacement.
+Shared-only updates preserve omitted directions. Selecting a direction on a legacy
+update refuses;
+use complete JSON to convert a layout. When a policy contains multiple AI entries,
+select an existing entry with `--ai-profile-index <n>` (zero-based), including for
+shared settings. The selected entry's model identity and all other entries survive.
+Unknown future mode strings are retained in JSON and transfer; protection flag edits
+refuse modes whose behavior has not been established.
+
+Positive and negative boolean flags preserve explicit true/false values.
+`--mask-data-inline` / `--no-mask-data-inline` can change only masking on update,
+preserving the existing DLP action and members. Directional flag creation requires
+at least one protection or shared setting; use
+JSON for deliberately empty configurations. Creation must also supply a DLP action
+when creating a DLP detection block. Flag updates merge detectors by name and overlay
+nested settings, preserving unmentioned severities, topic references, and future fields.
+
+Directional topics use the same selectors:
+
+```bash
+airs-cli runtime topics apply --profile Directional --name Restricted \
+  --intent block --direction prompt
+airs-cli runtime topics revert --profile Directional --name Restricted \
+  --direction prompt --force
+```
+
+Apply preserves other topics and directions. Revert refuses when the topic is still
+referenced by another direction or AI entry in the profile; deletion in both layouts
+uses the service's normal reference checks instead of force-removing references in
+other profiles. Read-only topic lookup without a selector includes all active
+protection locations. Library callers can request `{ includeInactive: true }` as its
+third argument to inspect retained legacy references. The exported
+`profileProtectionLocations` helper includes all locations with identity, direction,
+and an active marker. Daily reports label each AI entry and direction separately
+from shared latency/storage settings.
+
+### SDK availability
+
+CLI 7.3.0 pins registry-published SDK **0.35.0**, which contains the directional
+schemas. The release checks validate the installed SDK contract and a clean package
+installation; local development packages are not used in the release. Published SDK
+0.34.0 does not contain these schemas. CLI validation uses local transport tests and
+does not claim live service acceptance of profile mutations.
+
 ### runtime profiles backup and restore
 
 ```bash
@@ -358,8 +442,14 @@ airs-cli runtime profiles create [options]
 
 | Flag | Required | Default | Description |
 |------|:--------:|---------|-------------|
-| `--name <name>` | Yes | — | Profile name |
+| `--name <name>` | Unless `--config` | — | Profile name |
 | `--no-active` | No | — | Create profile as inactive |
+| `--direction <direction>` | No | — | Protection direction; mandatory for directional protection updates |
+| `--no-mask-data-inline` | No | — | Explicitly disable inline masking |
+| `--no-mask-data-in-storage` | No | — | Explicitly disable shared storage masking |
+| `--enable-full-conversation-inspection` | No | — | Enable shared conversation inspection |
+| `--no-enable-full-conversation-inspection` | No | — | Explicitly disable shared conversation inspection |
+| `--output <format>` | No | Resolved | pretty, json, yaml |
 | `--prompt-injection <action>` | No | — | Prompt injection action (block/allow/alert) |
 | `--toxic-content <action>` | No | — | Toxic content action (e.g. "high:block, moderate:block") |
 | `--contextual-grounding <action>` | No | — | Contextual grounding action (block/allow/alert) |
@@ -379,7 +469,7 @@ airs-cli runtime profiles create [options]
 | `--inline-timeout-action <action>` | No | — | Inline timeout action (block/allow) |
 | `--max-inline-latency <n>` | No | — | Max inline latency in seconds |
 | `--mask-data-in-storage` | No | — | Mask data in storage |
-| `--config <path>` | No | — | JSON file with profile configuration (legacy) |
+| `--config <path>` | No | — | Complete JSON configuration; exclusive with write flags |
 
 #### Examples
 
@@ -481,6 +571,13 @@ airs-cli runtime profiles update [options] <nameOrId>
 |------|:--------:|---------|-------------|
 | `--name <name>` | No | — | Update profile name |
 | `--no-active` | No | — | Set profile as inactive |
+| `--direction <direction>` | No | — | Protection direction; mandatory for directional protection updates |
+| `--no-mask-data-inline` | No | — | Explicitly disable inline masking |
+| `--no-mask-data-in-storage` | No | — | Explicitly disable shared storage masking |
+| `--enable-full-conversation-inspection` | No | — | Enable shared conversation inspection |
+| `--no-enable-full-conversation-inspection` | No | — | Explicitly disable shared conversation inspection |
+| `--output <format>` | No | Resolved | pretty, json, yaml |
+| `--ai-profile-index <n>` | No | — | Select existing AI entry, zero-based; required if multiple entries exist |
 | `--active` | No | — | Set profile as active |
 | `--prompt-injection <action>` | No | — | Prompt injection action (block/allow/alert) |
 | `--toxic-content <action>` | No | — | Toxic content action (e.g. "high:block, moderate:block") |
@@ -501,7 +598,7 @@ airs-cli runtime profiles update [options] <nameOrId>
 | `--inline-timeout-action <action>` | No | — | Inline timeout action (block/allow) |
 | `--max-inline-latency <n>` | No | — | Max inline latency in seconds |
 | `--mask-data-in-storage` | No | — | Mask data in storage |
-| `--config <path>` | No | — | JSON file with profile updates (legacy) |
+| `--config <path>` | No | — | Complete JSON replacement; exclusive with write flags |
 
 #### Examples
 

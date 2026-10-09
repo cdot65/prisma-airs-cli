@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-10-09T19:13:09.988Z",
+  "installed": "/tmp/airs-cli-7.3.0-release-hzw2uzg2/consumer/node_modules/@cdot65/prisma-airs-cli",
+  "archive": "/tmp/airs-cli-7.3.0-release-hzw2uzg2/cdot65-prisma-airs-cli-7.3.0.tgz",
+  "bytes": 215810,
+  "sha256": "836a10727a143ddd30a81544d4c6b436eabc3d89763eaee0fa12d2849b2df41f",
+  "version": "7.3.0",
+  "sdkVersion": "0.35.0",
+  "verifiedPayloadFiles": 9,
+  "distributionFiles": 5,
+  "libraryExports": 32,
+  "packedAndInstalledPayloadsIdentical": true,
+  "versionAndInferenceHelpPassed": true,
+  "groupFilterHelpPassed": true,
+  "gatewayDashboardAndTransactionPaginationHelpPassed": true,
+  "runtimeReportHelpPassed": true,
+  "redTeamDashboardHelpAndQuotaMethodPassed": true,
+  "runtimeDashboardAndSessionHelpPassed": true,
+  "runtimeTimeUnitValidationPassed": true,
+  "runtimeWarnings": [],
+  "passed": true
+}

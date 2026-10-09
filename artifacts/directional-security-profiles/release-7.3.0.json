@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-10-09T19:13:50.569321+00:00",
+  "version": "7.3.0",
+  "channel": "next",
+  "sdkVersion": "0.35.0",
+  "sdkRegistry": "https://registry.npmjs.org",
+  "localSdkOverride": false,
+  "claudeCodeReview": {
+    "score": 9.4,
+    "artifact": "claude-review-2.json",
+    "scope": "directional feature implementation before registry pinning"
+  },
+  "checks": {
+    "tests": 2087,
+    "testFiles": 137,
+    "coverage": {
+      "statements": 97.72,
+      "branches": 90,
+      "functions": 96.68,
+      "lines": 97.72
+    },
+    "builtDirectionalTests": 21,
+    "releaseTests": 14,
+    "lint": "pass with seven existing warnings",
+    "format": "pass",
+    "typescript": "pass",
+    "build": "pass",
+    "docsBuild": "pass",
+    "productionAudit": "no known vulnerabilities",
+    "cleanRegistrySdkContract": "pass",
+    "cleanTarballConsumer": "pass",
+    "nativeDlpConsumer": "pass"
+  },
+  "consumer": {
+    "checkedAt": "2026-10-09T19:13:09.988Z",
+    "installed": "/tmp/airs-cli-7.3.0-release-hzw2uzg2/consumer/node_modules/@cdot65/prisma-airs-cli",
+    "archive": "/tmp/airs-cli-7.3.0-release-hzw2uzg2/cdot65-prisma-airs-cli-7.3.0.tgz",
+    "bytes": 215810,
+    "sha256": "836a10727a143ddd30a81544d4c6b436eabc3d89763eaee0fa12d2849b2df41f",
+    "version": "7.3.0",
+    "sdkVersion": "0.35.0",
+    "verifiedPayloadFiles": 9,
+    "distributionFiles": 5,
+    "libraryExports": 32,
+    "packedAndInstalledPayloadsIdentical": true,
+    "versionAndInferenceHelpPassed": true,
+    "groupFilterHelpPassed": true,
+    "gatewayDashboardAndTransactionPaginationHelpPassed": true,
+    "runtimeReportHelpPassed": true,
+    "redTeamDashboardHelpAndQuotaMethodPassed": true,
+    "runtimeDashboardAndSessionHelpPassed": true,
+    "runtimeTimeUnitValidationPassed": true,
+    "runtimeWarnings": [],
+    "passed": true
+  },
+  "limitations": [
+    "Directional mutations and migration are transport-tested; live service writes were not performed."
+  ],
+  "publication": "ready; publication receipt is recorded separately after completion"
+}

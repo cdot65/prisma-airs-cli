@@ -1,6 +1,6 @@
 # Interface: SecurityProfileInfo
 
-Defined in: src/airs/types.ts:1080
+Defined in: src/airs/types.ts:1084
 
 Normalized security profile.
 
@@ -10,13 +10,21 @@ Normalized security profile.
 
 > `optional` **active?**: `boolean`
 
-Defined in: src/airs/types.ts:1084
+Defined in: src/airs/types.ts:1089
 
 ***
 
 ### createdBy?
 
 > `optional` **createdBy?**: `string`
+
+Defined in: src/airs/types.ts:1090
+
+***
+
+### dlpTenantId?
+
+> `optional` **dlpTenantId?**: `string`
 
 Defined in: src/airs/types.ts:1085
 
@@ -26,7 +34,7 @@ Defined in: src/airs/types.ts:1085
 
 > `optional` **lastModifiedTs?**: `string`
 
-Defined in: src/airs/types.ts:1087
+Defined in: src/airs/types.ts:1092
 
 ***
 
@@ -34,7 +42,7 @@ Defined in: src/airs/types.ts:1087
 
 > `optional` **policy?**: `Record`\<`string`, `unknown`\>
 
-Defined in: src/airs/types.ts:1088
+Defined in: src/airs/types.ts:1093
 
 ***
 
@@ -42,7 +50,7 @@ Defined in: src/airs/types.ts:1088
 
 > **profileId**: `string`
 
-Defined in: src/airs/types.ts:1081
+Defined in: src/airs/types.ts:1086
 
 ***
 
@@ -50,7 +58,7 @@ Defined in: src/airs/types.ts:1081
 
 > **profileName**: `string`
 
-Defined in: src/airs/types.ts:1082
+Defined in: src/airs/types.ts:1087
 
 ***
 
@@ -58,7 +66,7 @@ Defined in: src/airs/types.ts:1082
 
 > `optional` **revision?**: `number`
 
-Defined in: src/airs/types.ts:1083
+Defined in: src/airs/types.ts:1088
 
 ***
 
@@ -66,4 +74,4 @@ Defined in: src/airs/types.ts:1083
 
 > `optional` **updatedBy?**: `string`
 
-Defined in: src/airs/types.ts:1086
+Defined in: src/airs/types.ts:1091

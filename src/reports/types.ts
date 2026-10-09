@@ -74,6 +74,7 @@ export interface ReportProfile {
   modified: string | null;
   timeoutActions: string[];
   storageMasking: string;
+  protectionConfigurations: string[];
 }
 
 export interface ReportRegisteredApp {

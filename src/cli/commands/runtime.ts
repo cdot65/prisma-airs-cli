@@ -2,16 +2,15 @@ import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve as resolvePath } from 'node:path';
+import {
+  type CreateSecurityProfileRequest,
+  CreateSecurityProfileRequestSchema,
+} from '@cdot65/prisma-airs-sdk';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
 import { SDK_ASYNC_BATCH_SIZE, SdkRuntimeService } from '../../airs/runtime.js';
-import type {
-  BulkScanResult,
-  RuntimeScanResult,
-  SecurityProfileInfo,
-  SubmittedBatch,
-} from '../../airs/types.js';
+import type { BulkScanResult, RuntimeScanResult, SubmittedBatch } from '../../airs/types.js';
 import { managementClientOptions, runtimeInitOptions } from '../../config/client-options.js';
 import { assertScannerCredentials } from '../../config/credentials.js';
 import { loadConfig } from '../../config/loader.js';
@@ -40,7 +39,6 @@ import {
   renderCustomerAppConsumption,
   renderCustomerAppDetail,
   renderDeploymentProfileList,
-  renderProfileDetail,
   renderRuntimeConfigHeader,
   renderTopicDetail,
   resolveOutput,
@@ -169,6 +167,18 @@ function parsePositiveInteger(value: string, optionName: string): number {
     usageError(`${optionName} must be a positive integer`);
   }
   return parsed;
+}
+
+/** Complete JSON replacements are exclusive with explicit identity, selector and policy flags. */
+function assertProfileConfigFlags(command: Command, opts: { config?: string }): void {
+  if (!opts.config) return;
+  const conflicts = command.options.filter(
+    (option) =>
+      !['config', 'output'].includes(option.attributeName()) &&
+      command.getOptionValueSource(option.attributeName()) === 'cli',
+  );
+  if (conflicts.length)
+    throw new Error('--config cannot be combined with profile write flags or selectors');
 }
 
 /** Create a management service from config. */
@@ -689,10 +699,10 @@ export function registerRuntimeCommand(program: Command): void {
       }
     });
 
-  profiles
+  const profilesCreate = profiles
     .command('create')
     .description('Create a new security profile')
-    .requiredOption('--name <name>', 'Profile name')
+    .option('--name <name>', 'Profile name (required unless --config is supplied)')
     .option('--no-active', 'Create profile as inactive')
     .option('--prompt-injection <action>', 'Prompt injection action (block/allow/alert)')
     .option('--toxic-content <action>', 'Toxic content action (e.g. "high:block, moderate:block")')
@@ -706,76 +716,52 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--dlp-action <action>', 'Data leak detection action (block/allow/alert)')
     .option('--dlp-profiles <list>', 'Comma-separated DLP profile names')
     .option('--mask-data-inline', 'Mask detected data inline')
+    .option('--no-mask-data-inline', 'Disable inline masking')
     .option('--db-security-create <action>', 'Database create action (block/allow/alert)')
     .option('--db-security-read <action>', 'Database read action (block/allow/alert)')
     .option('--db-security-update <action>', 'Database update action (block/allow/alert)')
     .option('--db-security-delete <action>', 'Database delete action (block/allow/alert)')
     .option('--inline-timeout-action <action>', 'Inline timeout action (block/allow)')
-    .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number.parseFloat)
+    .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number)
     .option('--mask-data-in-storage', 'Mask data in storage')
-    .option('--config <path>', 'JSON file with profile configuration (legacy)')
+    .option('--no-mask-data-in-storage', 'Disable storage masking')
+    .option('--enable-full-conversation-inspection', 'Enable shared conversation inspection')
+    .option('--no-enable-full-conversation-inspection', 'Disable shared conversation inspection')
+    .option(
+      '--direction <direction>',
+      'Protection direction: prompt, response, tool-call, tool-response',
+    )
+    .option('--config <path>', 'Complete JSON profile configuration; exclusive with write flags')
+    .option('--output <format>', 'Output format: pretty, json, yaml')
     .action(async (opts) => {
-      const service = await createMgmtService();
+      let request: CreateSecurityProfileRequest;
       try {
-        renderRuntimeConfigHeader();
-
-        let profile: SecurityProfileInfo;
-        if (opts.config) {
-          // Legacy JSON file path
-          const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-          profile = await service.createProfile(config);
-        } else {
-          const request = buildProfileRequest({
-            name: opts.name,
-            active: opts.active,
-            promptInjection: opts.promptInjection,
-            toxicContent: opts.toxicContent,
-            contextualGrounding: opts.contextualGrounding,
-            maliciousCode: opts.maliciousCode,
-            urlAction: opts.urlAction,
-            allowUrlCategories: opts.allowUrlCategories,
-            blockUrlCategories: opts.blockUrlCategories,
-            alertUrlCategories: opts.alertUrlCategories,
-            agentSecurity: opts.agentSecurity,
-            dlpAction: opts.dlpAction,
-            dlpProfiles: opts.dlpProfiles,
-            maskDataInline: opts.maskDataInline,
-            dbSecurityCreate: opts.dbSecurityCreate,
-            dbSecurityRead: opts.dbSecurityRead,
-            dbSecurityUpdate: opts.dbSecurityUpdate,
-            dbSecurityDelete: opts.dbSecurityDelete,
-            inlineTimeoutAction: opts.inlineTimeoutAction,
-            maxInlineLatency: opts.maxInlineLatency,
-            maskDataInStorage: opts.maskDataInStorage,
-          });
-          profile = await service.createProfile(request);
-        }
-
-        ui.success(`Profile created: ${profile.profileId}`);
-        renderProfileDetail(profile);
+        assertProfileConfigFlags(profilesCreate, opts);
+        if (!opts.config && !opts.name)
+          throw new Error('--name is required unless --config is supplied');
+        const input = opts.config
+          ? JSON.parse(fs.readFileSync(opts.config, 'utf-8'))
+          : buildProfileRequest(opts);
+        request = CreateSecurityProfileRequestSchema.parse(
+          opts.config ? input : { ...input, policy: input.policy ?? {} },
+        );
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('409')) {
-          // AIRS may create the profile but also return 409 — check if it exists
-          try {
-            const created = await service.getProfileByName(opts.name);
-            ui.success(`Profile created: ${created.profileId}`);
-            renderProfileDetail(created);
-            return;
-          } catch {
-            // Profile truly already existed before our call
-            fail(
-              new Error(
-                `Profile "${opts.name}" already exists. Use 'profiles update' to modify it.`,
-              ),
-            );
-          }
-        }
+        usageError(err instanceof Error ? err.message : String(err));
+      }
+      try {
+        const fmt = await resolveOutput(profilesCreate, opts, {
+          allowed: ['pretty', 'json', 'yaml'],
+        });
+        const service = await createMgmtService();
+        const profile = await service.createProfile(request);
+        ui.status(`Profile created: ${profile.profileId}`);
+        emitDetail(profilesView, profile, fmt);
+      } catch (err) {
         fail(err);
       }
     });
 
-  profiles
+  const profilesUpdate = profiles
     .command('update <nameOrId>')
     .description('Update a security profile by name or UUID')
     .option('--name <name>', 'Update profile name')
@@ -793,66 +779,70 @@ export function registerRuntimeCommand(program: Command): void {
     .option('--dlp-action <action>', 'Data leak detection action (block/allow/alert)')
     .option('--dlp-profiles <list>', 'Comma-separated DLP profile names')
     .option('--mask-data-inline', 'Mask detected data inline')
+    .option('--no-mask-data-inline', 'Disable inline masking')
     .option('--db-security-create <action>', 'Database create action (block/allow/alert)')
     .option('--db-security-read <action>', 'Database read action (block/allow/alert)')
     .option('--db-security-update <action>', 'Database update action (block/allow/alert)')
     .option('--db-security-delete <action>', 'Database delete action (block/allow/alert)')
     .option('--inline-timeout-action <action>', 'Inline timeout action (block/allow)')
-    .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number.parseFloat)
+    .option('--max-inline-latency <n>', 'Max inline latency in seconds', Number)
     .option('--mask-data-in-storage', 'Mask data in storage')
-    .option('--config <path>', 'JSON file with profile updates (legacy)')
+    .option('--no-mask-data-in-storage', 'Disable storage masking')
+    .option('--enable-full-conversation-inspection', 'Enable shared conversation inspection')
+    .option('--no-enable-full-conversation-inspection', 'Disable shared conversation inspection')
+    .option(
+      '--direction <direction>',
+      'Protection direction: prompt, response, tool-call, tool-response',
+    )
+    .option(
+      '--ai-profile-index <n>',
+      'Select an AI entry in a multi-entry policy (zero-based)',
+      Number,
+    )
+    .option('--config <path>', 'Complete JSON replacement; exclusive with write flags')
+    .option('--output <format>', 'Output format: pretty, json, yaml')
     .action(async (nameOrId: string, opts) => {
+      let replacement: CreateSecurityProfileRequest | undefined;
+      let overrides: ReturnType<typeof buildProfileOverrides>;
       try {
-        renderRuntimeConfigHeader();
+        assertProfileConfigFlags(profilesUpdate, opts);
+        if (opts.config)
+          replacement = CreateSecurityProfileRequestSchema.parse(
+            JSON.parse(fs.readFileSync(opts.config, 'utf-8')),
+          );
+        else overrides = buildProfileOverrides(opts);
+      } catch (err) {
+        usageError(err instanceof Error ? err.message : String(err));
+      }
+      try {
+        const fmt = await resolveOutput(profilesUpdate, opts, {
+          allowed: ['pretty', 'json', 'yaml'],
+        });
         const service = await createMgmtService();
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           nameOrId,
         );
-        const resolved = isUuid
+        const current = isUuid
           ? await service.getProfile(nameOrId)
           : await service.getProfileByName(nameOrId);
-        const profileId = resolved.profileId;
-
-        let profile: SecurityProfileInfo;
-        if (opts.config) {
-          // Legacy JSON file path
-          const config = JSON.parse(fs.readFileSync(opts.config, 'utf-8'));
-          profile = await service.updateProfile(profileId, config);
-        } else {
-          // Read-modify-write: fetch current profile, merge flags, PUT full payload
-          const current = resolved;
-          const overrides = buildProfileOverrides({
-            promptInjection: opts.promptInjection,
-            toxicContent: opts.toxicContent,
-            contextualGrounding: opts.contextualGrounding,
-            maliciousCode: opts.maliciousCode,
-            urlAction: opts.urlAction,
-            allowUrlCategories: opts.allowUrlCategories,
-            blockUrlCategories: opts.blockUrlCategories,
-            alertUrlCategories: opts.alertUrlCategories,
-            agentSecurity: opts.agentSecurity,
-            dlpAction: opts.dlpAction,
-            dlpProfiles: opts.dlpProfiles,
-            maskDataInline: opts.maskDataInline,
-            dbSecurityCreate: opts.dbSecurityCreate,
-            dbSecurityRead: opts.dbSecurityRead,
-            dbSecurityUpdate: opts.dbSecurityUpdate,
-            dbSecurityDelete: opts.dbSecurityDelete,
-            inlineTimeoutAction: opts.inlineTimeoutAction,
-            maxInlineLatency: opts.maxInlineLatency,
-            maskDataInStorage: opts.maskDataInStorage,
-          });
-          const mergedPolicy = mergeProfilePolicy(current.policy, overrides);
-
-          profile = await service.updateProfile(profileId, {
-            profile_name: opts.name ?? current.profileName,
-            active: opts.active ?? current.active ?? true,
-            policy: mergedPolicy,
-          });
+        let request: CreateSecurityProfileRequest;
+        try {
+          request =
+            replacement ??
+            CreateSecurityProfileRequestSchema.parse({
+              profile_name: opts.name ?? current.profileName,
+              active:
+                profilesUpdate.getOptionValueSource('active') === 'cli'
+                  ? opts.active
+                  : (current.active ?? true),
+              policy: mergeProfilePolicy(current.policy, overrides, opts),
+            });
+        } catch (err) {
+          usageError(err instanceof Error ? err.message : String(err));
         }
-
-        ui.success(`Profile updated: ${profile.profileId}`);
-        renderProfileDetail(profile);
+        const profile = await service.updateProfile(current.profileId, request);
+        ui.status(`Profile updated: ${profile.profileId}`);
+        emitDetail(profilesView, profile, fmt);
       } catch (err) {
         fail(err);
       }

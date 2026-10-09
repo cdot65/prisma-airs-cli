@@ -105,5 +105,32 @@ describe('topics-apply', () => {
         }),
       ).rejects.toThrow(/not found/);
     });
+    it('passes both selectors through lookup and the additive topic write', async () => {
+      const mgmt = createMockManagementService();
+      mgmt.listTopics = vi
+        .fn()
+        .mockResolvedValue([{ topic_id: 'new', topic_name: 'Restricted', revision: 3 }]);
+      mgmt.getProfileTopics = vi
+        .fn()
+        .mockResolvedValue([{ topicId: 'keep', topicName: 'Keep', action: 'block' }]);
+      mgmt.assignTopicsToProfile = vi.fn();
+      const selector = { direction: 'response', aiProfileIndex: 1 } as const;
+      await applyTopicToProfile(mgmt, {
+        profileName: 'Directional',
+        topicName: 'Restricted',
+        intent: 'block',
+        selector,
+      });
+      expect(mgmt.getProfileTopics).toHaveBeenCalledWith('Directional', selector);
+      expect(mgmt.assignTopicsToProfile).toHaveBeenCalledWith(
+        'Directional',
+        [
+          { topicId: 'keep', topicName: 'Keep', action: 'block' },
+          { topicId: 'new', topicName: 'Restricted', action: 'block' },
+        ],
+        'allow',
+        selector,
+      );
+    });
   });
 });

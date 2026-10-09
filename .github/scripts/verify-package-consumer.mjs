@@ -19,10 +19,12 @@ assert.ok(files.includes('package/dist/index.js'));
 assert.ok(files.includes('package/dist/index.d.ts'));
 assert.ok(files.includes('package/package.json'));
 assert.ok(files.includes('package/README.md'));
+assert.ok(files.includes('package/LICENSE'));
+assert.ok(files.includes('package/NOTICE'));
 for (const packed of files) {
   assert.match(
     packed,
-    /^package\/(?:dist\/[a-zA-Z0-9_./-]+|package\.json|README\.md|LICENSE(?:\.\w+)?)$/,
+    /^package\/(?:dist\/[a-zA-Z0-9_./-]+|package\.json|README\.md|LICENSE(?:\.\w+)?|NOTICE)$/,
   );
   assert.ok(!packed.split('/').includes('..'), 'Unsafe archive path.');
   const file = packed.slice('package/'.length);

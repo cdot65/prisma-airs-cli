@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { profileProtectionLocations } from '../../airs/profile-policy.js';
 import { formatOutput, type OutputFormat } from './common.js';
 import { ui } from './ui.js';
 
@@ -120,6 +121,7 @@ export function renderProfileList(
 
 /** Render security profile detail. */
 export function renderProfileDetail(profile: {
+  dlpTenantId?: string;
   profileId: string;
   profileName: string;
   revision?: number;
@@ -135,11 +137,19 @@ export function renderProfileDetail(profile: {
     ['Name', profile.profileName],
     ['Status', profile.active ? chalk.green('active') : chalk.yellow('inactive')],
   ];
+  if (profile.dlpTenantId !== undefined) pairs.push(['DLP tenant', profile.dlpTenantId]);
   if (profile.revision != null) pairs.push(['Revision', profile.revision]);
   if (profile.createdBy) pairs.push(['Created', profile.createdBy]);
   if (profile.updatedBy) pairs.push(['Updated', profile.updatedBy]);
   if (profile.lastModifiedTs) pairs.push(['Modified', profile.lastModifiedTs]);
   if (profile.policy) {
+    const locations = profileProtectionLocations(profile.policy)
+      .filter((location) => location.active)
+      .map(
+        (location) =>
+          `AI[${location.index}] ${String(location.profile['model-type'] ?? 'unspecified')} / ${location.direction ?? 'legacy'}`,
+      );
+    if (locations.length) pairs.push(['Protection locations', locations.join(', ')]);
     const policyJson = JSON.stringify(profile.policy, null, 2);
     pairs.push(['Policy', policyJson.split('\n').join('\n  ')]);
   }

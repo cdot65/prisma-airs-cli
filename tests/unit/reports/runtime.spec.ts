@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { collectRuntimeDailyReport } from '../../../src/reports/runtime.js';
+import directionalFixture from '../../fixtures/directional-security-profile.json';
 import {
   noViolations,
   reportClient,
@@ -350,4 +351,18 @@ describe('daily runtime report collection', () => {
     await expect(collectRuntimeDailyReport(client, { maxPages })).rejects.toThrow('maxPages');
     expect(client.profiles.list).not.toHaveBeenCalled();
   });
+});
+
+it('reports every directional protection section separately from shared settings', async () => {
+  const client = reportClient();
+  client.profiles.list.mockResolvedValue({ ai_profiles: [directionalFixture] });
+  const report = await collectRuntimeDailyReport(client, { now: reportClock });
+  expect(report.profiles[0].protectionConfigurations).toHaveLength(4);
+  for (const direction of ['prompt', 'response', 'tool-call', 'tool-response']) {
+    expect(report.profiles[0].protectionConfigurations).toContain(
+      `AI[0] default / ${direction}: model-protection, app-protection, data-protection`,
+    );
+  }
+  expect(report.profiles[0].timeoutActions).toEqual(['block']);
+  expect(report.profiles[0].storageMasking).toBe('Off in at least one configuration');
 });

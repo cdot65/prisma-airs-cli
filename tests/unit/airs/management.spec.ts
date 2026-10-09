@@ -1,5 +1,8 @@
+import type { SecurityProfile } from '@cdot65/prisma-airs-sdk';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SdkManagementService } from '../../../src/airs/management.js';
+import { _resetManagementClient, SdkManagementService } from '../../../src/airs/management.js';
+import directionalFixture from '../../fixtures/directional-security-profile.json';
+import { required } from '../../helpers/required.js';
 
 interface PolicyTopicEntry {
   topic_id: string;
@@ -55,7 +58,8 @@ const mockDashboardApplication = vi.fn();
 const mockDashboardViolationBreakdown = vi.fn();
 const mockDashboardApplicationsOverview = vi.fn();
 
-vi.mock('@cdot65/prisma-airs-sdk', () => ({
+vi.mock('@cdot65/prisma-airs-sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cdot65/prisma-airs-sdk')>()),
   ManagementClient: vi.fn().mockImplementation(() => ({
     topics: {
       create: mockCreate,
@@ -1463,5 +1467,105 @@ describe('getOrCreateManagementClient', () => {
       tsgId: 'c',
     });
     expect(a).toBe(b);
+  });
+});
+
+describe('directional topic location and reference safety', () => {
+  let service: SdkManagementService;
+  let profile: SecurityProfile;
+  const guardrail = {
+    name: 'topic-guardrails',
+    action: 'allow',
+    severity: 'high',
+    'topic-list': [
+      {
+        action: 'block',
+        topic: [{ topic_id: 'topic-1', topic_name: 'Restricted', revision: 3, severity: 'low' }],
+      },
+    ],
+  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    _resetManagementClient();
+    service = new SdkManagementService({
+      clientId: 'fixture',
+      clientSecret: 'fixture',
+      tsgId: '100',
+    });
+    profile = structuredClone(directionalFixture);
+    mockProfileListAll.mockImplementation(async () => [structuredClone(profile)]);
+    mockListAll.mockResolvedValue([
+      {
+        topic_id: 'topic-1',
+        topic_name: 'Restricted',
+        revision: 3,
+        description: 'Fixture',
+        examples: ['Example'],
+      },
+    ]);
+    mockProfileUpdate.mockResolvedValue(directionalFixture);
+  });
+  const ai = (value: SecurityProfile) => required(value.policy?.['ai-security-profiles'])[0];
+
+  it('returns direction and AI entry identity while optionally including retained legacy references', async () => {
+    ai(profile)['model-configuration'] = { 'model-protection': [structuredClone(guardrail)] };
+    for (const direction of ['prompt', 'response', 'tool-call', 'tool-response'] as const)
+      required(required(ai(profile)['content-type-configurations'])[direction])[
+        'model-protection'
+      ]?.push(structuredClone(guardrail));
+    const active = await service.getProfileTopics(profile.profile_name);
+    expect(active.map((topic) => [topic.direction, topic.aiProfileIndex])).toEqual([
+      ['prompt', 0],
+      ['response', 0],
+      ['tool-call', 0],
+      ['tool-response', 0],
+    ]);
+    const all = await service.getProfileTopics(profile.profile_name, undefined, {
+      includeInactive: true,
+    });
+    expect(all).toHaveLength(5);
+    expect(all[0].direction).toBeUndefined();
+    expect(
+      await service.getProfileTopics(profile.profile_name, { direction: 'response' }),
+    ).toHaveLength(1);
+  });
+
+  it('preserves selected guardrail and topic severities and refuses duplicate identities', async () => {
+    const response = required(ai(profile)['content-type-configurations']?.response);
+    response['model-protection']?.push(structuredClone(guardrail));
+    await service.assignTopicsToProfile(
+      profile.profile_name,
+      [{ topicId: 'topic-1', topicName: 'Restricted', action: 'block' }],
+      'allow',
+      { direction: 'response' },
+    );
+    const written = mockProfileUpdate.mock.calls[0][1] as SecurityProfile;
+    const actual = required(
+      required(ai(written)['content-type-configurations']?.response)['model-protection'],
+    ).at(-1);
+    expect(actual).toEqual(guardrail);
+    mockProfileUpdate.mockClear();
+    response['model-protection']?.push(structuredClone(guardrail));
+    await expect(
+      service.assignTopicsToProfile(profile.profile_name, [], 'allow', { direction: 'response' }),
+    ).rejects.toThrow(/Ambiguous topic-guardrails/);
+    expect(mockProfileUpdate).not.toHaveBeenCalled();
+  });
+
+  it('refuses topic writes to missing directions and legacy layouts', async () => {
+    delete required(ai(profile)['content-type-configurations'])['tool-response'];
+    await expect(
+      service.assignTopicsToProfile(profile.profile_name, [], 'allow', {
+        direction: 'tool-response',
+      }),
+    ).rejects.toThrow(/Selected direction is absent/);
+    profile.policy = { 'ai-security-profiles': [{ 'model-configuration': {} }] };
+    await expect(
+      service.getProfileTopics(profile.profile_name, { direction: 'response' }),
+    ).rejects.toThrow(/legacy/);
+    await expect(
+      service.assignTopicsToProfile(profile.profile_name, [], 'allow', { direction: 'response' }),
+    ).rejects.toThrow(/legacy/);
+    expect(mockProfileUpdate).not.toHaveBeenCalled();
   });
 });

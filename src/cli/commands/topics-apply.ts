@@ -1,6 +1,8 @@
 import type { Command } from 'commander';
 import { SdkManagementService } from '../../airs/management.js';
+import { type ProfileSelector, validateProfileSelector } from '../../airs/profile-policy.js';
 import type { ManagementService } from '../../airs/types.js';
+import { managementClientOptions } from '../../config/client-options.js';
 import { loadConfig } from '../../config/loader.js';
 import { registerDeprecatedAlias, resolveDeprecatedAliases } from '../deprecated-flags.js';
 import { fail, ui, usageError } from '../renderer/index.js';
@@ -9,6 +11,7 @@ export interface ApplyInput {
   profileName: string;
   topicName: string;
   intent: 'allow' | 'block';
+  selector?: ProfileSelector;
 }
 
 export interface ApplyOutput {
@@ -28,7 +31,7 @@ export async function applyTopicToProfile(
     throw new Error(`Topic "${input.topicName}" not found. Create it first with "topics create".`);
   }
 
-  const existing = await mgmt.getProfileTopics(input.profileName);
+  const existing = await mgmt.getProfileTopics(input.profileName, input.selector);
 
   const merged = existing
     .filter((t) => t.topicName !== input.topicName)
@@ -42,7 +45,9 @@ export async function applyTopicToProfile(
 
   const guardrailAction = input.intent === 'block' ? 'allow' : 'block';
 
-  await mgmt.assignTopicsToProfile(input.profileName, merged, guardrailAction);
+  if (input.selector)
+    await mgmt.assignTopicsToProfile(input.profileName, merged, guardrailAction, input.selector);
+  else await mgmt.assignTopicsToProfile(input.profileName, merged, guardrailAction);
 
   return {
     topicId: match.topic_id,
@@ -59,6 +64,11 @@ export function registerApplyCommand(parent: Command): void {
     .requiredOption('--profile <name>', 'Security profile name')
     .requiredOption('--name <name>', 'Topic name to assign')
     .option('--intent <intent>', 'Topic intent: block or allow', 'block')
+    .option(
+      '--direction <direction>',
+      'Protection direction: prompt, response, tool-call, tool-response',
+    )
+    .option('--ai-profile-index <n>', 'AI profile entry index (zero-based)', Number)
     .option('--output <format>', 'Output format: pretty or json', 'pretty');
   registerDeprecatedAlias(cmd, {
     oldFlag: '--format <format>',
@@ -72,18 +82,22 @@ export function registerApplyCommand(parent: Command): void {
       usageError(`--intent must be "allow" or "block", got: "${opts.intent}"`);
     }
     try {
+      try {
+        validateProfileSelector(opts);
+      } catch (err) {
+        usageError(err instanceof Error ? err.message : String(err));
+      }
       const config = await loadConfig();
-      const mgmt = new SdkManagementService({
-        clientId: config.mgmtClientId,
-        clientSecret: config.mgmtClientSecret,
-        tsgId: config.mgmtTsgId,
-        tokenEndpoint: config.mgmtTokenEndpoint,
-      });
+      const mgmt = new SdkManagementService(managementClientOptions(config));
 
       const result = await applyTopicToProfile(mgmt, {
         profileName: opts.profile,
         topicName: opts.name,
         intent: opts.intent as 'allow' | 'block',
+        selector:
+          opts.direction !== undefined || opts.aiProfileIndex !== undefined
+            ? { direction: opts.direction, aiProfileIndex: opts.aiProfileIndex }
+            : undefined,
       });
 
       if (opts.output === 'json') {

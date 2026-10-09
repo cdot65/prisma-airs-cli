@@ -1,10 +1,19 @@
 import {
   type CreateCustomTopicRequest,
   type CreateSecurityProfileRequest,
+  CreateSecurityProfileRequestSchema,
   ManagementClient,
   type ManagementClientOptions,
   type CustomTopic as SdkCustomTopic,
 } from '@cdot65/prisma-airs-sdk';
+import {
+  ProfilePolicyError,
+  type ProfileSelector,
+  profileProtectionLocations,
+  selectAiProfile,
+  selectProfileProtections,
+  validateProfileSelector,
+} from './profile-policy.js';
 import type {
   ApiKeyInfo,
   ApiKeyListResult,
@@ -88,8 +97,14 @@ export class SdkManagementService implements ManagementService {
     topicId: string,
     topicName: string,
     action: 'allow' | 'block',
+    selector?: ProfileSelector,
   ): Promise<void> {
-    return this.assignTopicsToProfile(profileName, [{ topicId, topicName, action }]);
+    return this.assignTopicsToProfile(
+      profileName,
+      [{ topicId, topicName, action }],
+      undefined,
+      selector,
+    );
   }
 
   /**
@@ -105,10 +120,18 @@ export class SdkManagementService implements ManagementService {
     profileName: string,
     topics: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' }>,
     guardrailAction?: 'allow' | 'block',
+    selector: ProfileSelector = {},
   ): Promise<void> {
+    validateProfileSelector(selector);
     // Find profile by name
     const ai_profiles = await this.client.profiles.listAll();
-    const profile = ai_profiles.find((p) => p.profile_name === profileName);
+    const profile = ai_profiles
+      .filter((p) => p.profile_name === profileName)
+      .reduce<(typeof ai_profiles)[number] | undefined>(
+        (latest, candidate) =>
+          !latest || (candidate.revision ?? -1) > (latest.revision ?? -1) ? candidate : latest,
+        undefined,
+      );
     if (!profile?.profile_id) {
       throw new Error(`Profile "${profileName}" not found`);
     }
@@ -120,14 +143,19 @@ export class SdkManagementService implements ManagementService {
 
     // Deep clone the policy to mutate
     const policy = JSON.parse(JSON.stringify(profile.policy ?? {}));
-    const aiProfiles = policy['ai-security-profiles'] ?? [
-      { 'model-type': 'default', 'model-configuration': {} },
-    ];
-    const modelConfig = aiProfiles[0]?.['model-configuration'] ?? {};
+    const modelConfig = selectProfileProtections(
+      selectAiProfile(policy, selector),
+      selector.direction,
+    );
 
     // Find or create model-protection with topic-guardrails
     const modelProtection: Record<string, unknown>[] = modelConfig['model-protection'] ?? [];
-    let topicGuardrails = modelProtection.find((mp) => mp.name === 'topic-guardrails');
+    const guardrails = modelProtection.filter((mp) => mp.name === 'topic-guardrails');
+    if (guardrails.length > 1)
+      throw new ProfilePolicyError(
+        'Ambiguous topic-guardrails identity in selected protection section',
+      );
+    let topicGuardrails = guardrails[0];
 
     if (!topicGuardrails) {
       topicGuardrails = {
@@ -144,6 +172,13 @@ export class SdkManagementService implements ManagementService {
     // 'allow' = allow all unless explicitly blocked (only block topics needed).
     topicGuardrails.action = guardrailAction ?? 'block';
 
+    // Retain reference and bucket metadata for every existing topic being kept.
+    const priorList = (topicGuardrails['topic-list'] ?? []) as Array<{
+      action: string;
+      topic: Array<Record<string, unknown>> | null;
+    }>;
+    const priorRefs = priorList.flatMap((entry) => entry.topic ?? []);
+
     // Group topics by action, build topic-list entries with revision (skip empty groups).
     const byAction = new Map<
       string,
@@ -152,6 +187,7 @@ export class SdkManagementService implements ManagementService {
     for (const t of topics) {
       const group = byAction.get(t.action) ?? [];
       group.push({
+        ...priorRefs.find((ref) => ref.topic_id === t.topicId),
         topic_id: t.topicId,
         topic_name: t.topicName,
         revision: revisionMap.get(t.topicId) ?? 0,
@@ -164,76 +200,75 @@ export class SdkManagementService implements ManagementService {
       topic: Array<{ topic_id: string; topic_name: string; revision: number }>;
     }> = [];
     for (const [action, group] of byAction) {
-      topicList.push({ action, topic: group });
+      topicList.push({
+        ...priorList.find((entry) => entry.action === action),
+        action,
+        topic: group,
+      });
     }
 
     topicGuardrails['topic-list'] = topicList;
 
     // Write back
     modelConfig['model-protection'] = modelProtection;
-    aiProfiles[0]['model-configuration'] = modelConfig;
-    policy['ai-security-profiles'] = aiProfiles;
 
-    await this.client.profiles.update(profile.profile_id, {
+    const request = CreateSecurityProfileRequestSchema.parse({
       profile_name: profile.profile_name,
       active: profile.active,
       policy,
     });
+    await this.client.profiles.update(profile.profile_id, request);
   }
 
-  async getProfileTopics(profileName: string): Promise<ProfileTopic[]> {
+  async getProfileTopics(
+    profileName: string,
+    selector?: ProfileSelector,
+    options: { includeInactive?: boolean } = {},
+  ): Promise<ProfileTopic[]> {
+    validateProfileSelector(selector ?? {});
     const ai_profiles = await this.client.profiles.listAll();
-    const profile = ai_profiles.find((p) => p.profile_name === profileName);
-    if (!profile?.profile_id) {
-      throw new Error(`Profile "${profileName}" not found`);
-    }
-
-    // Extract topic entries from profile policy
-    const policy = profile.policy ?? {};
-    const aiProfiles = (policy as Record<string, unknown[]>)['ai-security-profiles'] ?? [];
-    const modelConfig =
-      (aiProfiles[0] as Record<string, Record<string, unknown>> | undefined)?.[
-        'model-configuration'
-      ] ?? {};
-    const modelProtection = (modelConfig['model-protection'] as Record<string, unknown>[]) ?? [];
-    const topicGuardrails = modelProtection.find((mp) => mp.name === 'topic-guardrails');
-
-    if (!topicGuardrails) return [];
-
-    const topicList =
-      (topicGuardrails['topic-list'] as Array<{
-        action: string;
-        topic: Array<{ topic_id: string; topic_name: string }>;
-      }>) ?? [];
-
-    // Flatten entries into topic refs with action
-    const topicRefs: Array<{ topicId: string; topicName: string; action: 'allow' | 'block' }> = [];
-    for (const entry of topicList) {
-      for (const t of entry.topic ?? []) {
-        topicRefs.push({
-          topicId: t.topic_id,
-          topicName: t.topic_name,
-          action: entry.action as 'allow' | 'block',
-        });
-      }
-    }
-
-    if (topicRefs.length === 0) return [];
-
-    // Fetch full topic details
+    const profile = ai_profiles
+      .filter((p) => p.profile_name === profileName)
+      .reduce<(typeof ai_profiles)[number] | undefined>(
+        (latest, candidate) =>
+          !latest || (candidate.revision ?? -1) > (latest.revision ?? -1) ? candidate : latest,
+        undefined,
+      );
+    if (!profile?.profile_id) throw new Error(`Profile "${profileName}" not found`);
+    const policy = structuredClone(profile.policy ?? {});
+    const selected = selector ? selectAiProfile(policy, selector) : undefined;
+    if (selected) selectProfileProtections(selected, selector?.direction);
+    const locations = profileProtectionLocations(policy).filter(
+      (location) =>
+        (location.active || options.includeInactive === true) &&
+        (!selected ||
+          (location.profile === selected && location.direction === selector?.direction)),
+    );
+    const refs = locations.flatMap((location) =>
+      (location.configuration['model-protection'] ?? [])
+        .filter((detector) => detector.name === 'topic-guardrails')
+        .flatMap((guardrail) =>
+          (guardrail['topic-list'] ?? []).flatMap((entry) =>
+            (entry.topic ?? []).map((topic) => ({
+              topicId: topic.topic_id,
+              topicName: topic.topic_name,
+              action: entry.action as 'allow' | 'block',
+              ...(location.direction ? { direction: location.direction } : {}),
+              ...(location.direction || (policy['ai-security-profiles']?.length ?? 0) > 1
+                ? { aiProfileIndex: location.index }
+                : {}),
+            })),
+          ),
+        ),
+    );
+    if (!refs.length) return [];
     const allTopics = await this.listTopics();
-    const topicMap = new Map(allTopics.map((t) => [t.topic_id, t]));
-
-    return topicRefs.map((ref) => {
-      const full = topicMap.get(ref.topicId);
-      return {
-        topicId: ref.topicId,
-        topicName: ref.topicName,
-        action: ref.action,
-        description: full?.description ?? '',
-        examples: full?.examples ?? [],
-      };
-    });
+    const topicMap = new Map(allTopics.map((topic) => [topic.topic_id, topic]));
+    return refs.map((ref) => ({
+      ...ref,
+      description: topicMap.get(ref.topicId)?.description ?? '',
+      examples: topicMap.get(ref.topicId)?.examples ?? [],
+    }));
   }
 
   // -------------------------------------------------------------------------
@@ -250,6 +285,7 @@ export class SdkManagementService implements ManagementService {
       updatedBy: p.updated_by as string | undefined,
       lastModifiedTs: p.last_modified_ts as string | undefined,
       policy: p.policy as Record<string, unknown> | undefined,
+      ...(p.dlp_tenant_id !== undefined ? { dlpTenantId: p.dlp_tenant_id as string } : {}),
     };
   }
 
@@ -283,7 +319,9 @@ export class SdkManagementService implements ManagementService {
   }
 
   async createProfile(request: CreateSecurityProfileRequest): Promise<SecurityProfileInfo> {
-    const response = await this.client.profiles.create(request);
+    const response = await this.client.profiles.create(
+      CreateSecurityProfileRequestSchema.parse(request),
+    );
     return this.normalizeProfile(response as unknown as Record<string, unknown>);
   }
 
@@ -291,7 +329,10 @@ export class SdkManagementService implements ManagementService {
     profileId: string,
     request: CreateSecurityProfileRequest,
   ): Promise<SecurityProfileInfo> {
-    const response = await this.client.profiles.update(profileId, request);
+    const response = await this.client.profiles.update(
+      profileId,
+      CreateSecurityProfileRequestSchema.parse(request),
+    );
     return this.normalizeProfile(response as unknown as Record<string, unknown>);
   }
 
