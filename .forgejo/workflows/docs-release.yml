@@ -4,7 +4,7 @@ on:
 jobs:
   docs-release:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: prisma-airs-cli
     timeout-minutes: 5
     steps:
       - uses: https://github.com/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
