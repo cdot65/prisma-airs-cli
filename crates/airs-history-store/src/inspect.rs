@@ -213,15 +213,18 @@ const CATEGORIES: [&str; 5] = ["inventory", "profiles", "reports", "results", "s
 /// The service's source category for a recorded evidence source name (contract §4.3
 /// coverage mapping). Local evidence-handling sources (`event-window`,
 /// `evidence-storage`, `archive-range`) and unrecognized legacy names describe no
-/// provider traversal and are not reported.
+/// provider traversal and are not reported. Neither is `application-telemetry`: it is
+/// an aggregate token-consumption read the dashboard serves only over 7, 30 or 60 days,
+/// so for any other window the collector records it unavailable ("no exact
+/// representation"); counted under `inventory`, it made the category unavailable on
+/// every 24-hour tick although the inventory reads themselves succeeded (M8 live
+/// evidence, 2026-11-07). The Signal Brief still reports it as a source.
 pub fn source_category(name: &str) -> Option<&'static str> {
     match name {
         "sessions" | "session-details" => Some("sessions"),
         "scan-results" => Some("results"),
         "scan-reports" => Some("reports"),
-        "applications" | "registered-apps" | "application-telemetry" | "transaction-metadata" => {
-            Some("inventory")
-        }
+        "applications" | "registered-apps" | "transaction-metadata" => Some("inventory"),
         "profiles" => Some("profiles"),
         _ => None,
     }
@@ -1108,5 +1111,22 @@ mod tests {
             1,
             "it commits once the read ends"
         );
+    }
+}
+
+#[cfg(test)]
+mod category_tests {
+    use super::source_category;
+
+    /// M8 live evidence (2026-11-07): `application-telemetry` is unavailable by design for
+    /// every window but 7, 30 or 60 days; it must not drag the `inventory` category down.
+    #[test]
+    fn application_telemetry_is_not_inventory_coverage() {
+        assert_eq!(source_category("application-telemetry"), None);
+        for s in ["applications", "registered-apps", "transaction-metadata"] {
+            assert_eq!(source_category(s), Some("inventory"), "{s}");
+        }
+        assert_eq!(source_category("sessions"), Some("sessions"));
+        assert_eq!(source_category("event-window"), None);
     }
 }

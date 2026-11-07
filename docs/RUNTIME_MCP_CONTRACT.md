@@ -536,8 +536,11 @@ client sent is reflected.
     - `sessions` covers `sessions` and `session-details`;
     - `results` covers `scan-results`;
     - `reports` covers `scan-reports`;
-    - `inventory` covers `applications`, `registered-apps`, `application-telemetry` and
-      `transaction-metadata`;
+    - `inventory` covers `applications`, `registered-apps` and `transaction-metadata`
+      (`application-telemetry` is an aggregate token-consumption read the dashboard
+      serves only over 7, 30 or 60 days; it is a Signal Brief source, not coverage —
+      counted here it made `inventory` unavailable on every 24-hour tick; M8 live
+      evidence, 2026-11-07);
     - `profiles` covers `profiles`.
   - Local evidence-handling sources (`event-window`, `evidence-storage`,
     `archive-range`) and unrecognized legacy names are not reported.
