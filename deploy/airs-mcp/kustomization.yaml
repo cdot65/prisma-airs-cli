@@ -1,6 +1,7 @@
-# JSON is valid YAML. The image digest is a placeholder the user replaces with the
-# digest of the image they build and push (M8.3 runbook step 2); the static manifest
-# test refuses to call the set deployable while it is the placeholder.
+# JSON is valid YAML. Both image digests are placeholders the user replaces: the
+# airs-mcp image they build and push (M8.3 runbook step 2), and the kubectl image the
+# daily backup orchestrator runs (pin the digest of the version you verified). The
+# static manifest test refuses to call the set deployable while either is a placeholder.
 {
   "apiVersion": "kustomize.config.k8s.io/v1beta1",
   "kind": "Kustomization",
@@ -11,7 +12,8 @@
     "pvc.json",
     "deployment.json",
     "service.json",
-    "networkpolicy.json"
+    "networkpolicy.json",
+    "backup-cronjob.json"
   ],
   "configMapGenerator": [
     {
@@ -25,6 +27,11 @@
     {
       "name": "airs-mcp",
       "newName": "registry.cdot.io/airs-mcp/airs-mcp",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "kubectl",
+      "newName": "registry.cdot.io/dockerhub/bitnami/kubectl",
       "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],

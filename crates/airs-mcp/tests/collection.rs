@@ -3939,3 +3939,102 @@ fn a_legacy_revision_with_changed_evidence_renders_the_stored_title() {
     );
     assert!(!text.contains("AIRS runtime history report"));
 }
+
+/// M8 review 1 (fork C gap): the disk reserve (contract §6, §9.5) pauses jobs before
+/// their executor writes anything. Within reserve + 512 MiB a report job is
+/// `blocked_policy` while collection still runs; below the reserve collection is paused
+/// too; once space is freed the worker's policy pass requeues them and they complete.
+#[test]
+fn the_disk_reserve_pauses_publication_then_collection_and_resumes() {
+    let (server, _sandbox) = fixture();
+    seed_scan(&server);
+    let s = service_with(&server, "uuid-shared");
+    submit(&s, "key-space-collect-01");
+    worker(&s).step(&s.tenant, |_| true).unwrap().unwrap();
+    let (w, _bundles) = reporter(&s);
+    let free = |bytes: u64| -> airs_mcp::space::Probe { Arc::new(move |_| Some(bytes)) };
+    let reserve = s.storage.space(&s.tenant).reserve;
+    // Within the publication headroom.
+    s.storage
+        .set_space_probe_for_tests(free(reserve + airs_mcp::space::MIB));
+    // A service-submitted report (as the daily scheduler submits), so that only the
+    // reserve, not a grant, decides whether it may resume.
+    let report = airs_mcp::reports::new_id("r1");
+    let period = day_period();
+    let now = airs_runtime_core::time::now_ms();
+    let params = json!({"report_id": report, "kind": "manual", "since_ms": period.0,
+        "until_ms": period.1, "app_ids": [], "title": "space"});
+    let rjob = s.storage.control(|c| {
+        c.submit(
+            Submission {
+                tenant: &s.tenant,
+                operation: "reports_create",
+                actor: Actor::Service("space-test".into()),
+                idempotency_key: "key-space-report-001",
+                expected_epoch: "0a1b2c3d",
+                params: &params,
+                config_revision: "example-1",
+                credential_revision: None,
+                deadline_ms: now + 3_600_000,
+                queue_tenant: 64,
+                queue_principal: 8,
+                join_equivalent: false,
+                scheduled_slot: None,
+            },
+            now,
+        )
+        .unwrap()
+        .job_id
+    });
+    let (_, state) = w.step(&s.tenant, |_| true).unwrap().unwrap();
+    assert_eq!(state, State::BlockedPolicy, "publication pauses");
+    assert!(job(&s, &rjob).result.is_none(), "nothing was published");
+    let cjob = submit(&s, "key-space-collect-02");
+    let (_, state) = worker(&s).step(&s.tenant, |_| true).unwrap().unwrap();
+    assert_eq!(
+        state,
+        State::Succeeded,
+        "collection continues: {:?}",
+        job(&s, &cjob).result
+    );
+    // Below the reserve (measured again: collection grew the archive).
+    let reserve = s.storage.space(&s.tenant).reserve;
+    s.storage.set_space_probe_for_tests(free(reserve - 1));
+    let cjob = submit(&s, "key-space-collect-03");
+    let (_, state) = worker(&s).step(&s.tenant, |_| true).unwrap().unwrap();
+    assert_eq!(state, State::BlockedPolicy, "collection pauses");
+    // Still low: the policy pass leaves both blocked.
+    airs_mcp::run::tick_passes_for_tests(&w, &s.shared);
+    assert_eq!(job(&s, &rjob).state, State::BlockedPolicy);
+    assert_eq!(job(&s, &cjob).state, State::BlockedPolicy);
+    // An unmeasurable volume fails closed: nothing is requeued, and a new collection
+    // job pauses too (M8 review 2 watchdog: measurement-failure coverage).
+    s.storage
+        .set_space_probe_for_tests(Arc::new(|_: &std::path::Path| None));
+    airs_mcp::run::tick_passes_for_tests(&w, &s.shared);
+    assert_eq!(
+        job(&s, &rjob).state,
+        State::BlockedPolicy,
+        "unmeasured: publication stays paused"
+    );
+    assert_eq!(
+        job(&s, &cjob).state,
+        State::BlockedPolicy,
+        "unmeasured: collection stays paused"
+    );
+    let ujob = submit(&s, "key-space-collect-04");
+    let (_, state) = worker(&s).step(&s.tenant, |_| true).unwrap().unwrap();
+    assert_eq!(
+        state,
+        State::BlockedPolicy,
+        "unmeasured: a new collection pauses"
+    );
+    // Space freed: all are requeued and complete.
+    s.storage.set_space_probe_for_tests(free(u64::MAX / 4));
+    airs_mcp::run::tick_passes_for_tests(&w, &s.shared);
+    assert_eq!(job(&s, &rjob).state, State::Queued);
+    assert_eq!(job(&s, &cjob).state, State::Queued);
+    assert_eq!(run_until_done(&w, &s, &rjob), State::Succeeded);
+    assert_eq!(run_until_done(&worker(&s), &s, &cjob), State::Succeeded);
+    assert_eq!(run_until_done(&worker(&s), &s, &ujob), State::Succeeded);
+}

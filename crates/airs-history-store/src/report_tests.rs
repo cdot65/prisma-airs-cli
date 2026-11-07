@@ -620,8 +620,10 @@ fn archive_file(root: &Path) -> std::path::PathBuf {
 /// - **contention:** four report readers (30-day inputs) run while a writer appends
 ///   `AIRS_QUALIFY_WRITES` (default 50,000) more scans in 1,000-scan transactions;
 ///   every read and write succeeds, each read within the report read budget;
-/// - **restore/volume:** a `VACUUM INTO` backup copy (the §9.4 content shape) is restored
-///   into a fresh root, `PRAGMA integrity_check` is `ok`, and the event count matches;
+/// - **restore/volume (archive only):** a `VACUUM INTO` copy of the archive database is
+///   restored into a fresh root, `PRAGMA integrity_check` is `ok`, and the event count
+///   matches. This exercises the archive store alone, not §9.4's coordinated
+///   control/archive/artifact set;
 /// - records peak RSS and storage I/O from `/proc/self`, archive and backup bytes, and
 ///   timings to stderr (and to `AIRS_QUALIFY_OUT` as JSON when set).
 ///

@@ -1742,6 +1742,21 @@ unknown-option refusal, with no request to the service.
 | D360 | `--record-history`: 2 s budget, no sign-in, warning only | `tests/mcp_client.rs::receipts_reports_and_downloads_through_the_gateway`, `tests/parity_mcp_client.rs::d360_record_history_is_rust_only`, `src/commands/mcp_ops.rs::tests::planning_the_largest_input_fits_the_retention_budget`, `tests/mcp_client.rs::record_history_never_sends_a_credential_returned_as_a_scan_id` |
 | D361 | one refresh-and-replay of a submission under its original key | `tests/mcp_client.rs::a_rejected_token_is_refreshed_once_and_the_submission_replayed_with_its_key`, `tests/parity_mcp_client.rs::d361_keyed_submission_recovery_is_rust_only` |
 
+
+### 12a. Optional runtime MCP service deployment (M8; server only, no CLI change)
+
+No §12 row: the TypeScript CLI has no service. The behaviour of DESIGN §22.8 (M8) is
+pinned by these executable tests:
+
+| Behaviour | Executable coverage |
+| --- | --- |
+| Manifests: hardening, complete NetworkPolicy rules, certificate/config correspondence, deployable pin | `crates/airs-mcp/tests/deploy_manifests.rs::the_committed_set_passes_every_check`, `::every_security_regression_is_refused`, `::the_deployment_validator_requires_and_accepts_a_valid_pin` |
+| Owner-only secret delivery to UID 65532 | `crates/airs-mcp/tests/deploy_manifests.rs::the_secret_copy_yields_owner_only_files_readable_by_their_owner` |
+| Coordinated backup set and its verification | `crates/airs-mcp/tests/maintenance.rs::the_coordinated_backup_set_is_complete_private_and_verified` |
+| Disk reserve: publication then collection pause, fail-closed when unmeasurable, resume | `crates/airs-mcp/tests/collection.rs::the_disk_reserve_pauses_publication_then_collection_and_resumes`, `crates/airs-mcp/src/space.rs::tests::the_reserve_and_its_two_thresholds`, `crates/airs-mcp/src/tools.rs::tests::the_disk_reserve_pauses_receipts_and_upload_staging` |
+| Time-bounded metrics sampling | `crates/airs-mcp/src/metrics.rs::tests::a_stalled_filesystem_sample_does_not_block_a_scrape` |
+| Owner scripts: secret refusal, offline R2 inventory validation, build-hash failure handling | `crates/airs-mcp/tests/m8_scripts.rs` |
+
 ## 13. Optional runtime MCP service (M0 roadmap)
 
 M0 changes no CLI behavior, so it adds no checklist or divergence rows. The M0

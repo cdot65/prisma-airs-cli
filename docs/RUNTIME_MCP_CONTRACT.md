@@ -1693,8 +1693,14 @@ size from measured growth.
   tenant, principal, path or credential data. Capacity alerts at 70% and 85% (§9.5) use
   the volume series.
 - **Backup-policy checks (§9.4).** They are user-run scripts.
-  - `scripts/m8/check-r2-delete-rights.sh` is read-only: credential names only, and
-    token-permission reads for tokens pasted at a hidden prompt.
+  - `scripts/m8/check-r2-delete-rights.sh` is offline. It never contacts a service,
+    reads a token or reads the environment. The owner inventories, separately and on
+    their own workstation, every credential an agent can reach, by name, with its kind,
+    permissions and scopes (from the dashboard or the `cf` CLI). The owner writes that
+    sanitized `INVENTORY.json`, which holds no secret value, under the strict schema in
+    the script header. The checker validates it. An unknown kind, key, permission, scope
+    or source blocks the verdict (exit 3). A modify permission on any scope covering the
+    backup bucket is a violation (exit 4).
   - The nas1 retention record is a checklist step.
   - Both stay **open until the owner records them**.
 - **M8.2 local qualification.** `qualify_restore_and_contention_at_scale` (opt-in) seeds

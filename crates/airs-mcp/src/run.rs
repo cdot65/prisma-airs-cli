@@ -63,7 +63,7 @@ pub fn load_config(path: &Path) -> Result<Config, ConfigError> {
 }
 
 #[derive(Debug)]
-pub struct ServeError(&'static str);
+pub struct ServeError(pub(crate) &'static str);
 impl std::fmt::Display for ServeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.0)
@@ -295,10 +295,13 @@ pub fn health_router_with(
         .route(
             "/metrics",
             get(move || {
-                let maintenance = metrics_shared.current().config.service.maintenance;
+                let live = metrics_shared.current();
+                let maintenance = live.config.service.maintenance;
+                let tenant = live.config.service.tenant.clone();
                 let storage = storage.clone();
                 async move {
-                    let sample = crate::metrics::sample(storage.as_ref(), ready, maintenance).await;
+                    let sample =
+                        crate::metrics::sample(storage.as_ref(), &tenant, ready, maintenance).await;
                     (
                         StatusCode::OK,
                         [(header::CONTENT_TYPE, "text/plain; version=0.0.4")],
@@ -914,7 +917,13 @@ fn worker_tick(worker: &crate::worker::Worker, shared: &Shared, stopped: &dyn Fn
     {
         // Policy-blocked jobs whose grant is restored resume (contract §10).
         let live = shared.current();
-        let admit = |job: &crate::control::Job| admits(&live.config, job);
+        // A job paused by the disk reserve resumes only once space is freed (§9.5).
+        let space = worker.storage.space(&tenant);
+        // Lifecycle jobs pass no action here (their parameters are not readable under
+        // this transaction): they requeue, and the worker re-checks with the action.
+        let admit = |job: &crate::control::Job| {
+            admits(&live.config, job) && space.admits_job(&job.operation, None)
+        };
         if let Err(r) = worker
             .storage
             .control(|c| c.reconsider_blocked(&tenant, now, &admit))
@@ -1049,6 +1058,36 @@ pub fn maintenance(source: &Path, action: Maintenance) -> Result<serde_json::Val
             c.reconcile().map_err(|r| ServeError(r.reason))?;
             json!({"event": "control_reconciled", "quarantine": was})
         }
+        Maintenance::BackupSet(dir, keep) => {
+            // The coordinated control/archive/artifact set (contract §9.4), taken under
+            // this exclusive owner lock, into `DATA/backups/<id>/` unless a directory
+            // is named.
+            let history = storage::private_child(&admitted, "history")
+                .map_err(|_| ServeError("cannot admit the history directory"))?;
+            let dir = match dir {
+                Some(d) => d,
+                None => {
+                    storage::private_child(&admitted, "backups")
+                        .map_err(|_| ServeError("cannot admit the backups directory"))?
+                        .path
+                }
+            };
+            let mut made = crate::backup_set::create(
+                &control_dir.path.join(crate::control::FILE),
+                &history.path,
+                &dir,
+                now,
+            )?;
+            // Retention runs only after the new set verifies (runbook §9a).
+            if let Some(keep) = keep {
+                let set = dir.join(made["set"].as_str().unwrap_or_default());
+                crate::backup_set::verify(&set)?;
+                let removed = crate::backup_set::prune(&dir, keep, &set)?;
+                made["verified"] = json!(true);
+                made["pruned"] = json!(removed);
+            }
+            made
+        }
         Maintenance::MigrateArchive(source) => {
             let history = storage::private_child(&admitted, "history")
                 .map_err(|_| ServeError("cannot admit the history directory"))?;
@@ -1074,6 +1113,11 @@ pub fn maintenance(source: &Path, action: Maintenance) -> Result<serde_json::Val
 /// One offline control-store maintenance action.
 pub enum Maintenance {
     Backup(PathBuf),
+    /// The coordinated backup set of control, archives and the artifact list (contract
+    /// §9.4), into the named directory or `DATA/backups/`.
+    /// The coordinated set into the directory (default `DATA/backups/`), then, with a
+    /// keep count, its verification and the on-volume retention.
+    BackupSet(Option<PathBuf>, Option<usize>),
     Restore(PathBuf),
     ActivateEpoch(String),
     /// End a restored or recreated store's recovery quarantine (C10/C11) once the

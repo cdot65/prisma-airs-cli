@@ -18292,7 +18292,7 @@ is claimed. A real subsequent schema version still requires B1's concrete verifi
 backup and transactional migration gate. The separately frozen B0 benchmark schema
 is unchanged.
 
-### 22.8 Optional runtime MCP service (M1 done; M2–M6 server implemented; M7 CLI client implemented; M8 not implemented)
+### 22.8 Optional runtime MCP service (M1 done; M2–M6 server implemented; M7 CLI client implemented; M8 deployment artifacts implemented, live qualification pending)
 
 The user-approved architecture in RUNTIME_MCP_IMPLEMENTATION_PLAN.md (revision 7)
 moves every persistent history operation into an optional, separately deployed MCP
@@ -18335,6 +18335,57 @@ parity test and COMPATIBILITY entry in the phase that ships it:
   §7.5. Admin-role connections keep no session and sign in afresh, nonce-bound, for
   every administrative mutation. Live gateway support for that proof is unqualified
   (M0.6 P3); the deployment keeps `[admin] mode = "disabled"` until M8 qualifies it.
+- **M8 (server and deployment only; the CLI is unchanged, so there is no §12 row):**
+  - *Deployment artifacts:* `deploy/airs-mcp/`. One `Recreate` replica on an RWOP
+    block PVC; non-root UID 65532, read-only root, dropped capabilities, no `fsGroup`.
+    Secrets reach the service only through an init container that copies them into a
+    memory-backed volume as 0400 files owned by 65532; rotation is a restart.
+  - *Maintenance:* `airs-mcp control-backup-set --config FILE [--dir DIR] [--keep N]`
+    writes, while the service is stopped and under the owner lock, the coordinated
+    `airs-mcp-backup/1` set to a new `DIR/<id>/` (`b1-<UTC>-<8 hex>`; 0700/0600,
+    no-clobber, fsynced). The default is `DATA/backups/<id>/`.
+    - The set holds `VACUUM INTO` copies of control and every archive, the artifact
+      list, and `manifest.json` written last. Each store records its real application
+      schema, and hashes are streamed.
+    - An archive or artifact that cannot be read fails the set: `complete: true` is never
+      written over a gap.
+    - With `--keep N` (N ≥ 1), the new set is verified, then the on-volume retention
+      keeps the newest N complete sets, always including the new one. It removes only
+      older sets whose names follow the generated grammar, never anything newer, never a
+      symlink's target, and never an off-volume copy. A set whose manifest cannot be read
+      or parsed is not treated as an interrupted run: retention fails closed rather than
+      deleting it. A malformed, missing-value or repeated `--keep` is a usage error (exit
+      2) before any storage access.
+  - *Verification:* `airs-mcp control-backup-verify --set DIR` verifies one set;
+    `--latest-in DIR` verifies the newest complete set under `DIR`, for the backup Job,
+    whose distroless image has no shell to pass the set ID. It re-hashes every store,
+    recomputes each `rows_digest`, and checks the manifest metadata against the copies:
+    the epoch, each schema, the SQLite version, `created_at`, and the artifact inventory
+    against the control copy's report versions. It refuses any mismatch, an unlisted file
+    or an incomplete manifest. A directory with no complete set refuses.
+  - *Disk reserve* (RUNTIME_MCP_CONTRACT §6 limits, §9.5): reserve = 2×DB bytes +
+    2×64 MiB + upload reservations + 64 MiB.
+    - Below reserve + 512 MiB, publication-class jobs (reports, daily, catch-up,
+      revisions) pause as `blocked_policy`, and upload staging answers
+      `storage_unavailable`.
+    - Below the reserve, collection and enrichment pause too, and `receipts_ingest`
+      answers `storage_unavailable`.
+    - A volume that cannot be measured fails closed: both classes pause until a
+      measurement succeeds. That includes a failed free-space, database-size,
+      directory or upload-reservation reading, and a measurement still running past its
+      bound, since one shared sampler serves the metrics and every request.
+    - `lifecycle_execute` is classified by action. `prune`, `compact` and
+      `artifact_delete`, which free space, still run. `export`, `import_finalize`,
+      `recover` and any unknown action allocate, and are publication-class.
+    - Reads always run. Paused jobs requeue only when space allows.
+  - *Metrics* (`/metrics` on the health listener, fixed series): storage sizes from a
+    time-bounded cached sample (`airs_mcp_storage_sample_available`, `…_age_seconds`),
+    `airs_mcp_storage_reserve_bytes`, `airs_mcp_storage_reserve_available` and
+    `airs_mcp_storage_low_space{level="publication"|"collection"}`.
+  - *Owner tooling:* `scripts/m8/derive-config.sh`, `user-checklist.sh`,
+    `check-r2-delete-rights.sh` (offline) and `build-hashes.sh`. The runbook is
+    RUNTIME_MCP_DEPLOYMENT_RUNBOOK.md, and the release procedure
+    RUNTIME_MCP_RELEASE.md.
 - **Done in M1:** SQLite and history-store code left the CLI package for
   `airs-history-store`, and the shared code moved to `airs-runtime-core` (§11). The
   unpublished local `--history-dir` and `--no-history` flags and the local
