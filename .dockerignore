@@ -1,0 +1,24 @@
+# Build context for deploy/airs-mcp/Dockerfile (context is the repository root).
+# Only the sources the `cargo build --locked -p airs-mcp` stage needs are sent.
+.git
+.claude
+.local
+.reference
+target
+**/target
+node_modules
+**/node_modules
+docs-site
+docs
+prototypes
+scripts
+tests
+npm
+signal-brief-*
+AIRS_SIGNAL_BRIEF_PROMPT.txt
+airs-mcp-probe-results.md
+*.log
+mise.local.toml
+.dockerignore
+.forgejo
+.github
