@@ -234,7 +234,7 @@ running volume does not meet it, and it is not substituted here.
 
 | Time | What | Where defined |
 |---|---|---|
-| 03:00 | The daily set job: Deployment scaled to 0 → `control-backup-set` → `control-backup-verify` → Deployment scaled to 1 → success marker. Normally a few minutes; bounded at 60 min (`activeDeadlineSeconds: 3600`), with the restore trap allowed 33 min more (`terminationGracePeriodSeconds: 1980`) if that deadline hits | `deploy/airs-mcp/backup-cronjob.json` |
+| 03:00 | The daily set job: Deployment scaled to 0 → `control-backup-set` → `control-backup-verify` → Deployment scaled to 1 → success marker. Normally a few minutes; bounded at 65 min (`activeDeadlineSeconds: 3900`), with the restore trap allowed 33 min (`terminationGracePeriodSeconds: 1980`) if that deadline hits | `deploy/airs-mcp/backup-cronjob.json` |
 | 03:15 | The Longhorn recurring backup of the data volume (the existing job group) carries the new set, and the stopped-then-restarted volume, off-volume to nas2, then nas1 and R2 | the cluster's Longhorn recurring jobs |
 
 **The daily set job** runs in the `airs-mcp` namespace with a ServiceAccount that may only
@@ -258,17 +258,20 @@ scale `deploy/airs-mcp`. It must:
    refuses an incomplete manifest, a mismatched or missing store, or an unlisted file.
    It prints `{"event":"backup_set_verified",…}`.
 4. Scale `deploy/airs-mcp` back to 1, **whatever** happened in steps 2–3, once every
-   set pod is terminal (`Succeeded` or `Failed`; up to 1260 s, which covers the set Job's
-   own 1200 s deadline). A completed pod stays listed for 14 days and holds nothing.
+   set pod is terminal (`Succeeded` or `Failed`; up to 1260 s of elapsed time, request
+   time included, which covers the set Job's own 1200 s deadline). A completed pod stays
+   listed for 14 days and holds nothing.
 5. Only after a verified set, write that day's success marker. The job's log carries
    the `backup_set` and `backup_set_verified` lines.
 
 **Downtime window.** The service is stopped from about 03:00 until the set is verified,
 normally a few minutes and dominated by `VACUUM INTO` of the archive. Measure it on the
 first runs (step 12, measured capacity). The worst case is the orchestrator's budget:
-stop 300 + poll 1230 + release 1260 + ready 300 + margin 300 = 3390 s, inside its
-3600 s deadline; and if the deadline ends it, the trap still has 1980 s of grace to
-restore the service. On such a day the 03:15 Longhorn backup runs before the set is
+scale-down request 30 + stop 300 + create request 30 + poll 1260 + release 1260 +
+restore 360 + margin 300 = 3540 s of elapsed time (every phase's API requests included;
+each request is capped at the time left in its phase), inside its 3900 s deadline; and if
+the deadline ends it, the trap needs at most request 30 + release 1260 + restore 360 +
+margin 300 = 1950 s, inside its 1980 s of grace, to restore the service. On such a day the 03:15 Longhorn backup runs before the set is
 verified, so the success gate below records no coordinated backup for it. While it is stopped, agents and the CLI get
 connection errors, and no collection runs. The quarter-hour schedule coalesces the
 missed tick (contract §6.1).
@@ -574,11 +577,36 @@ has no route, so it cannot run a job. Never run this in production.
       az ad app permission add --id <gw-qual-client-id> --api <qual-api-app-id> \
         --api-permissions <read-scope-id>=Scope <operate-scope-id>=Scope <admin-scope-id>=Scope
       az ad app permission admin-consent --id <gw-qual-client-id>
-      az ad app credential reset --id <gw-qual-client-id> --append --years 1 --query keyId -o tsv
       ```
-      The credential value is shown once: paste it only into the gateway integration
-      below, and record just the `keyId`. Put `<gw-qual-client-id>` in
-      `[upstream].allowed_client_ids`.
+      Put `<gw-qual-client-id>` in `[upstream].allowed_client_ids`.
+
+      **Its secret is an owner-only handoff** (M8 review 5): the value exists in your
+      terminal and the gateway's secret store, and nowhere else. Not in an agent
+      session, a log, the checklist's evidence file, or a command line of this
+      repository's CLI.
+      1. In your own terminal, with history off for the command (`set +o history`, or
+         `HISTCONTROL=ignorespace` and a leading space), create the credential and
+         print only its value:
+         ```sh
+         az ad app credential reset --id <gw-qual-client-id> --append --years 1 \
+           --display-name airs-qual-gateway --query password -o tsv
+         ```
+         `az ad app credential reset` returns `appId`, `password` and `tenant`; it has
+         no `keyId` field, so `--query keyId` prints nothing. The `password` is the
+         one-time value.
+      2. In the gateway console, create the secret for the qualification integration
+         (the same way the production integration's secret was created) and paste the
+         value directly into it. Then clear the terminal (`clear`, and
+         `set -o history` again). The gateway secret is referenced by name in
+         `--secret-mappings` below; the value never passes through the CLI.
+      3. Record the credential's metadata only, from the listing, which cannot return a
+         value (`az ad app credential list`: "the content of the password … is not
+         retrievable"):
+         ```sh
+         az ad app credential list --id <gw-qual-client-id> \
+           --query "[].{keyId:keyId,displayName:displayName,end:endDateTime}" -o table
+         ```
+         The checklist's evidence file holds the `keyId` and the end date, nothing else.
    3. **The gateway integration**, from the committed M0.6 template with the
       qualification values (the production integration is left untouched):
       ```sh
@@ -588,21 +616,24 @@ has no route, so it cannot run a job. Never run this in production.
         --url https://mcp-backend-airs-qual.goshawks.io/mcp --auth-type oauth_auto \
         --set-string configurations.client_id=<gw-qual-client-id> \
         --set-string configurations.audience=<qual-api-app-id> \
-        --secret-mappings '<the template's mapping, naming the gateway secret created for the qualification client>' \
+        --secret-mappings '<the template's mapping, naming the gateway secret created in 2.2>' \
         --output json
       ```
       `airs gateway mcp integrations create --help` lists every flag; override the
-      template's own field names with `--set-string`. Record the integration UUID for
-      cleanup. Enable identity forwarding as for production.
+      template's own field names with `--set-string`. `--configurations` takes inline
+      JSON only (it would put a value into the process arguments and shell history), so
+      the secret is never passed through it: the integration reaches its secret only by
+      the mapping's name. Record the integration UUID for cleanup. Enable identity
+      forwarding as for production.
    4. **Routing.** Add a CoreDNS rewrite for `mcp-backend-airs-qual.goshawks.io` to
       `airs-mcp.airs-mcp-qual.svc.cluster.local`, and that hostname to the gateway's
       `TRUSTED_CUSTOM_HOSTS` (the same shape as production; `scripts/m8/derive-config.sh`
       prints the snippets). No public DNS record: cert-manager proves the name with its
       own temporary DNS-01 TXT record.
    5. **Repeat §7a** for the qualification route before signing in: items 1–4 with
-      `<gw-qual-client-id>`, the qualification API's SP object ID, the `keyId` above and
-      the URL `https://mcp-backend-airs-qual.goshawks.io/mcp`. Refuse and stay blocked if
-      any item fails.
+      `<gw-qual-client-id>`, the qualification API's SP object ID, the `keyId` recorded
+      in 2.2 and the URL `https://mcp-backend-airs-qual.goshawks.io/mcp`. Refuse and stay
+      blocked if any item fails.
    6. Then `airs mcp connections set qual …` and `airs mcp login qual`.
 
    Everything in this step is removed in step 8.
@@ -632,15 +663,24 @@ has no route, so it cannot run a job. Never run this in production.
    With the Deployment at 0 (the PVC is ReadWriteOncePod, so only one pod may mount it),
    run a `filler` debug pod from the pinned busybox image of `deployment.json`, as UID
    65532 with no `fsGroup` and no service-account token, mounting the qualification PVC
-   at `/data`, and fill until about 1% remains:
+   at `/data`, and fill until about 1% remains. The helper is BusyBox, so the recipe uses
+   only BusyBox applets and POSIX options: `df -P` (its 1024-byte-block output; GNU's
+   `--output=` is rejected), `dd`, `stat -c`, `rm`. BusyBox 1.37 also ships `fallocate`,
+   which is faster; `dd` is the fallback when it is missing or refused by the filesystem.
    ```sh
-   FREE=$(kubectl -n airs-mcp-qual exec filler -- sh -c "df -B1 --output=avail /data | tail -1")
+   FREE_KIB=$(kubectl -n airs-mcp-qual exec filler -- sh -c "df -Pk /data/qual-filler | awk 'NR==2{print \$4}'")
+   case "$FREE_KIB" in ''|*[!0-9]*|0) echo "refuse: no free-space figure ($FREE_KIB)"; exit 1;; esac
+   FILL_KIB=$(( FREE_KIB - FREE_KIB / 100 ))
    kubectl -n airs-mcp-qual exec filler -- sh -c \
-     "fallocate -l \$(( $FREE - $FREE / 100 )) /data/qual-filler/fill || dd if=/dev/zero of=/data/qual-filler/fill bs=1M count=\$(( ($FREE - $FREE / 100) / 1048576 ))"
+     "fallocate -l $(( FILL_KIB * 1024 )) /data/qual-filler/fill 2>/dev/null \
+      || dd if=/dev/zero of=/data/qual-filler/fill bs=1024 count=$FILL_KIB"
    kubectl -n airs-mcp-qual exec filler -- stat -c '%u:%g %a %s' /data/qual-filler /data/qual-filler/fill
    ```
-   Expected: `65532:65532 700` for the directory. Delete the `filler` pod before step 6,
-   or the service pod cannot attach the volume.
+   `df -P` reports the filesystem of its argument, so the figure is the data volume's
+   free space whatever the mount path. The `case` refuses an empty, non-numeric or zero
+   figure before any arithmetic. Expected: `65532:65532 700` for the directory, and a
+   file of about `FILL_KIB` KiB. Delete the `filler` pod before step 6, or the service pod
+   cannot attach the volume.
 6. **Start the service and record:**
    - whether it starts (`storage_owned`, `control_recovered`) or refuses
      (`storage_refused` or `control_refused`, with the data intact);

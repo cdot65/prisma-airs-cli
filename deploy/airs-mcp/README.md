@@ -75,24 +75,35 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
   ended it), so a failed set is noticed at once rather than at a timeout. On every exit
   (success, failure, SIGTERM, or the orchestrator's own deadline), a shell `trap` first
   waits until every set-Job pod is **terminal** (`Succeeded` or `Failed`), then scales
-  the Deployment back to 1, then polls until it is available (up to 300 s). A failed set
-  fails the orchestrator Job (`backoffLimit: 0`). Every `kubectl` call carries
-  `--request-timeout=30s`.
+  the Deployment back to 1, then polls until it is available. A failed set fails the
+  orchestrator Job (`backoffLimit: 0`).
   - *Volume release.* A completed Job keeps its pod (`ttlSecondsAfterFinished`, 14 days),
     so the trap never waits for the pod to be *deleted*: it waits for its phase. A
     terminated pod no longer holds the `ReadWriteOncePod` attachment, and the
     scheduler ignores terminal pods when it places the service pod again.
-  - *Budgets* (checked statically by `deploy_manifests.rs`, and exercised by its
-    orchestrator test against stub `kubectl`):
-    - the set Job's own `activeDeadlineSeconds: 1200` ends it before the orchestrator's
-      poll gives up (1230 s) and before the trap's release wait gives up (1260 s);
-    - the **full path** is bounded by stop 300 + poll 1230 + release 1260 + ready 300 +
-      margin 300 = 3390 s, strictly below the orchestrator's `activeDeadlineSeconds:
-      3600`;
-    - the **termination path** (the trap alone, after a SIGTERM or the deadline) is
-      bounded by release 1260 + ready 300 + four bounded API calls + margin = 1980 s,
-      which is the pod's `terminationGracePeriodSeconds`, so the kubelet lets the trap
-      finish.
+  - *Elapsed-time budgets* (checked statically by `deploy_manifests.rs` from the script's
+    own constants, and exercised by its orchestrator test against stub `kubectl` on a
+    virtual clock). No phase counts iterations: each is a wall-clock deadline that
+    includes the time its API requests take, and every `kubectl` call goes through one
+    function, `kc DEADLINE …`, which caps `--request-timeout` at the lesser of `REQ` (30 s)
+    and the time left until that phase's deadline, and makes no call at all once none is
+    left. A slow or erroring API server therefore shortens the number of requests, never
+    the deadline. The constants are `STOP=300`, `POLL=1260`, `RELEASE=1260`,
+    `RESTORE=360` and `MARGIN=300`:
+    - the set Job's own `activeDeadlineSeconds: 1200` ends it before the poll phase gives
+      up (1260 s) and before the trap's release wait gives up (1260 s);
+    - the **restoration budget** `RESTORE` (360 s = ready wait 300 + two bounded
+      requests) is reserved: the trap starts it fresh after the release wait, so an
+      exhausted release wait can never consume the time the scale-up needs;
+    - the **full path** is bounded by scale-down request 30 + stop 300 + create request 30
+      + poll 1260 + release 1260 + restore 360 + margin 300 = 3540 s, strictly below the
+      orchestrator's `activeDeadlineSeconds: 3900`;
+    - the **termination path** (a SIGTERM or the deadline at the worst moment: the
+      in-flight request finishes, then the trap runs alone) is bounded by request 30 +
+      release 1260 + restore 360 + margin 300 = 1950 s, within the pod's
+      `terminationGracePeriodSeconds: 1980`, so the kubelet lets the trap finish. The trap
+      ignores a further TERM while it runs; the grace period, not a second signal, is its
+      bound.
   - *Downtime* is the length of the set plus the restart. There is no fixed restoration
     time: the service is down from 03:00 until `service_restored` is logged, which on a
     normal day is a few minutes; the budgets above are worst cases. Schedule the Longhorn

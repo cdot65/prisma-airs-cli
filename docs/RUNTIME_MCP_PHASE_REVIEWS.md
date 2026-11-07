@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source-side review 4: 8.0/10, revise; round 5 corrections submitted for review 5** (reviews 1–3 scored 6.5, 6.5 and 7.5);
+Status: **source-side review 5: 8.5/10, revise; round 6 corrections submitted for review 6** (reviews 1–4 scored 6.5, 6.5, 7.5 and 8.0);
 integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
 accepted). The plan's exit gate needs an
 independent source and receipts review at or above the owner-set 9.0 threshold **plus**
@@ -5230,9 +5230,10 @@ unmeasurable volume pauses nothing.
    - `--run-lookups` runs read-only commands through an allowlist, refusing mutating
      verbs.
    - Public DNS creation is removed; the `cf` command is printed instead.
-   - Values are serialized safely, and the output is published only after a `tomllib`
-     round-trip, a structural check and `airs-mcp check-config`. Invalid output exits 1
-     and leaves no file.
+   - Values are serialized safely, and the output is published only after a TOML
+     round-trip and structural check (when the local `python3` has `tomllib` or `tomli`)
+     and `airs-mcp check-config`. Without a Python TOML parser the service parser is
+     required rather than optional. Invalid output exits 1 and leaves no file.
    - Tests use service stubs that fail if invoked.
 4. **The R2 checker has a strict schema.** It defines exact keys, six kinds, a closed
    Cloudflare permission list, the `s3:` action grammar and a scope grammar.
@@ -5476,3 +5477,83 @@ interrupted), R2 (literal placeholder accepted), R3 (wait-for-delete restored), 
 (deadline 2400), R5 (grace 300), R6 (no request timeout), R7 (no TERM trap); fork S2's M1
 (the reserve counting siblings) and M2 (admission refusing a data directory with a
 sibling).
+
+### M8 source-side review 5 — 8.5/10, revise (preserved, 2026-11-07T13:04Z)
+
+Source: `.local/dev/runtime-mcp/m8/review-5/result.md`. All 712 frozen files verified.
+Every review-4 probe passes except the two below; the retention regression was shown to
+fail on the review-4 source and pass on round 5.
+
+Material findings:
+1. The orchestrator counts only its sleeps (5 s per iteration), not the time `kubectl`
+   calls take, and the static budget check assumes four request costs during termination
+   although the release loop allows 252 requests. With release queries each failing after
+   29 s (inside the 30 s request timeout), a SIGTERM path requested the scale-up 8,563 s
+   later, far past the 1,980 s grace period. The stub tests pass because their API
+   responds at once and their sleeps take no time.
+2. Runbook §12's credential step runs `az ad app credential reset … --query keyId`, but
+   the command returns `appId`, `password` and `tenant`, never `keyId`, and selecting an
+   identifier cannot preserve the one-time credential value the next step needs.
+
+Minor finding: the filler recipe uses GNU `df --output=avail` in a BusyBox helper, which
+rejects it, leaving the allocation arithmetic with an empty value.
+
+### M8 round 6 corrections (submitted for source-side review 6)
+
+1. **The orchestrator keeps elapsed-time deadlines.** It remains POSIX `/bin/sh` with no
+   new dependency (`now() { date +%s; }`).
+   - Constants `REQ=30 STOP=300 POLL=1260 RELEASE=1260 RESTORE=360 MARGIN=300`.
+   - One `kubectl` call site, `kc DEADLINE …`, whose request timeout is the smaller of
+     `REQ` and the time left to the phase deadline; it issues no request once none is left
+     (exit 124). Every phase (stop wait, Job poll, release wait, ready wait) is a fresh
+     wall-clock deadline; no loop counts iterations.
+   - The trap keeps its own clock, starts `RESTORE` afresh after the release wait, so an
+     exhausted release wait cannot consume it, and ignores a further TERM so the grace
+     period alone bounds it. Budget exhaustion in the stop wait is never read as "pods
+     gone".
+   - `activeDeadlineSeconds` is 3900 (was 3600); `terminationGracePeriodSeconds` stays
+     1980. Full path 30 + 300 + 30 + 1260 + 1260 + 360 + 300 = 3540 < 3900; termination
+     path 30 + 1260 + 360 + 300 = 1950 ≤ 1980.
+   - `check_backup` parses the constants from the script and the deadlines from the
+     manifests and asserts both inequalities, `tmpl < POLL`, `tmpl + 60 ≤ RELEASE`,
+     `RESTORE ≥ 2·REQ + 300`, the single `kubectl` inside `kc`, the absence of iteration
+     counters, each phase's deadline guard, each request bounded by its phase, and the
+     fresh `RESTORE`.
+   - The scenario test runs the real script under `/bin/sh` with stub `date`, `sleep` and
+     `kubectl` on a virtual clock (`sleep N` advances N; a request advances the smaller of
+     its cost and its timeout). Cases: a completed Job with a retained pod; a failed Job;
+     SIGTERM after a poll; a Job never terminal; a pod never terminal; a service never
+     available; SIGTERM followed by 29 s failing release queries (scale-up within
+     REQ + RELEASE, the trap ends within grace − margin); 29 s polls never terminal plus
+     slow release (the whole run within deadline − margin); and SIGTERM at the start of a
+     29 s request. Every case checks each timeout ≤ `REQ` and ≤ the time left in its phase.
+   - The README and runbook §9a carry the new numbers (65 min deadline, 33 min grace, the
+     3540 s / 1950 s worst cases); no 1230, 3390 or 3600 remains.
+2. **The qualification credential is an owner-only handoff.** The wrong `--query keyId`
+   line is gone. In the owner's terminal, with history off, `az ad app credential reset
+   … --query password -o tsv` is pasted directly into the gateway console's secret for
+   the integration, the terminal is cleared, and only `az ad app credential list …
+   --query "[].{keyId, displayName, end}"` is recorded. The evidence file holds only the
+   key ID and expiry. The integration reaches the secret by name (`--secret-mappings`),
+   and `--configurations` takes inline JSON only, so it never carries the value. The
+   installed `az` source confirms `credential reset` returns `appId`, `password` and
+   `tenant`, never `keyId`.
+
+Minor finding: the filler recipe uses `df -Pk … | awk 'NR==2{print $4}'`, refuses a
+non-numeric or zero result before any arithmetic, and keeps `fallocate` with a `dd`
+fallback. It was exercised inside the pinned `busybox:1.37.0` image: `df --output` is
+rejected there, the POSIX pipeline works, and `fallocate`, `dd`, `stat -c` and `rm` are
+present.
+
+Each mutation was checked alone and caught: m1 iteration counting (scale-up 2340 s after
+SIGTERM against a 1290 s bound), m2 no per-request cap (a 30 s request overruns its
+deadline), m3 the ready wait reusing the release deadline (no scale-up requested when
+the pod never terminates).
+
+Also in round 6, found by PR #10's CI: the CI image is Ubuntu 22.04 with Python 3.10,
+which has no `tomllib`, so `derive-config.sh`'s validation failed there. The helper now
+probes for `tomllib` or `tomli`; without either, suggestions from the M0.6 file are
+absent, the grant tools fall back to the built-in proof-ready lists, the Python
+round-trip is skipped, and `airs-mcp check-config` becomes mandatory (no binary and no
+parser refuses to write). Exercised in the CI image: the script completes with a
+`check-config` stub, and refuses with neither validator.

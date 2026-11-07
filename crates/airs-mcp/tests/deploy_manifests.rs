@@ -916,14 +916,14 @@ fn check_backup(dir: &Path) -> Result<(), String> {
     let phases = at("phases() {")?;
     let released = at("released() {")?;
     let restore = at("restore() {")?;
-    let release_wait = at("until released; do")?;
+    let release_wait = at("if released \"$dr\"; then rel=1; break; fi")?;
     let up = at("scale deployment/airs-mcp --replicas=1")?;
     let ready = at("availableReplicas")?;
     let restored = at("service_restored")?;
     let daily = at("backup_set_daily_complete")?;
     let trap = at("trap restore EXIT")?;
     let down = at("--replicas=0")?;
-    let gone = at("wait --for=delete pod -l app.kubernetes.io/name=airs-mcp")?;
+    let gone = at("get pod -l app.kubernetes.io/name=airs-mcp -o name")?;
     let create = at("create job \"$RUN\" --from=cronjob/airs-mcp-backup-set")?;
     let poll = at("get job \"$RUN\"")?;
     let verified = at("backup_set_verified")?;
@@ -944,57 +944,82 @@ fn check_backup(dir: &Path) -> Result<(), String> {
             && poll < verified
             && script.contains("[ \"$OK\" = 1 ] && [ \"$svc\" = 0 ] && [ \"$rc\" = 0 ]")
             && script.contains("trap 'exit 143' TERM INT")
-            && script.contains("trap - TERM INT")
+            && script.contains("trap '' TERM INT")
             && script.contains("grep -qvE '^(Succeeded|Failed)$'")
-            && script.contains("*Complete=True*) break ;; *Failed=True*) exit 1 ;;")
-            && !script.contains("wait --for=delete pod -l job-name"),
+            && script.contains("*Complete=True*) OK=1; break ;; *Failed=True*) exit 1 ;;")
+            && !script.contains("wait --for="),
         "stop the service, run the set and poll the Job's terminal conditions; on any exit \
          wait until every set pod is terminal (never for its deletion: a completed Job \
          keeps its pod), scale back up and wait until available; report the verified \
-         backup and the restored service separately, and daily completion only for both",
+         backup and the restored service separately, and daily completion only for both; \
+         the trap ignores a further TERM (its bound is the grace period)",
     )?;
-    // Every kubectl call is bounded.
+    // Every kubectl call goes through `kc DEADLINE …`, the one call site, whose request
+    // timeout is the lesser of REQ and the time left until the phase deadline, and which
+    // makes no call once none is left (M8 review 5 finding 1).
     ensure(
-        script.contains("K=\"kubectl -n $NS --request-timeout="),
-        "every kubectl call carries a request timeout",
+        script.matches("kubectl").count() == 1
+            && script.contains(
+                "kc() { d=$1; shift; r=$(( d - $(now) )); [ \"$r\" -gt 0 ] || return 124; \
+                 [ \"$r\" -gt \"$REQ\" ] && r=$REQ; kubectl -n \"$NS\" --request-timeout=\"${r}s\" \"$@\"; }",
+            ),
+        "one kubectl call site, bounded by the lesser of REQ and the phase's remaining time",
+    )?;
+    // Elapsed-time deadlines, never iteration counts: each phase computes a fresh
+    // deadline from the clock and every loop is guarded by it.
+    ensure(
+        !script.contains("$((i+") && !script.contains("-ge "),
+        "no loop counts iterations",
+    )?;
+    for (deadline, budget) in [
+        ("d1", "STOP"),
+        ("d2", "POLL"),
+        ("dr", "RELEASE"),
+        ("ds", "RESTORE"),
+    ] {
+        ensure(
+            script.contains(&format!("{deadline}=$(( $(now) + {budget} ))"))
+                && script.contains(&format!("while [ \"$(now)\" -lt \"${deadline}\" ]; do")),
+            format!("the {budget} phase is a wall-clock deadline ({deadline}) guarding its loop"),
+        )?;
+    }
+    ensure(
+        script.contains("released \"$dr\"")
+            && script.contains("kc \"$ds\" scale deployment/airs-mcp --replicas=1")
+            && script.contains("kc \"$ds\" get deployment airs-mcp")
+            && script.contains("kc \"$d1\" get pod -l app.kubernetes.io/name=airs-mcp")
+            && script.contains("kc \"$d2\" get job \"$RUN\""),
+        "every request inside a phase is bounded by that phase's deadline",
     )?;
     ensure(
-        !script.replace("K=\"kubectl", "").contains("kubectl"),
-        "no kubectl call bypasses $K",
+        script.contains("[ \"$rel\" = 1 ] || svc=1; ds=$(( $(now) + RESTORE ))"),
+        "the restoration budget starts fresh after the release wait, so an exhausted \
+         release wait never consumes it",
     )?;
-    // Budgets (M8 review 4 finding 1): the full path's sequential bounds (stop wait, Job
-    // poll, release wait, readiness, margin) sum strictly below the orchestrator's
-    // deadline; the set Job's own deadline fails it before the poll gives up and before
-    // the release wait does; and the termination path (the exit trap alone, plus its API
-    // calls) fits the pod's grace period, so a SIGTERM or a deadline still restores the
-    // service.
-    let num_after = |needle: &str| -> Result<u64, String> {
-        let i = script.find(needle).ok_or(format!("bound {needle:?}"))? + needle.len();
+    // Budgets (M8 review 4 finding 1, review 5 finding 1), from the script's own constants
+    // and the manifests' numbers. Every phase bound is elapsed time with its requests
+    // included, so the arithmetic is: full path = scale-down request + STOP + create
+    // request + POLL + RELEASE + RESTORE + MARGIN < the orchestrator's deadline; the
+    // termination path (the in-flight request, then the trap alone) = REQ + RELEASE +
+    // RESTORE + MARGIN <= the pod's grace period; the set Job's own deadline ends it
+    // before the poll and the release wait give up; and RESTORE leaves real time for the
+    // ready wait after its two bounded requests.
+    let constant = |name: &str| -> Result<u64, String> {
+        let needle = format!("{name}=");
+        let i = script.find(&needle).ok_or(format!("constant {name}"))? + needle.len();
         script[i..]
             .chars()
             .take_while(char::is_ascii_digit)
             .collect::<String>()
             .parse::<u64>()
-            .map_err(|_| format!("bound {needle:?} is not a number"))
+            .map_err(|_| format!("constant {name} is not a number"))
     };
-    let bound_after = |anchor: &str| -> Result<u64, String> {
-        let i = script.find(anchor).ok_or(format!("bound {anchor:?}"))?;
-        let rest = &script[i..];
-        let j = rest
-            .find("if [ \"$i\" -ge ")
-            .ok_or(format!("no -ge bound after {anchor:?}"))?;
-        rest[j + "if [ \"$i\" -ge ".len()..]
-            .chars()
-            .take_while(char::is_ascii_digit)
-            .collect::<String>()
-            .parse::<u64>()
-            .map_err(|_| format!("bound after {anchor:?} is not a number"))
-    };
-    let request = num_after("--request-timeout=")?;
-    let stop = num_after("app.kubernetes.io/name=airs-mcp --timeout=")?;
-    let release_bound = bound_after("until released; do")?;
-    let ready_bound = bound_after("availableReplicas")?;
-    let poll_bound = bound_after("get job \"$RUN\"")?;
+    let request = constant("REQ")?;
+    let stop = constant("STOP")?;
+    let poll_bound = constant("POLL")?;
+    let release_bound = constant("RELEASE")?;
+    let restore_budget = constant("RESTORE")?;
+    let margin = constant("MARGIN")?;
     let orch_deadline = job["activeDeadlineSeconds"]
         .as_u64()
         .ok_or("orchestrator deadline")?;
@@ -1006,21 +1031,23 @@ fn check_backup(dir: &Path) -> Result<(), String> {
         .find(|i| i["kind"] == "CronJob" && i["metadata"]["name"] == "airs-mcp-backup-set")
         .and_then(|t| t["spec"]["jobTemplate"]["spec"]["activeDeadlineSeconds"].as_u64())
         .ok_or("set Job deadline")?;
-    let margin = 300;
-    let full_path = stop + poll_bound + release_bound + ready_bound + margin;
-    let termination_path = release_bound + ready_bound + 4 * request + margin;
+    let full_path = request + stop + request + poll_bound + release_bound + restore_budget + margin;
+    let termination_path = request + release_bound + restore_budget + margin;
     ensure(
         (1..=60).contains(&request)
+            && margin >= 60
             && tmpl_deadline < poll_bound
             && tmpl_deadline + 60 <= release_bound
+            && restore_budget >= 2 * request + 300
             && full_path < orch_deadline
             && termination_path <= grace,
         format!(
             "budgets: request {request} s; set Job {tmpl_deadline} s < poll {poll_bound} s; \
-             release wait {release_bound} s >= Job + 60; full path stop {stop} + poll \
-             {poll_bound} + release {release_bound} + ready {ready_bound} + margin {margin} = \
-             {full_path} < orchestrator deadline {orch_deadline}; termination path release + \
-             ready + 4 requests + margin = {termination_path} <= grace {grace}"
+             release wait {release_bound} s >= Job + 60; restore {restore_budget} s >= 2 \
+             requests + 300; full path {request} + stop {stop} + {request} + poll \
+             {poll_bound} + release {release_bound} + restore {restore_budget} + margin \
+             {margin} = {full_path} < orchestrator deadline {orch_deadline}; termination \
+             path {request} + release + restore + margin = {termination_path} <= grace {grace}"
         ),
     )?;
     // The suspended template the orchestrator instantiates.
@@ -1948,9 +1975,13 @@ fn the_m8_scripts_parse_and_the_backup_check_is_read_only() {
     }
 }
 
-/// M8 review 4 finding 1: the orchestrator script itself, run against stateful stub
-/// `kubectl`, `sleep` and `date`. A completed Job keeps its pod, so the volume-release
-/// step must accept a retained terminal pod. Cases:
+/// M8 review 4 finding 1 and review 5 finding 1: the orchestrator script itself, run
+/// against stateful stub `kubectl`, `sleep` and `date` on a **virtual clock**. The stubs
+/// advance the clock the script reads (`date +%s`): `sleep N` by N, and each `kubectl`
+/// call by that call's configured cost (up to the 30 s request timeout), so a slow or
+/// erroring API server is modelled faithfully and the test still runs in milliseconds.
+/// A completed Job keeps its pod, so the volume-release step must accept a retained
+/// terminal pod. Cases:
 /// (a) the Job completes and its pod stays, phase `Succeeded`: the service is restored,
 ///     exit 0, all three events;
 /// (b) the Job fails (pod `Failed`): the service is restored, exit 1,
@@ -1958,67 +1989,170 @@ fn the_m8_scripts_parse_and_the_backup_check_is_read_only() {
 /// (c) SIGTERM while polling the Job: the exit trap restores the service, exit 143,
 ///     no completion;
 /// (d) the Job never becomes terminal and its pod ends `Failed` (the Job's own deadline
-///     killed it): the poll gives up, the service is restored, exit 1, no completion;
+///     killed it): the poll gives up at its elapsed bound, the service is restored,
+///     exit 1, no completion;
 /// (e) the Job never becomes terminal and its pod never ends: no restoration is claimed,
 ///     exit 1, though the scale-up is still requested so the service returns once the
-///     volume frees.
+///     volume frees;
+/// (f) SIGTERM, then every release query takes 29 s and fails: the trap still requests
+///     the scale-up within REQ + RELEASE of the signal, and finishes within the grace
+///     period, issuing far fewer requests than the iteration count would have;
+/// (g) every Job poll takes 29 s and the Job never becomes terminal, and the release
+///     queries are slow too: the whole run, trap included, ends within the orchestrator's
+///     deadline minus its margin;
+/// (h) SIGTERM at the start of a 29 s request: the in-flight request completes first,
+///     then the trap restores the service within the grace period.
+/// In every case each request's `--request-timeout` is at most REQ and at most the time
+/// left in its phase.
 #[test]
 fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     use std::os::unix::fs::PermissionsExt;
     let list = load_in(&committed(), "backup-cronjob.json");
-    let script = list["items"]
+    let orch = list["items"]
         .as_array()
         .unwrap()
         .iter()
         .find(|i| i["kind"] == "CronJob" && i["metadata"]["name"] == "airs-mcp-backup")
-        .unwrap()["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["command"][2]
-        .as_str()
-        .unwrap()
-        .to_owned();
-    // `job`: the Job's condition lines; `pod`: the set pod's phase lines; `available`: the
-    // Deployment's availableReplicas; `term`: send SIGTERM to the orchestrator the first
-    // time it sleeps after polling the Job.
+        .unwrap();
+    let script =
+        orch["spec"]["jobTemplate"]["spec"]["template"]["spec"]["containers"][0]["command"][2]
+            .as_str()
+            .unwrap()
+            .to_owned();
+    let orch_deadline = orch["spec"]["jobTemplate"]["spec"]["activeDeadlineSeconds"]
+        .as_u64()
+        .unwrap();
+    let grace =
+        orch["spec"]["jobTemplate"]["spec"]["template"]["spec"]["terminationGracePeriodSeconds"]
+            .as_u64()
+            .unwrap();
+    let constant = |name: &str| -> u64 {
+        let needle = format!("{name}=");
+        let i = script.find(&needle).unwrap() + needle.len();
+        script[i..]
+            .chars()
+            .take_while(char::is_ascii_digit)
+            .collect::<String>()
+            .parse()
+            .unwrap()
+    };
+    let (req, poll, release, margin) = (
+        constant("REQ"),
+        constant("POLL"),
+        constant("RELEASE"),
+        constant("MARGIN"),
+    );
+    /// When the stubs send SIGTERM to the orchestrator.
+    #[derive(Clone, Copy, PartialEq)]
+    enum Term {
+        Never,
+        /// The first `sleep` after a Job poll.
+        AfterPoll,
+        /// The start of the first Job poll request (before its cost elapses).
+        StartOfJobRequest,
+    }
+    /// `job`: the Job's condition lines; `pod`: the set pod's phase lines; `available`:
+    /// the Deployment's availableReplicas; costs are the virtual seconds each kind of
+    /// request takes; `fail_release`: release queries exit 1.
     struct Case<'a> {
         job: &'a str,
         pod: &'a str,
         available: &'a str,
-        term: bool,
+        term: Term,
+        cost_job: u64,
+        cost_release: u64,
+        fail_release: bool,
     }
-    let run = |c: &Case| -> (i32, String, Vec<String>) {
+    /// One logged request: the virtual time it started, its timeout and its arguments.
+    struct Call {
+        at: u64,
+        timeout: u64,
+        args: String,
+    }
+    struct Run {
+        code: i32,
+        out: String,
+        calls: Vec<Call>,
+        /// The virtual time SIGTERM was sent, if it was.
+        term_at: Option<u64>,
+        /// The virtual time when the script ended.
+        end: u64,
+    }
+    const T0: u64 = 1_000_000;
+    let run = |c: &Case| -> Run {
         let d = std::env::temp_dir().join(format!("airs-mcp-orch-{}", uuid::Uuid::new_v4()));
         let bin = d.join("bin");
         std::fs::create_dir_all(&bin).unwrap();
+        let clock = d.join("clock");
+        std::fs::write(&clock, T0.to_string()).unwrap();
         let log = d.join("log");
         let polled = d.join("polled");
         let sent = d.join("sent");
+        let pidfile = d.join("pid");
+        // Shared stub helpers: read/advance the clock; signal the orchestrator once.
+        let common = format!(
+            "now() {{ cat '{clock}'; }}\n\
+             advance() {{ echo $(( $(now) + $1 )) > '{clock}'; }}\n\
+             spend() {{ c=$1; if [ -n \"$t\" ] && [ \"$c\" -gt \"$t\" ]; then c=$t; fi; advance \"$c\"; }}\n\
+             term_once() {{ if [ ! -e '{sent}' ]; then now > '{sent}'; kill -TERM \"$(cat '{pidfile}')\"; fi; }}\n",
+            clock = clock.display(),
+            sent = sent.display(),
+            pidfile = pidfile.display(),
+        );
+        let term_on_job = if c.term == Term::StartOfJobRequest {
+            "term_once"
+        } else {
+            ":"
+        };
+        let release_exit = if c.fail_release { 1 } else { 0 };
         let kubectl = format!(
-            "#!/bin/sh\necho \"$*\" >> '{log}'\ncase \"$*\" in\n  *'get job'*) touch '{polled}'; printf '%s' '{job}' ;;\n  *'get deployment'*) printf '%s' '{available}' ;;\n  *'get pod'*'job-name='*) printf '%s' '{pod}' ;;\n  *'get pod'*) printf '' ;;\nesac\nexit 0\n",
+            "#!/bin/sh\n{common}\
+             t=''; for a in \"$@\"; do case \"$a\" in --request-timeout=*) t=\"${{a#--request-timeout=}}\"; t=\"${{t%s}}\" ;; esac; done\n\
+             echo \"$(now) $t $*\" >> '{log}'\n\
+             case \"$*\" in\n\
+               *'get job'*) touch '{polled}'; {term_on_job}; spend {cost_job}; printf '%s' '{job}' ;;\n\
+               *'get deployment'*) printf '%s' '{available}' ;;\n\
+               *'get pod'*'job-name='*) spend {cost_release}; printf '%s' '{pod}'; exit {release_exit} ;;\n\
+               *'get pod'*) printf '' ;;\n\
+             esac\n\
+             exit 0\n",
             log = log.display(),
             polled = polled.display(),
+            cost_job = c.cost_job,
+            cost_release = c.cost_release,
             job = c.job,
             available = c.available,
             pod = c.pod,
         );
-        let sleep = if c.term {
-            format!(
-                "#!/bin/sh\nif [ -e '{polled}' ] && [ ! -e '{sent}' ]; then touch '{sent}'; kill -TERM $PPID; fi\nexit 0\n",
-                polled = polled.display(),
-                sent = sent.display()
-            )
-        } else {
-            "#!/bin/sh\nexit 0\n".to_owned()
-        };
+        let sleep = format!(
+            "#!/bin/sh\n{common}\
+             {term}\n\
+             advance \"$1\"\nexit 0\n",
+            term = if c.term == Term::AfterPoll {
+                format!("if [ -e '{}' ]; then term_once; fi", polled.display())
+            } else {
+                String::new()
+            },
+        );
+        let date = format!(
+            "#!/bin/sh\n{common}\
+             case \"$*\" in *+%s*) now ;; *) echo 20261107030000 ;; esac\n",
+        );
         for (name, body) in [
             ("kubectl", kubectl.as_str()),
             ("sleep", sleep.as_str()),
-            ("date", "#!/bin/sh\necho 20261107030000\n"),
+            ("date", date.as_str()),
         ] {
             let p = bin.join(name);
             std::fs::write(&p, body).unwrap();
             std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).unwrap();
         }
+        // The stubs need the orchestrator shell's PID: a wrapper records it, then execs
+        // the script in that same process.
         let out = std::process::Command::new("/bin/sh")
             .arg("-c")
+            .arg("echo $$ > \"$0\"; exec /bin/sh -c \"$1\"")
+            .arg(&pidfile)
             .arg(&script)
             .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
             .output()
@@ -2026,121 +2160,226 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         let calls = std::fs::read_to_string(&log)
             .unwrap_or_default()
             .lines()
-            .map(str::to_owned)
+            .map(|l| {
+                let mut it = l.splitn(3, ' ');
+                Call {
+                    at: it.next().unwrap().parse().unwrap(),
+                    timeout: it.next().unwrap().parse().unwrap(),
+                    args: it.next().unwrap_or_default().to_owned(),
+                }
+            })
             .collect();
+        let term_at = std::fs::read_to_string(&sent)
+            .ok()
+            .map(|s| s.trim().parse().unwrap());
+        let end = std::fs::read_to_string(&clock)
+            .unwrap()
+            .trim()
+            .parse()
+            .unwrap();
         let _ = std::fs::remove_dir_all(&d);
-        (
-            out.status.code().unwrap_or(-1),
-            String::from_utf8_lossy(&out.stdout).into_owned(),
+        Run {
+            code: out.status.code().unwrap_or(-1),
+            out: String::from_utf8_lossy(&out.stdout).into_owned(),
             calls,
-        )
+            term_at,
+            end,
+        }
     };
-    let index = |calls: &[String], needle: &str| {
+    let index = |calls: &[Call], needle: &str| {
         calls
             .iter()
-            .position(|c| c.contains(needle))
-            .unwrap_or_else(|| panic!("no call {needle:?} in {calls:?}"))
+            .position(|c| c.args.contains(needle))
+            .unwrap_or_else(|| panic!("no call {needle:?}"))
     };
     let count =
-        |calls: &[String], needle: &str| calls.iter().filter(|c| c.contains(needle)).count();
+        |calls: &[Call], needle: &str| calls.iter().filter(|c| c.args.contains(needle)).count();
+    // Every request's timeout is at most REQ, and at most the time left in its phase: the
+    // poll phase starts at its first `get job`, the release phase at its first `job-name=`
+    // query (the body never issues one, so that is the trap's start).
+    let bounded = |r: &Run| {
+        for c in &r.calls {
+            assert!(
+                (1..=req).contains(&c.timeout),
+                "timeout {} in {}",
+                c.timeout,
+                c.args
+            );
+        }
+        for (needle, budget) in [("get job", poll), ("job-name=", release)] {
+            if let Some(first) = r.calls.iter().find(|c| c.args.contains(needle)) {
+                let deadline = first.at + budget;
+                for c in r.calls.iter().filter(|c| c.args.contains(needle)) {
+                    assert!(
+                        c.at < deadline && c.at + c.timeout <= deadline,
+                        "{needle}: a request at {} with timeout {} overruns the deadline {deadline}",
+                        c.at,
+                        c.timeout
+                    );
+                }
+            }
+        }
+    };
+    let fast = |job: &'static str, pod: &'static str, available: &'static str, term: Term| Case {
+        job,
+        pod,
+        available,
+        term,
+        cost_job: 0,
+        cost_release: 0,
+        fail_release: false,
+    };
     // (a) Completed Job, retained pod.
-    let (code, out, calls) = run(&Case {
-        job: "Complete=True\n",
-        pod: "Succeeded\n",
-        available: "1",
-        term: false,
-    });
-    assert_eq!(code, 0, "{out}");
+    let r = run(&fast("Complete=True\n", "Succeeded\n", "1", Term::Never));
+    assert_eq!(r.code, 0, "{}", r.out);
     for event in [
         "backup_set_verified",
         "service_restored",
         "backup_set_daily_complete",
     ] {
-        assert!(out.contains(event), "{event}: {out}");
+        assert!(r.out.contains(event), "{event}: {}", r.out);
     }
     let order = [
-        index(&calls, "--replicas=0"),
-        index(&calls, "app.kubernetes.io/name=airs-mcp"),
-        index(&calls, "create job"),
-        index(&calls, "get job"),
-        index(&calls, "job-name="),
-        index(&calls, "--replicas=1"),
-        index(&calls, "get deployment"),
+        index(&r.calls, "--replicas=0"),
+        index(&r.calls, "app.kubernetes.io/name=airs-mcp"),
+        index(&r.calls, "create job"),
+        index(&r.calls, "get job"),
+        index(&r.calls, "job-name="),
+        index(&r.calls, "--replicas=1"),
+        index(&r.calls, "get deployment"),
     ];
-    assert!(order.windows(2).all(|w| w[0] < w[1]), "{calls:?}");
-    assert!(
-        calls.iter().all(|c| c.contains("--request-timeout=")),
-        "every call is bounded: {calls:?}"
-    );
+    assert!(order.windows(2).all(|w| w[0] < w[1]));
     assert_eq!(
-        count(&calls, "job-name="),
+        count(&r.calls, "job-name="),
         1,
         "the retained pod releases at once"
     );
+    bounded(&r);
     // (b) Failed Job.
-    let (code, out, calls) = run(&Case {
-        job: "Failed=True\n",
-        pod: "Failed\n",
-        available: "1",
-        term: false,
-    });
-    assert_eq!(code, 1, "{out}");
-    assert!(out.contains("service_restored") && !out.contains("backup_set_verified"));
-    assert!(!out.contains("backup_set_daily_complete"));
-    assert!(index(&calls, "job-name=") < index(&calls, "--replicas=1"));
+    let r = run(&fast("Failed=True\n", "Failed\n", "1", Term::Never));
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(r.out.contains("service_restored") && !r.out.contains("backup_set_verified"));
+    assert!(!r.out.contains("backup_set_daily_complete"));
+    assert!(index(&r.calls, "job-name=") < index(&r.calls, "--replicas=1"));
+    bounded(&r);
     // (c) SIGTERM while polling: the trap still restores.
-    let (code, out, calls) = run(&Case {
-        job: "",
-        pod: "Succeeded\n",
-        available: "1",
-        term: true,
-    });
-    assert_eq!(code, 143, "{out}");
-    assert!(out.contains("service_restored"), "{out}");
-    assert!(!out.contains("backup_set_verified") && !out.contains("backup_set_daily_complete"));
-    assert!(
-        index(&calls, "get job") < index(&calls, "--replicas=1"),
-        "{calls:?}"
-    );
-    // (d) The Job never reports terminal, but its pod ended: the poll gives up and the
-    // service is restored.
-    let (code, out, calls) = run(&Case {
-        job: "",
-        pod: "Failed\n",
-        available: "1",
-        term: false,
-    });
-    assert_eq!(code, 1, "{out}");
-    assert!(out.contains("service_restored") && !out.contains("backup_set_verified"));
-    assert!(!out.contains("backup_set_daily_complete"));
+    let r = run(&fast("", "Succeeded\n", "1", Term::AfterPoll));
+    assert_eq!(r.code, 143, "{}", r.out);
+    assert!(r.out.contains("service_restored"), "{}", r.out);
+    assert!(!r.out.contains("backup_set_verified") && !r.out.contains("backup_set_daily_complete"));
+    assert!(index(&r.calls, "get job") < index(&r.calls, "--replicas=1"));
+    bounded(&r);
+    // (d) The Job never reports terminal, but its pod ended: the poll gives up at its
+    // elapsed bound (one request per 5 s sleep, instant responses) and the service is
+    // restored.
+    let r = run(&fast("", "Failed\n", "1", Term::Never));
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(r.out.contains("service_restored") && !r.out.contains("backup_set_verified"));
+    assert!(!r.out.contains("backup_set_daily_complete"));
     assert_eq!(
-        count(&calls, "get job"),
-        1230 / 5,
+        count(&r.calls, "get job") as u64,
+        poll / 5,
         "the poll runs to its bound"
     );
+    bounded(&r);
     // (e) The pod never ends: no restoration is claimed, but scale-up is requested.
-    let (code, out, calls) = run(&Case {
+    let r = run(&fast("", "Running\n", "1", Term::Never));
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(!r.out.contains("service_restored") && !r.out.contains("backup_set_daily_complete"));
+    assert_eq!(
+        count(&r.calls, "job-name=") as u64,
+        release / 5,
+        "the release wait runs to its bound"
+    );
+    assert!(r.calls.iter().any(|c| c.args.contains("--replicas=1")));
+    bounded(&r);
+    // A service that never becomes available: neither restoration nor completion.
+    let r = run(&fast("Complete=True\n", "Succeeded\n", "", Term::Never));
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(r.out.contains("backup_set_verified"));
+    assert!(!r.out.contains("service_restored") && !r.out.contains("backup_set_daily_complete"));
+    bounded(&r);
+    // (f) SIGTERM, then slow, failing release queries (M8 review 5 finding 1): the trap's
+    // release wait is bounded by elapsed time, not by iterations, so the scale-up is still
+    // requested within REQ + RELEASE of the signal and the trap ends within the grace
+    // period. The iteration count would have allowed release / 5 requests of 29 s each.
+    let r = run(&Case {
         job: "",
         pod: "Running\n",
         available: "1",
-        term: false,
+        term: Term::AfterPoll,
+        cost_job: 0,
+        cost_release: 29,
+        fail_release: true,
     });
-    assert_eq!(code, 1, "{out}");
-    assert!(!out.contains("service_restored") && !out.contains("backup_set_daily_complete"));
-    assert_eq!(
-        count(&calls, "job-name="),
-        1260 / 5,
-        "the release wait runs to its bound"
+    let term_at = r.term_at.expect("SIGTERM was sent");
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(
+        !r.out.contains("service_restored"),
+        "the release wait failed: {}",
+        r.out
     );
-    assert!(calls.iter().any(|c| c.contains("--replicas=1")));
-    // A service that never becomes available: neither restoration nor completion.
-    let (code, out, _) = run(&Case {
-        job: "Complete=True\n",
-        pod: "Succeeded\n",
-        available: "",
-        term: false,
+    let up = &r.calls[index(&r.calls, "--replicas=1")];
+    assert!(
+        up.at - term_at <= req + release,
+        "scale-up requested {} s after SIGTERM, bound {}",
+        up.at - term_at,
+        req + release
+    );
+    assert!(
+        r.end - term_at <= grace - margin,
+        "the trap took {} s after SIGTERM; grace {grace} minus margin {margin}",
+        r.end - term_at
+    );
+    let releases = count(&r.calls, "job-name=") as u64;
+    assert!(
+        releases <= release / 29 + 1 && releases < release / 5,
+        "{releases} release queries"
+    );
+    bounded(&r);
+    // (g) Every Job poll takes 29 s and never reports terminal; release queries are slow
+    // too and the pod never ends. The whole run, trap included, ends inside the
+    // orchestrator's deadline less its margin, and the poll issued far fewer requests
+    // than its iteration count.
+    let r = run(&Case {
+        job: "",
+        pod: "Running\n",
+        available: "1",
+        term: Term::Never,
+        cost_job: 29,
+        cost_release: 29,
+        fail_release: false,
     });
-    assert_eq!(code, 1, "{out}");
-    assert!(out.contains("backup_set_verified"));
-    assert!(!out.contains("service_restored") && !out.contains("backup_set_daily_complete"));
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(
+        r.end - T0 <= orch_deadline - margin,
+        "the run took {} s; deadline {orch_deadline} minus margin {margin}",
+        r.end - T0
+    );
+    let polls = count(&r.calls, "get job") as u64;
+    assert!(polls <= poll / 29 + 1 && polls < poll / 5, "{polls} polls");
+    assert!(r.calls.iter().any(|c| c.args.contains("--replicas=1")));
+    bounded(&r);
+    // (h) SIGTERM at the start of a 29 s request: the request completes, then the trap
+    // restores the service, all within the grace period.
+    let r = run(&Case {
+        job: "",
+        pod: "Succeeded\n",
+        available: "1",
+        term: Term::StartOfJobRequest,
+        cost_job: 29,
+        cost_release: 0,
+        fail_release: false,
+    });
+    let term_at = r.term_at.expect("SIGTERM was sent");
+    assert_eq!(r.code, 143, "{}", r.out);
+    assert!(r.out.contains("service_restored"), "{}", r.out);
+    let up = &r.calls[index(&r.calls, "--replicas=1")];
+    assert!(
+        (29..=req + release).contains(&(up.at - term_at)),
+        "the in-flight request finished first, then the trap: {} s",
+        up.at - term_at
+    );
+    assert!(r.end - term_at <= grace - margin);
+    bounded(&r);
 }

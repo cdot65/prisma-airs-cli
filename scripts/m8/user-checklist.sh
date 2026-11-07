@@ -149,8 +149,12 @@ quarantined and has no route). Follow runbook §12 'Qualification on the actual 
  2. its OWN identities (§12 step 2; the production gateway client serves one integration only):
     2.1 a qualification API registration (az ad app create ... --identifier-uris
         https://mcp-backend-airs-qual.goshawks.io/mcp; copy the production scopes with new IDs);
-    2.2 a confidential-only qualification gateway client with those scopes admin-consented;
-        record its keyId, never the secret value;
+    2.2 a confidential-only qualification gateway client with those scopes admin-consented.
+        Its secret is an OWNER-ONLY handoff: in your own terminal with history off,
+        'az ad app credential reset ... --query password -o tsv' (the reset returns appId,
+        password, tenant; it has no keyId), paste the value straight into the gateway
+        console's secret for the integration, clear the terminal; then record ONLY
+        'az ad app credential list ... --query \"[].{keyId:keyId,end:endDateTime}\"' here;
     2.3 'airs gateway mcp integrations create --file prototypes/runtime-mcp/deploy/m0.6/gateway/
         integration.template.json --name airs-qual --slug airs-qual --transport http --url
         https://mcp-backend-airs-qual.goshawks.io/mcp --auth-type oauth_auto ...' (record the UUID);
@@ -164,7 +168,9 @@ quarantined and has no route). Follow runbook §12 'Qualification on the actual 
     'airs-mcp control-reconcile --config /etc/airs-mcp/config/airs-mcp.toml'. Schedules stay disabled.
  4. start at 1 replica; 'airs runtime history status --mcp qual' and /readyz = ready.
  5. Deployment at 0 (RWOP: one pod at a time); from a UID 65532 busybox debug pod mounting the PVC,
-    fill /data/qual-filler/fill (fallocate, or dd) until about 1% is free; stat shows
+    read free space with 'df -Pk /data/qual-filler | awk NR==2{print \$4}' (BusyBox: no GNU
+    --output), refuse an empty/non-numeric/zero figure, then fill /data/qual-filler/fill
+    (fallocate, else dd bs=1024) until about 1% is free; stat shows
     65532:65532 700 for the directory; delete the debug pod before step 6. Never fill inside
     /data/airs (the reserve would count it as database bytes).
  6. start; record storage_owned/control_recovered (or the refusal), /readyz, the volume metrics,

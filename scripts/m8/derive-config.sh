@@ -67,8 +67,21 @@ looks_secret() {
 spike() {
   [ -f "$SPIKE" ] || return 0
   python3 -I - "$SPIKE" "$1" <<'PY' 2>/dev/null
-import sys, tomllib
-data = tomllib.load(open(sys.argv[1], "rb"))
+import sys
+def _toml():
+    try:
+        import tomllib
+        return tomllib
+    except ImportError:
+        try:
+            import tomli
+            return tomli
+        except ImportError:
+            return None
+toml = _toml()
+if toml is None:
+    sys.exit(0)
+data = toml.load(open(sys.argv[1], "rb"))
 cur = data
 for part in sys.argv[2].split("."):
     if isinstance(cur, list):
@@ -319,7 +332,18 @@ export D_REVISION="$REVISION" D_HOST="$HOST" D_RESOURCE="$RESOURCE" D_TENANT_ID=
 # Every value is serialized as a TOML basic string by json.dumps (quotes, backslashes and
 # control characters escaped), then the whole file is parsed back and checked.
 if ! python3 -I - "$TMP" <<'PY'
-import json, os, sys, tomllib, datetime
+import json, os, sys, datetime
+def _toml():
+    try:
+        import tomllib
+        return tomllib
+    except ImportError:
+        try:
+            import tomli
+            return tomli
+        except ImportError:
+            return None
+toml = _toml()
 e = os.environ
 def s(v):
     return json.dumps(v, ensure_ascii=False)
@@ -337,7 +361,7 @@ tools = {
                  "jobs_get", "schedules_list"],
 }
 try:
-    tpl = tomllib.load(open(e["D_TEMPLATE"], "rb"))
+    tpl = toml.load(open(e["D_TEMPLATE"], "rb")) if toml else {}
     for g in tpl.get("grants", []):
         if g.get("label") in tools and isinstance(g.get("tools"), list):
             tools[g["label"]] = [str(t) for t in g["tools"]]
@@ -435,8 +459,11 @@ for label, client, perm in (("claude-code", e["D_CC_CLIENT"], "reader"), ("airs-
           "tools = [" + ", ".join(s(t) for t in tools[label]) + "]"]
 text = "\n".join(L) + "\n"
 open(sys.argv[1], "w").write(text)
-# Parse back, and check the structure the service needs.
-d = tomllib.loads(text)
+# Parse back, and check the structure the service needs. Without a TOML parser
+# (Python < 3.11 and no tomli) the shell requires `airs-mcp check-config` instead.
+if toml is None:
+    sys.exit(0)
+d = toml.loads(text)
 need = {"revision": str, "server": dict, "upstream": dict, "assertion": dict, "admin": dict,
         "service": dict, "airs": dict, "grants": list, "receipt_associations": list}
 for k, t in need.items():
@@ -451,11 +478,21 @@ then
   warn "the derived configuration did not validate; nothing was written"
   exit 1
 fi
-ok "it parses as TOML and has the expected structure"
+# Python 3.11+ (tomllib) or the tomli module gives the round-trip check above; without
+# either, the service parser below is required rather than optional.
+if python3 -I -c 'import tomllib' 2>/dev/null || python3 -I -c 'import tomli' 2>/dev/null; then
+  HAVE_TOML=1; ok "it parses as TOML and has the expected structure"
+else
+  HAVE_TOML=0; dim "  (no TOML module in this python3: the service parser must validate it)"
+fi
 AIRS_MCP_BIN="${AIRS_MCP_BIN:-}"
 for c in "$AIRS_MCP_BIN" "$REPO/target/release/airs-mcp" "$REPO/target/debug/airs-mcp"; do
   if [ -n "$c" ] && [ -x "$c" ]; then AIRS_MCP_BIN=$c; break; fi
 done
+if [ -z "$AIRS_MCP_BIN" ] && [ "$HAVE_TOML" = 0 ]; then
+  warn "nothing can validate the output here: build airs-mcp or set AIRS_MCP_BIN; nothing was written"
+  exit 1
+fi
 if [ -n "$AIRS_MCP_BIN" ] && [ -x "$AIRS_MCP_BIN" ]; then
   if "$AIRS_MCP_BIN" check-config --config "$TMP" >/dev/null 2>&1; then
     ok "airs-mcp check-config accepts it"
