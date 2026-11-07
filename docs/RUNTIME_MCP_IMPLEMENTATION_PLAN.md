@@ -73,6 +73,9 @@ Evidence: `.local/dev/runtime-mcp/m0.6/receipts.md`; contract §2.2, §2.3 and �
    account-level Cloudflare token, can delete objects in the R2 backup bucket, or
    narrow those credentials until none can.
    No real data is stored before M8, so nothing relies on either check earlier.
+   **Withdrawn 2026-11-07 (owner):** both checks described the reference environment's
+   own backup chain, not the product. They are optional operator records now (contract
+   §9.4 revised; runbook steps 4–5 optional; the checklist accepts `skip` with a reason).
 
 ## Confirmed product decisions
 
