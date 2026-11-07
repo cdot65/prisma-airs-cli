@@ -123,8 +123,12 @@ when not applicable.
 
 ## 6. Deploy
 
-Apply through your GitOps path, for example `kubectl apply -k deploy/airs-mcp`. Then
-confirm:
+Apply through your GitOps path, for example `kubectl apply -k deploy/airs-mcp`. If a
+GitOps controller with self-healing manages the Deployment (Argo CD `selfHeal`), it must
+**ignore replica drift** on `deploy/airs-mcp`: the daily set job (§9a) scales it to 0 and
+back while it writes and verifies the set, and a controller that heals `replicas` would
+bring the service up mid-backup. Argo CD: `ignoreDifferences` on `/spec/replicas` for the
+Deployment plus the `RespectIgnoreDifferences=true` sync option. Then confirm:
 
 - one pod Running, and the `Recreate` rollout never overlaps two pods;
 - the PVC is Bound, `ReadWriteOncePod`, on the encrypted class;
