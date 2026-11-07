@@ -572,6 +572,60 @@ fn answers(revision: &str) -> Vec<String> {
     .collect()
 }
 
+/// Owner tooling (2026-11-07): `--prefill FILE` is a local, non-secret TOML of suggestions
+/// gathered beforehand (same key paths as the spike config, plus `scanner.*`,
+/// `management_revision`, `airs.tsg_id`). Accepting the suggestion (an empty answer) uses
+/// the prefilled value; the helper stays offline and the real parser accepts the result.
+#[test]
+fn derive_config_takes_suggestions_from_a_prefill_file() {
+    let dir = temp("derive-prefill");
+    let stubs = service_stubs(&dir);
+    let prefill = dir.join("prefill.toml");
+    std::fs::write(
+        &prefill,
+        "management_revision = \"22222222-3333-4444-8555-666666666661\"\n\
+         [airs]\ntsg_id = \"1001000001\"\n\
+         [scanner]\nname = \"monitor\"\napplicationId = \"app-prefilled\"\n\
+         endpoint = \"https://service.api.aisecurity.paloaltonetworks.com\"\n\
+         revision = \"22222222-3333-4444-8555-666666666662\"\n",
+    )
+    .unwrap();
+    let mut a = answers("prod-prefill-1");
+    for i in [10, 11, 13, 15] {
+        a[i] = String::new(); // TSG, management revision, scanner app ID, scanner revision
+    }
+    let refs: Vec<&str> = a.iter().map(String::as_str).collect();
+    let (code, text) = derive(
+        &dir,
+        &["--prefill", prefill.to_str().unwrap()],
+        &refs,
+        &stubs,
+    );
+    assert_eq!(code, 0, "{text}");
+    assert!(!dir.join("INVOKED").exists(), "a service CLI ran: {text}");
+    let out = std::fs::read_to_string(dir.join("out/airs-mcp.local.toml")).unwrap();
+    assert!(out.contains("tenant = \"airs-tsg-1001000001\""), "{out}");
+    assert!(
+        out.contains("management_revision = \"22222222-3333-4444-8555-666666666661\""),
+        "{out}"
+    );
+    assert!(out.contains("applicationId = \"app-prefilled\""), "{out}");
+    assert!(
+        out.contains("revision = \"22222222-3333-4444-8555-666666666662\""),
+        "{out}"
+    );
+    let check = Command::new(env!("CARGO_BIN_EXE_airs-mcp"))
+        .args(["check-config", "--config"])
+        .arg(dir.join("out/airs-mcp.local.toml"))
+        .output()
+        .unwrap();
+    assert!(
+        check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
+}
+
 /// M8 review 2 finding 3: the derive helper is offline by default. With service-CLI stubs
 /// that fail if invoked, it runs none of them, writes a 0600 configuration that the real
 /// service parser (`airs-mcp check-config`) accepts, and never creates DNS records. The

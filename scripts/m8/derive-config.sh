@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # M8.3 step 1 helper: derive every value airs-mcp.toml needs, interactively.
 #
-#   scripts/m8/derive-config.sh [--talos-cluster DIR] [--spike FILE] [--out FILE]
+#   scripts/m8/derive-config.sh [--talos-cluster DIR] [--spike FILE] [--prefill FILE] [--out FILE]
 #
 # For each value it explains what the value is, shows the exact read-only command that
 # finds it when it already exists, and proposes a suggestion. Suggestions come from your
@@ -16,7 +16,11 @@
 # (--talos-cluster, default ~/development/talos-cluster) for the CoreDNS, pihole and
 # gateway entries. For every value it prints the exact read-only command(s) for YOU to run
 # separately, under your own credentials, and accepts the sanitized result you paste (or
-# the suggestion). It never creates, changes or deletes anything in Entra, the cluster,
+# the suggestion). A --prefill FILE (default .local/airs-mcp/prefill.toml when it exists)
+# is a local, non-secret TOML of suggestions gathered beforehand (the same key paths as
+# the spike config, plus scanner.{name,applicationId,endpoint,revision},
+# management_revision and revision_label); it takes precedence over the spike config and
+# is screened like any pasted value. It never creates, changes or deletes anything in Entra, the cluster,
 # pihole or Cloudflare. The only program it runs is this repository's own `airs-mcp
 # check-config`, which validates the output locally.
 #
@@ -32,6 +36,7 @@ REPO=$(cd "$(dirname "$0")/../.." && pwd)
 TALOS="${HOME}/development/talos-cluster"
 OUT="$REPO/.local/airs-mcp/airs-mcp.local.toml"
 SPIKE="$REPO/prototypes/runtime-mcp/deploy/m0.6/spike-config.live.toml"
+PREFILL="$REPO/.local/airs-mcp/prefill.toml"
 TEMPLATE="$REPO/deploy/airs-mcp/airs-mcp.toml"
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -40,6 +45,7 @@ while [ $# -gt 0 ]; do
       exit 2 ;;
     --talos-cluster) TALOS=$2; shift 2 ;;
     --spike) SPIKE=$2; shift 2 ;;
+    --prefill) PREFILL=$2; shift 2 ;;
     --out) OUT=$2; shift 2 ;;
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -63,10 +69,17 @@ looks_secret() {
   m8_looks_secret "$1"
 }
 
-# Suggested values from the local M0.6 live config (public identifiers only).
+# Suggested values: the prefill file first, then the local M0.6 live config (public
+# identifiers only). A suggestion that looks like a credential is dropped.
 spike() {
-  [ -f "$SPIKE" ] || return 0
-  python3 -I - "$SPIKE" "$1" <<'PY' 2>/dev/null
+  local v=""
+  if [ -f "$PREFILL" ]; then v=$(toml_get "$PREFILL" "$1"); fi
+  if [ -z "$v" ] && [ -f "$SPIKE" ]; then v=$(toml_get "$SPIKE" "$1"); fi
+  if [ -n "$v" ] && looks_secret "$v"; then return 0; fi
+  printf '%s' "$v"
+}
+toml_get() {
+  python3 -I - "$1" "$2" <<'PY' 2>/dev/null
 import sys
 def _toml():
     try:
@@ -255,13 +268,15 @@ ask TENANT_ID "Entra tenant ID" "$s_tid" uuid \
   "Or: Entra admin center → Overview → Tenant ID"
 s_api=$(spike upstream.audiences | cut -d, -f1)
 ask API_APP "airs-mcp API application (client) ID: the upstream token's audience" "$s_api" uuid \
-  "Find: az ad app list --filter \"displayName eq 'airs-mcp'\" --query '[].{name:displayName,appId:appId}' -o table" \
+  "Find (names vary, e.g. AIRS-MCP-API; match case-insensitively):" \
+  "  az ad app list --all --query '[].{name:displayName,appId:appId}' -o tsv | grep -i 'airs'" \
   "Check its App ID URI is $RESOURCE: az ad app show --id <appId> --query 'identifierUris[0]' -o tsv"
 dim "  The App ID URI must be $RESOURCE (the scopes below use it):"
 dim "    az ad app show --id $API_APP --query 'identifierUris[0]' -o tsv"
 s_gw=$(spike upstream.allowed_client_ids)
 ask GW_CLIENT "Gateway confidential client ID(s): the token's azp (comma-separated)" "$s_gw" uuids \
-  "Find: az ad app list --filter \"startswith(displayName,'airs-mcp-gateway')\" --query '[].{name:displayName,appId:appId}' -o table" \
+  "Find (the gateway's dedicated client; names vary, match case-insensitively):" \
+  "  az ad app list --all --query '[].{name:displayName,appId:appId}' -o tsv | grep -i 'airs' | grep -i 'gateway'" \
   "This must be a DEDICATED confidential client used by this integration only (plan revision 7)."
 s_own=$(spike upstream.owner_object_ids)
 ask OWNERS "Owner object ID(s): who owns the service (comma-separated)" "$s_own" uuids \
@@ -284,20 +299,27 @@ ask A_WS "Workspace ID(s) allowed to reach this backend" "$(spike assertion.work
 
 # ---------------------------------------------------------------------------------
 bold $'\n== 4/7  AIRS tenant'
-s_tsg=$(spike service.tenant | sed -n 's/^airs-tsg-//p')
+s_tsg=$(spike airs.tsg_id); [ -n "$s_tsg" ] || s_tsg=$(spike service.tenant | sed -n 's/^airs-tsg-//p')
 ask TSG "AIRS TSG ID" "$s_tsg" digits \
   "Find: airs tenant list --output json   (tsgId of the active tenant)"
-ask MGMT_REV "Management credential revision (a GUID naming this credential version)" "" uuid \
+ask MGMT_REV "Management credential revision (a GUID naming this credential version)" "$(spike management_revision)" uuid \
   "This is NOT secret: it names the credential version so collections can be attributed to it." \
   "Suggested: a new GUID for this deployment:  uuidgen   (rotate it whenever the secret changes)"
 echo
+PF_SC_NAME=$(spike scanner.name); PF_SC_EP=$(spike scanner.endpoint); PF_REV=$(spike revision_label)
 bold "Scanner"
+dim "  'Scanner' is this CLI's name for one AI Runtime Security API credential binding: the"
+dim "  AIRS API key for an application (SCM → AI Runtime Security → Applications), its scan"
+dim "  endpoint, a revision GUID and that application's ID. Create one from the flat key with"
+dim "    airs tenant scanners bind-default --app-id <application id> <tenant> monitor"
 dim "  Find: airs tenant scanners list --output json   (public metadata only)"
-ask SC_NAME "Scanner name" "monitor" any "Find: airs tenant scanners list (name)"
-ask SC_APP "Scanner application ID" "" any "Find: airs tenant scanners list --output json (applicationId)"
-ask SC_EP "Scanner endpoint" "https://service.api.aisecurity.paloaltonetworks.com" url \
+ask SC_NAME "Scanner name" "${PF_SC_NAME:-monitor}" any "Find: airs tenant scanners list (name)"
+ask SC_APP "Scanner application ID (the AIRS application the key belongs to)" "$(spike scanner.applicationId)" any \
+  "Find: airs tenant scanners list --output json (applicationId)" \
+  "Or: airs runtime customer-apps list --output json --quiet (id / app_name)"
+ask SC_EP "Scanner endpoint" "${PF_SC_EP:-https://service.api.aisecurity.paloaltonetworks.com}" url \
   "Find: airs tenant scanners list --output json (endpoint)"
-ask SC_REV "Scanner credential revision (a GUID)" "" uuid \
+ask SC_REV "Scanner credential revision (a GUID)" "$(spike scanner.revision)" uuid \
   "Find: airs tenant scanners list --output json (revision), or a new uuidgen when you rotate the key"
 
 # ---------------------------------------------------------------------------------
@@ -314,7 +336,7 @@ dim "  report and job tools stay in step with the template."
 
 # ---------------------------------------------------------------------------------
 bold $'\n== 6/7  Revision'
-ask REVISION "Configuration revision label" "prod-$(date +%Y%m%d)-1" any \
+ask REVISION "Configuration revision label" "${PF_REV:-prod-$(date +%Y%m%d)-1}" any \
   "Any label; change it whenever this file changes (it is recorded with every job)."
 
 # ---------------------------------------------------------------------------------
