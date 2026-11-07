@@ -169,7 +169,30 @@ fn io_kind(error: &std::io::Error) -> FileError {
 /// Open an existing store file with the §3.8 checks: `symlink_metadata`, an
 /// `O_NOFOLLOW | O_CLOEXEC` open with `flags`, then `fstat` with the same device and
 /// inode, a regular file, owned by the effective uid, `mode & 0o077 == 0`.
+///
+/// A concurrent writer replaces store files atomically (rename over the path). If the
+/// path names a different inode at the `fstat` than at the `symlink_metadata`, the file
+/// was replaced between the two checks rather than being unsafe, so the checks are
+/// repeated on the new file, a bounded number of times. An unsafe file (wrong type,
+/// owner or mode, or a symlink) is refused at once as before.
 pub fn open_checked(path: &Path, flags: rustix::fs::OFlags) -> Result<File, FileError> {
+    const REPLACED_RETRIES: usize = 16;
+    for _ in 0..REPLACED_RETRIES {
+        match open_checked_once(path, flags)? {
+            Opened::File(file) => return Ok(file),
+            Opened::Replaced => continue,
+        }
+    }
+    Err(FileError::Unsafe)
+}
+
+enum Opened {
+    File(File),
+    /// The path was atomically replaced between the checks (a different inode).
+    Replaced,
+}
+
+fn open_checked_once(path: &Path, flags: rustix::fs::OFlags) -> Result<Opened, FileError> {
     use rustix::fs::{Mode, OFlags};
     let before = std::fs::symlink_metadata(path).map_err(|error| io_kind(&error))?;
     if !file_metadata_ok(
@@ -196,18 +219,18 @@ pub fn open_checked(path: &Path, flags: rustix::fs::OFlags) -> Result<File, File
     })?;
     let file = File::from(fd);
     let after = file.metadata().map_err(|_| FileError::Io)?;
-    if after.dev() != before.dev()
-        || after.ino() != before.ino()
-        || !file_metadata_ok(
-            after.file_type().is_file(),
-            after.uid(),
-            after.permissions().mode(),
-            euid(),
-        )
-    {
+    if !file_metadata_ok(
+        after.file_type().is_file(),
+        after.uid(),
+        after.permissions().mode(),
+        euid(),
+    ) {
         return Err(FileError::Unsafe);
     }
-    Ok(file)
+    if after.dev() != before.dev() || after.ino() != before.ino() {
+        return Ok(Opened::Replaced);
+    }
+    Ok(Opened::File(file))
 }
 
 /// Read a whole store file of at most [`MAX_FILE_BYTES`] with the §3.8 checks.

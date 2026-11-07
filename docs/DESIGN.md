@@ -979,7 +979,11 @@ require the same device and inode (no swap between the two). The file must be a
 regular file, owned by the effective uid, with `mode & 0o077 == 0`. Otherwise:
 `Refusing to use <path>: it must be a regular file (not a symlink) owned by the current user with no group or other permissions (chmod 600)`
 (exit 1). The size limit and parse failures use the file's invalid message (§3.2,
-§3.3), not this one.
+§3.3), not this one. A different inode at the `fstat`, on a file that is itself regular,
+owned and private, means a concurrent writer replaced the file atomically (rename over
+the path) between the two checks; that is not an unsafe file. The checks are then
+repeated on the new file, up to 16 times, before the file is refused. Any file that
+fails the type, owner or mode check is refused at once.
 
 **Read-only files** (writers only). A `config.toml` or tenant file that the writer would
 replace and whose mode lacks owner write (`mode & 0o200 == 0`) is refused:
