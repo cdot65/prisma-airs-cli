@@ -1261,15 +1261,19 @@ impl From<CliError> for SyncFailure {
 /// else (25 hours, 2 days, …) is refused with HTTP 400, which the collector records as
 /// the applications and sessions sources being unavailable. A service collection derives
 /// its span at run time from the job's checkpointed target, so a 24 h target submitted
-/// seconds earlier spans 24 h plus a little: it must round up to the next accepted window,
-/// never to the exact hour count (M8 live evidence, 2026-11-07). Over-covering is safe: the
-/// archive records traversal as of the collection and deduplicates facts; the target range
-/// itself is unchanged. Spans past 60 days keep the exact hour count: the API refuses it and
-/// the sources say so, rather than silently collecting less than requested.
+/// seconds earlier spans 24 h plus a little: that stays the 24-hour window (up to one hour
+/// of slack is the rolling-bound boundary uncertainty the coverage model already carries,
+/// and the polling lower bound is clamped so one hour always covers it), while anything
+/// longer rounds up to the next accepted window, never to the exact hour count (M8 live
+/// evidence, 2026-11-07). Rounding the bootstrap read up to 7 days would have made every
+/// tick a 7-day read while any source still lacked a complete traversal. Over-covering is
+/// safe: the archive records traversal as of the collection and deduplicates facts; the
+/// target range itself is unchanged. Spans past 60 days keep the exact hour count: the API
+/// refuses it and the sources say so, rather than silently collecting less than requested.
 pub fn dashboard_window(span_hours: u64) -> (u64, &'static str) {
     match span_hours {
-        0..=24 => (24, "hours"),
-        25..=168 => (7, "days"),
+        0..=25 => (24, "hours"),
+        26..=168 => (7, "days"),
         169..=720 => (30, "days"),
         721..=1440 => (60, "days"),
         _ => (span_hours, "hours"),
@@ -1393,10 +1397,11 @@ mod dashboard_window_tests {
     /// left the applications and sessions sources unavailable on every collection).
     #[test]
     fn spans_round_up_to_an_accepted_dashboard_window() {
-        for h in [0, 1, 23, 24] {
+        // 25 h is the first collection's 24 h target derived a moment later: still 24 hours.
+        for h in [0, 1, 23, 24, 25] {
             assert_eq!(dashboard_window(h), (24, "hours"), "{h} h");
         }
-        for h in [25, 48, 100, 168] {
+        for h in [26, 48, 100, 168] {
             assert_eq!(dashboard_window(h), (7, "days"), "{h} h");
         }
         for h in [169, 500, 720] {

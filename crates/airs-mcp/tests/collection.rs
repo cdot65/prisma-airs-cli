@@ -898,8 +898,9 @@ fn token_outcomes_are_classified_and_a_rotation_resumes_collecting() {
 /// traversal minus the overlap — the narrowest the SCM dashboard API accepts. The API
 /// takes 24 hours or 1, 7, 30 or 60 days and refuses every other shape with HTTP 400
 /// (25 hours, 2 days, 1 hour for sessions, …), so the span is rounded up to the next
-/// accepted shape: a 24 h target derived a few milliseconds later is 7 days, and a
-/// one-hour tick is 24 hours. The archive bounds stay the exact target either way.
+/// accepted shape; a 24 h target derived a few milliseconds later (25 whole hours) stays
+/// the 24-hour window (one hour of slack is boundary uncertainty), and a one-hour tick is
+/// 24 hours too. The archive bounds stay the exact target either way.
 #[test]
 fn a_later_tick_reads_only_since_the_last_traversal() {
     use airs_test_harness::Rx;
@@ -939,13 +940,13 @@ fn a_later_tick_reads_only_since_the_last_traversal() {
         .filter_map(interval)
         .collect();
     // The first collection's target is the 24 h resolved (and checkpointed) when the job
-    // starts; the collector, a moment later, spans a little more than 24 h, and the
-    // narrowest accepted selector covering that is 7 days (never 25 hours, which the API
-    // refuses). The archive bounds are the exact target.
+    // starts; the collector, a moment later, spans a little more than 24 h, which stays
+    // the 24-hour window (never 25 hours, which the API refuses, nor a 7-day read on every
+    // bootstrap tick). The archive bounds are the exact target.
     assert_eq!(
         first.first().map(String::as_str),
-        Some("7"),
-        "the first collection covers its 24 h target with the next accepted window: {first:?}"
+        Some("24"),
+        "the first collection reads its 24 h target with the 24-hour window: {first:?}"
     );
     accepted(&server);
     submit(&s, "key-window-000000002");
@@ -958,7 +959,7 @@ fn a_later_tick_reads_only_since_the_last_traversal() {
     assert_eq!(
         all.last().map(String::as_str),
         Some("24"),
-        "the next tick reads the narrowest accepted window (24 hours), not a fresh 7 days: {all:?}"
+        "the next tick reads the narrowest accepted window (24 hours): {all:?}"
     );
     accepted(&server);
 }
