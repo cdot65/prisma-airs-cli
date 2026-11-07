@@ -25,10 +25,9 @@ Columns and the Status each maps to: Backlog (`TODO`), Ready (`TODO`), In Progre
 
 ## Conventions
 
-- **Title prefix:** `[AIRS CLI] ` followed by an imperative or outcome phrase, for example
-  `[AIRS CLI] M8 — Verify the R2 backup set restore path`. Cards created before
-  2026-11-07 use the earlier form `AIRS CLI — …`; leave their titles alone unless the
-  Owner asks.
+- **Title prefix:** `[Prisma AIRS CLI] ` followed by an imperative or outcome phrase, for
+  example `[Prisma AIRS CLI] M8 — Verify the R2 backup set restore path`. All Cards on the
+  Board were retitled to this prefix on 2026-11-07.
 - **Label:** every Card carries `prisma-airs-cli`, exactly one triage Label and at least
   one kind Label from [triage-labels.md](triage-labels.md). Legacy status Labels on older
   Cards (`validate`, `planned`, `gated`, `superseded`, `owner-action`) stay as they are.
