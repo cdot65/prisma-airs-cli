@@ -94,4 +94,15 @@ client_id = "PLACEHOLDER_AIRS_CLI_PUBLIC_CLIENT_ID"
 owner_object_id = "00000000-0000-4000-8000-000000000004"
 permission = "operator"
 label = "airs-cli"
-tools = ["service_info", "history_status", "history_coverage", "collection_start", "receipts_ingest"]
+# Every tool the runbook's proofs use through the airs CLI: status and coverage, sync
+# (collection_start and the job tools), receipts, the marker report (reports_create,
+# then reports_list/reports_get and the artifact reads for its download), history query
+# and the schedules list. The service's strict parser refuses any tool above the grant's
+# tier.
+tools = [
+  "service_info", "history_status", "history_coverage", "history_query",
+  "collection_start", "receipts_ingest",
+  "jobs_list", "jobs_get", "jobs_cancel",
+  "reports_create", "reports_list", "reports_get", "artifacts_read", "artifacts_download",
+  "schedules_list",
+]

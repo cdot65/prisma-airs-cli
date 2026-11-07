@@ -1,0 +1,441 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "ServiceAccount",
+      "metadata": {
+        "name": "airs-mcp-backup",
+        "labels": {
+          "app.kubernetes.io/name": "airs-mcp-backup-orchestrator"
+        }
+      },
+      "automountServiceAccountToken": false
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "airs-mcp-backup"
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments"
+          ],
+          "resourceNames": [
+            "airs-mcp"
+          ],
+          "verbs": [
+            "get"
+          ]
+        },
+        {
+          "apiGroups": [
+            "apps"
+          ],
+          "resources": [
+            "deployments/scale"
+          ],
+          "resourceNames": [
+            "airs-mcp"
+          ],
+          "verbs": [
+            "get",
+            "patch",
+            "update"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "pods"
+          ],
+          "verbs": [
+            "get",
+            "list",
+            "watch"
+          ]
+        },
+        {
+          "apiGroups": [
+            "batch"
+          ],
+          "resources": [
+            "cronjobs"
+          ],
+          "resourceNames": [
+            "airs-mcp-backup-set"
+          ],
+          "verbs": [
+            "get"
+          ]
+        },
+        {
+          "apiGroups": [
+            "batch"
+          ],
+          "resources": [
+            "jobs"
+          ],
+          "verbs": [
+            "create",
+            "get",
+            "list",
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "airs-mcp-backup"
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "airs-mcp-backup"
+      },
+      "subjects": [
+        {
+          "kind": "ServiceAccount",
+          "name": "airs-mcp-backup",
+          "namespace": "airs-mcp"
+        }
+      ]
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "CronJob",
+      "metadata": {
+        "name": "airs-mcp-backup",
+        "labels": {
+          "app.kubernetes.io/name": "airs-mcp-backup-orchestrator"
+        }
+      },
+      "spec": {
+        "schedule": "0 3 * * *",
+        "timeZone": "America/Chicago",
+        "concurrencyPolicy": "Forbid",
+        "startingDeadlineSeconds": 600,
+        "successfulJobsHistoryLimit": 14,
+        "failedJobsHistoryLimit": 14,
+        "jobTemplate": {
+          "spec": {
+            "backoffLimit": 0,
+            "activeDeadlineSeconds": 3600,
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app.kubernetes.io/name": "airs-mcp-backup-orchestrator"
+                }
+              },
+              "spec": {
+                "serviceAccountName": "airs-mcp-backup",
+                "automountServiceAccountToken": true,
+                "enableServiceLinks": false,
+                "restartPolicy": "Never",
+                "hostNetwork": false,
+                "hostPID": false,
+                "hostIPC": false,
+                "imagePullSecrets": [
+                  {
+                    "name": "harbor-pull"
+                  }
+                ],
+                "securityContext": {
+                  "runAsNonRoot": true,
+                  "runAsUser": 65532,
+                  "runAsGroup": 65532,
+                  "seccompProfile": {
+                    "type": "RuntimeDefault"
+                  }
+                },
+                "containers": [
+                  {
+                    "name": "orchestrate",
+                    "image": "kubectl",
+                    "command": [
+                      "/bin/sh",
+                      "-c",
+                      "set -eu; NS=airs-mcp; K=\"kubectl -n $NS --request-timeout=30s\"; RUN=\"airs-mcp-backup-set-$(date -u +%Y%m%d%H%M%S)\"; OK=0; phases() { $K get pod -l job-name=\"$RUN\" -o jsonpath='{range .items[*]}{.status.phase}{\"\\n\"}{end}'; }; released() { p=\"$(phases)\" || return 1; [ -z \"$p\" ] && return 0; printf '%s\\n' \"$p\" | grep -qvE '^(Succeeded|Failed)$' && return 1; return 0; }; restore() { rc=$?; set +e; trap - TERM INT; svc=0; i=0; until released; do i=$((i+5)); if [ \"$i\" -ge 1260 ]; then svc=1; break; fi; sleep 5; done; $K scale deployment/airs-mcp --replicas=1 || svc=1; i=0; until [ \"$($K get deployment airs-mcp -o jsonpath='{.status.availableReplicas}')\" = 1 ]; do i=$((i+5)); if [ \"$i\" -ge 300 ]; then svc=1; break; fi; sleep 5; done; if [ \"$svc\" = 0 ]; then echo '{\"event\":\"service_restored\"}'; fi; if [ \"$OK\" = 1 ] && [ \"$svc\" = 0 ] && [ \"$rc\" = 0 ]; then echo \"{\\\"event\\\":\\\"backup_set_daily_complete\\\",\\\"job\\\":\\\"$RUN\\\"}\"; fi; if [ \"$svc\" != 0 ]; then rc=1; fi; exit \"$rc\"; }; trap restore EXIT; trap 'exit 143' TERM INT; $K scale deployment/airs-mcp --replicas=0; $K wait --for=delete pod -l app.kubernetes.io/name=airs-mcp --timeout=300s || [ -z \"$($K get pod -l app.kubernetes.io/name=airs-mcp -o name)\" ]; $K create job \"$RUN\" --from=cronjob/airs-mcp-backup-set; i=0; while :; do c=\"$($K get job \"$RUN\" -o jsonpath='{range .status.conditions[*]}{.type}={.status}{\"\\n\"}{end}')\"; case \"$c\" in *Complete=True*) break ;; *Failed=True*) exit 1 ;; esac; i=$((i+5)); if [ \"$i\" -ge 1230 ]; then exit 1; fi; sleep 5; done; echo \"{\\\"event\\\":\\\"backup_set_verified\\\",\\\"job\\\":\\\"$RUN\\\"}\"; OK=1"
+                    ],
+                    "env": [
+                      {
+                        "name": "HOME",
+                        "value": "/tmp"
+                      }
+                    ],
+                    "securityContext": {
+                      "allowPrivilegeEscalation": false,
+                      "readOnlyRootFilesystem": true,
+                      "privileged": false,
+                      "capabilities": {
+                        "drop": [
+                          "ALL"
+                        ]
+                      },
+                      "runAsNonRoot": true,
+                      "runAsUser": 65532,
+                      "runAsGroup": 65532
+                    },
+                    "resources": {
+                      "requests": {
+                        "cpu": "10m",
+                        "memory": "32Mi"
+                      },
+                      "limits": {
+                        "memory": "128Mi"
+                      }
+                    },
+                    "volumeMounts": [
+                      {
+                        "name": "tmp",
+                        "mountPath": "/tmp"
+                      }
+                    ]
+                  }
+                ],
+                "volumes": [
+                  {
+                    "name": "tmp",
+                    "emptyDir": {
+                      "medium": "Memory",
+                      "sizeLimit": "16Mi"
+                    }
+                  }
+                ],
+                "terminationGracePeriodSeconds": 1980
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "batch/v1",
+      "kind": "CronJob",
+      "metadata": {
+        "name": "airs-mcp-backup-set",
+        "labels": {
+          "app.kubernetes.io/name": "airs-mcp-backup"
+        }
+      },
+      "spec": {
+        "suspend": true,
+        "schedule": "0 0 1 1 *",
+        "concurrencyPolicy": "Forbid",
+        "jobTemplate": {
+          "spec": {
+            "backoffLimit": 0,
+            "activeDeadlineSeconds": 1200,
+            "ttlSecondsAfterFinished": 1209600,
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app.kubernetes.io/name": "airs-mcp-backup"
+                }
+              },
+              "spec": {
+                "automountServiceAccountToken": false,
+                "enableServiceLinks": false,
+                "restartPolicy": "Never",
+                "hostNetwork": false,
+                "hostPID": false,
+                "hostIPC": false,
+                "imagePullSecrets": [
+                  {
+                    "name": "harbor-pull"
+                  }
+                ],
+                "securityContext": {
+                  "runAsNonRoot": true,
+                  "runAsUser": 65532,
+                  "runAsGroup": 65532,
+                  "seccompProfile": {
+                    "type": "RuntimeDefault"
+                  }
+                },
+                "initContainers": [
+                  {
+                    "name": "backup-set",
+                    "image": "airs-mcp",
+                    "args": [
+                      "control-backup-set",
+                      "--config",
+                      "/etc/airs-mcp/config/airs-mcp.toml",
+                      "--dir",
+                      "/data/airs/backups",
+                      "--keep",
+                      "3"
+                    ],
+                    "securityContext": {
+                      "allowPrivilegeEscalation": false,
+                      "readOnlyRootFilesystem": true,
+                      "privileged": false,
+                      "capabilities": {
+                        "drop": [
+                          "ALL"
+                        ]
+                      },
+                      "runAsNonRoot": true,
+                      "runAsUser": 65532,
+                      "runAsGroup": 65532
+                    },
+                    "resources": {
+                      "requests": {
+                        "cpu": "100m",
+                        "memory": "256Mi"
+                      },
+                      "limits": {
+                        "memory": "2Gi"
+                      }
+                    },
+                    "volumeMounts": [
+                      {
+                        "name": "config",
+                        "mountPath": "/etc/airs-mcp/config",
+                        "readOnly": true
+                      },
+                      {
+                        "name": "data",
+                        "mountPath": "/data"
+                      },
+                      {
+                        "name": "tmp",
+                        "mountPath": "/tmp"
+                      }
+                    ]
+                  }
+                ],
+                "containers": [
+                  {
+                    "name": "verify",
+                    "image": "airs-mcp",
+                    "args": [
+                      "control-backup-verify",
+                      "--latest-in",
+                      "/data/airs/backups"
+                    ],
+                    "securityContext": {
+                      "allowPrivilegeEscalation": false,
+                      "readOnlyRootFilesystem": true,
+                      "privileged": false,
+                      "capabilities": {
+                        "drop": [
+                          "ALL"
+                        ]
+                      },
+                      "runAsNonRoot": true,
+                      "runAsUser": 65532,
+                      "runAsGroup": 65532
+                    },
+                    "resources": {
+                      "requests": {
+                        "cpu": "100m",
+                        "memory": "256Mi"
+                      },
+                      "limits": {
+                        "memory": "2Gi"
+                      }
+                    },
+                    "volumeMounts": [
+                      {
+                        "name": "data",
+                        "mountPath": "/data",
+                        "readOnly": true
+                      },
+                      {
+                        "name": "tmp",
+                        "mountPath": "/tmp"
+                      }
+                    ]
+                  }
+                ],
+                "volumes": [
+                  {
+                    "name": "config",
+                    "configMap": {
+                      "name": "airs-mcp-config",
+                      "defaultMode": 292
+                    }
+                  },
+                  {
+                    "name": "data",
+                    "persistentVolumeClaim": {
+                      "claimName": "airs-mcp-data"
+                    }
+                  },
+                  {
+                    "name": "tmp",
+                    "emptyDir": {
+                      "medium": "Memory",
+                      "sizeLimit": "64Mi"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "airs-mcp-backup-to-apiserver"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app.kubernetes.io/name": "airs-mcp-backup-orchestrator"
+          }
+        },
+        "policyTypes": [
+          "Egress"
+        ],
+        "egress": [
+          {
+            "to": [
+              {
+                "ipBlock": {
+                  "cidr": "192.168.255.10/32"
+                }
+              },
+              {
+                "ipBlock": {
+                  "cidr": "192.168.255.11/32"
+                }
+              },
+              {
+                "ipBlock": {
+                  "cidr": "192.168.255.12/32"
+                }
+              },
+              {
+                "ipBlock": {
+                  "cidr": "192.168.255.13/32"
+                }
+              }
+            ],
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 6443
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

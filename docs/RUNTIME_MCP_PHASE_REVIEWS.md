@@ -4942,8 +4942,9 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **implemented; integrated on accepted M7 (2026-11-07); awaiting user-run
-integration evidence** (not reviewed, not accepted). The plan's exit gate needs an
+Status: **source-side review 4: 8.0/10, revise; round 5 corrections submitted for review 5** (reviews 1–3 scored 6.5, 6.5 and 7.5);
+integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
+accepted). The plan's exit gate needs an
 independent source and receipts review at or above the owner-set 9.0 threshold **plus**
 actual integration evidence from the owner's live steps (`scripts/m8/user-checklist.sh`).
 Nothing here is published, applied or deployed by an agent.
@@ -5032,3 +5033,446 @@ re-derives the size from measured production growth (user-run).
 9. Backup marker absence (step 9).
 10. Node-loss test on a dedicated disposable node (step 10).
 11. Restore drill (step 11).
+
+### M8 source-side review 1 — 6.5/10, revise (preserved, 2026-11-07T09:35Z)
+
+Source: `.local/dev/runtime-mcp/m8/review-1/result.md`. All 704 frozen files verified.
+The missing live evidence did not reduce the score: the findings are defects in the
+artifacts and procedures meant to produce that evidence.
+
+Material findings:
+1. Projected secrets are root-owned 0400 while the service runs as UID 65532 without
+   `fsGroup`, so TLS and AIRS credentials cannot be read.
+2. `deploy_manifests.rs` misses security regressions (public metrics or TLS ingress,
+   unrestricted egress, a privileged container, a wrong certificate hostname all pass)
+   and rejects a valid image pin.
+3. `check-r2-delete-rights.sh` calls Cloudflare with bearer values in `curl` arguments,
+   reads credentials despite claiming not to, and can succeed on incomplete inspection.
+4. `user-checklist.sh` accepts `password=…` and `Authorization: Bearer …` and rejects
+   SHA-256 digests; it has no executable tests, and status answers are unrestricted.
+5. The backup marker procedure can certify encryption falsely (`receipt_key` is
+   stored hashed), and omits the coordinated control/archive/artifact backup set of §9.4.
+6. The restore drill starts the service before offline maintenance (which refuses while
+   it runs), and does not handle the restored control epoch, quarantine, reconciliation
+   or activation.
+7. The live-proof recipe omits revision 7's dedicated-gateway-client checks. The
+   node-loss test pins its workload to the lost node without a defined transition and
+   fencing evidence. The low-space and capacity steps are missing.
+8. `build-hashes.sh` exits 0 when every build fails.
+
+Minor findings: metrics filesystem sampling is unbounded in time; the binary-hash
+comparison lacks reproducible build conditions; a qualification comment overstates its
+backup coverage.
+
+### M8 round 2 corrections (submitted for source-side review 2)
+
+1. **Secrets are delivered owner-only to UID 65532, with no `fsGroup`.**
+   - An init container, `secrets`, runs as root with CHOWN only and is not privileged.
+   - It alone mounts the raw Secret volumes (`tls-source`, `airs-secrets-source`, 0400).
+   - It copies them into a memory-backed `emptyDir` as 0400 files in 0500 directories
+     owned by 65532.
+   - The service mounts only that volume, read-only, at the unchanged paths.
+   - Rotation is a `rollout restart` with `Recreate` (deploy/airs-mcp/README.md).
+   - Test: `the_secret_copy_yields_owner_only_files_readable_by_their_owner` runs the
+     real init script.
+2. **Manifest validation is discriminating and accepts a real pin.**
+   - Every rule is a check over a directory, comparing complete effective
+     NetworkPolicy rules: exactly four policies, a full default deny, TLS only from
+     the gateway pods, health only from `monitoring`, three named egress rules,
+     private ranges excepted, no IPv6 catch-all.
+   - Also checked: hardening, the secret delivery, config/port/Service
+     correspondence, and certificate `dnsNames` = `allowed_hosts`.
+   - `every_security_regression_is_refused` applies 20 mutations to temporary copies,
+     including the reviewer's five.
+   - `validate_deployable` requires and accepts `sha256:` plus 64 lowercase hex.
+     `AIRS_MCP_REQUIRE_DEPLOYABLE=1` validates the owner's filled set.
+3. **The R2 helper is offline.** `check-r2-delete-rights.sh` validates an owner-made,
+   sanitized `INVENTORY.json`. It makes no network call and reads no credential or
+   environment, and every string goes through the secret check. Exit codes: 0 clean,
+   2 invalid or secret-looking, 3 incomplete or uninspected, 4 violation.
+4. **Checklist input is field-validated.**
+   - Shared `lib-secrets.sh` detection covers PEM, JWT, `Authorization:`/Bearer/Basic,
+     key=value secrets and AWS key IDs. It exempts digests and UUIDs, and long
+     alphanumeric runs are refused.
+   - Field kinds are text, hash and status (`pass`/`fail`/`skip` with a reason), with a
+     `--check KIND` mode for tests.
+   - Refused input is never echoed or recorded.
+   - Test: `m8_scripts.rs`.
+5. **The backup marker proves encryption, and the coordinated set exists.**
+   - The marker is a report title, stored as written (`reports.title`), with a
+     positive control.
+   - A missing marker counts only with positive encryption evidence, a wrong-key
+     refusal and a correct-key restore.
+   - New `airs-mcp control-backup-set` writes the §9.4 set while stopped, under the
+     owner lock: `VACUUM INTO` control and every archive, the artifact list, and
+     `manifest.json` (`airs-mcp-backup/1`, with a documented `rows_digest`), all 0700/0600,
+     no-clobber and fsynced. `control-backup-verify` re-hashes and recomputes it.
+   - Its relation to the daily Longhorn backup and its retention is documented
+     (runbook §9a/§9b).
+6. **The restore drill is executable and handles control state.**
+   - It runs in an isolated namespace with default-deny egress and placeholder secrets.
+   - Order: Deployment at 0, restore, `control-backup` of the restored store, move it
+     aside, `control-restore` (pending epoch), `control-activate-epoch`. Reconciliation
+     is deliberately withheld, so quarantine prevents AIRS sends.
+   - Then a controlled startup and marker verification. The production prerequisites
+     are stated (runbook §11).
+7. **The live proof states every assertion.**
+   - §7a: dedicated confidential gateway client, sole consent, exclusive credential
+     use, no other integration targeting the backend, with refusal conditions.
+   - §10: node loss across two disposable nodes, with labels, taints and cordons, no
+     force-detach while ownership is uncertain, power-off fencing evidence, RWOP
+     attachment states and the new owner UUID.
+   - §12: low-space behaviour and capacity qualification.
+   - The disk reserve is implemented (§6/§9.5) by the new `space.rs`.
+     Publication-class jobs pause below reserve + 512 MiB, and collection and
+     enrichment below the reserve (`Outcome::LowSpace` → `blocked_policy`, requeued
+     only when space allows). Receipts and upload staging return
+     `storage_unavailable`. New metrics: `airs_mcp_storage_reserve_bytes` and
+     `airs_mcp_storage_low_space{level}`.
+   - Test: `the_disk_reserve_pauses_publication_then_collection_and_resumes`.
+8. **`build-hashes.sh` fails on failure.** A build failure or a missing binary exits 1
+   and writes no `BIN-SHA256SUMS`. A missing required target is recorded and exits 3.
+   The full matrix is always recorded, ending `release-qualification: blocked
+   (pending: …)` until complete.
+
+Minor findings:
+- Metrics filesystem sampling uses a per-store cache refreshed on the blocking pool,
+  within 500 ms, plus availability and age gauges.
+- `RUNTIME_MCP_RELEASE.md` records image-binary provenance (base image by digest,
+  toolchain, target, sha256) instead of a host-versus-image comparison.
+- The `report_tests.rs` comment now says "archive-only".
+
+New owner helper (owner request): `scripts/m8/derive-config.sh` walks every
+`airs-mcp.toml` value. For each it gives a read-only lookup and a suggestion, checks
+CoreDNS, pihole and Cloudflare without changing them, writes
+`.local/airs-mcp/airs-mcp.local.toml` (0600, gitignored), and refuses secrets.
+Checklist step 12 is added.
+
+Also, from the watchdog's round-2 check:
+- **An unmeasurable volume fails closed.** When `statvfs` fails, publication and
+  collection both pause until a measurement succeeds; lifecycle operations and reads
+  still run. The reserve regression adds that stage (both stay paused, and a new
+  collection pauses), and restoring the earlier fail-open behaviour fails it.
+- **Binding documentation.** DESIGN §22.8 has an M8 entry: artifacts, the backup-set
+  commands, the reserve and its fail-closed rule, metrics and the owner tooling. The
+  CLI is unchanged, so there is no §12 row. COMPATIBILITY §12a maps each M8
+  behaviour to its tests.
+
+Each new guard was mutation-checked alone and caught: 20 manifest mutations, M3a–M8b,
+D1–D2, R1–R4, and fail-closed.
+
+**CI blockers fixed with round 2 (both pre-existing, outside M8 code):**
+- *`signal_reads` deadline tests.* Wall-clock bounds of 2–5 s on whole CLI runs failed on
+  the contended CI runner (PR #9 `linux`). Each bound is now 15 s, and each test still
+  fails without its deadline: the fallback test uses `--timeout 30`, so its fallback
+  must fire at 3 s.
+- *The tenant-store locking flake* (`tenant_write locking::*`, documented since M4). A
+  reader's `symlink_metadata`/`open`/`fstat` checks saw a different inode when a
+  concurrent writer renamed a new file over the path, and refused the file as unsafe.
+  `open_checked` now repeats the checks on a replaced file, up to 16 times, while a
+  wrong type, owner or mode is still refused at once (DESIGN §3.8). Stress test: 40 runs
+  of the locking group with the retry gave 0 failures; without it, 2/40.
+
+### M8 source-side review 2 — 6.5/10, revise (preserved, 2026-11-07T11:08Z)
+
+Source: `.local/dev/runtime-mcp/m8/review-2/result.md`. All 711 frozen files verified.
+The review-1 fixes are confirmed. The store retry is bounded, and the §3.8 type, owner,
+mode and symlink refusals are unchanged. The `signal_reads` bounds still discriminate.
+
+Material findings:
+1. The secret init container chowns each 0500 directory before its children, so root
+   with only CAP_CHOWN loses search permission. The test substitutes the current UID.
+2. Manifest validation does not prohibit extra egress on the ingress policies.
+   `egress: [{}]` on the gateway policy was printed `DEPLOYABLE`.
+3. `derive-config.sh` invokes service CLIs (az, kubectl, cf, airs) and can create a
+   public DNS record; the helpers must stay offline.
+4. `check-r2-delete-rights.sh` treats unknown permissions and scopes as clean (an unknown
+   permission, and `s3:DeleteObject` on `arn:aws:s3:::…/*`, both exited 0). The runbook
+   still describes the obsolete token-prompt workflow.
+5. The coordinated backup suppresses archive discovery and stat errors, and skips
+   malformed artifact manifests. It records the control schema as 0, not 3. Verify
+   accepts a wrong epoch, a fabricated schema, and an invalid artifact list.
+6. Backup hashing reads whole databases into memory (beyond the 2 GiB pod limit for
+   multi-GiB archives).
+7. The reserve fails open: every `lifecycle_execute` (including allocating
+   export/import) is admitted; a reservation-query failure reads as zero; directory
+   sampling suppresses errors.
+8. Metrics start a fresh, blocking reserve measurement on every scrape (stalled probes
+   accumulate), and request handlers await `space_bounded` without a deadline.
+9. Proof steps are not executable as supplied: the checklist names the coordinated
+   set before `control-restore`, which needs a control-only backup; the grants omit the
+   report and job tools the proofs need; the low-space step reuses a quarantined drill
+   with no authenticated route.
+10. The daily backup procedure substitutes running-volume snapshots; contract §9.4
+    requires the daily off-volume backup after the application set.
+
+Minor findings: invalid derived TOML exits 0; `space.rs`'s module doc still says an
+unmeasurable volume pauses nothing.
+
+### M8 round 3 corrections (submitted for source-side review 3)
+
+1. **The secret hand-off is completable with CHOWN only.** The init script chowns the
+   files, then chmods each directory to 0500, then chowns the directories last, so root
+   never needs a directory after giving it away.
+   - A static order check refuses any later command on a child.
+   - `the_secret_copy_never_needs_a_directory_after_giving_it_away` runs the real script
+     with each hand-off modelled as a loss of access. The committed order passes and the
+     review-2 order fails.
+   - The README states what the step-6 live proof must still show.
+2. **Every policy's spec is exactly one direction.** Each policy is its selector,
+   `policyTypes` and one rule set (`["Ingress"]` or `["Egress"]`).
+   - The mutation suite (now 32 cases) adds egress on the gateway policy (the
+     reviewer's) and on the health policy, and ingress on the egress policy.
+   - A fully pinned copy of every mutation is asserted not deployable.
+3. **The derive helper is offline by default.**
+   - By default it reads only local files and prints each lookup for the owner, and
+     pasted results are screened.
+   - `--run-lookups` runs read-only commands through an allowlist, refusing mutating
+     verbs.
+   - Public DNS creation is removed; the `cf` command is printed instead.
+   - Values are serialized safely, and the output is published only after a `tomllib`
+     round-trip, a structural check and `airs-mcp check-config`. Invalid output exits 1
+     and leaves no file.
+   - Tests use service stubs that fail if invoked.
+4. **The R2 checker has a strict schema.** It defines exact keys, six kinds, a closed
+   Cloudflare permission list, the `s3:` action grammar and a scope grammar.
+   - Unknown kinds, keys, permissions, scopes or sources exit 3.
+   - A modify permission on a scope covering the bucket exits 4, including ARN prefixes.
+   - The reviewer's two probes are tests. The runbook §5 now describes the offline
+     inventory workflow.
+5. **The backup set fails closed and records real metadata.**
+   - Archive discovery errors are propagated, and malformed artifact manifests fail
+     the set.
+   - The schema is the control store's `meta.schema` (3) and each archive's
+     `user_version`.
+   - Verify checks the epoch against the control copy, each schema, the SQLite
+     version, `created_at`, the artifact-list shape and duplicate store names.
+6. **Hashing is streamed** through a 1 MiB buffer in creation and verification
+   (`hash_reader`/`hash_file`). `rows_digest` reads through a cursor. RELEASE §1 adds a
+   coordinated-backup qualification under the 2 GiB memory limit.
+7. **The reserve has no fail-open path.**
+   - `lifecycle_execute` is classified by action: `prune`, `compact` and
+     `artifact_delete` are exempt; `export`, `import_finalize`, `recover` and unknown
+     actions are publication-class. The worker reads the action from the job's
+     parameters.
+   - A failed reservation query, or a directory or entry error, gives `Unknown`
+     (`store_bytes_checked`).
+8. **One shared, bounded reserve sampler.** `Storage::space_sampled` keeps one cached
+   measurement (2 s), runs at most one blocking measurement at a time, and waits at most
+   500 ms; otherwise the answer is `Unknown`, so allocations fail closed. Both
+   `space_bounded` (request handlers) and the metrics scrape use it.
+   - Test: 4 sampler calls and 3 scrapes share one stalled probe, and each returns
+     within the bound.
+9. **The proof steps are executable.**
+   - The checklist and runbook §11 use the control-only `control-backup` for
+     `control-restore`, and the coordinated set for content.
+   - The `airs-cli` grant covers the proof tools: `history_query`,
+     `jobs_list/get/cancel`, `reports_create/list/get`, `artifacts_read/download` and
+     `schedules_list`. Every granted tool must exist in the catalogue.
+   - §12 is a separate qualification in its own `airs-mcp-qual` namespace, with an
+     authenticated route and deliberate reconciliation, and no AIRS egress.
+10. **The daily backup follows §9.4.**
+    - `deploy/airs-mcp/backup-cronjob.json`: a 03:00 America/Chicago orchestrator
+      (scale to 0, the set Job, scale back to 1 on any exit) with minimal RBAC, a
+      suspended hardened set-Job template, and egress only to the API servers.
+    - The set step runs `control-backup-set --keep 3`. The new set is verified, then
+      only complete sets beyond the newest 3 and older interrupted runs are removed,
+      never anything newer and never off-volume copies (`backup_set::prune`).
+    - The verify step runs `control-backup-verify --latest-in`, because the distroless
+      image has no shell to pass the set ID (`backup_set::latest_complete`).
+    - Runbook §9a sets the schedule, a success gate (a day counts only if its set
+      verified and the Longhorn backup ran after it), failure handling and retention.
+    - Runbook step 2 pins the `kubectl` image as well.
+
+Minor findings: derive output is validated before publication (above); `space.rs`
+documents the fail-closed behaviour and its exemptions.
+
+Each mutation was checked alone and caught:
+- fork A: G1–G6, and 12 new manifest mutations;
+- fork B: B1 and B3–B8;
+- fork D: M1–M5 and M7–M10;
+- retention: P1 (sets newer than the verified one pruned) and P2 (keep off by one).
+
+### M8 source-side review 3 — 7.5/10, revise (preserved, 2026-11-07T11:52Z)
+
+Source: `.local/dev/runtime-mcp/m8/review-3/result.md`. All 712 frozen files verified.
+Most review-2 defects are fixed.
+
+Material findings:
+1. `derive-config.sh --run-lookups` still runs service commands. The offline
+   requirement applies to the helper itself, not only its default.
+2. `control-backup-verify` checks the artifact list's shape, not its contents against
+   `report_versions` in the control copy. Replacing it with `[]` still verified.
+3. Retention accepts any `b1-` alphanumeric name, and treats an unreadable or corrupt
+   manifest as an interrupted run. With `keep=3` it deleted an unrelated `b1-000-…`
+   directory and a verified set whose manifest had become unreadable.
+4. The deployable validator requires only the service image mapping. With the `kubectl`
+   entry removed, it printed `DEPLOYABLE` while the orchestrator ran the image `kubectl`.
+5. Checklist step 12 still runs the low-space proof in the quarantined drill, not the
+   separate `airs-mcp-qual` deployment.
+
+Minor findings:
+- The daily-backup recovery timing is overclaimed, and the stop wait, the Job timeout
+  and the orchestrator deadline are misaligned. Scaling to 1 does not release an RWOP
+  volume the Job still holds, and the success marker precedes the restore trap.
+- DESIGN §22.8 still exempts all lifecycle operations, and CONTRACT §9 still describes
+  hidden token input. The retention and latest-selection options are undocumented.
+- The capacity accounting budgets one backup set, not three retained sets plus one
+  being created.
+- `--keep` with no value, or given twice, is treated as absent instead of as a usage
+  error.
+
+### M8 round 4 corrections (submitted for source-side review 4)
+
+1. **The derive helper is offline under every option.** `--run-lookups` is removed and
+   now exits 2 ("offline only"). For each value the helper prints the read-only commands
+   for the owner to run, then takes the pasted, screened result or the suggestion. It
+   reads only local files, and the only program it runs is the repository's own
+   `airs-mcp check-config` on its output.
+   - Tests: `derive_config_runs_no_service_cli_under_any_option` (failing stubs for az,
+     kubectl, cf, airs, mise, curl and wget; default mode, `--help` and `--run-lookups`)
+     and `the_derive_helper_source_invokes_no_service_cli` (static, with comments,
+     quoted text and heredocs stripped).
+   - Mutation: an injected `az account show` call fails the static test and three
+     runtime tests.
+2. **Verify compares the artifact inventory with the control copy.** `control_artifacts`
+   is the one derivation used by creation and verification. Verify rebuilds the
+   inventory from the verified control copy's `report_versions` and requires exact,
+   order-insensitive equality of IDs, hashes, bytes and count.
+   - Tests (`maintenance.rs`): `[]`, a changed hash, changed bytes, a duplicate and an
+     extra entry are each refused.
+3. **Retention fails closed.**
+   - `is_set_name` accepts only `b1-YYYYMMDDTHHMMSSmmmZ-<8 lowercase hex>`, the exact
+     grammar `create` produces.
+   - A set's manifest is Complete, Missing (an interrupted run, removable when older than
+     the newest), Incomplete, or Uncertain (unreadable, not JSON, not a file, or a foreign
+     format). Any Uncertain set makes `prune` remove nothing and return an error, and
+     `latest_complete` refuses when an Uncertain set is newer than the newest complete
+     one. Deletions are collected first and performed only after every check passes.
+   - Test: `retention_fails_closed_on_uncertain_sets_and_ignores_foreign_names`
+     (`b1-000-not-a-backup` is never touched; a corrupt, unreadable or foreign manifest
+     blocks retention; after repair only the interrupted run is removed).
+4. **Every image is validated.** `check_images` walks every container and init-container
+   image of every resource in the kustomization. Each is a bare name with exactly one
+   mapping, or a fully qualified `@sha256:` reference. The mappings must exactly cover the
+   bare names (no missing, extra or duplicate mapping), with a registry `newName` and a
+   well-formed digest; deployability refuses placeholders.
+   - Tests: the pin test adds five mutations on a fully pinned copy (kubectl mapping
+     removed or renamed, an unused mapping, an unmapped init-container image, an
+     init-container image pinned by tag only).
+5. **Checklist step 12 follows the `airs-mcp-qual` deployment** of runbook §12 exactly:
+   isolation with no AIRS egress, the authenticated temporary route, seed or restore with
+   deliberate reconciliation and schedules disabled, fill, observe, free, resume and
+   clean up. It says never to use the quarantined drill namespace.
+
+Minor findings:
+- *Backup timing.* The orchestrator polls the Job (a failure exits at once), its exit trap
+  waits for the set Job's pod to be gone (the RWOP volume released) before scaling to 1
+  and then polls `availableReplicas`, and a TERM/INT trap makes the exit trap run on
+  termination. It logs `backup_set_verified`, `service_restored` and
+  `backup_set_daily_complete` separately and exits 0 only when both succeed. Deadlines
+  nest: set Job 1200 s < poll 1230 s ≤ pod wait 1260 s; stop 300 + pod 1260 + ready 300
+  + 300 margin ≤ orchestrator 2400 s. The README drops the "back by 03:14" claim and
+  documents recovery after an interrupted orchestrator. `check_backup` checks the step
+  order and deadline nesting statically, and
+  `the_backup_orchestrator_restores_the_service_and_reports_honestly` runs the real
+  script against stub `kubectl`/`sleep`/`date` for success, a failed set, and a service
+  that never becomes available.
+- *Documentation.* DESIGN §22.8 describes the lifecycle classification, the fail-closed
+  measurement cases, `--keep N`, `--latest-in DIR` and verify's inventory and metadata
+  checks. CONTRACT §9 replaces the hidden-token text with the offline inventory
+  workflow (exit codes 3 and 4).
+- *Capacity.* Runbook §12 accounts separately for artifacts, the live databases, three
+  retained sets and the creation-time peak (a fourth set before pruning): about 7×D + A
+  + 20%, and the sets must fit outside the disk reserve.
+- *`--keep` parsing.* `strict_flags` runs before any configuration or storage step on
+  every maintenance command and on `control-backup-verify`: only known `--flag value`
+  pairs, each at most once, with no value starting `--`; otherwise exit 2. Ten cases are
+  tested, including a missing value, a duplicate, `0`, two `--set`, and `--set` with
+  `--latest-in`.
+
+Each mutation was checked alone and caught: fork S's `az` injection; fork R's Q1
+(inventory comparison removed), Q2 (lenient names), Q3 (Uncertain sets do not block),
+Q4 (unmapped images accepted), Q5 (unused mappings accepted), Q6 (`strict_flags` off),
+Q7 (no wait for the set pod before scale-up) and Q8 (success marker without restoration).
+
+### M8 source-side review 4 — 8.0/10, revise (preserved, 2026-11-07T12:24Z)
+
+Source: `.local/dev/runtime-mcp/m8/review-4/result.md`. All 712 frozen files verified.
+Most review-3 probes pass.
+
+Material findings:
+1. The backup orchestrator waits for the set Job's pod to be deleted, but a completed
+   pod stays (the Job has a 14-day TTL), so the real script exits 1 without restoring
+   the service. The stub test makes every wait succeed. The sequential bounds (300 +
+   1,230 + 1,260 + 300 = 3,090 s) exceed the 2,400 s deadline, and the exit trap has no
+   matching termination grace period.
+2. Retention treats a recognized-format manifest whose `complete` is missing or not
+   `true` as an interrupted run. Removing only `complete` from a verified set's manifest
+   got it deleted under `keep=3`.
+3. The qualification route (runbook §12) adds a second gateway integration against the
+   production upstream audience and client, which §7a forbids (one confidential client
+   per integration).
+4. The low-space filler asks UID 65532 to create `/data/filler`, but `/data` is
+   root-owned 0755 (contract §9.3), so the command cannot run.
+
+Minor finding: a literal image reference with an all-zero digest is accepted as
+deployable; only mapped digests were checked for the placeholder.
+
+### M8 round 5 corrections (submitted for source-side review 5)
+
+1. **The orchestrator releases the volume by pod phase, within its deadline.**
+   - The exit trap no longer waits for the set Job's pod to be deleted (a completed pod
+     is retained for 14 days). It polls pod phases and proceeds once every set-Job pod is
+     `Succeeded` or `Failed`, or none exists; a terminal pod holds no RWOP attachment.
+     No delete permission was added.
+   - The Job poll reads `status.conditions`: `Complete=True` succeeds, `Failed=True`
+     exits 1 at once.
+   - Every `kubectl` call carries `--request-timeout=30s`, and the trap disarms itself
+     against re-entry.
+   - Budgets: set Job 1200 s < poll 1230 s ≤ release wait 1260 s; the full path
+     300 + 1230 + 1260 + 300 + 300 margin = 3390 s < `activeDeadlineSeconds` 3600;
+     `terminationGracePeriodSeconds` 1980 = release 1260 + ready 300 + 4 × 30 s API
+     calls + 300 margin.
+   - `check_backup` asserts the step order, the absence of a delete-wait, the condition
+     polling, the request timeouts, both budget inequalities and the grace period.
+   - `the_backup_orchestrator_restores_the_service_and_reports_honestly` runs the real
+     script against stateful stubs: a completed Job with a retained `Succeeded` pod
+     (exit 0, all three events); a failed Job (restored, exit 1, no completion event);
+     SIGTERM mid-poll (the trap restores, exit 143); a Job that never completes (the
+     poll runs to its bound, restored, exit 1); a pod that never terminates (no
+     restoration claimed, exit 1); and a service that never becomes available.
+   - The README and runbook §9a carry the same numbers and the worst-case downtime.
+2. **Retention fails closed on any non-complete manifest.** Creation only writes
+   `complete: true`, so `Missing` (no manifest) is the only interrupted-run state. Any
+   present manifest that is not exactly a complete one of this format is `Uncertain`:
+   unreadable, not JSON, a foreign format, a missing `created_at`, `epoch`, `stores` or
+   `artifacts`, or `complete` missing, `null`, `false`, `"true"` or `1`. `prune` then
+   refuses and removes nothing, and `latest_complete` refuses when such a set is newer
+   than the newest complete one. Each case is a regression.
+3. **The qualification route has its own identities.** Runbook §12 provisions a separate
+   Entra API registration (its own App ID URI and scopes) and a confidential-only
+   gateway client, derives the qualification config from production (hostname,
+   `audiences`, `allowed_client_ids`), repeats §7a's four binding checks with the
+   qualification IDs before any sign-in, and removes every temporary registration,
+   integration and DNS entry in cleanup, re-checking §7a against production afterwards.
+   §7a states that the production client never serves a second integration. Checklist
+   step 12 matches.
+4. **The filler is a 65532-owned sibling.** The qualification overlay's init container
+   (root, `CAP_CHOWN` only) creates `/data/qual-filler` 0700 owned by 65532 beside
+   `/data/airs`; ancestors are unchanged, and production manifests never create it. The
+   choice follows the code: `storage::admit` checks the target and its ancestors only,
+   and the reserve sums the control and history stores only, so a sibling is neither
+   refused nor counted. Fill and free steps run as 65532 through a debug pod or
+   ephemeral container, since the service image has no shell.
+   - Test: `the_qualification_filler_is_a_sibling_the_reserve_never_counts`.
+
+Minor finding: `check_images` rejects the all-zero placeholder in literal `@sha256:`
+references as well as in mappings; the pin test adds an init container pinned to 64
+zeros.
+
+Each mutation was checked alone and caught: fork R2's R1 (non-boolean `complete` as
+interrupted), R2 (literal placeholder accepted), R3 (wait-for-delete restored), R4
+(deadline 2400), R5 (grace 300), R6 (no request timeout), R7 (no TERM trap); fork S2's M1
+(the reserve counting siblings) and M2 (admission refusing a data directory with a
+sibling).

@@ -3,6 +3,7 @@
 pub mod airs_tenant;
 pub mod auth;
 pub mod authority_store;
+pub mod backup_set;
 pub mod catalogue;
 pub mod collection;
 pub mod config;
@@ -17,6 +18,7 @@ pub mod report_html;
 pub mod reports;
 pub mod run;
 pub mod schedule_store;
+pub mod space;
 pub mod storage;
 pub mod tools;
 pub mod worker;

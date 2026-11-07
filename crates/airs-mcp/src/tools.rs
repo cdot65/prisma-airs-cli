@@ -61,6 +61,23 @@ pub struct Storage {
     /// Upload content validations of this service run one at a time (bounded memory
     /// and CPU; M5 review 1 finding 8).
     validations: tokio::sync::Semaphore,
+    /// Where the data volume's free space comes from (`statvfs`; tests inject theirs).
+    space_probe: std::sync::Mutex<crate::space::Probe>,
+    /// The shared reserve sampler: per tenant, the newest measurement and whether one
+    /// is in flight. At most one blocking measurement runs at a time (M8 review 2
+    /// finding 8).
+    space_cache: std::sync::Mutex<std::collections::HashMap<String, SpaceEntry>>,
+}
+
+/// How long a reserve measurement is reused before a new one is started.
+pub const SPACE_MAX_AGE: std::time::Duration = std::time::Duration::from_secs(2);
+/// How long a request handler or a scrape waits for a measurement in flight.
+pub const SPACE_BUDGET: std::time::Duration = std::time::Duration::from_millis(500);
+
+#[derive(Default)]
+struct SpaceEntry {
+    last: Option<(std::time::Instant, crate::space::Space)>,
+    in_flight: bool,
 }
 
 impl Storage {
@@ -78,6 +95,140 @@ impl Storage {
             control: std::sync::Mutex::new(control),
             epoch,
             validations: tokio::sync::Semaphore::new(1),
+            space_probe: std::sync::Mutex::new(crate::space::default_probe()),
+            space_cache: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+
+    /// Test support: replace where free space comes from (simulated low space).
+    #[doc(hidden)]
+    pub fn set_space_probe_for_tests(&self, probe: crate::space::Probe) {
+        *self
+            .space_probe
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = probe;
+        // A new probe invalidates cached measurements; one in flight finishes, but
+        // its result is replaced by the next sample.
+        for e in self
+            .space_cache
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .values_mut()
+        {
+            e.last = None;
+        }
+    }
+
+    /// The data volume against the disk reserve (contract §6, §9.5): the store bytes
+    /// (control and archives), `tenant`'s outstanding upload reservations, and the free
+    /// bytes. Blocking (it reads the control store): worker paths only; request handlers
+    /// use [`Storage::space_bounded`].
+    ///
+    /// Any part that cannot be measured makes the level `Unknown` (fail closed, M8
+    /// review 2 finding 7): the store bytes ([`crate::metrics::store_bytes_checked`]),
+    /// the reservation query, or the free bytes.
+    pub fn space(&self, tenant: &str) -> crate::space::Space {
+        let db = crate::metrics::store_bytes_checked(&self.history_root).and_then(|h| {
+            crate::metrics::store_bytes_checked(&self.admitted.path.join("control"))
+                .map(|c| h.saturating_add(c))
+        });
+        let now = airs_runtime_core::time::now_ms();
+        let reserved = self
+            .control(|c| c.staging_reserved(tenant, now))
+            .ok()
+            .map(|n| n.max(0) as u64);
+        let probe = self
+            .space_probe
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
+        let free = probe(&self.admitted.path);
+        match (db, reserved) {
+            (Some(db), Some(reserved)) => {
+                let reserve = crate::space::reserve(db, reserved);
+                crate::space::Space {
+                    free,
+                    reserve,
+                    level: crate::space::Level::of(free, reserve),
+                }
+            }
+            _ => crate::space::Space {
+                free,
+                reserve: 0,
+                level: crate::space::Level::Unknown,
+            },
+        }
+    }
+
+    /// The reserve for request handlers, bounded: [`Storage::space_sampled`]'s space.
+    pub async fn space_bounded(self: &Arc<Self>, tenant: &str) -> crate::space::Space {
+        self.space_sampled(tenant).await.0
+    }
+
+    /// The reserve through the shared sampler, and the age of the measurement used:
+    /// - a measurement younger than [`SPACE_MAX_AGE`] is reused;
+    /// - otherwise one is started on the blocking pool, unless one is already in
+    ///   flight (at most one runs at a time, however many callers);
+    /// - the caller waits at most [`SPACE_BUDGET`].
+    ///
+    /// When no fresh measurement arrives in time, the answer is `Unknown` with no age,
+    /// which fails closed, rather than a stale level. A stalled measurement keeps
+    /// running, and is never started twice.
+    pub async fn space_sampled(
+        self: &Arc<Self>,
+        tenant: &str,
+    ) -> (crate::space::Space, Option<std::time::Duration>) {
+        let unknown = crate::space::Space {
+            free: None,
+            reserve: 0,
+            level: crate::space::Level::Unknown,
+        };
+        let fresh = |e: &SpaceEntry| {
+            e.last
+                .as_ref()
+                .is_some_and(|(at, _)| at.elapsed() < SPACE_MAX_AGE)
+        };
+        {
+            let mut map = self
+                .space_cache
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let e = map.entry(tenant.to_owned()).or_default();
+            if let (true, Some((at, s))) = (fresh(e), e.last) {
+                return (s, Some(at.elapsed()));
+            }
+            if !e.in_flight {
+                e.in_flight = true;
+                let (storage, t) = (self.clone(), tenant.to_owned());
+                tokio::task::spawn_blocking(move || {
+                    let s = storage.space(&t);
+                    let mut map = storage
+                        .space_cache
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    let e = map.entry(t).or_default();
+                    e.last = Some((std::time::Instant::now(), s));
+                    e.in_flight = false;
+                });
+            }
+        }
+        let deadline = std::time::Instant::now() + SPACE_BUDGET;
+        loop {
+            {
+                let map = self
+                    .space_cache
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if let Some(e) = map.get(tenant)
+                    && let (true, Some((at, s))) = (fresh(e), e.last)
+                {
+                    return (s, Some(at.elapsed()));
+                }
+            }
+            if std::time::Instant::now() >= deadline {
+                return (unknown, None);
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
         }
     }
 
@@ -842,6 +993,10 @@ impl Service {
         params: ReceiptsParams,
     ) -> Result<Value, Failure> {
         let storage = self.storage.clone().ok_or(ErrorCode::StorageUnavailable)?;
+        // Receipt ingestion writes the archive: it pauses at the reserve (§9.5).
+        if !storage.space_bounded(tenant).await.allows_collection() {
+            return Err(ErrorCode::StorageUnavailable.into());
+        }
         let config = &live.config;
         let cloud = cloud(config)?;
         if params.cloud_id != cloud.cloud_id {
@@ -1317,6 +1472,10 @@ impl Service {
     ) -> Result<Value, Failure> {
         let max_age = Self::admin(live)?;
         let storage = self.storage.clone().ok_or(ErrorCode::StorageUnavailable)?;
+        // Staging pauses with publication, at reserve + 512 MiB (§9.5).
+        if !storage.space_bounded(tenant).await.allows_publication() {
+            return Err(ErrorCode::StorageUnavailable.into());
+        }
         let generation = self.generation_for(live, tenant, "upload_admit").await?;
         let proof = Self::proof(p, live);
         let actor = Self::authority_actor(p);
@@ -1431,6 +1590,9 @@ impl Service {
         params: UploadChunkParams,
     ) -> Result<Value, Failure> {
         let storage = self.storage.clone().ok_or(ErrorCode::StorageUnavailable)?;
+        if !storage.space_bounded(tenant).await.allows_publication() {
+            return Err(ErrorCode::StorageUnavailable.into());
+        }
         let bytes = base64::engine::general_purpose::STANDARD
             .decode(&params.data_base64)
             .map_err(|_| ErrorCode::InvalidRequest)?;
@@ -4832,6 +4994,245 @@ mod tests {
         })
     }
 
+    /// M8 review 2 finding 7: every part of the reserve measurement fails closed. A
+    /// failed reservation query, or a store directory that cannot be listed, makes the
+    /// level `Unknown` (never a zero reservation or zero bytes), so allocating writes
+    /// pause.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_failed_reserve_measurement_is_unknown_not_zero() {
+        let (base, storage, _service, live) =
+            receipts_service_with_secret("SYNTHETIC-SERVICE-SECRET-ABCDEFGHIJ");
+        let tenant = live.config.service.tenant.clone();
+        let plenty: crate::space::Probe = std::sync::Arc::new(|_| Some(u64::MAX / 4));
+        storage.set_space_probe_for_tests(plenty);
+        assert_eq!(storage.space(&tenant).level, crate::space::Level::Normal);
+        // The reservation query fails.
+        storage.control(|c| {
+            c.conn
+                .execute_batch("ALTER TABLE upload_sessions RENAME TO upload_sessions_hidden")
+                .unwrap()
+        });
+        let s = storage.space(&tenant);
+        assert_eq!(
+            s.level,
+            crate::space::Level::Unknown,
+            "not a zero reservation"
+        );
+        assert!(!s.admits("reports_create") && !s.admits("receipts_ingest"));
+        storage.control(|c| {
+            c.conn
+                .execute_batch("ALTER TABLE upload_sessions_hidden RENAME TO upload_sessions")
+                .unwrap()
+        });
+        assert_eq!(storage.space(&tenant).level, crate::space::Level::Normal);
+        // A store directory that cannot be listed (root would read it anyway).
+        if rustix::process::geteuid().as_raw() != 0 {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::create_dir_all(&storage.history_root).unwrap();
+            let mode = |m| std::fs::Permissions::from_mode(m);
+            std::fs::set_permissions(&storage.history_root, mode(0o000)).unwrap();
+            let s = storage.space(&tenant);
+            std::fs::set_permissions(&storage.history_root, mode(0o700)).unwrap();
+            assert_eq!(s.level, crate::space::Level::Unknown, "not zero bytes");
+        }
+        std::fs::remove_dir_all(&base).unwrap();
+    }
+
+    /// M8 review 2 finding 8: the reserve sampler is shared and bounded. While a
+    /// measurement stalls, concurrent scrapes and tool calls start no second one; each
+    /// returns within its bound with `Unknown`, so allocating tools refuse. When the
+    /// measurement finishes, its result is used.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn a_stalled_reserve_measurement_is_shared_and_bounded() {
+        let (base, storage, service, live) =
+            receipts_service_with_secret("SYNTHETIC-SERVICE-SECRET-ABCDEFGHIJ");
+        let tenant = live.config.service.tenant.clone();
+        let p = Principal::for_tests(
+            "PLACEHOLDER_CALLER_SUB",
+            "PLACEHOLDER_AIRS_CLI_PUBLIC_CLIENT_ID",
+        );
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let release = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        // A failing assertion still releases the stalled probes, so the runtime can shut
+        // down and the test fails instead of hanging.
+        struct Release(std::sync::Arc<std::sync::atomic::AtomicBool>);
+        impl Drop for Release {
+            fn drop(&mut self) {
+                self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+        }
+        let _release_on_exit = Release(release.clone());
+        let (c2, r2) = (calls.clone(), release.clone());
+        storage.set_space_probe_for_tests(std::sync::Arc::new(move |_| {
+            c2.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            while !r2.load(std::sync::atomic::Ordering::SeqCst) {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            Some(u64::MAX / 4)
+        }));
+        let bound = SPACE_BUDGET + std::time::Duration::from_millis(400);
+        let started = std::time::Instant::now();
+        let mut waits = Vec::new();
+        for _ in 0..4 {
+            let s = storage.clone();
+            let t = tenant.clone();
+            waits.push(tokio::spawn(async move { s.space_sampled(&t).await }));
+        }
+        for _ in 0..3 {
+            let s = storage.clone();
+            let t = tenant.clone();
+            waits.push(tokio::spawn(async move {
+                let m = crate::metrics::sample(Some(&s), &t, true, false).await;
+                (m.space.unwrap(), None)
+            }));
+        }
+        for w in waits {
+            let (s, age) = w.await.unwrap();
+            assert_eq!(s.level, crate::space::Level::Unknown);
+            assert!(age.is_none());
+        }
+        assert!(started.elapsed() < bound * 2, "{:?}", started.elapsed());
+        // A tool call that allocates refuses within its bound while measurement stalls.
+        let t0 = std::time::Instant::now();
+        let refused = service
+            .receipts_ingest(
+                &p,
+                &live,
+                &tenant,
+                "key-space-stall-0001",
+                "0a1b2c3d",
+                serde_json::from_value(json!({"cloud_id": cloud(&live.config).unwrap().cloud_id,
+                    "records": [receipt("rk-stall-0001", "monitor", None)]}))
+                .unwrap(),
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(refused.code, ErrorCode::StorageUnavailable);
+        assert!(t0.elapsed() < bound, "{:?}", t0.elapsed());
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "one measurement in flight, however many callers"
+        );
+        // The measurement finishes; its result is used and reused.
+        release.store(true, std::sync::atomic::Ordering::SeqCst);
+        let mut level = crate::space::Level::Unknown;
+        for _ in 0..50 {
+            level = storage.space_sampled(&tenant).await.0.level;
+            if level == crate::space::Level::Normal {
+                break;
+            }
+        }
+        assert_eq!(level, crate::space::Level::Normal);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        std::fs::remove_dir_all(&base).unwrap();
+    }
+
+    /// M8 review 1 (fork C gap): the disk reserve gates the synchronous writes. Receipt
+    /// ingestion (an archive write) pauses only below the reserve; upload staging pauses
+    /// with publication, below reserve + 512 MiB, before any validation or write.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn the_disk_reserve_pauses_receipts_and_upload_staging() {
+        let (base, storage, service, live) =
+            receipts_service_with_secret("SYNTHETIC-SERVICE-SECRET-ABCDEFGHIJ");
+        let tenant = live.config.service.tenant.clone();
+        let p = Principal::for_tests(
+            "PLACEHOLDER_CALLER_SUB",
+            "PLACEHOLDER_AIRS_CLI_PUBLIC_CLIENT_ID",
+        );
+        let cloud_id = cloud(&live.config).unwrap().cloud_id;
+        let reserve = storage.space(&tenant).reserve;
+        let free =
+            |bytes: u64| -> crate::space::Probe { std::sync::Arc::new(move |_| Some(bytes)) };
+        let batch = |rk: &str| -> ReceiptsParams {
+            serde_json::from_value(
+                json!({"cloud_id": cloud_id, "records": [receipt(rk, "monitor", None)]}),
+            )
+            .unwrap()
+        };
+        let chunk = || -> UploadChunkParams {
+            serde_json::from_value(
+                json!({"upload_id": format!("u1_0a1b2c3d_{}", uuid::Uuid::new_v4()),
+                "offset": 0, "data_base64": "AA==", "chunk_sha256": hex(&Sha256::digest([0u8]))}),
+            )
+            .unwrap()
+        };
+        // Below the reserve: receipts write nothing.
+        storage.set_space_probe_for_tests(free(reserve - 1));
+        assert_eq!(
+            storage.space(&tenant).level,
+            crate::space::Level::CollectionPaused
+        );
+        let refused = service
+            .receipts_ingest(
+                &p,
+                &live,
+                &tenant,
+                "key-space-receipts-01",
+                "0a1b2c3d",
+                batch("rk-space-0001"),
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(refused.code, ErrorCode::StorageUnavailable);
+        assert!(
+            !storage
+                .history_root
+                .join(&cloud_id)
+                .join("archive.sqlite3")
+                .exists()
+                || rusqlite::Connection::open(
+                    storage.history_root.join(&cloud_id).join("archive.sqlite3")
+                )
+                .unwrap()
+                .query_row("SELECT count(*) FROM receipts", [], |r| r.get::<_, i64>(0))
+                .unwrap_or(0)
+                    == 0,
+            "nothing was written"
+        );
+        // Within the publication headroom: receipts go, upload staging is paused.
+        storage.set_space_probe_for_tests(free(reserve + crate::space::MIB));
+        assert_eq!(
+            storage.space(&tenant).level,
+            crate::space::Level::PublicationPaused
+        );
+        let accepted = service
+            .receipts_ingest(
+                &p,
+                &live,
+                &tenant,
+                "key-space-receipts-02",
+                "0a1b2c3d",
+                batch("rk-space-0002"),
+            )
+            .await
+            .unwrap();
+        assert_eq!(accepted["accepted"], 1);
+        assert_eq!(
+            service
+                .upload_chunk(&p, &tenant, chunk())
+                .await
+                .unwrap_err()
+                .code,
+            ErrorCode::StorageUnavailable,
+            "staging is paused before the upload is even looked up"
+        );
+        // Normal space (the reserve is measured again: the archive grew): the same
+        // chunk reaches validation (an unknown upload).
+        let reserve = storage.space(&tenant).reserve;
+        storage.set_space_probe_for_tests(free(reserve + crate::space::PUBLICATION_HEADROOM));
+        assert_eq!(storage.space(&tenant).level, crate::space::Level::Normal);
+        assert_ne!(
+            service
+                .upload_chunk(&p, &tenant, chunk())
+                .await
+                .unwrap_err()
+                .code,
+            ErrorCode::StorageUnavailable
+        );
+        std::fs::remove_dir_all(base).unwrap();
+    }
+
     /// M4.5 `receipts_ingest`: validation before any write, attribution only through an
     /// explicit association to a configured scanner, idempotency by batch key, archive
     /// duplicates counted, and the 200-record bound.
@@ -5905,6 +6306,13 @@ mod tests {
         let params = |records: Vec<Value>| -> ReceiptsParams {
             serde_json::from_value(json!({"cloud_id": cloud_id, "records": records})).unwrap()
         };
+        // A measured reserve first (the shared sampler keeps it for SPACE_MAX_AGE), so
+        // both calls pass the reserve gate. An unlistable history root alone would make
+        // the reserve unknown and refuse them before the key is bound (fail closed).
+        assert_eq!(
+            storage.space_bounded(&tenant).await.level,
+            crate::space::Level::Normal
+        );
         // The archive cannot be written: its root is a regular file.
         std::fs::write(&storage.history_root, b"not a directory").unwrap();
         let failed = service

@@ -67,12 +67,54 @@
                 "add": [
                   "CHOWN"
                 ]
-              }
+              },
+              "privileged": false
             },
             "volumeMounts": [
               {
                 "name": "data",
                 "mountPath": "/data"
+              }
+            ]
+          },
+          {
+            "name": "secrets",
+            "image": "docker.io/library/busybox:1.37.0@sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4",
+            "command": [
+              "sh",
+              "-c",
+              "set -eu; umask 0377; mkdir -m 0700 /secrets/tls /secrets/airs; for f in tls.crt tls.key; do cat /source/tls/$f > /secrets/tls/$f; done; for f in mgmt-client-id mgmt-client-secret scanner-monitor; do cat /source/airs/$f > /secrets/airs/$f; done; chown 65532:65532 /secrets/tls/tls.crt /secrets/tls/tls.key /secrets/airs/mgmt-client-id /secrets/airs/mgmt-client-secret /secrets/airs/scanner-monitor; chmod 0500 /secrets/tls /secrets/airs; chown 65532:65532 /secrets/tls /secrets/airs; stat -c '%u:%g %a %n' /secrets/tls /secrets/airs"
+            ],
+            "securityContext": {
+              "runAsNonRoot": false,
+              "runAsUser": 0,
+              "runAsGroup": 0,
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "privileged": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ],
+                "add": [
+                  "CHOWN"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "tls-source",
+                "mountPath": "/source/tls",
+                "readOnly": true
+              },
+              {
+                "name": "airs-secrets-source",
+                "mountPath": "/source/airs",
+                "readOnly": true
+              },
+              {
+                "name": "secrets",
+                "mountPath": "/secrets"
               }
             ]
           }
@@ -171,13 +213,15 @@
                 "readOnly": true
               },
               {
-                "name": "tls",
+                "name": "secrets",
                 "mountPath": "/etc/airs-mcp/tls",
+                "subPath": "tls",
                 "readOnly": true
               },
               {
-                "name": "airs-secrets",
+                "name": "secrets",
                 "mountPath": "/run/airs-mcp/secrets",
+                "subPath": "airs",
                 "readOnly": true
               },
               {
@@ -201,7 +245,7 @@
             }
           },
           {
-            "name": "tls",
+            "name": "tls-source",
             "secret": {
               "secretName": "airs-mcp-tls",
               "defaultMode": 256
@@ -221,7 +265,7 @@
             }
           },
           {
-            "name": "airs-secrets",
+            "name": "airs-secrets-source",
             "secret": {
               "secretName": "airs-mcp-airs-credentials",
               "defaultMode": 256,
@@ -240,8 +284,18 @@
                 }
               ]
             }
+          },
+          {
+            "name": "secrets",
+            "emptyDir": {
+              "medium": "Memory",
+              "sizeLimit": "1Mi"
+            }
           }
-        ]
+        ],
+        "hostNetwork": false,
+        "hostPID": false,
+        "hostIPC": false
       }
     }
   }

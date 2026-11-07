@@ -34,8 +34,11 @@ pub enum Outcome {
     NeedsCredentials {
         revision: String,
     },
-    /// Quota, low space, quarantine or revocation.
+    /// Quota, quarantine or revocation.
     Blocked,
+    /// The data volume is within its reserve for this operation (contract §6, §9.5):
+    /// nothing was written; the job is requeued once space is freed.
+    LowSpace,
 }
 
 /// What an executor may do with its job. Every call is one control-store transaction.
@@ -223,7 +226,26 @@ impl Worker {
             job: &job,
             storage: &self.storage,
         };
-        let outcome = executor.run(&ctx);
+        // The disk reserve is checked before the executor writes anything (contract
+        // §9.5): publication pauses at reserve + 512 MiB, collection at the reserve.
+        // A lifecycle job is classified by its action (M8 review 2 finding 7). Its
+        // parameters, unreadable, classify as allocating (an empty action).
+        let action = (job.operation == "lifecycle_execute").then(|| {
+            self.storage
+                .control(|c| c.params(&job.job_id))
+                .ok()
+                .and_then(|p| p["action"].as_str().map(str::to_owned))
+                .unwrap_or_default()
+        });
+        let outcome = if self
+            .storage
+            .space(&job.tenant)
+            .admits_job(&job.operation, action.as_deref())
+        {
+            executor.run(&ctx)
+        } else {
+            Outcome::LowSpace
+        };
         let now = airs_runtime_core::time::now_ms();
         let tenant = job.tenant.clone();
         let id = job.job_id.clone();
@@ -267,6 +289,7 @@ impl Worker {
                 Outcome::RetryLater { after_ms } => c.release(&tenant, &id, Trigger::TransientFailure, "retry later", Some(now + after_ms.max(0)), now),
                 Outcome::NeedsCredentials { revision } => c.park_credentials(&tenant, &id, &revision, now),
                 Outcome::Blocked => c.release(&tenant, &id, Trigger::PolicyBlock, "blocked by policy", None, now),
+                Outcome::LowSpace => c.release(&tenant, &id, Trigger::PolicyBlock, "the data volume is within its reserve", None, now),
             }
         })?;
         Ok(Some((id, state)))
