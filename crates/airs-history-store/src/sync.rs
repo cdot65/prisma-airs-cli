@@ -1256,6 +1256,30 @@ impl From<CliError> for SyncFailure {
     }
 }
 
+/// The dashboard rolling window that covers a span of `span_hours` hours, in a shape the
+/// SCM dashboard API accepts. The API takes 24 hours or 1, 7, 30 or 60 days; anything
+/// else (25 hours, 2 days, …) is refused with HTTP 400, which the collector records as
+/// the applications and sessions sources being unavailable. A service collection derives
+/// its span at run time from the job's checkpointed target, so a 24 h target submitted
+/// seconds earlier spans 24 h plus a little: that stays the 24-hour window (up to one hour
+/// of slack is the rolling-bound boundary uncertainty the coverage model already carries,
+/// and the polling lower bound is clamped so one hour always covers it), while anything
+/// longer rounds up to the next accepted window, never to the exact hour count (M8 live
+/// evidence, 2026-11-07). Rounding the bootstrap read up to 7 days would have made every
+/// tick a 7-day read while any source still lacked a complete traversal. Over-covering is
+/// safe: the archive records traversal as of the collection and deduplicates facts; the
+/// target range itself is unchanged. Spans past 60 days keep the exact hour count: the API
+/// refuses it and the sources say so, rather than silently collecting less than requested.
+pub fn dashboard_window(span_hours: u64) -> (u64, &'static str) {
+    match span_hours {
+        0..=25 => (24, "hours"),
+        26..=168 => (7, "days"),
+        169..=720 => (30, "days"),
+        721..=1440 => (60, "days"),
+        _ => (span_hours, "hours"),
+    }
+}
+
 /// Collect the tenant's recent runtime observations into its archive: management
 /// discovery and sessions through the shared collector, due revisits, sparse cached
 /// enrichment and transaction metadata, with every attempt admitted through one staged
@@ -1269,16 +1293,19 @@ pub async fn run(
     let now = database::now_ms()?;
     let target = request.range.unwrap_or((now - 86_400_000, now));
     let mut options = request.options;
-    options.interval = u64::try_from(now.saturating_sub(target.0))
+    let span_hours = u64::try_from(now.saturating_sub(target.0))
         .unwrap_or(u64::MAX)
         .div_ceil(3_600_000)
         .max(1);
-    if options.interval > 87600 {
+    if span_hours > 87600 {
         return Err(CliError::usage(
             "--since exceeds the supported 87600-hour rolling query bound",
         )
         .into());
     }
+    let (interval, unit) = dashboard_window(span_hours);
+    options.interval = interval;
+    options.unit = unit.into();
     let budget = airs_runtime_core::read_budget::ReadBudget::with_stages(
         options.limits.seconds,
         options.limits.requests,
@@ -1358,4 +1385,34 @@ pub async fn run(
         incomplete_required_sources: evidence.incomplete(),
         incomplete: evidence.health_unknown() || strict_incomplete,
     })
+}
+
+#[cfg(test)]
+mod dashboard_window_tests {
+    use super::dashboard_window;
+
+    /// The SCM dashboard API accepts 24 hours or 1, 7, 30 or 60 days. A span derived at
+    /// run time is a little longer than the job's nominal window, so it must round up to
+    /// the next accepted shape (M8 live evidence: 25 hours was refused with HTTP 400 and
+    /// left the applications and sessions sources unavailable on every collection).
+    #[test]
+    fn spans_round_up_to_an_accepted_dashboard_window() {
+        // 25 h is the first collection's 24 h target derived a moment later: still 24 hours.
+        for h in [0, 1, 23, 24, 25] {
+            assert_eq!(dashboard_window(h), (24, "hours"), "{h} h");
+        }
+        for h in [26, 48, 100, 168] {
+            assert_eq!(dashboard_window(h), (7, "days"), "{h} h");
+        }
+        for h in [169, 500, 720] {
+            assert_eq!(dashboard_window(h), (30, "days"), "{h} h");
+        }
+        for h in [721, 1000, 1440] {
+            assert_eq!(dashboard_window(h), (60, "days"), "{h} h");
+        }
+        // Past the largest accepted window the exact count is kept: the API refuses it
+        // and the sources say so, instead of silently collecting less than requested.
+        assert_eq!(dashboard_window(1441), (1441, "hours"));
+        assert_eq!(dashboard_window(87600), (87600, "hours"));
+    }
 }

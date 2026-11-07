@@ -893,9 +893,14 @@ fn token_outcomes_are_classified_and_a_rotation_resumes_collecting() {
     assert_ne!(first_run, second_run, "a new run, not the failed one");
 }
 
-/// M4 review 1 finding 5: an ordinary recent tick after a valid traversal asks only for
-/// the narrowest selector covering the last traversal minus the overlap (1 h here), not
-/// a fresh 24 h.
+/// M4 review 1 finding 5, amended by the M8 live evidence (2026-11-07): an ordinary
+/// recent tick after a valid traversal asks for the narrowest selector covering the last
+/// traversal minus the overlap — the narrowest the SCM dashboard API accepts. The API
+/// takes 24 hours or 1, 7, 30 or 60 days and refuses every other shape with HTTP 400
+/// (25 hours, 2 days, 1 hour for sessions, …), so the span is rounded up to the next
+/// accepted shape; a 24 h target derived a few milliseconds later (25 whole hours) stays
+/// the 24-hour window (one hour of slack is boundary uncertainty), and a one-hour tick is
+/// 24 hours too. The archive bounds stay the exact target either way.
 #[test]
 fn a_later_tick_reads_only_since_the_last_traversal() {
     use airs_test_harness::Rx;
@@ -909,19 +914,41 @@ fn a_later_tick_reads_only_since_the_last_traversal() {
             .find(|(k, _)| k == "time_interval")
             .map(|(_, v)| v.clone())
     };
+    let unit = |r: &airs_test_harness::RecordedRequest| {
+        r.query
+            .iter()
+            .find(|(k, _)| k == "time_unit")
+            .map(|(_, v)| v.clone())
+    };
+    // Every window the service asks the dashboard for is a shape the real API accepts
+    // (the fixture is permissive; production is not).
+    let accepted = |server: &airs_test_harness::FixtureServer| {
+        for r in server.requests_for(Route::Runtime(Rx::SessionsOverview)) {
+            let shape = (interval(&r), unit(&r));
+            assert!(
+                matches!(
+                    (shape.0.as_deref(), shape.1.as_deref()),
+                    (Some("24"), Some("hours")) | (Some("7" | "30" | "60"), Some("days"))
+                ),
+                "a dashboard window the API refuses: {shape:?}"
+            );
+        }
+    };
     let first: Vec<_> = server
         .requests_for(Route::Runtime(Rx::SessionsOverview))
         .iter()
         .filter_map(interval)
         .collect();
     // The first collection's target is the 24 h resolved (and checkpointed) when the job
-    // starts; the collector, a moment later, needs the narrowest whole-hour selector that
-    // still covers that target's start: 24 h, or 25 h when the hour boundary was crossed
-    // (it always is by a few milliseconds). The archive bounds are the exact target.
-    assert!(
-        matches!(first.first().map(String::as_str), Some("24" | "25")),
-        "the first collection reads its 24 h target: {first:?}"
+    // starts; the collector, a moment later, spans a little more than 24 h, which stays
+    // the 24-hour window (never 25 hours, which the API refuses, nor a 7-day read on every
+    // bootstrap tick). The archive bounds are the exact target.
+    assert_eq!(
+        first.first().map(String::as_str),
+        Some("24"),
+        "the first collection reads its 24 h target with the 24-hour window: {first:?}"
     );
+    accepted(&server);
     submit(&s, "key-window-000000002");
     worker(&s).step(&s.tenant, |_| true).unwrap().unwrap();
     let all: Vec<_> = server
@@ -931,9 +958,10 @@ fn a_later_tick_reads_only_since_the_last_traversal() {
         .collect();
     assert_eq!(
         all.last().map(String::as_str),
-        Some("1"),
-        "the next tick reads only the last hour: {all:?}"
+        Some("24"),
+        "the next tick reads the narrowest accepted window (24 hours): {all:?}"
     );
+    accepted(&server);
 }
 
 /// M4 review 1 finding 6: cancellation during a delayed response stops the collector:

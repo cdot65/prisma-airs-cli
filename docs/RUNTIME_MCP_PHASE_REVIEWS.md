@@ -5582,6 +5582,55 @@ Material findings:
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
 
+### M8 live evidence (owner-run with the agent, 2026-11-07): findings and fixes
+
+Steps 1–3 and 6–9 of the runbook were performed against the owner's cluster (GitOps:
+talos-cluster `airs-mcp/deploy` overlay on this repository's `deploy/airs-mcp` at a pinned
+commit; Argo-managed; Harbor image `registry.cdot.io/airs-mcp/airs-mcp@sha256:c1c9888c…`).
+The service came up as designed (uid 65532, encrypted RWOP volume attached once, ESO
+secrets, Let's Encrypt TLS, `storage_owned` → `control_recovered` → `listening`, probes and
+metrics clean) and answered the CLI and Claude Code through the gateway. Three findings:
+
+1. **Owner decision — environment-specific backup gates withdrawn.** Contract §9.4's
+   "open checks" (a second NAS's retention record; no agent-accessible R2 delete right)
+   described the reference environment's backup chain, not the product, which stores
+   everything in SQLite on its own volume. Rewritten as operator-owned policy; runbook
+   steps 4–5 are optional operator records (PR #14).
+2. **Grant binding is exact, as designed.** Claude Code's dynamic registration had changed
+   since M0.6 (`pk_66d09ded…` → `pk_610f537e…`); the reader grant refused the new client
+   (`caller and agent have no grant`) until the configuration named it (talos-cluster
+   PR #454, revision prod-20261107-2). The login helper note: the gateway registers the
+   CLI client with an exact loopback redirect, so `airs mcp login` needs `--port 53682`
+   (runbook §7b, PR #13).
+3. **Collector defect (fixed): dashboard rolling window.** The first collection left the
+   `inventory` and `sessions` sources `unavailable`. The SCM dashboard API accepts rolling
+   windows of 24 hours or 1, 7, 30 or 60 days only; the service derived its window as
+   `ceil((now − target.start) / 1 h)` at run time, which for a 24 h target submitted seconds
+   earlier is 25 hours — refused with HTTP 400 on every ordinary collection. Fix:
+   `airs-history-store::sync::dashboard_window` rounds the span up to the smallest accepted
+   shape (24 h; 7, 30, 60 days; the exact count is kept past 60 days so the refusal stays
+   visible), with a unit test; the applications and sessions queries then succeed (direct
+   probes: 24 h, 7 d and 30 d accepted; 25 h, 48 h and 2 d refused). Two refinements followed
+   from the redeployed service: (a) `inventory` stayed unavailable because the category
+   reported the worst of its sources and `application-telemetry` is unavailable by design
+   for any window but 7/30/60 days — it is no longer coverage (contract §4.3; still a Signal
+   Brief source); (b) a 24 h target derived a moment later (25 whole hours) stays the
+   24-hour window rather than 7 days, because the polling lower bound returns to the first
+   collection's 24 h while any source lacks a complete traversal, and a page-capped 7-day
+   sessions read would never complete on a larger tenant (contract §6). **Recollection
+   receipt** on the redeployed image (`sha-27e9654`, sha256:fc830c2b…, 2026-11-07T22:57Z):
+   `collection_start` succeeded (4 management sends, 0 unfinished) and
+   `history coverage` for 22:45–22:57Z, a range only that run covers, shows inventory,
+   profiles, results and sessions all **complete** with gap 0 (the first run on the
+   reviewed image had inventory and sessions unavailable); repeated on the final image
+   (`sha-e3060b7`, sha256:7c81056d…, 2026-11-07T23:06Z): job succeeded, 4 management
+   sends, all four sources complete, gap 0, for 22:58–23:06Z. These are source changes
+   after review 8 and are part of the final combined review's scope.
+
+The marker report (step 9b) was created on real data and its positive control passed
+(`grep -c` of the marker in the downloaded `report.html` = 1). Steps 10–12 and the final
+combined review remain.
+
 ### M8 source-side review 8 (preserved; 2026-11-07T16:03Z, Codex, frozen tree a02899d7, receipts m8/run9)
 
 **9.0/10, accept (source side).** "The round-7 termination defect and both minors are

@@ -536,8 +536,11 @@ client sent is reflected.
     - `sessions` covers `sessions` and `session-details`;
     - `results` covers `scan-results`;
     - `reports` covers `scan-reports`;
-    - `inventory` covers `applications`, `registered-apps`, `application-telemetry` and
-      `transaction-metadata`;
+    - `inventory` covers `applications`, `registered-apps` and `transaction-metadata`
+      (`application-telemetry` is an aggregate token-consumption read the dashboard
+      serves only over 7, 30 or 60 days; it is a Signal Brief source, not coverage —
+      counted here it made `inventory` unavailable on every 24-hour tick; M8 live
+      evidence, 2026-11-07);
     - `profiles` covers `profiles`.
   - Local evidence-handling sources (`event-window`, `evidence-storage`,
     `archive-range`) and unrecognized legacy names are not reported.
@@ -766,7 +769,7 @@ as text content, which roughly doubles the size. The JSON-RPC envelope adds unde
 | Item | Default | Bound | Notes |
 | --- | --- | --- | --- |
 | Collection interval | 15 min, UTC quarter-hours | 5–60 min | Missed ticks coalesce into one catch-up job. |
-| Tick lower bound | last traversed-as-of − 15 min overlap | narrowest rolling selector, ≥1 h | Advances per source only after a valid traversal. |
+| Tick lower bound | last traversed-as-of − 15 min overlap | narrowest rolling selector the dashboard API accepts (24 hours, or 1, 7, 30 or 60 days), ≥1 h | Advances per source only after a valid traversal. The span is rounded **up** to the next accepted shape, with one hour of slack on the 24-hour window (a 24 h target derived seconds later stays 24 hours, never 25, which the API refuses; a 26-hour span is 7 days); past 60 days the exact count is kept so the refusal stays visible. |
 | Tick budget | 120 s, 200 sends incl. OAuth, 40 pages/source | config ≤ 600 s / 1000 / 200 | A ceiling, not a per-application allowance. |
 | First collection | recent 24 h | — | Older backfill explicit, ≤87,600 h selector bound. |
 | Reports per job | 5 IDs default, 10 max, ≤2 sends | compiled | Serial, stop on 429, cached reuse. |
