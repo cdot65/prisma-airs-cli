@@ -49,6 +49,11 @@ installed="$(rustup target list --installed 2>/dev/null || true)"
   echo "rustc: $(rustc --version)"
   echo "cargo: $(cargo --version)"
   echo "host: $host"
+  if command -v zig >/dev/null 2>&1 && command -v cargo-zigbuild >/dev/null 2>&1; then
+    echo "cross: cargo-zigbuild $(cargo-zigbuild --version 2>/dev/null | awk '{print $2}'), zig $(zig version 2>/dev/null)"
+  else
+    echo "cross: none (non-host targets need zig + cargo-zigbuild, or a musl cross C toolchain)"
+  fi
 } > "$OUT/BUILD.txt"
 git ls-files -z | LC_ALL=C sort -z | xargs -0 sha256sum > "$OUT/SOURCE-SHA256SUMS"
 sums="$OUT/.BIN-SHA256SUMS.partial"
@@ -60,7 +65,14 @@ for t in "${REQUIRED[@]}"; do
     missing+=("$t")
     continue
   fi
-  if ! cargo build --locked --release --target "$t" -p airs-cli -p airs-mcp >"$OUT/build-$t.log" 2>&1; then
+  # Non-host targets build the way the release does (docs/RELEASING.md): `cargo zigbuild`
+  # when zig and cargo-zigbuild are installed, else plain cargo (which then needs a musl
+  # cross C toolchain for the aws-lc-sys build script).
+  build=(cargo build)
+  if [ "$t" != "$host" ] && command -v zig >/dev/null 2>&1 && command -v cargo-zigbuild >/dev/null 2>&1; then
+    build=(cargo zigbuild)
+  fi
+  if ! "${build[@]}" --locked --release --target "$t" -p airs-cli -p airs-mcp >"$OUT/build-$t.log" 2>&1; then
     echo "FAILED: $t (build error; see build-$t.log)" >> "$OUT/BUILD.txt"
     echo "build-hashes: the $t build failed (see $OUT/build-$t.log)" >&2
     fatal=1

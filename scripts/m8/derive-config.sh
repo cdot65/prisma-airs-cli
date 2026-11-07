@@ -92,9 +92,43 @@ def _toml():
         except ImportError:
             return None
 toml = _toml()
+def _mini(text):
+    # Fallback without tomllib/tomli (CI's Python 3.10): the subset these files use —
+    # `key = "string"`, `key = ["a", "b"]`, `[table]`, `[[array-of-tables]]`, comments.
+    import re
+    data = {}
+    data_cur = data
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip() if not raw.strip().startswith("#") else ""
+        if not line:
+            continue
+        m = re.fullmatch(r"\[\[([A-Za-z0-9_.-]+)\]\]", line)
+        if m:
+            data_cur = {}
+            data.setdefault(m.group(1), []).append(data_cur)
+            continue
+        m = re.fullmatch(r"\[([A-Za-z0-9_.-]+)\]", line)
+        if m:
+            data_cur = data.setdefault(m.group(1), {})
+            continue
+        m = re.fullmatch(r'([A-Za-z0-9_-]+)\s*=\s*(.*)', line)
+        if not m:
+            continue
+        key, val = m.group(1), m.group(2).strip()
+        if val.startswith("["):
+            data_cur[key] = re.findall(r'"((?:[^"\\]|\\.)*)"', val)
+        elif val.startswith('"'):
+            mm = re.match(r'"((?:[^"\\]|\\.)*)"', val)
+            data_cur[key] = mm.group(1) if mm else ""
+        elif val in ("true", "false"):
+            data_cur[key] = val == "true"
+        else:
+            data_cur[key] = val
+    return data
 if toml is None:
-    sys.exit(0)
-data = toml.load(open(sys.argv[1], "rb"))
+    data = _mini(open(sys.argv[1], encoding="utf-8").read())
+else:
+    data = toml.load(open(sys.argv[1], "rb"))
 cur = data
 for part in sys.argv[2].split("."):
     if isinstance(cur, list):
