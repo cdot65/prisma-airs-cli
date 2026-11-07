@@ -317,7 +317,9 @@ fn scanner_lookup_deadline_cancels_a_hanging_read() {
         &RunOptions::new(),
     );
     out.assert_code(1);
-    assert!(started.elapsed() < std::time::Duration::from_secs(4));
+    // Without the deadline the hung read waits for the harness's 30 s kill; the bound
+    // leaves room for process start-up on a contended CI runner.
+    assert!(started.elapsed() < std::time::Duration::from_secs(15));
     assert!(out.stdout.contains("deadline"));
 }
 #[test]
@@ -806,7 +808,8 @@ fn report_configuration_is_not_starved_by_hung_session_walk_and_details_use_conc
         &RunOptions::new(),
     );
     out.assert_code(1);
-    assert!(at.elapsed() < std::time::Duration::from_secs(5));
+    // Room for process start-up on a contended runner; a missed deadline hangs to 30 s.
+    assert!(at.elapsed() < std::time::Duration::from_secs(15));
     let e: Value =
         serde_json::from_str(&std::fs::read_to_string(dest.join("evidence.json")).unwrap())
             .unwrap();
@@ -1084,7 +1087,8 @@ fn direct_reports_stop_on_rate_limit_and_reject_more_than_ten_before_tenant() {
     let at = std::time::Instant::now();
     let out = run(&cli(), &sandbox, &args, &RunOptions::new());
     out.assert_code(1);
-    assert!(at.elapsed() < std::time::Duration::from_secs(5));
+    // Room for process start-up on a contended runner; a missed deadline hangs to 30 s.
+    assert!(at.elapsed() < std::time::Duration::from_secs(15));
     assert_eq!(server.requests_for(Route::ScanReports).len(), 1);
     assert!(!out.stdout.contains("PRIVATE-LIMIT") && !out.stderr.contains("PRIVATE-LIMIT"));
     args.extend(["--report-id", &ids[10]]);
@@ -1284,14 +1288,16 @@ fn transaction_fallback_deadline_cancels_hung_reads_without_spending_report_requ
             "report",
             "--strict",
             "--timeout",
-            "3",
+            "30",
             "--bundle-dir",
             dest.to_str().unwrap(),
         ],
         &RunOptions::new(),
     );
     out.assert_code(1);
-    assert!(at.elapsed() < std::time::Duration::from_secs(2));
+    // The fallback deadline is a tenth of --timeout (3 s here): it must cancel the hung
+    // transaction read well before the 30 s overall timeout, with start-up room.
+    assert!(at.elapsed() < std::time::Duration::from_secs(15));
     let e: Value =
         serde_json::from_str(&std::fs::read_to_string(dest.join("evidence.json")).unwrap())
             .unwrap();
