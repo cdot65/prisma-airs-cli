@@ -5610,8 +5610,20 @@ metrics clean) and answered the CLI and Claude Code through the gateway. Three f
    `airs-history-store::sync::dashboard_window` rounds the span up to the smallest accepted
    shape (24 h; 7, 30, 60 days; the exact count is kept past 60 days so the refusal stays
    visible), with a unit test; the applications and sessions queries then succeed (direct
-   probes: 24 h, 7 d and 30 d accepted; 25 h, 48 h and 2 d refused). This is a source change
-   after review 8 and is part of the final combined review's scope.
+   probes: 24 h, 7 d and 30 d accepted; 25 h, 48 h and 2 d refused). Two refinements followed
+   from the redeployed service: (a) `inventory` stayed unavailable because the category
+   reported the worst of its sources and `application-telemetry` is unavailable by design
+   for any window but 7/30/60 days — it is no longer coverage (contract §4.3; still a Signal
+   Brief source); (b) a 24 h target derived a moment later (25 whole hours) stays the
+   24-hour window rather than 7 days, because the polling lower bound returns to the first
+   collection's 24 h while any source lacks a complete traversal, and a page-capped 7-day
+   sessions read would never complete on a larger tenant (contract §6). **Recollection
+   receipt** on the redeployed image (`sha-27e9654`, sha256:fc830c2b…, 2026-11-07T22:57Z):
+   `collection_start` succeeded (4 management sends, 0 unfinished) and
+   `history coverage` for 22:45–22:57Z, a range only that run covers, shows inventory,
+   profiles, results and sessions all **complete** with gap 0 (the first run on the
+   reviewed image had inventory and sessions unavailable). These are source changes after
+   review 8 and are part of the final combined review's scope.
 
 The marker report (step 9b) was created on real data and its positive control passed
 (`grep -c` of the marker in the downloaded `report.html` = 1). Steps 10–12 and the final
