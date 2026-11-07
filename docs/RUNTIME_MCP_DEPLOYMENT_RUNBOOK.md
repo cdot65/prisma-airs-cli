@@ -80,7 +80,13 @@ docker push <registry>/airs-mcp:<version>
 2. Pin the daily backup orchestrator's `kubectl` image too (the `kubectl` entry in the
    same `images` list, `registry.cdot.io/dockerhub/bitnami/kubectl`). Resolve the tag you
    choose to its digest (`crane digest …` or `docker buildx imagetools inspect …`) and set
-   `digest`. Every image must be pinned for the set to be deployable:
+   `digest`. The orchestrator bounds every `kubectl` invocation with coreutils `timeout`,
+   so confirm the pinned image has it:
+   `podman run --rm --entrypoint timeout registry.cdot.io/dockerhub/bitnami/kubectl@sha256:<digest> --version`
+   must print a coreutils version. If it does not, choose another tag or build a derived
+   image; the orchestrator refuses to run without it (it exits 1 before touching the
+   service, logging `orchestrator_preflight_failed`). Every image must be pinned for the
+   set to be deployable:
    `AIRS_MCP_DEPLOY_DIR=deploy/airs-mcp AIRS_MCP_REQUIRE_DEPLOYABLE=1 cargo test -p airs-mcp --test deploy_manifests`
    prints `DEPLOYABLE: …` only then.
 3. Record both digests and the `BIN-SHA256SUMS` of the build.
@@ -259,7 +265,8 @@ scale `deploy/airs-mcp`. It must:
    It prints `{"event":"backup_set_verified",…}`.
 4. Scale `deploy/airs-mcp` back to 1, **whatever** happened in steps 2–3, once every
    set pod is terminal (`Succeeded` or `Failed`; up to 1260 s of elapsed time, request
-   time included, which covers the set Job's own 1200 s deadline). A completed pod stays
+   time included and every `kubectl` invocation cut at the time left, which covers the set
+   Job's own 1200 s deadline). A completed pod stays
    listed for 14 days and holds nothing.
 5. Only after a verified set, write that day's success marker. The job's log carries
    the `backup_set` and `backup_set_verified` lines.
@@ -267,11 +274,12 @@ scale `deploy/airs-mcp`. It must:
 **Downtime window.** The service is stopped from about 03:00 until the set is verified,
 normally a few minutes and dominated by `VACUUM INTO` of the archive. Measure it on the
 first runs (step 12, measured capacity). The worst case is the orchestrator's budget:
-scale-down request 30 + stop 300 + create request 30 + poll 1260 + release 1260 +
-restore 360 + margin 300 = 3540 s of elapsed time (every phase's API requests included;
-each request is capped at the time left in its phase), inside its 3900 s deadline; and if
-the deadline ends it, the trap needs at most request 30 + release 1260 + restore 360 +
-margin 300 = 1950 s, inside its 1980 s of grace, to restore the service. On such a day the 03:15 Longhorn backup runs before the set is
+scale-down 35 + stop 305 + create 35 + poll 1265 + release 1265 + restore 365 + margin
+300 = 3570 s of elapsed time (every phase's API requests included; each `kubectl`
+invocation is cut at the time left in its phase, with 5 s to force-terminate it, so a
+phase overruns by at most those 5 s), inside its 3900 s deadline; and if the deadline ends
+it, the trap needs at most 35 + release 1265 + restore 365 + margin 300 = 1965 s, inside
+its 1980 s of grace, to restore the service. On such a day the 03:15 Longhorn backup runs before the set is
 verified, so the success gate below records no coordinated backup for it. While it is stopped, agents and the CLI get
 connection errors, and no collection runs. The quarter-hour schedule coalesces the
 missed tick (contract §6.1).

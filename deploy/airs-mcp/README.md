@@ -85,25 +85,32 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
     own constants, and exercised by its orchestrator test against stub `kubectl` on a
     virtual clock). No phase counts iterations: each is a wall-clock deadline that
     includes the time its API requests take, and every `kubectl` call goes through one
-    function, `kc DEADLINE …`, which caps `--request-timeout` at the lesser of `REQ` (30 s)
-    and the time left until that phase's deadline, and makes no call at all once none is
-    left. A slow or erroring API server therefore shortens the number of requests, never
-    the deadline. The constants are `STOP=300`, `POLL=1260`, `RELEASE=1260`,
-    `RESTORE=360` and `MARGIN=300`:
+    function, `kc DEADLINE …`, which bounds the **whole invocation** by elapsed time:
+    `timeout -k "$KGRACE" "$r" kubectl --request-timeout="${t}s" …`, where `r` is the time
+    left until the phase's deadline and `t` is the lesser of `REQ` (30 s) and `r`. A
+    `kubectl` invocation can issue several server requests (discovery, retries), so
+    `--request-timeout` alone bounds only each request; coreutils `timeout` (an Essential
+    package in the image's Debian base) sends TERM at the elapsed bound and KILL `KGRACE`
+    (5 s) later, so one invocation can overrun its phase by at most `KGRACE`. No call is
+    made once no time is left. A slow or erroring API server therefore shortens the number
+    of requests, never the deadline. The constants are `REQ=30`, `KGRACE=5`, `STOP=300`,
+    `POLL=1260`, `RELEASE=1260`, `RESTORE=360` and `MARGIN=300`:
     - the set Job's own `activeDeadlineSeconds: 1200` ends it before the poll phase gives
       up (1260 s) and before the trap's release wait gives up (1260 s);
     - the **restoration budget** `RESTORE` (360 s = ready wait 300 + two bounded
       requests) is reserved: the trap starts it fresh after the release wait, so an
       exhausted release wait can never consume the time the scale-up needs;
-    - the **full path** is bounded by scale-down request 30 + stop 300 + create request 30
-      + poll 1260 + release 1260 + restore 360 + margin 300 = 3540 s, strictly below the
+    - the **full path** is bounded by scale-down (30 + 5) + stop (300 + 5) + create
+      (30 + 5) + poll (1260 + 5) + release (1260 + 5) + restore (360 + 5) + margin 300 =
+      3570 s, each phase allowing one forced termination of `KGRACE`, strictly below the
       orchestrator's `activeDeadlineSeconds: 3900`;
     - the **termination path** (a SIGTERM or the deadline at the worst moment: the
-      in-flight request finishes, then the trap runs alone) is bounded by request 30 +
-      release 1260 + restore 360 + margin 300 = 1950 s, within the pod's
-      `terminationGracePeriodSeconds: 1980`, so the kubelet lets the trap finish. The trap
-      ignores a further TERM while it runs; the grace period, not a second signal, is its
-      bound.
+      in-flight invocation is cut, then the trap runs alone) is bounded by (30 + 5) +
+      release (1260 + 5) + restore (360 + 5) + margin 300 = 1965 s, within the pod's
+      `terminationGracePeriodSeconds: 1980`, so the kubelet lets the trap finish. A further
+      TERM does not end the trap while it runs (it is handled as a no-op, `trap ':'`, not
+      ignored: an ignored signal would be inherited by every `kubectl` the trap launches
+      and defeat `timeout`'s TERM); the grace period, not a second signal, is its bound.
   - *Downtime* is the length of the set plus the restart. There is no fixed restoration
     time: the service is down from 03:00 until `service_restored` is logged, which on a
     normal day is a few minutes; the budgets above are worst cases. Schedule the Longhorn
@@ -130,7 +137,10 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
   server (the control-plane VIP and nodes, 192.168.255.10–13:6443).
 
 Pin the `kubectl` image digest in `kustomization.yaml` (runbook step 2), as for the
-service image. The orchestrator logs three distinct events:
+service image, and confirm the pinned image has coreutils `timeout` (runbook step 2 shows
+how); the orchestrator checks for it before it sets a trap or touches the service and, if
+it is missing, logs `{"event":"orchestrator_preflight_failed","missing":"timeout"}` and
+exits 1 with the service untouched. The orchestrator logs three distinct events:
 - `{"event":"backup_set_verified",...}`: the set Job completed; its set was written and
   verified;
 - `{"event":"service_restored"}`: the Deployment is back at 1 and available, logged even

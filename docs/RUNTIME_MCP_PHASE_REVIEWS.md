@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source-side review 6: 8.7/10, revise; round 7 corrections in progress** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
+Status: **source-side review 6: 8.7/10, revise; round 7 corrections submitted for review 7** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
 integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
 accepted). The plan's exit gate needs an
 independent source and receipts review at or above the owner-set 9.0 threshold **plus**
@@ -5582,7 +5582,53 @@ Material findings:
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
 
-### M8 round 7 corrections (in progress; submitted for source-side review 7 when complete)
+### M8 round 7 corrections (submitted for source-side review 7)
+
+1. **Every `kubectl` invocation is bounded by elapsed time, not only each request.** `kc`
+   is now `timeout -k "$KGRACE" "$r" kubectl -n "$NS" --request-timeout="${t}s" …`, with
+   `r` the time left until the phase deadline and `t` the lesser of `REQ` and `r`
+   (`KGRACE=5`). Coreutils `timeout` sends TERM at the bound and KILL `KGRACE` later, so an
+   invocation that issues several server requests, or a child that ignores its request
+   timeout, overruns its phase by at most `KGRACE`. Each phase's budget charges that:
+   full path (30+5)+(300+5)+(30+5)+(1260+5)+(1260+5)+(360+5)+300 = 3570 < 3900;
+   termination path (30+5)+(1260+5)+(360+5)+300 = 1965 ≤ 1980. README and runbook §9a
+   state the same arithmetic and the new guarantee.
+   - Found while proving it: the trap's `trap '' TERM INT` *ignored* TERM, and an ignored
+     signal is inherited across `exec`, so every `kubectl` the trap launched ignored
+     `timeout`'s TERM and each cut cost the full `KGRACE`. The trap now installs a no-op
+     handler, `trap ':' TERM INT`: a second TERM still does not end the trap, but its
+     children exec with default TERM disposition. The static check asserts the handler
+     and the absence of `trap ''`.
+   - Preflight: the bound depends on `timeout` existing in the pinned kubectl image, so
+     the script checks `command -v timeout` before it sets any trap or makes any call,
+     and otherwise logs `{"event":"orchestrator_preflight_failed","missing":"timeout"}`
+     and exits 1 with the service untouched. The static check requires the preflight to
+     precede the first `trap`; runbook step 2 tells the owner to confirm the pinned
+     image has coreutils `timeout` (`podman run --rm --entrypoint timeout <image> --version`).
+   - Harness (`deploy_manifests.rs`, orchestrator scenario test): a virtual-clock
+     `timeout` stub (TERM at the bound, KILL at bound+k, exit 124/137; a child alive 20 s
+     past its bound is logged `RUNAWAY` and fails the test instead of hanging); the
+     `kubectl` stub spends time in 1 s steps so cuts land mid-request, supports N
+     requests per invocation and TERM-ignoring hangs; log lines record start, finish or
+     cut time and the bound; clock writes are atomic. `bounded()` asserts per invocation:
+     request timeout ≤ bound ≤ remaining phase time, finished within its bound, cut within
+     bound+`KGRACE`, no runaway, phase overrun ≤ `KGRACE`. New scenarios: (i) five 29 s
+     failing requests per release invocation on the termination path (exactly one cut, at
+     the release deadline; scale-up ≤ REQ+RELEASE+KGRACE after SIGTERM; trap within
+     grace−margin); (j) the first Job poll hangs ignoring TERM and its request timeout
+     (KILLed at 1265 s, the poll gives up, the trap restores the service, run ≤
+     3900−300); (k) the first release query in the trap hangs (KILLed at 1265 s, release
+     wait fails honestly: no `service_restored`, exit 1, service still scaled up within
+     1295 s of SIGTERM, trap within grace−margin). Scenarios a–h unchanged.
+   - Mutations (each alone): removing the `timeout -k` wrapper fails the scenario test at
+     the first invocation and the static check; with the bound-presence checks relaxed,
+     scenario (i) reproduces the review's overrun ("scale-up requested 1355 s after
+     SIGTERM, bound 1295"); removing `-k "$KGRACE"` fails (j) ("the hung query lasted
+     1280 s: bound 1260 then KILL after 5") and the static check; grace 1980→1960 fails
+     the static arithmetic (1965 ≤ 1960).
+   - Live proof still owner-run: `timeout` present in the pinned image and a real kubectl
+     answering TERM; a kubelet TERM reaching PID 1 and the trap finishing within the
+     1980 s grace; one observed daily run (runbook §9a, checklist step 9).
 
 2. **The derive helper publishes only after a validator ran.** The validator is resolved
    into its own variable as the first candidate that is a regular, executable file. An
@@ -5610,5 +5656,3 @@ line. The stub logs with `printf` now. Reproduced and verified in the CI image
 `deploy_manifests` tests pass under dash. The orchestrator script itself already used
 `printf` for data that can carry backslashes.
 
-(Finding 1, the elapsed-time bound around each whole `kubectl` invocation, is fork O2's
-and is recorded below when it lands.)
