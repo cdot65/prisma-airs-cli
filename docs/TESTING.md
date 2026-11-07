@@ -201,6 +201,7 @@ the code.
 
 | Variable | Read by | Meaning |
 |---|---|---|
+| `RUST_TEST_THREADS` | the test harness | CI sets `4` in the `linux` job. The job container has no CPU limit, so the default would be one thread per host core (16 on the dedicated runner) while the `musl` job compiles alongside; the runner is sized for 4 CPUs, and the suite's wall-clock tests need that headroom to be real. Locally the default is fine. |
 | `AIRS_REQUIRE_PARITY` | `runner.rs`, `ts_reference.rs` | `1`: an unusable reference fails the parity tests even when `AIRS_ALLOW_PARITY_SKIP=1`. |
 | `AIRS_ALLOW_PARITY_SKIP` | `runner.rs`, `ts_reference.rs` | `1`: skip parity tests with a `PARITY SKIPPED` notice when the reference is unusable. |
 | `AIRS_TS_CLI_ENTRY` | `runner.rs` | Path to the reference `dist/cli/index.js`. Used without the commit check. |
