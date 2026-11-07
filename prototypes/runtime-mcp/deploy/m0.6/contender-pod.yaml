@@ -1,0 +1,21 @@
+# Applied manually in runbook step 8. Mounts the SAME claim; under
+# ReadWriteOncePod it must stay Pending while the spike runs. Delete afterwards.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: airs-mcp-spike-contender
+  namespace: airs-mcp
+  labels: {app.kubernetes.io/name: airs-mcp-spike-contender}
+spec:
+  automountServiceAccountToken: false
+  imagePullSecrets: [{name: harbor-pull}]
+  securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+  containers:
+    - name: probe
+      image: registry.cdot.io/airs-mcp/spike@sha256:b41a2b3bedd9babf148c3839d97b3e0c54f0bde8b4ea15a892e26f38f536db32
+      args: ["storage-probe", "--data-dir", "/data/airs", "--hold-seconds", "60"]
+      securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+      volumeMounts: [{name: data, mountPath: /data}]
+  volumes:
+    - {name: data, persistentVolumeClaim: {claimName: airs-mcp-spike-data}}
+  restartPolicy: Never

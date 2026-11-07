@@ -547,6 +547,37 @@ pub fn is_tenant_command(args: &[&str]) -> bool {
     false
 }
 
+/// The history driver's `runtime history` leaves are local archive operations. All
+/// path/mutation guards still apply; only API endpoint admission is unnecessary for them.
+fn is_history_command(args: &[&str]) -> bool {
+    let mut positionals = Vec::new();
+    let mut args = args.iter();
+    while let Some(arg) = args.next() {
+        match *arg {
+            "--output" | "--tenant" => {
+                args.next();
+            }
+            "--" => return false,
+            flag if flag.starts_with('-') => {}
+            value => {
+                positionals.push(value);
+                if positionals.len() == 2 {
+                    break;
+                }
+            }
+        }
+    }
+    positionals == ["runtime", "history"]
+}
+
+/// The history store's test driver (`airs-history-driver runtime sync`) writes its
+/// archive under the default data directory; the runner keeps it under tmp. Since M1 the
+/// `airs` CLI writes no history, so `runtime scan`/`bulk-scan`/`resume-poll` run with the
+/// sandbox's own data directory and its unchanged-sandbox checks.
+fn automatic_history_command(args: &[&str]) -> bool {
+    matches!(positionals(args).as_slice(), ["runtime", "sync", ..])
+}
+
 /// The child's stdin and stderr when a pty supplies them ([`crate::pty`]).
 pub(crate) struct Terminal {
     pub stdin: Stdio,
@@ -736,6 +767,21 @@ pub(crate) fn spawn_with(
     terminal: Option<Terminal>,
 ) -> Running {
     let mut env = child_env(sandbox, options);
+    // Automatic archive writes remain under tmp; every existing mutation,
+    // endpoint and path guard still applies. Explicit controls are never replaced.
+    if automatic_history_command(args)
+        && !options.env.iter().any(|(key, _)| key == "XDG_DATA_HOME")
+        && env.contains_key("XDG_DATA_HOME")
+    {
+        env.insert(
+            "XDG_DATA_HOME".into(),
+            sandbox
+                .tmp()
+                .join("history-data")
+                .to_string_lossy()
+                .into_owned(),
+        );
+    }
     if cli.is_ts() && is_runtime_command(args) {
         if let Some(problem) = ts_trap_removal_violation(options) {
             panic!("refusing to run the TypeScript CLI {args:?}: {problem}");
@@ -778,7 +824,7 @@ pub(crate) fn spawn_with(
     {
         panic!("refusing to run {} {args:?}: {problem}", cli.label());
     }
-    let guarded = !is_tenant_command(args);
+    let guarded = !is_tenant_command(args) && (cli.is_ts() || !is_history_command(args));
     if cli.is_ts() {
         sandbox.assert_safe_for_ts_with(&env, guarded);
     } else if let Some(store) = rust_store_dir(&env, &sandbox.cwd()) {
@@ -823,8 +869,8 @@ pub(crate) fn spawn_with(
     }
     let before = options.check_unchanged.then(|| sandbox.full_snapshot());
     let started = Instant::now();
-    let mut child = command
-        .spawn()
+    let spawn_deadline = started + options.timeout.min(Duration::from_secs(1));
+    let mut child = spawn_ready(|| command.spawn(), spawn_deadline)
         .unwrap_or_else(|err| panic!("cannot start {} {args:?}: {err}", cli.label()));
     // The command holds the parent's copy of a filled stderr's write end: closing it lets
     // the reader see the end of the stream once the child exits.
@@ -987,7 +1033,7 @@ pub fn uv_hook_violation(env: &BTreeMap<String, String>) -> Option<String> {
 }
 
 /// Variables that name a path; a child's value must stay inside the sandbox.
-pub const PATH_VARIABLES: [&str; 9] = [
+pub const PATH_VARIABLES: [&str; 10] = [
     "HOME",
     "TMPDIR",
     "AIRS_CLI_CONFIG_DIR",
@@ -997,6 +1043,7 @@ pub const PATH_VARIABLES: [&str; 9] = [
     "XDG_CACHE_HOME",
     "PRISMA_AIRS_TENANTS_PATH",
     SIGNAL_MARKER_VAR,
+    "AIRS_CLI_TEST_HISTORY_BATCH_MARKER",
 ];
 
 /// The airs-cli-rs signal thread creates the file this variable names once it has
@@ -1064,7 +1111,7 @@ pub fn escape_violation(
 /// keyword `--file` is already here), the M6c `--url-file` and `--dir`, the M6d
 /// `--key-file` (also the M6e integration credential input) and the M6e `--secret-output`
 /// (DESIGN §10).
-pub const PATH_FLAGS: [&str; 18] = [
+pub const PATH_FLAGS: [&str; 22] = [
     "--from",
     "--from-config",
     "--config",
@@ -1083,6 +1130,10 @@ pub const PATH_FLAGS: [&str; 18] = [
     "--dir",
     "--key-file",
     "--secret-output",
+    "--from-evidence",
+    "--bundle-dir",
+    "--review-file",
+    "--history-dir",
 ];
 
 /// [`escape_violation`] where a path may lie inside any of `roots` (the live tier's
@@ -1118,6 +1169,14 @@ pub fn escape_violation_within(
         }
     }
     if !env.contains_key("HOME") {
+        if (is_history_command(args) || automatic_history_command(args))
+            && !env.contains_key("XDG_DATA_HOME")
+            && !args
+                .iter()
+                .any(|arg| *arg == "--history-dir" || arg.starts_with("--history-dir="))
+        {
+            return Some("HOME and XDG_DATA_HOME are removed; local history needs an explicit sandbox --history-dir".into());
+        }
         let store = set("AIRS_CLI_CONFIG_DIR")
             .or(set("XDG_CONFIG_HOME"))
             .is_some();
@@ -1477,6 +1536,14 @@ impl std::fmt::Debug for Running {
 }
 
 impl Running {
+    /// The stderr the child printed so far (an interactive flow reads a printed URL).
+    pub fn stderr_now(&self) -> String {
+        self.stderr_seen
+            .lock()
+            .map(|seen| String::from_utf8_lossy(&seen).into_owned())
+            .unwrap_or_default()
+    }
+
     /// Process id.
     pub fn pid(&self) -> u32 {
         self.child.id()
@@ -1761,7 +1828,102 @@ fn full_pipe() -> (std::io::PipeReader, std::io::PipeWriter, usize) {
     (reader, writer, filler)
 }
 
+/// Another test's fork can briefly inherit a fixture script's writable descriptor
+/// before close-on-exec. ETXTBSY proves exec failed; no CLI has run to replay.
+fn spawn_ready(
+    mut spawn: impl FnMut() -> std::io::Result<Child>,
+    deadline: Instant,
+) -> std::io::Result<Child> {
+    loop {
+        match spawn() {
+            Err(error)
+                if error.raw_os_error() == Some(rustix::io::Errno::TXTBSY.raw_os_error())
+                    && Instant::now() < deadline =>
+            {
+                std::thread::sleep(
+                    Duration::from_millis(1)
+                        .min(deadline.saturating_duration_since(Instant::now())),
+                );
+                if Instant::now() >= deadline {
+                    return Err(error);
+                }
+            }
+            result => return result,
+        }
+    }
+}
+
 pub(crate) fn join_output(handle: JoinHandle<Vec<u8>>) -> String {
     let bytes = handle.join().unwrap_or_default();
     String::from_utf8_lossy(&bytes).into_owned()
+}
+
+#[cfg(test)]
+mod spawn_tests {
+    use super::*;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn text_busy_fixture_retries_after_the_writer_closes_without_replaying_a_child() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("fixture.sh");
+        let mut writer = std::fs::File::create(&script).unwrap();
+        writer.write_all(b"#!/bin/sh\nprintf ready\n").unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let mut writer = Some(writer);
+        let mut calls = 0;
+        let mut command = Command::new(&script);
+        command.stdout(Stdio::piped());
+        let mut child = spawn_ready(
+            || {
+                calls += 1;
+                let result = command.spawn();
+                if calls == 1 {
+                    assert_eq!(
+                        result.as_ref().unwrap_err().raw_os_error(),
+                        Some(rustix::io::Errno::TXTBSY.raw_os_error())
+                    );
+                    drop(writer.take());
+                }
+                result
+            },
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+        assert_eq!(calls, 2);
+        let mut output = String::new();
+        child
+            .stdout
+            .take()
+            .unwrap()
+            .read_to_string(&mut output)
+            .unwrap();
+        assert!(child.wait().unwrap().success());
+        assert_eq!(output, "ready");
+    }
+
+    #[test]
+    fn other_spawn_errors_and_expired_text_busy_fail_without_retry() {
+        for code in [rustix::io::Errno::ACCESS, rustix::io::Errno::TXTBSY] {
+            let mut calls = 0;
+            let deadline = if code == rustix::io::Errno::ACCESS {
+                Instant::now() + Duration::from_secs(1)
+            } else {
+                Instant::now()
+            };
+            let result = spawn_ready(
+                || {
+                    calls += 1;
+                    Err(std::io::Error::from_raw_os_error(code.raw_os_error()))
+                },
+                deadline,
+            );
+            assert_eq!(
+                result.unwrap_err().raw_os_error(),
+                Some(code.raw_os_error())
+            );
+            assert_eq!(calls, 1);
+        }
+    }
 }

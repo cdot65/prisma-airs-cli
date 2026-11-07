@@ -1,0 +1,8 @@
+**/target
+.local
+.reference
+.git
+**/node_modules
+signal-brief-*
+docs-site
+*.sqlite3

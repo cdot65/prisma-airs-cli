@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: airs-mcp-restore-verify, namespace: airs-m06-restore}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, runAsGroup: 65532, seccompProfile: {type: RuntimeDefault}}
+      restartPolicy: Never
+      containers:
+        - name: verify
+          image: registry.cdot.io/airs-mcp/spike@sha256:ed7011be730b8c2b146b41a479fe91221de815254df02791f9ea794013ad2967
+          # The set name is printed by `drill backup` (runbook step 9).
+          args: ["drill", "verify", "--set", "/restore/airs/backups/PLACEHOLDER_BACKUP_SET", "--marker", "PLACEHOLDER_DRILL_MARKER"]
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+          volumeMounts: [{name: restored, mountPath: /restore, readOnly: true}]
+      volumes:
+        - {name: restored, persistentVolumeClaim: {claimName: airs-mcp-spike-restored, readOnly: true}}

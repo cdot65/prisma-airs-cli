@@ -1,0 +1,248 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "airs-mcp",
+    "labels": {
+      "app.kubernetes.io/name": "airs-mcp"
+    }
+  },
+  "spec": {
+    "replicas": 1,
+    "revisionHistoryLimit": 3,
+    "progressDeadlineSeconds": 900,
+    "strategy": {
+      "type": "Recreate"
+    },
+    "selector": {
+      "matchLabels": {
+        "app.kubernetes.io/name": "airs-mcp"
+      }
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/name": "airs-mcp"
+        },
+        "annotations": {
+          "prometheus.io/scrape": "true",
+          "prometheus.io/port": "8081",
+          "prometheus.io/path": "/metrics"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "enableServiceLinks": false,
+        "imagePullSecrets": [
+          {
+            "name": "harbor-pull"
+          }
+        ],
+        "securityContext": {
+          "runAsNonRoot": true,
+          "runAsUser": 65532,
+          "runAsGroup": 65532,
+          "seccompProfile": {
+            "type": "RuntimeDefault"
+          }
+        },
+        "initContainers": [
+          {
+            "name": "data-subtree",
+            "image": "docker.io/library/busybox:1.37.0@sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4",
+            "command": [
+              "sh",
+              "-c",
+              "test -d /data/airs || { mkdir -m 0700 /data/airs && chown 65532:65532 /data/airs; }; stat -c '%u:%g %a' /data /data/airs"
+            ],
+            "securityContext": {
+              "runAsNonRoot": false,
+              "runAsUser": 0,
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ],
+                "add": [
+                  "CHOWN"
+                ]
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "data",
+                "mountPath": "/data"
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "name": "airs-mcp",
+            "image": "airs-mcp",
+            "args": [
+              "serve",
+              "--config",
+              "/etc/airs-mcp/config/airs-mcp.toml"
+            ],
+            "env": [
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "NODE_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "spec.nodeName"
+                  }
+                }
+              }
+            ],
+            "ports": [
+              {
+                "name": "https",
+                "containerPort": 8443,
+                "protocol": "TCP"
+              },
+              {
+                "name": "health",
+                "containerPort": 8081,
+                "protocol": "TCP"
+              }
+            ],
+            "startupProbe": {
+              "httpGet": {
+                "path": "/livez",
+                "port": "health"
+              },
+              "periodSeconds": 5,
+              "failureThreshold": 60,
+              "timeoutSeconds": 3
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/readyz",
+                "port": "health"
+              },
+              "periodSeconds": 10,
+              "timeoutSeconds": 3
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/livez",
+                "port": "health"
+              },
+              "periodSeconds": 30,
+              "timeoutSeconds": 3,
+              "failureThreshold": 3
+            },
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "256Mi"
+              },
+              "limits": {
+                "memory": "2Gi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "readOnlyRootFilesystem": true,
+              "privileged": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "runAsNonRoot": true,
+              "runAsUser": 65532,
+              "runAsGroup": 65532
+            },
+            "volumeMounts": [
+              {
+                "name": "config",
+                "mountPath": "/etc/airs-mcp/config",
+                "readOnly": true
+              },
+              {
+                "name": "tls",
+                "mountPath": "/etc/airs-mcp/tls",
+                "readOnly": true
+              },
+              {
+                "name": "airs-secrets",
+                "mountPath": "/run/airs-mcp/secrets",
+                "readOnly": true
+              },
+              {
+                "name": "data",
+                "mountPath": "/data"
+              },
+              {
+                "name": "tmp",
+                "mountPath": "/tmp"
+              }
+            ]
+          }
+        ],
+        "terminationGracePeriodSeconds": 60,
+        "volumes": [
+          {
+            "name": "config",
+            "configMap": {
+              "name": "airs-mcp-config",
+              "defaultMode": 292
+            }
+          },
+          {
+            "name": "tls",
+            "secret": {
+              "secretName": "airs-mcp-tls",
+              "defaultMode": 256
+            }
+          },
+          {
+            "name": "data",
+            "persistentVolumeClaim": {
+              "claimName": "airs-mcp-data"
+            }
+          },
+          {
+            "name": "tmp",
+            "emptyDir": {
+              "medium": "Memory",
+              "sizeLimit": "64Mi"
+            }
+          },
+          {
+            "name": "airs-secrets",
+            "secret": {
+              "secretName": "airs-mcp-airs-credentials",
+              "defaultMode": 256,
+              "items": [
+                {
+                  "key": "mgmt-client-id",
+                  "path": "mgmt-client-id"
+                },
+                {
+                  "key": "mgmt-client-secret",
+                  "path": "mgmt-client-secret"
+                },
+                {
+                  "key": "scanner-monitor",
+                  "path": "scanner-monitor"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

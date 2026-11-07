@@ -1,0 +1,4 @@
+# Isolated restore drill (runbook step 10). Disposable namespace; delete after use.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: [namespace.yaml, storageclass-from-backup.yaml, pvc.yaml, verify-job.yaml]

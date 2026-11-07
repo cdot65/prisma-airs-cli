@@ -262,6 +262,9 @@ pub const PROGRAM_NEXT: &[&str] = &[
     "model-security",
     "gateway",
     "supplychain",
+    // The optional runtime MCP client (D350–D354): Rust-only, so no TypeScript text
+    // names it, but the root's command words include it.
+    "mcp",
     "help",
     "--tenant",
     "--output",

@@ -1,0 +1,44 @@
+[package]
+name = "airs-history-store"
+description = "Server-owned runtime history archive for the optional airs-mcp service: SQLite, reconciliation, work, transfer and lifecycle"
+version = "8.2.0-dev.1"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+# Workspace-only (RUNTIME_MCP_CONTRACT §1): never published, never a CLI dependency.
+publish = false
+
+# The executable test driver (src/bin/airs-history-driver.rs): a fixture for the
+# history store's own executable tests. No release or documented procedure builds or
+# installs it, and building or installing the `airs` CLI never compiles it (this crate is
+# `publish = false`; a local `cargo install --path` of it is possible but unsupported).
+[[bin]]
+name = "airs-history-driver"
+path = "src/bin/airs-history-driver.rs"
+test = false
+
+[dependencies]
+airs-runtime-core = { path = "../airs-runtime-core", version = "=8.2.0-dev.1" }
+# The same SDK pin and features as core (no second SDK, contract §1).
+scm = { package = "scm-sdk", version = "=0.2.4", default-features = false, features = ["reqwest-transport", "scan", "management", "red-team", "dlp", "model-security", "gateway", "agentguard"] }
+# Bundled history storage, qualified in isolated B0 on MSRV and all shipped targets.
+rusqlite = { version = "=0.41.1", default-features = false, features = ["bundled", "hooks", "limits", "serialize"] }
+rustix = { version = "=1.1.5", features = ["fs", "termios", "system", "process"] }
+serde = { version = "1.0", features = ["derive"] }
+# Never enable `preserve_order`: feature unification would change SDK wire bytes.
+serde_json = "1.0"
+sha2 = { version = "=0.10.9", default-features = false }
+# The test driver reads the synthetic tenant store; parse-only, as in the CLI.
+toml = { version = "=1.1.2", default-features = false, features = ["std", "serde", "parse"] }
+tokio = { version = "1.50", features = ["rt", "macros", "signal", "time", "sync"] }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+airs-test-harness = { path = "../airs-test-harness" }
+url = "2.5"
+httpdate = "=1.0.3"
+
+[lints]
+workspace = true

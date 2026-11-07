@@ -11,18 +11,16 @@ pub mod lock;
 
 use crate::error::CliError;
 use crate::output::terminal_safe;
+pub use airs_runtime_core::store::{
+    MAX_FILE_BYTES, PROGRAM, euid, normalize, parse_toml, toml_string, valid_tenant_name,
+};
 use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Read;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
-/// The program name every usage line, hint, remedy and success line uses (D73, D326):
-/// clap's `name` and `bin_name`, so it never depends on `argv[0]` (DESIGN §21.2).
-pub const PROGRAM: &str = "airs";
-/// The largest `config.toml` or tenant file read or written, in bytes.
-pub const MAX_FILE_BYTES: u64 = 1_048_576;
 /// The most tenants `config.toml` may list.
 pub const MAX_TENANTS: usize = 1000;
 /// `D/config.toml`.
@@ -31,46 +29,6 @@ pub const INDEX_FILE: &str = "config.toml";
 pub const TENANTS_DIR: &str = "tenants";
 /// `D/config.lock`.
 pub const LOCK_FILE: &str = "config.lock";
-
-/// Lexical normalisation like Node's `path.resolve`/`path.join`: drops `.`, resolves
-/// `..` (never above the root), duplicate and trailing separators.
-pub fn normalize(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    let mut depth = 0usize;
-    for component in path.components() {
-        match component {
-            Component::Prefix(_) | Component::RootDir => out.push(component.as_os_str()),
-            Component::CurDir => {}
-            Component::ParentDir => {
-                if depth > 0 {
-                    out.pop();
-                    depth -= 1;
-                } else if !out.has_root() {
-                    out.push("..");
-                }
-            }
-            Component::Normal(name) => {
-                out.push(name);
-                depth += 1;
-            }
-        }
-    }
-    if out.as_os_str().is_empty() {
-        out.push(".");
-    }
-    out
-}
-
-/// `^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$`
-pub fn valid_tenant_name(name: &str) -> bool {
-    let bytes = name.as_bytes();
-    !bytes.is_empty()
-        && bytes.len() <= 64
-        && bytes[0].is_ascii_alphanumeric()
-        && bytes
-            .iter()
-            .all(|b| b.is_ascii_alphanumeric() || *b == b'_' || *b == b'-')
-}
 
 /// A path for a message: absolute, normalised by construction, through `terminal_safe`.
 pub fn shown(path: &Path) -> String {
@@ -139,11 +97,6 @@ pub fn tenant_file_error(path: &Path) -> CliError {
         "Cannot read a valid tenant config at {}",
         shown(path)
     ))
-}
-
-/// The effective user id.
-pub fn euid() -> u32 {
-    rustix::process::geteuid().as_raw()
 }
 
 /// The §3.8 rule for a directory's metadata.
@@ -216,7 +169,30 @@ fn io_kind(error: &std::io::Error) -> FileError {
 /// Open an existing store file with the §3.8 checks: `symlink_metadata`, an
 /// `O_NOFOLLOW | O_CLOEXEC` open with `flags`, then `fstat` with the same device and
 /// inode, a regular file, owned by the effective uid, `mode & 0o077 == 0`.
+///
+/// A concurrent writer replaces store files atomically (rename over the path). If the
+/// path names a different inode at the `fstat` than at the `symlink_metadata`, the file
+/// was replaced between the two checks rather than being unsafe, so the checks are
+/// repeated on the new file, a bounded number of times. An unsafe file (wrong type,
+/// owner or mode, or a symlink) is refused at once as before.
 pub fn open_checked(path: &Path, flags: rustix::fs::OFlags) -> Result<File, FileError> {
+    const REPLACED_RETRIES: usize = 16;
+    for _ in 0..REPLACED_RETRIES {
+        match open_checked_once(path, flags)? {
+            Opened::File(file) => return Ok(file),
+            Opened::Replaced => continue,
+        }
+    }
+    Err(FileError::Unsafe)
+}
+
+enum Opened {
+    File(File),
+    /// The path was atomically replaced between the checks (a different inode).
+    Replaced,
+}
+
+fn open_checked_once(path: &Path, flags: rustix::fs::OFlags) -> Result<Opened, FileError> {
     use rustix::fs::{Mode, OFlags};
     let before = std::fs::symlink_metadata(path).map_err(|error| io_kind(&error))?;
     if !file_metadata_ok(
@@ -243,18 +219,18 @@ pub fn open_checked(path: &Path, flags: rustix::fs::OFlags) -> Result<File, File
     })?;
     let file = File::from(fd);
     let after = file.metadata().map_err(|_| FileError::Io)?;
-    if after.dev() != before.dev()
-        || after.ino() != before.ino()
-        || !file_metadata_ok(
-            after.file_type().is_file(),
-            after.uid(),
-            after.permissions().mode(),
-            euid(),
-        )
-    {
+    if !file_metadata_ok(
+        after.file_type().is_file(),
+        after.uid(),
+        after.permissions().mode(),
+        euid(),
+    ) {
         return Err(FileError::Unsafe);
     }
-    Ok(file)
+    if after.dev() != before.dev() || after.ino() != before.ino() {
+        return Ok(Opened::Replaced);
+    }
+    Ok(Opened::File(file))
 }
 
 /// Read a whole store file of at most [`MAX_FILE_BYTES`] with the §3.8 checks.
@@ -268,35 +244,6 @@ pub fn read_checked(path: &Path) -> Result<Vec<u8>, FileError> {
         return Err(FileError::TooLarge);
     }
     Ok(bytes)
-}
-
-/// A TOML basic string (§3.2): `"` and `\` escaped, the five short escapes, every other
-/// C0 control, DEL and C1 control as `\uXXXX`, everything else raw UTF-8.
-pub fn toml_string(text: &str) -> String {
-    let mut out = String::with_capacity(text.len() + 2);
-    out.push('"');
-    for c in text.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\u{8}' => out.push_str("\\b"),
-            '\t' => out.push_str("\\t"),
-            '\n' => out.push_str("\\n"),
-            '\u{c}' => out.push_str("\\f"),
-            '\r' => out.push_str("\\r"),
-            c if c.is_control() => out.push_str(&format!("\\u{:04X}", u32::from(c))),
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
-
-/// Parse TOML text into a table; any failure (the `toml` crate's message quotes the
-/// input) is `None`, so nothing from the file can reach a message.
-pub fn parse_toml(bytes: &[u8]) -> Option<toml::Table> {
-    let text = std::str::from_utf8(bytes).ok()?;
-    text.parse::<toml::Table>().ok()
 }
 
 /// The validated `config.toml` (§3.2).

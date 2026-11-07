@@ -4242,8 +4242,10 @@ fn live_runtime_reads_note_unavailable_access() {
             report.notices
         );
     }
-    // The dashboard checks did not run (the report still reads its sources).
-    assert!(server.rx_requests(Rx::Session).is_empty());
+    // Direct dashboard checks were skipped. The bounded replacement discovery and
+    // report still independently read session details (D338, D340), never content.
+    assert!(server.rx_requests(Rx::Session).len() <= 2);
+    assert!(server.rx_requests(Rx::ScanContent).is_empty());
     assert!(server.rx_requests(Rx::Application).is_empty());
     assert_rx_clean(&server, &report, &sandbox);
     assert_sanitized(&report, &sandbox, &tenant);

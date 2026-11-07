@@ -17,7 +17,7 @@ use super::{Invocation, Plan};
 use crate::cli::{
     ApiKeysCommand, CustomerAppsCommand, DashboardCommand, DashboardPageArgs, DashboardWindowArgs,
     DashboardWindowDaysArgs, DeploymentProfilesCommand, ProfilesCommand, RuntimeCommand,
-    ScanIdentityArgs, ScanLogsCommand, SessionIdentityArgs, SessionsCommand,
+    ScanIdentityArgs, SessionIdentityArgs, SessionsCommand,
 };
 use crate::clients::{ManagementClients, Planes};
 use crate::error::{CliError, InterruptContext};
@@ -116,7 +116,7 @@ pub enum RxPlan {
         format: Option<Format>,
     },
     /// The TypeScript stub (§18.11): reads the tenant selection, sends nothing.
-    ScanLogs,
+    ScanLogs(Box<super::runtime_scan_logs::ScanLogsPlan>),
     Dashboard {
         read: DashRead,
         format: Option<Format>,
@@ -182,7 +182,7 @@ impl RxPlan {
     /// `--debug` during planning.
     pub fn debug_policy(&self) -> crate::debug::DebugPolicy {
         match self {
-            Self::ScanLogs => crate::debug::DebugPolicy::None,
+            Self::ScanLogs(_) => crate::debug::DebugPolicy::Refused,
             Self::Report(_) | Self::ProfilesBackup(_) | Self::ProfilesRestore(_) => {
                 crate::debug::DebugPolicy::Refused
             }
@@ -277,6 +277,21 @@ fn plan_report(
             "The environment report is written as HTML; omit --output",
         ));
     }
+    if args.from_evidence.is_some()
+        && (args.max_pages.is_some()
+            || args.max_events.is_some()
+            || args.max_reports.is_some()
+            || args.interval.is_some()
+            || args.unit.is_some()
+            || !args.app_ids.is_empty()
+            || args.budget.timeout.is_some()
+            || args.budget.concurrency.is_some()
+            || args.budget.max_requests.is_some())
+    {
+        return Err(CliError::usage(
+            "--from-evidence cannot be combined with live collection options",
+        ));
+    }
     let max_pages = args.max_pages.as_deref().unwrap_or("40");
     let pages = (!max_pages.is_empty()
         && !max_pages.starts_with('0')
@@ -288,7 +303,7 @@ fn plan_report(
     let title = args
         .title
         .clone()
-        .unwrap_or_else(|| "Daily environment report".to_owned());
+        .unwrap_or_else(|| "AIRS Signal Brief".to_owned());
     if crate::tenant::config::js_trim(&title).is_empty() || title.encode_utf16().count() > 240 {
         return Err(CliError::usage("--title must contain 1–240 characters"));
     }
@@ -305,8 +320,53 @@ fn plan_report(
     Ok(RuntimeReportPlan {
         destination,
         title,
-        max_pages: pages,
         strict: args.strict,
+        from_evidence: args.from_evidence.clone(),
+        review_file: args.review_file.clone(),
+        bundle_dir: args.bundle_dir.clone(),
+        collection: {
+            use crate::runtime::scan_logs::{self, CollectionOptions};
+            let unit = args.unit.clone().unwrap_or_else(|| "hours".into());
+            if !["hour", "hours", "day", "days"].contains(&unit.as_str()) {
+                return Err(CliError::usage("--unit must be hour, hours, day or days"));
+            }
+            if args.app_ids.len() > 1000
+                || args.app_ids.iter().any(|id| {
+                    id.trim().is_empty() || id.len() > 4096 || id.chars().any(char::is_control)
+                })
+            {
+                return Err(CliError::usage(
+                    "Supply at most 1000 nonempty --app-id values without controls",
+                ));
+            }
+            if args.bundle_dir.as_ref().is_some_and(|p| {
+                p.as_os_str().is_empty()
+                    || crate::tenant::config::js_trim(&p.to_string_lossy()).is_empty()
+            }) {
+                return Err(CliError::usage("--bundle-dir cannot be empty"));
+            }
+            CollectionOptions {
+                limits: crate::runtime::evidence_limits(&args.budget)?,
+                interval: scan_logs::number(args.interval.as_deref(), 24, 1, 87600, "--interval")?,
+                unit,
+                app_ids: args.app_ids.clone(),
+                max_pages: u64::from(pages),
+                max_events: scan_logs::number(
+                    args.max_events.as_deref(),
+                    10000,
+                    1,
+                    10000,
+                    "--max-events",
+                )?,
+                max_reports: scan_logs::number(
+                    args.max_reports.as_deref(),
+                    5,
+                    0,
+                    10,
+                    "--max-reports",
+                )?,
+            }
+        },
     })
 }
 
@@ -538,8 +598,9 @@ pub fn plan(
         },
         RuntimeCommand::ScanLogs(group) => match &group.command {
             None => return Ok(Plan::GroupHelp(&["runtime", "scan-logs"])),
-            // Every value is accepted and ignored (TS).
-            Some(ScanLogsCommand::Query(_)) => RxPlan::ScanLogs,
+            Some(command) => RxPlan::ScanLogs(Box::new(super::runtime_scan_logs::plan(
+                command, format, debug,
+            )?)),
         },
         RuntimeCommand::Dashboard(group) => match &group.command {
             None => return Ok(Plan::GroupHelp(&["runtime", "dashboard"])),
@@ -728,7 +789,7 @@ pub async fn dispatch(invocation: &mut Invocation, plan: RxPlan) -> Result<(), C
             unactivated,
             format,
         } => inv::deployment_profiles(invocation, unactivated, format).await,
-        RxPlan::ScanLogs => inv::scan_logs(invocation),
+        RxPlan::ScanLogs(plan) => super::runtime_scan_logs::run(invocation, &plan).await,
         RxPlan::Dashboard { read, format } => dash::read(invocation, &read, format).await,
         RxPlan::SessionsList { list, format } => {
             dash::sessions_list(invocation, &list, format).await
@@ -1202,22 +1263,9 @@ mod tests {
                 format: None
             }
         );
-        let plan = rx(&[
-            "scan-logs",
-            "query",
-            "--interval",
-            "x",
-            "--unit",
-            "y",
-            "--page",
-            "4",
-            "--page-size",
-            "9",
-            "--limit",
-            "-1",
-        ]);
-        assert_eq!(plan, RxPlan::ScanLogs);
-        assert_eq!(plan.debug_policy(), crate::debug::DebugPolicy::None);
+        let plan = rx(&["scan-logs", "query", "--interval", "24", "--unit", "hours"]);
+        assert!(matches!(plan, RxPlan::ScanLogs(_)));
+        assert_eq!(plan.debug_policy(), crate::debug::DebugPolicy::Refused);
         let list = rx(&["sessions", "ls", "--all", "--offset", "2"]);
         assert_eq!(list.debug_policy(), crate::debug::DebugPolicy::Log);
         assert_eq!(list.interrupt_context(), InterruptContext::NoDataWritten);

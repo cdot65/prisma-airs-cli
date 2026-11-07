@@ -72,6 +72,12 @@ A green run with `AIRS_REQUIRE_PARITY=1` means the TypeScript side of every pari
 ran. Without it, a missing reference still fails the parity tests unless you opt out
 with `AIRS_ALLOW_PARITY_SKIP=1` (§3.3).
 
+`tests/mcp_client.rs::a_frozen_pre_m7_binary_refuses_the_mcp_table` needs a frozen
+pre-M7 `airs` named by `AIRS_PRE_M7_BIN` (built by `scripts/build-pre-m7-cli.sh` from the
+8.0.0 release commit). Without it the test prints `PRE-M7 SKIPPED` and passes, unless
+`AIRS_REQUIRE_PRE_M7=1` is set, which makes it fail. A run that executed it prints
+`PRE-M7 RAN`.
+
 ## 3. The TypeScript reference
 
 ### 3.1 Building it
@@ -195,6 +201,7 @@ the code.
 
 | Variable | Read by | Meaning |
 |---|---|---|
+| `RUST_TEST_THREADS` | the test harness | CI sets `4` in the `linux` job. The job container has no CPU limit, so the default would be one thread per host core (16 on the dedicated runner) while the `musl` job compiles alongside; the runner is sized for 4 CPUs, and the suite's wall-clock tests need that headroom to be real. Locally the default is fine. |
 | `AIRS_REQUIRE_PARITY` | `runner.rs`, `ts_reference.rs` | `1`: an unusable reference fails the parity tests even when `AIRS_ALLOW_PARITY_SKIP=1`. |
 | `AIRS_ALLOW_PARITY_SKIP` | `runner.rs`, `ts_reference.rs` | `1`: skip parity tests with a `PARITY SKIPPED` notice when the reference is unusable. |
 | `AIRS_TS_CLI_ENTRY` | `runner.rs` | Path to the reference `dist/cli/index.js`. Used without the commit check. |
@@ -250,6 +257,13 @@ is a warning.
   killed and the test panics;
 - a required exit status: death by a signal fails the test unless
   `RunOptions::expect_signal` is set.
+
+A fixture executable can briefly return `ETXTBSY` (`Text file busy`) before a
+child starts, for example while a fork retains a writable script descriptor.
+The runner retries only that pre-exec failure for at most one second within the
+existing run timeout. Other spawn failures return immediately, and a started CLI
+is never retried. The Linux regression holds and closes a real script writer;
+the deadline/error regression also runs on the other supported Unix targets.
 
 ### 5.2 Loopback guard
 
@@ -738,7 +752,7 @@ the credential-free reads byte for byte and the secret-bearing ones outside the 
 there masked in memory). The guardrail catalog is sent in a non-alphabetical member order
 (`fixtures::gateway::service_order`), as the service sends it, so its table and pretty cells are compared as JSON
 (D35); a `serde_json::Value` body is otherwise sent with sorted members, which hides a key-order difference.
-The policy's secret paths come from the SDK's `AI_GATEWAY_SECRET_FIELDS`; `src/gateway/withhold.rs::tests::
+The policy's secret paths come from the SDK's `AI_GATEWAY_SECRET_FIELDS`; `crates/airs-runtime-core/src/withhold.rs::tests::
 every_sdk_secret_path_is_withheld` walks that table and fails when an operation (after an SDK bump) has no policy
 and is not in the commented audit-only list, or when any request or response path is shown by its policy or by a
 revealed audit field. `every_credential_member_is_withheld_everywhere` runs each credential member of rule 3 through
@@ -802,7 +816,7 @@ The doctor `Gateway API` cases are `tests/doctor.rs::gateway_api` and the `d227`
 
 ### 5.19 The gateway withholding rules (adding a name or a sub-rule)
 
-The rules of DESIGN §19.3 rules 3 and 4 live in the CLI's module `src/gateway/withhold_rules/` (choices 172, 185;
+The rules of DESIGN §19.3 rules 3 and 4 live in the CLI's module `crates/airs-runtime-core/src/withhold_rules/` (choices 172, 185;
 DESIGN §11 names where a change starts and the tests that pin each file, choice 188),
 `std` and `serde_json` only: `names.rs` (the normalisation, the `NAME_RULES` table, the action table, headers, pairs,
 registration and its one filter `registrable` with the placeholder and mode words, choices 183, 188), `values.rs` (the string tests, the URL parser, the
@@ -820,9 +834,9 @@ the workspace's other tests as `airs_test_harness::withhold::{check, corpus}`), 
 `super::`, never `crate::`; a helper only the tests or the harness call is `#[cfg(test)]` or carries its own narrow
 `allow` (no blanket `dead_code` allow on the module, choice 187);
 `withhold::tests::corpus::the_rules_compile_outside_the_cli` holds that. `corpus` is test data: `#[cfg(test)]` in the
-CLI, never in its binary (choice 182). `src/gateway/withhold.rs` is the CLI's rewriting traversal; it asks the rules
+CLI, never in its binary (choice 182). `crates/airs-runtime-core/src/withhold.rs` is the CLI's rewriting traversal; it asks the rules
 module for every decision. Its tests are
-`src/gateway/withhold/tests/`: `name_rule.rs` (rule 3 by name, registration, the DESIGN table), `headers.rs` (3c),
+`crates/airs-runtime-core/src/withhold/tests/`: `name_rule.rs` (rule 3 by name, registration, the DESIGN table), `headers.rs` (3c),
 `schemas.rs` (3e), `paths.rs` (rules 1 and 2), `audit.rs` (rule 5), `texts.rs` (3f, private keys, the URL, scheme
 and key=value rules, model output) and `corpus.rs` (the corpus drivers and the traversal-equality check), with the
 shared helpers in `mod.rs`.
@@ -866,15 +880,15 @@ shared helpers in `mod.rs`.
   runs it on `serde_json::Value`) and, when it is a new container, a shape to `corpus::containers`, so
   `d238_a_planted_credential_never_prints_in_any_format` (every name shape × every container × json, pretty and
   table, and a revealed audit body) and the harness's `every_planted_credential_is_refused` cover it. Add a `d238_`
-  test in the matching file of `src/gateway/withhold/tests/` and, for a command-level effect, one in
+  test in the matching file of `crates/airs-runtime-core/src/withhold/tests/` and, for a command-level effect, one in
   `tests/gateway_inventory.rs`.
 - **Scale.** The `SecretSet` is read once per printed string, so a rule that registers per row must stay linear:
   `withhold::tests::audit::d239_a_large_audit_log_is_withheld_in_linear_work` reads 4000 audit records and bounds
   structure, not time (no unrevealed field text registered, at most four forms per record, at most two matcher steps
   per printed byte, read from `SecretSet::form_count` and `SecretSet::steps`, both `#[cfg(test)]`: the step count is
-  `secrets::Steps`, zero-sized outside a test build, and a `const` assertion in `src/secrets.rs` fails the binary's
+  `secrets::Steps`, zero-sized outside a test build, and a `const` assertion in `crates/airs-runtime-core/src/secrets.rs` fails the binary's
   build if it ever carries one), so it is deterministic in CI; the matcher itself is checked against a `contains`
-  per form (`src/secrets.rs::tests::the_matcher_agrees_with_contains_per_form`).
+  per form (`crates/airs-runtime-core/src/secrets.rs::tests::the_matcher_agrees_with_contains_per_form`).
   A wall-clock measurement belongs in the choice that motivates a change (choice 187), never in a test.
 - **The live check** needs no change: `live::gateway::withheld` is the same checker, compiled into the harness
   from `check.rs`. A new file of the rules module needs its `mod` line in `withhold_rules/mod.rs` (the harness
@@ -1599,10 +1613,10 @@ These are listed in DESIGN and in the COMPATIBILITY.md divergence index:
 
 | Item | Coverage | Why there is no executable test |
 |---|---|---|
-| D31: the 60 s per-request and 300 s per-walk budgets | The 5 s doctor budget is tested on both sides; the constants are in `src/clients.rs`. | A test would have to hang a request for 60–300 s. |
+| D31: the 60 s per-request and 300 s per-walk budgets | The 5 s doctor budget is tested on both sides; the constants are in `crates/airs-runtime-core/src/clients.rs`. | A test would have to hang a request for 60–300 s. |
 | D36 and DESIGN §2.6: proxy use for https endpoints and macOS system proxies | The doctor's proxy suffix and the loopback proxy bypass are tested. | The fixture serves only plain-http loopback, so there is no https endpoint to proxy. |
 | D40: SDK safety bounds on `--all` walks (100,000 pages, 512 MiB, 1,000,000 items) | Unit tests in `src/pagination.rs`. | Reaching a bound would take minutes and gigabytes per run, and the TypeScript CLI has no bound to compare against. |
-| D58: colour decided per stream from whether each one is a terminal | The environment rules are tested on both sides, the per-stream decision by unit tests (`src/render/style.rs`, `src/output.rs`). | The runner pipes both streams. The pty runner (§5.5) puts stdin and stderr on a terminal for the prompt tests, but keeps `NO_COLOR=1`, so no test drives the terminal colour decision. |
+| D58: colour decided per stream from whether each one is a terminal | The environment rules are tested on both sides, the per-stream decision by unit tests (`crates/airs-runtime-core/src/style.rs`, `src/output.rs`). | The runner pipes both streams. The pty runner (§5.5) puts stdin and stderr on a terminal for the prompt tests, but keeps `NO_COLOR=1`, so no test drives the terminal colour decision. |
 | D47: server text carrying a secret in scan output | Tested on the Rust side. | A parity test is possible but does not exist; it would need `RunOptions::allow_secret_output` for the TypeScript run. |
 | D48: a non-loopback `http` endpoint | Tested on the Rust side; the fragment case is parity tested. | The harness never lets the TypeScript CLI reach a non-loopback host, so its sending side cannot run. |
 | Behaviour against the real service | The live tier (§6). | Needs a real tenant; see §6.11 for what has not been checked yet. |
@@ -1677,3 +1691,58 @@ Notes:
 - **Results.** The Forgejo API lists each job's outcome:
   `GET /api/v1/repos/cdot/prisma-airs-cli/actions/tasks`. Job logs are only in the
   web UI.
+
+## Signal Brief regression coverage
+
+The unreleased Signal Brief replaces the default runtime report and scan-log stub;
+see DESIGN §18.11/§18.14 and differences D337–D341. All executable fixtures use
+loopback services or synthetic local files, never real tenants:
+
+```sh
+cargo test --lib report::signal
+cargo test --test signal_sdk --test signal_reads --test signal_offline --test signal_review --test runtime_report
+AIRS_REQUIRE_PARITY=1 cargo test --test parity_signal --test parity_runtime_report --test parity_runtime_extras
+```
+
+`signal_sdk` proves pinned SDK model/request compatibility, not live semantics.
+`signal_reads` covers discovery/result/report correlation, request/deadline limits,
+credential planes, failed results, sampling and DLP withholding. Offline/review
+suites exercise digest binding, extra privacy projection, immutable source files,
+private bundles, injection, and agent versus human attribution. Publication unit
+checks inject sync/rename failures and races. The existing live tier's runtime
+self-tests remain loopback; only the user may enable its real-service gate.
+
+The synthetic examples under `docs/examples/signal/` are generated by the actual
+offline CLI. Local visual checks cover desktop/mobile, keyboard disclosure and
+print expansion with network requests blocked. Playwright and its previews remain
+ignored development tooling; the CLI has no browser/runtime dependency. Independent
+phase scores are recorded in SIGNAL_BRIEF_PHASE_REVIEWS.md and final validation
+outcomes in SIGNAL_BRIEF_VALIDATION.md.
+
+Runtime history lives in `crates/airs-history-store` since M1 of the runtime MCP plan.
+Its unit fixtures share a process-local test gate acquired before
+fixture creation and held through cleanup. This prevents independent archive
+construction from saturating the same test volume while another case measures
+the production 250ms retention deadline. It does not serialize the reader/writer
+threads, signals or child processes deliberately used within a case. Child test
+processes have separate gates. Poison recovery avoids cascading unrelated failures.
+The cancellation-before-send async scenario runs inside a runtime created after
+taking the guard, so no synchronous mutex is held across an outer async suspension.
+Default workspace scheduling remains the required baseline; separately serialized
+emulated/native platform receipts explicitly state their execution conditions.
+Earlier parallel fixture failures remain in qualification/audit evidence. Production
+deadlines, warning assertions, endpoint/path guards and live-tier restrictions are
+unchanged.
+
+The history store's executable tests (`crates/airs-history-store/tests/`) drive
+`airs-history-driver`, a test-only binary that keeps the former `runtime sync` and
+`runtime history` grammar, JSON output, exit codes and signal handling. The runner's
+existing guards apply unchanged; only the driver's `runtime sync` has its default data
+directory kept under the sandbox's tmp. The CLI's `runtime scan`, `bulk-scan` and
+`resume-poll` run against the sandbox's own data directory, and the unchanged-sandbox
+checks prove they retain nothing (`tests/no_local_history.rs`). The automatic-retention
+executable tests were retired with the feature. Their receipt domain rules (no payload,
+bounded capture, one outcome per run, job-scoped deduplication across resume) are unit
+tests in `crates/airs-history-store/src/receipts_tests.rs`. The held-management timeout
+test still pins received-request journaling and a partial run, and availability still
+determines its exit code.

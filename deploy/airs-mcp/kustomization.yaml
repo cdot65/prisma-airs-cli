@@ -1,0 +1,39 @@
+# JSON is valid YAML. The image digest is a placeholder the user replaces with the
+# digest of the image they build and push (M8.3 runbook step 2); the static manifest
+# test refuses to call the set deployable while it is the placeholder.
+{
+  "apiVersion": "kustomize.config.k8s.io/v1beta1",
+  "kind": "Kustomization",
+  "namespace": "airs-mcp",
+  "resources": [
+    "namespace.json",
+    "certificate.json",
+    "pvc.json",
+    "deployment.json",
+    "service.json",
+    "networkpolicy.json"
+  ],
+  "configMapGenerator": [
+    {
+      "name": "airs-mcp-config",
+      "files": [
+        "airs-mcp.toml"
+      ]
+    }
+  ],
+  "images": [
+    {
+      "name": "airs-mcp",
+      "newName": "registry.cdot.io/airs-mcp/airs-mcp",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "labels": [
+    {
+      "pairs": {
+        "app.kubernetes.io/part-of": "airs-mcp"
+      },
+      "includeSelectors": false
+    }
+  ]
+}

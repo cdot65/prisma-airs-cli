@@ -8,78 +8,11 @@
 use crate::error::CliError;
 use crate::render::style::{self, Style};
 use crate::signals::SignalState;
+pub use airs_runtime_core::output_format::Format;
+pub use airs_runtime_core::text::{terminal_safe, terminal_safe_lines};
 use serde::Serialize;
-use std::borrow::Cow;
 use std::io::{self, Write};
 use std::sync::Arc;
-
-/// The output formats (`markdown`, `csv` and `yaml` are dropped for good, D50).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Format {
-    Pretty,
-    Table,
-    Json,
-}
-
-impl Format {
-    pub const ALL: [Format; 3] = [Format::Pretty, Format::Table, Format::Json];
-
-    pub fn name(self) -> &'static str {
-        match self {
-            Self::Pretty => "pretty",
-            Self::Table => "table",
-            Self::Json => "json",
-        }
-    }
-
-    /// The format with exactly this (case-sensitive) name.
-    pub fn parse(name: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|format| format.name() == name)
-    }
-
-    /// Every valid name, comma+space joined (`pretty, table, json`).
-    pub fn valid_names() -> String {
-        Self::ALL.map(Self::name).join(", ")
-    }
-}
-
-/// Replace C0 control characters, DEL and C1 control characters with U+FFFD, so text
-/// that came from a server or a file cannot move the cursor, retitle the window or
-/// forge status lines (DESIGN §2.2). Text without them is returned unchanged.
-pub fn terminal_safe(text: &str) -> Cow<'_, str> {
-    let control = |c: char| c.is_control();
-    if text.chars().any(control) {
-        Cow::Owned(
-            text.chars()
-                .map(|c| if control(c) { '\u{fffd}' } else { c })
-                .collect(),
-        )
-    } else {
-        Cow::Borrowed(text)
-    }
-}
-
-/// [`terminal_safe`] for multi-line server text that TypeScript prints verbatim on several
-/// lines (the red team report summaries, EULA content, script output, descriptions,
-/// prompts and goals; DESIGN §15.3 "Multi-line server text", D52): a line feed, a CR LF
-/// pair and a tab are kept as TypeScript prints them; every other control character, a
-/// lone CR included, becomes U+FFFD.
-pub fn terminal_safe_lines(text: &str) -> Cow<'_, str> {
-    let mut chars = text.chars().peekable();
-    let mut kept = true;
-    let mut out = String::with_capacity(text.len());
-    while let Some(c) = chars.next() {
-        let keep =
-            !c.is_control() || c == '\n' || c == '\t' || (c == '\r' && chars.peek() == Some(&'\n'));
-        kept &= keep;
-        out.push(if keep { c } else { '\u{fffd}' });
-    }
-    if kept {
-        Cow::Borrowed(text)
-    } else {
-        Cow::Owned(out)
-    }
-}
 
 /// How one command uses `--output` (the per-command table of DESIGN §2.4; the help
 /// text and planning both read it).
@@ -391,6 +324,7 @@ pub(crate) mod testing {
 mod tests {
     use super::testing::capture;
     use super::*;
+    use std::borrow::Cow;
 
     #[test]
     fn explicit_formats_are_validated() {

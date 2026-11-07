@@ -1,0 +1,147 @@
+{
+  "complete": false,
+  "detail_events": 4,
+  "digest": "5e808c18adebf9c18ebe86a26d58b98bc29c56548f9067e63c058c3820afe6fa",
+  "gaps": [
+    "sessions coverage is partial for the tenant"
+  ],
+  "profiles": [
+    {
+      "name": "profile-a",
+      "protections": [
+        {
+          "action": "block",
+          "active": true,
+          "confidence": "explicit",
+          "detector": "prompt-injection",
+          "direction": "prompt",
+          "location": "model-protection"
+        }
+      ],
+      "revision": 1
+    }
+  ],
+  "sources": [
+    {
+      "ended_ms": 1793599200000,
+      "name": "results",
+      "notes": [],
+      "pages": 0,
+      "population": "retained history",
+      "records": 0,
+      "required": true,
+      "started_ms": 1793509200000,
+      "status": "complete",
+      "unit": "archive coverage groups"
+    },
+    {
+      "ended_ms": 1793599200000,
+      "name": "sessions",
+      "notes": [
+        "sessions coverage is partial for the tenant"
+      ],
+      "pages": 0,
+      "population": "retained history",
+      "records": 0,
+      "required": true,
+      "started_ms": 1793509200000,
+      "status": "partial",
+      "unit": "archive coverage groups"
+    },
+    {
+      "ended_ms": 1793599200000,
+      "name": "scan-results",
+      "notes": [
+        "coverage category results"
+      ],
+      "pages": 0,
+      "population": "retained history",
+      "records": 0,
+      "required": false,
+      "started_ms": 1793509200000,
+      "status": "complete",
+      "unit": "archived observations"
+    }
+  ],
+  "summary": {
+    "cell_budget": 50000,
+    "cells": [
+      {
+        "events": 1,
+        "key": [
+          "2026-11-01",
+          "app-1",
+          "benign",
+          "allow"
+        ]
+      },
+      {
+        "events": 1,
+        "key": [
+          "2026-11-01",
+          "app-1",
+          "malicious",
+          "allow"
+        ]
+      },
+      {
+        "events": 1,
+        "key": [
+          "2026-11-01",
+          "app-2",
+          "malicious",
+          "block"
+        ]
+      },
+      {
+        "events": 1,
+        "key": [
+          "2026-11-01",
+          "app-2",
+          "unknown",
+          "unknown"
+        ]
+      }
+    ],
+    "detector_cells": [
+      {
+        "events": 1,
+        "key": [
+          "2026-11-01",
+          "app-1",
+          "malicious",
+          "allow",
+          "prompt-injection"
+        ]
+      },
+      {
+        "events": 1,
+        "key": [
+          "2026-11-01",
+          "app-2",
+          "malicious",
+          "block",
+          "dlp"
+        ]
+      }
+    ],
+    "dimensions": [
+      "day",
+      "application",
+      "verdict",
+      "action"
+    ],
+    "disabled_filters": [],
+    "events": 4
+  },
+  "timeline": [
+    {
+      "at_start": true,
+      "first_observed_ms": 1793505600000,
+      "last_observed_ms": 1793505600000,
+      "observation": "2a8230796478",
+      "profile": "profile-a",
+      "revision": 1
+    }
+  ]
+}

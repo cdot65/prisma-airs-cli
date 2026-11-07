@@ -95,6 +95,7 @@ fn shown_cell(value: &Shown) -> String {
             crate::render::js_integer(i128::from(*number))
         }
         Shown::Redacted(text) => (*text).to_owned(),
+        Shown::Scanners(_) => terminal_safe(&value.display()).into_owned(),
     }
 }
 
@@ -118,15 +119,45 @@ pub fn read(
     let view = store_of(invocation)?;
     let selected = view.resolve(name, invocation.tenant_flag.as_deref())?;
     let config = view.load_config(&selected)?;
+    invocation.secrets.register_config(&config);
     // `config.toml` text is file text: no control character reaches stderr (D52).
-    invocation.output.status(&format!(
+    let status = format!(
         "Tenant {} (TSG {}): {}",
         terminal_safe(&selected.name),
         terminal_safe(&selected.tsg_id),
         shown(&view.tenant_path(&selected.name))
-    ));
+    );
+    invocation.output.status(if config.scanners().is_some() {
+        invocation.secrets.scrub(&status)
+    } else {
+        &status
+    });
     let rows = config.read_rows();
+    let mut public_scanners = serde_json::to_value(config.shown("scanners"))
+        .map_err(|_| CliError::operational("Scanner metadata cannot be safely displayed"))?;
+    if config.scanners().is_some() {
+        crate::tenant::scanners::safe_public_value(&mut public_scanners, &invocation.secrets)?;
+    }
     if format == Format::Json {
+        if config.scanners().is_some() {
+            let mut rows: Vec<serde_json::Value> = rows
+                .iter()
+                .map(|(key, value)| {
+                    let public = if *key == "scanners" {
+                        public_scanners.clone()
+                    } else {
+                        serde_json::to_value(value).map_err(|_| {
+                            CliError::operational("Scanner metadata cannot be safely displayed")
+                        })?
+                    };
+                    Ok(serde_json::json!({"key":key,"value":public}))
+                })
+                .collect::<Result<_, CliError>>()?;
+            for row in &mut rows {
+                crate::tenant::scanners::safe_public_value(row, &invocation.secrets)?;
+            }
+            return invocation.output.json(&rows);
+        }
         let rows: Vec<SettingRow<'_>> = rows
             .iter()
             .map(|(key, value)| SettingRow { key, value })
@@ -136,7 +167,18 @@ pub fn read(
     // `pretty` is the table (TS parity, R§3.6).
     let cells = rows
         .iter()
-        .map(|(key, value)| ((*key).to_owned(), shown_cell(value)))
+        .map(|(key, value)| {
+            (
+                (*key).to_owned(),
+                if *key == "scanners" {
+                    public_scanners.to_string()
+                } else if config.scanners().is_some() {
+                    invocation.secrets.scrub(&shown_cell(value)).to_owned()
+                } else {
+                    shown_cell(value)
+                },
+            )
+        })
         .collect();
     invocation.output.data_line(&table::key_value_table(cells));
     Ok(())
@@ -153,6 +195,31 @@ pub fn get(
     // The positional name only: `--tenant` never stands in for it (TS `resolveEntry`).
     let selected = view.resolve(Some(name), None)?;
     let config = view.load_config(&selected)?;
+    invocation.secrets.register_config(&config);
+    if key == "scanners" || config.scanners().is_some() {
+        let mut public = serde_json::to_value(config.shown(key))
+            .map_err(|_| CliError::operational("Scanner metadata cannot be safely displayed"))?;
+        crate::tenant::scanners::safe_public_value(&mut public, &invocation.secrets)?;
+        let cell = public
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_else(|| public.to_string());
+        return match format {
+            Format::Json => invocation
+                .output
+                .json(&[serde_json::json!({"key":key,"value":public})]),
+            Format::Pretty => {
+                invocation.output.data_line(&cell);
+                Ok(())
+            }
+            Format::Table => {
+                invocation
+                    .output
+                    .data_line(&table::key_value_table(vec![(key.into(), cell)]));
+                Ok(())
+            }
+        };
+    }
     let value = config.shown(key);
     match format {
         Format::Json => invocation.output.json(&[SettingRow { key, value: &value }]),

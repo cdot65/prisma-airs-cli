@@ -59,7 +59,7 @@ fn csv_rows(text: &str) -> Result<Vec<Vec<String>>, ParseError> {
     let mut i = 0;
     while i < chars.len() {
         let (row, next) = csv_row(&chars, i)?;
-        if !row.is_empty() && !(row.len() == 1 && row[0].is_empty()) {
+        if !(row.is_empty() || (row.len() == 1 && row[0].is_empty())) {
             rows.push(row);
         }
         i = next;

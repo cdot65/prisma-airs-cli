@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airs-mcp-spike
+  labels: {app.kubernetes.io/name: airs-mcp-spike}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}          # never two owners during rollout
+  selector: {matchLabels: {app.kubernetes.io/name: airs-mcp-spike}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: airs-mcp-spike}
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets: [{name: harbor-pull}]
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+        # No fsGroup: it would make admitted paths group-writable (contract §9.3).
+      initContainers:
+        # Creates only the UID-owned 0700 subtree on the root-owned volume; never
+        # recurses into or repairs an existing subtree.
+        - name: data-subtree
+          image: docker.io/library/busybox:1.37.0@sha256:66a6306db78bf2dbf3487f293aa8d6990d8e506fdffab9cc43fe422becf886e4
+          command: ["sh", "-c", "test -d /data/airs || { mkdir -m 0700 /data/airs && chown 65532:65532 /data/airs; }; stat -c '%u:%g %a' /data /data/airs"]
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL], add: [CHOWN]}
+          volumeMounts: [{name: data, mountPath: /data}]
+      containers:
+        - name: spike
+          image: airs-mcp-spike
+          args: ["serve", "--config", "/etc/airs-mcp-spike/config/spike.toml"]
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: NODE_NAME, valueFrom: {fieldRef: {fieldPath: spec.nodeName}}}
+          ports: [{name: https, containerPort: 8443}]
+          readinessProbe:
+            httpGet: {path: /healthz, port: https, scheme: HTTPS}
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: https, scheme: HTTPS}
+            periodSeconds: 30
+            timeoutSeconds: 3
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/airs-mcp-spike/config, readOnly: true}
+            - {name: tls, mountPath: /etc/airs-mcp-spike/tls, readOnly: true}
+            - {name: route, mountPath: /etc/airs-mcp-spike/route, readOnly: true}
+            - {name: data, mountPath: /data}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - {name: config, configMap: {name: airs-mcp-spike-config}}
+        - {name: tls, secret: {secretName: airs-mcp-spike-tls}}
+        # Route-binding secret (contract §2.2 resolution 3), from Conjur via ESO.
+        - {name: route, secret: {secretName: airs-mcp-route-binding, items: [{key: binding, path: binding}]}}
+        - {name: data, persistentVolumeClaim: {claimName: airs-mcp-spike-data}}

@@ -19,6 +19,8 @@ use serde_json::Value;
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Planned {
+    /// Optional fixture ownership guards, checked even for programmed responses.
+    pub required_headers: Vec<(String, String)>,
     /// HTTP status code.
     pub status: u16,
     /// Response headers (name, value).
@@ -44,6 +46,11 @@ pub struct Planned {
 }
 
 impl Planned {
+    pub fn with_required_header(mut self, name: &str, value: &str) -> Self {
+        self.required_headers
+            .push((name.to_owned(), value.to_owned()));
+        self
+    }
     /// A JSON body with `content-type: application/json`.
     pub fn json(status: u16, body: &Value) -> Self {
         Self::raw(status, "application/json", body.to_string())
@@ -57,6 +64,7 @@ impl Planned {
     /// Arbitrary body bytes with the given content type (e.g. non-JSON or truncated JSON).
     pub fn raw(status: u16, content_type: &str, body: impl Into<Vec<u8>>) -> Self {
         Self {
+            required_headers: Vec::new(),
             status,
             headers: vec![("content-type".into(), content_type.into())],
             body: body.into(),
@@ -72,6 +80,7 @@ impl Planned {
     /// A status with no body and no content type.
     pub fn status(status: u16) -> Self {
         Self {
+            required_headers: Vec::new(),
             status,
             headers: Vec::new(),
             body: Vec::new(),

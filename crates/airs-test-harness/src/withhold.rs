@@ -10,7 +10,7 @@
 //! (the pinned, generated and rule-independent documents), test data for this crate's tests
 //! and the workspace's `tests/*.rs`.
 
-#[path = "../../../src/gateway/withhold_rules/mod.rs"]
+#[path = "../../airs-runtime-core/src/withhold_rules/mod.rs"]
 mod rules;
 
 pub use rules::{WITHHELD, names, values, view};
@@ -19,7 +19,7 @@ pub use rules::{WITHHELD, names, values, view};
 /// own unit tests read it from there); any other build of this crate compiles the same file
 /// here, for the live tier and the workspace's tests. The CLI's binary never carries it.
 #[cfg(not(test))]
-#[path = "../../../src/gateway/withhold_rules/check.rs"]
+#[path = "../../airs-runtime-core/src/withhold_rules/check.rs"]
 pub mod check;
 #[cfg(test)]
 pub use rules::check;
@@ -28,7 +28,7 @@ pub use rules::check;
 /// own unit tests read it from there); any other build of this crate compiles the same file
 /// here, for the CLI's and the workspace's tests.
 #[cfg(not(test))]
-#[path = "../../../src/gateway/withhold_rules/corpus.rs"]
+#[path = "../../airs-runtime-core/src/withhold_rules/corpus.rs"]
 pub mod corpus;
 #[cfg(test)]
 pub use rules::corpus;

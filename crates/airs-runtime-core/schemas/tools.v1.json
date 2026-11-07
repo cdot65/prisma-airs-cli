@@ -1,0 +1,3260 @@
+{
+ "$comment": "Frozen M0 tool catalogue (docs/RUNTIME_MCP_CONTRACT.md \u00a74). Changing it after M0 acceptance is a contract revision.",
+ "$defs": {
+  "accepted": {
+   "additionalProperties": false,
+   "properties": {
+    "job": {
+     "$ref": "#/$defs/job"
+    },
+    "joined_existing": {
+     "type": "boolean"
+    },
+    "schema_version": {
+     "const": 1
+    }
+   },
+   "required": [
+    "job",
+    "joined_existing",
+    "schema_version"
+   ],
+   "type": "object"
+  },
+  "app_ids": {
+   "items": {
+    "maxLength": 4096,
+    "minLength": 1,
+    "type": "string"
+   },
+   "maxItems": 100,
+   "type": "array"
+  },
+  "coverage_source": {
+   "additionalProperties": false,
+   "properties": {
+    "application_id": {
+     "anyOf": [
+      {
+       "maxLength": 4096,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "gap_seconds": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "source": {
+     "enum": [
+      "sessions",
+      "results",
+      "reports",
+      "inventory",
+      "profiles"
+     ]
+    },
+    "state": {
+     "enum": [
+      "complete",
+      "partial",
+      "falling_behind",
+      "unavailable",
+      "unknown"
+     ]
+    },
+    "traversed_as_of": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/utc"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "application_id",
+    "gap_seconds",
+    "source",
+    "state",
+    "traversed_as_of"
+   ],
+   "type": "object"
+  },
+  "cursor": {
+   "pattern": "^c1\\.[A-Za-z0-9_-]{16,2048}$",
+   "type": "string"
+  },
+  "error": {
+   "additionalProperties": false,
+   "properties": {
+    "code": {
+     "enum": [
+      "invalid_request",
+      "unsupported_version",
+      "unauthenticated",
+      "forbidden",
+      "not_found",
+      "conflict",
+      "idempotency_conflict",
+      "control_restored",
+      "overloaded",
+      "quota_exhausted",
+      "low_space",
+      "storage_unavailable",
+      "maintenance_required",
+      "credential_blocked",
+      "upstream_unavailable",
+      "canceled",
+      "result_too_large",
+      "internal"
+     ]
+    },
+    "credential_status": {
+     "enum": [
+      "ok",
+      "needs_credentials",
+      "cooldown"
+     ]
+    },
+    "job_id": {
+     "$ref": "#/$defs/job_id"
+    },
+    "reason": {
+     "maxLength": 256,
+     "type": "string"
+    },
+    "retry_after_seconds": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "schema_version": {
+     "const": 1
+    }
+   },
+   "required": [
+    "code",
+    "reason",
+    "schema_version"
+   ],
+   "type": "object"
+  },
+  "job": {
+   "additionalProperties": false,
+   "properties": {
+    "epoch": {
+     "pattern": "^[0-9a-f]{8}$",
+     "type": "string"
+    },
+    "gaps": {
+     "items": {
+      "maxLength": 256,
+      "type": "string"
+     },
+     "maxItems": 50,
+     "type": "array"
+    },
+    "job_id": {
+     "$ref": "#/$defs/job_id"
+    },
+    "operation": {
+     "type": "string"
+    },
+    "params_digest": {
+     "$ref": "#/$defs/sha256"
+    },
+    "progress": {
+     "anyOf": [
+      {
+       "additionalProperties": false,
+       "properties": {
+        "done": {
+         "minimum": 0,
+         "type": "integer"
+        },
+        "phase": {
+         "maxLength": 64,
+         "type": "string"
+        },
+        "total": {
+         "anyOf": [
+          {
+           "minimum": 0,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       },
+       "required": [
+        "done",
+        "phase",
+        "total"
+       ],
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "result": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/job_result"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "retry_after_seconds": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "state": {
+     "$ref": "#/$defs/job_state"
+    },
+    "submitted_at": {
+     "$ref": "#/$defs/utc"
+    },
+    "submitter": {
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "enum": [
+        "principal",
+        "service"
+       ]
+      },
+      "label": {
+       "maxLength": 128,
+       "type": "string"
+      }
+     },
+     "required": [
+      "kind",
+      "label"
+     ],
+     "type": "object"
+    },
+    "updated_at": {
+     "$ref": "#/$defs/utc"
+    }
+   },
+   "required": [
+    "epoch",
+    "gaps",
+    "job_id",
+    "operation",
+    "params_digest",
+    "progress",
+    "result",
+    "retry_after_seconds",
+    "state",
+    "submitted_at",
+    "submitter",
+    "updated_at"
+   ],
+   "type": "object"
+  },
+  "job_id": {
+   "pattern": "^j1_[0-9a-f]{8}_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+   "type": "string"
+  },
+  "job_result": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/result_collection"
+    },
+    {
+     "$ref": "#/$defs/result_report"
+    },
+    {
+     "$ref": "#/$defs/result_enrichment"
+    },
+    {
+     "$ref": "#/$defs/result_lifecycle"
+    },
+    {
+     "$ref": "#/$defs/result_export"
+    },
+    {
+     "$ref": "#/$defs/result_failure"
+    }
+   ]
+  },
+  "job_state": {
+   "enum": [
+    "queued",
+    "running",
+    "waiting_retry",
+    "needs_credentials",
+    "blocked_policy",
+    "cancel_requested",
+    "canceled",
+    "succeeded",
+    "partial",
+    "failed"
+   ]
+  },
+  "manifest": {
+   "additionalProperties": false,
+   "properties": {
+    "analysis_version": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "as_of": {
+     "$ref": "#/$defs/utc"
+    },
+    "completeness": {
+     "enum": [
+      "complete",
+      "partial"
+     ]
+    },
+    "files": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "bytes": {
+        "maximum": 67108864,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "name": {
+        "enum": [
+         "report.html",
+         "evidence.json",
+         "review.md"
+        ]
+       },
+       "sha256": {
+        "$ref": "#/$defs/sha256"
+       }
+      },
+      "required": [
+       "bytes",
+       "name",
+       "sha256"
+      ],
+      "type": "object"
+     },
+     "maxItems": 3,
+     "minItems": 3,
+     "type": "array"
+    },
+    "gaps": {
+     "items": {
+      "maxLength": 256,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "type": "array"
+    },
+    "job_id": {
+     "$ref": "#/$defs/job_id"
+    },
+    "kind": {
+     "enum": [
+      "daily",
+      "revision",
+      "manual",
+      "catch_up"
+     ]
+    },
+    "period": {
+     "$ref": "#/$defs/range"
+    },
+    "predecessor": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/version_id"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "redaction_version": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "report_id": {
+     "$ref": "#/$defs/report_id"
+    },
+    "scheduled_at": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/utc"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "timezone": {
+     "type": "string"
+    },
+    "tzdb_version": {
+     "type": "string"
+    },
+    "version": {
+     "maximum": 24,
+     "minimum": 0,
+     "type": "integer"
+    },
+    "version_id": {
+     "$ref": "#/$defs/version_id"
+    }
+   },
+   "required": [
+    "analysis_version",
+    "as_of",
+    "completeness",
+    "files",
+    "gaps",
+    "job_id",
+    "kind",
+    "period",
+    "predecessor",
+    "redaction_version",
+    "report_id",
+    "scheduled_at",
+    "timezone",
+    "tzdb_version",
+    "version",
+    "version_id"
+   ],
+   "type": "object"
+  },
+  "page": {
+   "additionalProperties": false,
+   "properties": {
+    "cursor": {
+     "$ref": "#/$defs/cursor"
+    },
+    "limit": {
+     "maximum": 100,
+     "minimum": 1,
+     "type": "integer"
+    }
+   },
+   "required": [],
+   "type": "object"
+  },
+  "preview_id": {
+   "pattern": "^p1_[0-9a-f]{8}_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+   "type": "string"
+  },
+  "range": {
+   "additionalProperties": false,
+   "properties": {
+    "since": {
+     "$ref": "#/$defs/utc"
+    },
+    "until": {
+     "$ref": "#/$defs/utc"
+    }
+   },
+   "required": [
+    "since",
+    "until"
+   ],
+   "type": "object"
+  },
+  "receipt": {
+   "additionalProperties": false,
+   "properties": {
+    "action": {
+     "anyOf": [
+      {
+       "enum": [
+        "allow",
+        "block",
+        "unknown"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "application_id": {
+     "anyOf": [
+      {
+       "maxLength": 4096,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "application_name": {
+     "anyOf": [
+      {
+       "maxLength": 4096,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "category": {
+     "anyOf": [
+      {
+       "enum": [
+        "benign",
+        "malicious",
+        "unknown"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "declared_scanner": {
+     "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+     "type": "string"
+    },
+    "identity_withheld": {
+     "type": "boolean"
+    },
+    "receipt_key": {
+     "pattern": "^[A-Za-z0-9_.:-]{8,200}$",
+     "type": "string"
+    },
+    "received_at": {
+     "$ref": "#/$defs/utc"
+    },
+    "report_id": {
+     "anyOf": [
+      {
+       "maxLength": 256,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "scan_id": {
+     "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+     "type": "string"
+    },
+    "session_id": {
+     "anyOf": [
+      {
+       "maxLength": 4096,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "status": {
+     "enum": [
+      "complete",
+      "pending",
+      "failed",
+      "timeout"
+     ]
+    },
+    "sub_request": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "declared_scanner",
+    "identity_withheld",
+    "receipt_key",
+    "received_at",
+    "scan_id",
+    "status"
+   ],
+   "type": "object"
+  },
+  "report_id": {
+   "pattern": "^r1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+   "type": "string"
+  },
+  "result_collection": {
+   "additionalProperties": false,
+   "properties": {
+    "duplicate_facts": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "new_facts": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "operation": {
+     "const": "collection_start"
+    },
+    "sends": {
+     "additionalProperties": false,
+     "properties": {
+      "management": {
+       "maximum": 1000,
+       "minimum": 0,
+       "type": "integer"
+      },
+      "oauth": {
+       "maximum": 1000,
+       "minimum": 0,
+       "type": "integer"
+      },
+      "reports": {
+       "const": 0
+      },
+      "results": {
+       "maximum": 1000,
+       "minimum": 0,
+       "type": "integer"
+      }
+     },
+     "required": [
+      "management",
+      "oauth",
+      "reports",
+      "results"
+     ],
+     "type": "object"
+    },
+    "sources": {
+     "items": {
+      "$ref": "#/$defs/coverage_source"
+     },
+     "maxItems": 100,
+     "type": "array"
+    },
+    "unfinished_sources": {
+     "maximum": 100,
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "duplicate_facts",
+    "new_facts",
+    "operation",
+    "sends",
+    "sources",
+    "unfinished_sources"
+   ],
+   "type": "object"
+  },
+  "result_enrichment": {
+   "additionalProperties": false,
+   "properties": {
+    "cached": {
+     "maximum": 10,
+     "minimum": 0,
+     "type": "integer"
+    },
+    "operation": {
+     "const": "enrichment_start"
+    },
+    "selected_ids": {
+     "maximum": 10,
+     "minimum": 0,
+     "type": "integer"
+    },
+    "sends": {
+     "maximum": 2,
+     "minimum": 0,
+     "type": "integer"
+    },
+    "stopped_on_429": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "cached",
+    "operation",
+    "selected_ids",
+    "sends",
+    "stopped_on_429"
+   ],
+   "type": "object"
+  },
+  "result_export": {
+   "additionalProperties": false,
+   "properties": {
+    "bytes": {
+     "maximum": 17179869184,
+     "minimum": 0,
+     "type": "integer"
+    },
+    "operation": {
+     "const": "export"
+    },
+    "records": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "sha256": {
+     "$ref": "#/$defs/sha256"
+    }
+   },
+   "required": [
+    "bytes",
+    "operation",
+    "records",
+    "sha256"
+   ],
+   "type": "object"
+  },
+  "result_failure": {
+   "additionalProperties": false,
+   "properties": {
+    "committed_facts": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "error": {
+     "$ref": "#/$defs/error"
+    },
+    "operation": {
+     "pattern": "^[a-z_]{1,40}$",
+     "type": "string"
+    },
+    "uncertain_sends": {
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "committed_facts",
+    "error",
+    "operation",
+    "uncertain_sends"
+   ],
+   "type": "object"
+  },
+  "result_lifecycle": {
+   "additionalProperties": false,
+   "properties": {
+    "action": {
+     "enum": [
+      "prune",
+      "artifact_delete",
+      "compact",
+      "backup",
+      "restore",
+      "recover",
+      "import_finalize",
+      "allowance_set",
+      "epoch_activate"
+     ]
+    },
+    "affected": {
+     "additionalProperties": false,
+     "properties": {
+      "examples": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "facts": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "receipts": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "report_versions": {
+       "minimum": 0,
+       "type": "integer"
+      }
+     },
+     "required": [],
+     "type": "object"
+    },
+    "backup_id": {
+     "anyOf": [
+      {
+       "pattern": "^b1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "imported_records": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "operation": {
+     "const": "lifecycle_execute"
+    },
+    "partial_import": {
+     "type": "boolean"
+    },
+    "tombstones": {
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "action",
+    "affected",
+    "backup_id",
+    "imported_records",
+    "operation",
+    "partial_import",
+    "tombstones"
+   ],
+   "type": "object"
+  },
+  "result_report": {
+   "additionalProperties": false,
+   "properties": {
+    "completeness": {
+     "enum": [
+      "complete",
+      "partial"
+     ]
+    },
+    "manifest_sha256": {
+     "$ref": "#/$defs/sha256"
+    },
+    "operation": {
+     "enum": [
+      "reports_create",
+      "daily_report",
+      "revision",
+      "catch_up"
+     ]
+    },
+    "report_id": {
+     "$ref": "#/$defs/report_id"
+    },
+    "version_id": {
+     "$ref": "#/$defs/version_id"
+    }
+   },
+   "required": [
+    "completeness",
+    "manifest_sha256",
+    "operation",
+    "report_id",
+    "version_id"
+   ],
+   "type": "object"
+  },
+  "schedule_id": {
+   "pattern": "^s1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+   "type": "string"
+  },
+  "sha256": {
+   "pattern": "^[0-9a-f]{64}$",
+   "type": "string"
+  },
+  "tier": {
+   "enum": [
+    "reader",
+    "operator",
+    "administrator"
+   ]
+  },
+  "upload_id": {
+   "pattern": "^u1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+   "type": "string"
+  },
+  "utc": {
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$",
+   "type": "string"
+  },
+  "version_id": {
+   "pattern": "^v1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+   "type": "string"
+  }
+ },
+ "authority_rules": {
+  "direct_proof": "Administrator grant, admin.mode=fresh_proof, and an assertion carrying the preview's server nonce (proof_nonce_claim) with fresh auth_time; the proof is consumed once together with the effect. Refused when admin.mode=disabled.",
+  "direct_proof_or_approval": "Either direct_proof by the administrative identity that will own the job, or an unexpired approval_id issued by admin_confirm for exactly this preview, digest and data generation and presented by the same agent actor that created the preview; the approval is consumed with the job insert. A proof or approval is never reusable for another preview or operation.",
+  "grant": "Effective tier (token scope \u2229 grant) \u2265 tool tier and the tool is in the grant's allowed list. A mutating 'grant' tool is refused for an Administrator grant in every mode.",
+  "idempotent_retry": "A retry with the same idempotency key returns the original result only if every admitted binding field (preview_id, parameter_digest, data generation, and approval_id where used) is identical; otherwise idempotency_conflict.",
+  "upload_session": "Only the actor whose transfer_upload_begin admitted the session, within its expiry, with Administrator effective tier; no new proof per chunk (continuation of one admitted operation); offsets must be contiguous and never exceed the declared length; finalize requires the complete length and matching SHA-256 and is idempotent; abort by that actor only and not after import. The import itself is a separate import_finalize preview (owner only, finalized uploads only, once per upload) requiring its own direct proof."
+ },
+ "format": "airs-mcp-tools",
+ "result_limits": {
+  "agent": 16384,
+  "cli": 262144
+ },
+ "schema_version": 1,
+ "tools": {
+  "admin_confirm": {
+   "admin_proof": true,
+   "authority": "direct_proof",
+   "idempotency_key": false,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "parameter_digest": {
+        "$ref": "#/$defs/sha256"
+       },
+       "preview_id": {
+        "$ref": "#/$defs/preview_id"
+       }
+      },
+      "required": [
+       "parameter_digest",
+       "preview_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "approval_id": {
+      "pattern": "^q1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "type": "string"
+     },
+     "expires_at": {
+      "$ref": "#/$defs/utc"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "approval_id",
+     "expires_at",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  },
+  "artifacts_download": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "length": {
+        "maximum": 65536,
+        "minimum": 1,
+        "type": "integer"
+       },
+       "name": {
+        "enum": [
+         "report.html",
+         "evidence.json",
+         "review.md"
+        ]
+       },
+       "offset": {
+        "maximum": 67108863,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "version_id": {
+        "$ref": "#/$defs/version_id"
+       }
+      },
+      "required": [
+       "length",
+       "name",
+       "offset",
+       "version_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "chunk_sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "data_base64": {
+      "maxLength": 87384,
+      "type": "string"
+     },
+     "file_sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "length": {
+      "maximum": 65536,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "offset": {
+      "minimum": 0,
+      "type": "integer"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "total_bytes": {
+      "maximum": 67108864,
+      "minimum": 0,
+      "type": "integer"
+     }
+    },
+    "required": [
+     "chunk_sha256",
+     "data_base64",
+     "file_sha256",
+     "length",
+     "offset",
+     "schema_version",
+     "total_bytes"
+    ],
+    "type": "object"
+   },
+   "result_limit": "cli",
+   "tier": "reader"
+  },
+  "artifacts_read": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "cursor": {
+        "$ref": "#/$defs/cursor"
+       },
+       "name": {
+        "enum": [
+         "review.md",
+         "summary.md"
+        ]
+       },
+       "version_id": {
+        "$ref": "#/$defs/version_id"
+       }
+      },
+      "required": [
+       "name",
+       "version_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "next_cursor": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/cursor"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "segment": {
+      "maxLength": 6144,
+      "type": "string"
+     },
+     "sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "total_bytes": {
+      "minimum": 0,
+      "type": "integer"
+     }
+    },
+    "required": [
+     "next_cursor",
+     "schema_version",
+     "segment",
+     "sha256",
+     "total_bytes"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "assessments_submit": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "markdown": {
+        "maxLength": 65536,
+        "type": "string"
+       },
+       "review_sha256": {
+        "$ref": "#/$defs/sha256"
+       },
+       "reviewer_label": {
+        "maxLength": 128,
+        "type": "string"
+       },
+       "version_id": {
+        "$ref": "#/$defs/version_id"
+       }
+      },
+      "required": [
+       "markdown",
+       "review_sha256",
+       "version_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "assessment_id": {
+      "pattern": "^a1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "type": "string"
+     },
+     "attributed_to": {
+      "additionalProperties": false,
+      "properties": {
+       "kind": {
+        "enum": [
+         "principal"
+        ]
+       },
+       "label": {
+        "maxLength": 128,
+        "type": "string"
+       }
+      },
+      "required": [
+       "kind",
+       "label"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "assessment_id",
+     "attributed_to",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "collection_start": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "app_ids": {
+        "$ref": "#/$defs/app_ids"
+       },
+       "mode": {
+        "enum": [
+         "recent",
+         "backfill"
+        ]
+       },
+       "range": {
+        "$ref": "#/$defs/range"
+       }
+      },
+      "required": [
+       "mode"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "$ref": "#/$defs/accepted"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "enrichment_start": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "max_reports": {
+        "maximum": 10,
+        "minimum": 1,
+        "type": "integer"
+       },
+       "report_id": {
+        "$ref": "#/$defs/report_id"
+       }
+      },
+      "required": [
+       "report_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "$ref": "#/$defs/accepted"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "export_read": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "job_id": {
+        "$ref": "#/$defs/job_id"
+       },
+       "length": {
+        "maximum": 65536,
+        "minimum": 1,
+        "type": "integer"
+       },
+       "offset": {
+        "minimum": 0,
+        "type": "integer"
+       }
+      },
+      "required": [
+       "job_id",
+       "length",
+       "offset"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "chunk_sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "data_base64": {
+      "maxLength": 87384,
+      "type": "string"
+     },
+     "file_sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "length": {
+      "maximum": 65536,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "offset": {
+      "minimum": 0,
+      "type": "integer"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "total_bytes": {
+      "minimum": 0,
+      "type": "integer"
+     }
+    },
+    "required": [
+     "chunk_sha256",
+     "data_base64",
+     "file_sha256",
+     "length",
+     "offset",
+     "schema_version",
+     "total_bytes"
+    ],
+    "type": "object"
+   },
+   "result_limit": "cli",
+   "tier": "administrator"
+  },
+  "history_coverage": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "app_ids": {
+        "$ref": "#/$defs/app_ids"
+       },
+       "page": {
+        "$ref": "#/$defs/page"
+       },
+       "range": {
+        "$ref": "#/$defs/range"
+       }
+      },
+      "required": [
+       "range"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/$defs/coverage_source"
+      },
+      "maxItems": 100,
+      "type": "array"
+     },
+     "next_cursor": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/cursor"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "items",
+     "next_cursor",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "history_query": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "app_ids": {
+        "$ref": "#/$defs/app_ids"
+       },
+       "group_by": {
+        "items": {
+         "enum": [
+          "day",
+          "application",
+          "detector",
+          "verdict",
+          "action",
+          "profile"
+         ]
+        },
+        "maxItems": 3,
+        "type": "array"
+       },
+       "page": {
+        "$ref": "#/$defs/page"
+       },
+       "range": {
+        "$ref": "#/$defs/range"
+       }
+      },
+      "required": [
+       "range"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "cohort": {
+      "additionalProperties": false,
+      "properties": {
+       "events": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "unattributed_receipts": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "unknown_time": {
+        "minimum": 0,
+        "type": "integer"
+       }
+      },
+      "required": [
+       "events",
+       "unattributed_receipts",
+       "unknown_time"
+      ],
+      "type": "object"
+     },
+     "display_truncated": {
+      "type": "boolean"
+     },
+     "next_cursor": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/cursor"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "rows": {
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "allowed": {
+         "minimum": 0,
+         "type": "integer"
+        },
+        "blocked": {
+         "minimum": 0,
+         "type": "integer"
+        },
+        "events": {
+         "minimum": 0,
+         "type": "integer"
+        },
+        "key": {
+         "additionalProperties": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "properties": {},
+         "required": [],
+         "type": "object"
+        },
+        "malicious": {
+         "minimum": 0,
+         "type": "integer"
+        },
+        "unknown": {
+         "minimum": 0,
+         "type": "integer"
+        }
+       },
+       "required": [
+        "allowed",
+        "blocked",
+        "events",
+        "key",
+        "malicious",
+        "unknown"
+       ],
+       "type": "object"
+      },
+      "maxItems": 100,
+      "type": "array"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "cohort",
+     "display_truncated",
+     "next_cursor",
+     "rows",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "history_status": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "archive_present": {
+      "type": "boolean"
+     },
+     "falling_behind": {
+      "type": "boolean"
+     },
+     "last_collection": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/job"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "oldest_gap_seconds": {
+      "anyOf": [
+       {
+        "minimum": 0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema": {
+      "anyOf": [
+       {
+        "minimum": 1,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "unfinished_imports": {
+      "minimum": 0,
+      "type": "integer"
+     }
+    },
+    "required": [
+     "archive_present",
+     "falling_behind",
+     "last_collection",
+     "oldest_gap_seconds",
+     "schema",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "jobs_cancel": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "job_id": {
+        "$ref": "#/$defs/job_id"
+       }
+      },
+      "required": [
+       "job_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "job": {
+      "$ref": "#/$defs/job"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "job",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "jobs_get": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "job_id": {
+        "$ref": "#/$defs/job_id"
+       }
+      },
+      "required": [
+       "job_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "job": {
+      "$ref": "#/$defs/job"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "job",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "jobs_list": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "page": {
+        "$ref": "#/$defs/page"
+       },
+       "states": {
+        "items": {
+         "$ref": "#/$defs/job_state"
+        },
+        "maxItems": 10,
+        "type": "array"
+       }
+      },
+      "required": [],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/$defs/job"
+      },
+      "maxItems": 50,
+      "type": "array"
+     },
+     "next_cursor": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/cursor"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "items",
+     "next_cursor",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "lifecycle_execute": {
+   "admin_proof": true,
+   "authority": "direct_proof_or_approval",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "approval_id": {
+        "pattern": "^q1_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        "type": "string"
+       },
+       "parameter_digest": {
+        "$ref": "#/$defs/sha256"
+       },
+       "preview_id": {
+        "$ref": "#/$defs/preview_id"
+       }
+      },
+      "required": [
+       "parameter_digest",
+       "preview_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "$ref": "#/$defs/accepted"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  },
+  "lifecycle_preview": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "action": {
+        "enum": [
+         "prune",
+         "artifact_delete",
+         "compact",
+         "backup",
+         "restore",
+         "recover",
+         "import_finalize",
+         "export",
+         "allowance_set",
+         "epoch_activate",
+         "upload_admit"
+        ]
+       },
+       "allowance": {
+        "additionalProperties": false,
+        "properties": {
+         "daily_ids": {
+          "maximum": 50,
+          "minimum": 0,
+          "type": "integer"
+         },
+         "daily_sends": {
+          "maximum": 10,
+          "minimum": 0,
+          "type": "integer"
+         }
+        },
+        "required": [
+         "daily_ids",
+         "daily_sends"
+        ],
+        "type": "object"
+       },
+       "app_ids": {
+        "$ref": "#/$defs/app_ids"
+       },
+       "artifact_version_ids": {
+        "items": {
+         "$ref": "#/$defs/version_id"
+        },
+        "maxItems": 100,
+        "type": "array"
+       },
+       "backup_id": {
+        "maxLength": 64,
+        "type": "string"
+       },
+       "before": {
+        "$ref": "#/$defs/utc"
+       },
+       "examples_only": {
+        "type": "boolean"
+       },
+       "upload": {
+        "additionalProperties": false,
+        "properties": {
+         "expect_environment": {
+          "pattern": "^env1:[0-9a-f]{64}$",
+          "type": "string"
+         },
+         "expect_tsg": {
+          "pattern": "^[0-9]{1,32}$",
+          "type": "string"
+         },
+         "kind": {
+          "enum": [
+           "logical_transfer",
+           "legacy_bundle"
+          ]
+         },
+         "sha256": {
+          "$ref": "#/$defs/sha256"
+         },
+         "total_bytes": {
+          "maximum": 17179869184,
+          "minimum": 1,
+          "type": "integer"
+         }
+        },
+        "required": [
+         "expect_environment",
+         "expect_tsg",
+         "kind",
+         "sha256",
+         "total_bytes"
+        ],
+        "type": "object"
+       },
+       "upload_id": {
+        "$ref": "#/$defs/upload_id"
+       }
+      },
+      "required": [
+       "action"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "action": {
+      "enum": [
+       "prune",
+       "artifact_delete",
+       "compact",
+       "backup",
+       "restore",
+       "recover",
+       "import_finalize",
+       "export",
+       "allowance_set",
+       "epoch_activate",
+       "upload_admit"
+      ]
+     },
+     "affected": {
+      "additionalProperties": false,
+      "properties": {
+       "examples": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "facts": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "known_backups": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "receipts": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "report_versions": {
+        "minimum": 0,
+        "type": "integer"
+       }
+      },
+      "required": [],
+      "type": "object"
+     },
+     "data_generation": {
+      "minimum": 0,
+      "type": "integer"
+     },
+     "expires_at": {
+      "$ref": "#/$defs/utc"
+     },
+     "parameter_digest": {
+      "$ref": "#/$defs/sha256"
+     },
+     "preview_id": {
+      "$ref": "#/$defs/preview_id"
+     },
+     "proof_nonce": {
+      "anyOf": [
+       {
+        "pattern": "^[0-9a-f]{32}$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "summary": {
+      "maxLength": 8192,
+      "type": "string"
+     }
+    },
+    "required": [
+     "action",
+     "affected",
+     "data_generation",
+     "expires_at",
+     "parameter_digest",
+     "preview_id",
+     "proof_nonce",
+     "schema_version",
+     "summary"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  },
+  "receipts_ingest": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "cloud_id": {
+        "$ref": "#/$defs/sha256"
+       },
+       "records": {
+        "items": {
+         "$ref": "#/$defs/receipt"
+        },
+        "maxItems": 200,
+        "minItems": 1,
+        "type": "array"
+       }
+      },
+      "required": [
+       "cloud_id",
+       "records"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "accepted": {
+      "maximum": 200,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "duplicates": {
+      "maximum": 200,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "refused": {
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "index": {
+         "maximum": 199,
+         "minimum": 0,
+         "type": "integer"
+        },
+        "reason": {
+         "maxLength": 128,
+         "type": "string"
+        }
+       },
+       "required": [
+        "index",
+        "reason"
+       ],
+       "type": "object"
+      },
+      "maxItems": 200,
+      "type": "array"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "accepted",
+     "duplicates",
+     "refused",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "reports_create": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "app_ids": {
+        "$ref": "#/$defs/app_ids"
+       },
+       "range": {
+        "$ref": "#/$defs/range"
+       },
+       "title": {
+        "maxLength": 200,
+        "type": "string"
+       }
+      },
+      "required": [
+       "range"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "$ref": "#/$defs/accepted"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "reports_get": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "report_id": {
+        "$ref": "#/$defs/report_id"
+       },
+       "version_id": {
+        "$ref": "#/$defs/version_id"
+       }
+      },
+      "required": [
+       "report_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "latest_version": {
+      "$ref": "#/$defs/version_id"
+     },
+     "manifest": {
+      "$ref": "#/$defs/manifest"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "summary": {
+      "maxLength": 8192,
+      "type": "string"
+     }
+    },
+    "required": [
+     "latest_version",
+     "manifest",
+     "schema_version",
+     "summary"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "reports_list": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "kind": {
+        "enum": [
+         "daily",
+         "revision",
+         "manual",
+         "catch_up"
+        ]
+       },
+       "page": {
+        "$ref": "#/$defs/page"
+       },
+       "range": {
+        "$ref": "#/$defs/range"
+       }
+      },
+      "required": [],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/$defs/manifest"
+      },
+      "maxItems": 50,
+      "type": "array"
+     },
+     "next_cursor": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/cursor"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "items",
+     "next_cursor",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "schedules_disable": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "effective_at": {
+        "$ref": "#/$defs/utc"
+       },
+       "schedule_id": {
+        "$ref": "#/$defs/schedule_id"
+       }
+      },
+      "required": [
+       "effective_at",
+       "schedule_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "revision": {
+      "minimum": 1,
+      "type": "integer"
+     },
+     "schedule_id": {
+      "$ref": "#/$defs/schedule_id"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "revision",
+     "schedule_id",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "schedules_list": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "schedules": {
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "backlog_slots": {
+         "minimum": 0,
+         "type": "integer"
+        },
+        "effective_at": {
+         "$ref": "#/$defs/utc"
+        },
+        "enabled": {
+         "type": "boolean"
+        },
+        "interval_minutes": {
+         "anyOf": [
+          {
+           "maximum": 60,
+           "minimum": 5,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "kind": {
+         "enum": [
+          "collection",
+          "daily_report",
+          "daily_enrichment"
+         ]
+        },
+        "last_completed_slot": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/utc"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "revision_allowance": {
+         "anyOf": [
+          {
+           "maximum": 24,
+           "minimum": 1,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "revision_interval_hours": {
+         "anyOf": [
+          {
+           "maximum": 24,
+           "minimum": 1,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "schedule_id": {
+         "$ref": "#/$defs/schedule_id"
+        }
+       },
+       "required": [
+        "backlog_slots",
+        "effective_at",
+        "enabled",
+        "interval_minutes",
+        "kind",
+        "last_completed_slot",
+        "revision_allowance",
+        "revision_interval_hours",
+        "schedule_id"
+       ],
+       "type": "object"
+      },
+      "maxItems": 16,
+      "type": "array"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "schedules",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "schedules_set": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "effective_at": {
+        "$ref": "#/$defs/utc"
+       },
+       "enabled": {
+        "type": "boolean"
+       },
+       "interval_minutes": {
+        "maximum": 60,
+        "minimum": 5,
+        "type": "integer"
+       },
+       "kind": {
+        "enum": [
+         "collection",
+         "daily_report",
+         "daily_enrichment"
+        ]
+       },
+       "revision_allowance": {
+        "maximum": 24,
+        "minimum": 1,
+        "type": "integer"
+       },
+       "revision_interval_hours": {
+        "maximum": 24,
+        "minimum": 1,
+        "type": "integer"
+       }
+      },
+      "required": [
+       "effective_at",
+       "enabled",
+       "kind"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "revision": {
+      "minimum": 1,
+      "type": "integer"
+     },
+     "schedule_id": {
+      "$ref": "#/$defs/schedule_id"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "revision",
+     "schedule_id",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "operator"
+  },
+  "service_info": {
+   "admin_proof": false,
+   "authority": "grant",
+   "idempotency_key": false,
+   "mutating": false,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "contract_version": {
+      "minimum": 1,
+      "type": "integer"
+     },
+     "effective_tier": {
+      "$ref": "#/$defs/tier"
+     },
+     "epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "health": {
+      "enum": [
+       "ok",
+       "degraded",
+       "maintenance",
+       "storage_unavailable"
+      ]
+     },
+     "negotiated_protocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "schema_version_supported": {
+      "items": {
+       "minimum": 1,
+       "type": "integer"
+      },
+      "type": "array"
+     },
+     "server": {
+      "type": "string"
+     },
+     "service_tenant": {
+      "type": "string"
+     },
+     "tools": {
+      "items": {
+       "type": "string"
+      },
+      "maxItems": 64,
+      "type": "array"
+     },
+     "version": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "contract_version",
+     "effective_tier",
+     "epoch",
+     "health",
+     "negotiated_protocol",
+     "schema_version",
+     "schema_version_supported",
+     "server",
+     "service_tenant",
+     "tools",
+     "version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "reader"
+  },
+  "transfer_upload_abort": {
+   "admin_proof": false,
+   "authority": "upload_session",
+   "idempotency_key": false,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "upload_id": {
+        "$ref": "#/$defs/upload_id"
+       }
+      },
+      "required": [
+       "upload_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "aborted": {
+      "type": "boolean"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "upload_id": {
+      "$ref": "#/$defs/upload_id"
+     }
+    },
+    "required": [
+     "aborted",
+     "schema_version",
+     "upload_id"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  },
+  "transfer_upload_begin": {
+   "admin_proof": true,
+   "authority": "direct_proof",
+   "idempotency_key": true,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "expected_epoch": {
+      "pattern": "^[0-9a-f]{8}$",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "type": "string"
+     },
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "parameter_digest": {
+        "$ref": "#/$defs/sha256"
+       },
+       "preview_id": {
+        "$ref": "#/$defs/preview_id"
+       }
+      },
+      "required": [
+       "parameter_digest",
+       "preview_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "expected_epoch",
+     "idempotency_key",
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "chunk_bytes": {
+      "maximum": 65536,
+      "minimum": 1,
+      "type": "integer"
+     },
+     "expires_at": {
+      "$ref": "#/$defs/utc"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "sha256": {
+      "$ref": "#/$defs/sha256"
+     },
+     "total_bytes": {
+      "maximum": 17179869184,
+      "minimum": 1,
+      "type": "integer"
+     },
+     "upload_id": {
+      "$ref": "#/$defs/upload_id"
+     }
+    },
+    "required": [
+     "chunk_bytes",
+     "expires_at",
+     "schema_version",
+     "sha256",
+     "total_bytes",
+     "upload_id"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  },
+  "transfer_upload_chunk": {
+   "admin_proof": false,
+   "authority": "upload_session",
+   "idempotency_key": false,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "chunk_sha256": {
+        "$ref": "#/$defs/sha256"
+       },
+       "data_base64": {
+        "maxLength": 87384,
+        "type": "string"
+       },
+       "offset": {
+        "minimum": 0,
+        "type": "integer"
+       },
+       "upload_id": {
+        "$ref": "#/$defs/upload_id"
+       }
+      },
+      "required": [
+       "chunk_sha256",
+       "data_base64",
+       "offset",
+       "upload_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "received_bytes": {
+      "minimum": 0,
+      "type": "integer"
+     },
+     "schema_version": {
+      "const": 1
+     }
+    },
+    "required": [
+     "received_bytes",
+     "schema_version"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  },
+  "transfer_upload_finalize": {
+   "admin_proof": false,
+   "authority": "upload_session",
+   "idempotency_key": false,
+   "mutating": true,
+   "params": {
+    "additionalProperties": false,
+    "properties": {
+     "params": {
+      "additionalProperties": false,
+      "properties": {
+       "upload_id": {
+        "$ref": "#/$defs/upload_id"
+       }
+      },
+      "required": [
+       "upload_id"
+      ],
+      "type": "object"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "tenant": {
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "type": "string"
+     }
+    },
+    "required": [
+     "params",
+     "schema_version",
+     "tenant"
+    ],
+    "type": "object"
+   },
+   "result": {
+    "additionalProperties": false,
+    "properties": {
+     "records": {
+      "minimum": 0,
+      "type": "integer"
+     },
+     "schema_version": {
+      "const": 1
+     },
+     "upload_id": {
+      "$ref": "#/$defs/upload_id"
+     },
+     "validated": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "records",
+     "schema_version",
+     "upload_id",
+     "validated"
+    ],
+    "type": "object"
+   },
+   "result_limit": "agent",
+   "tier": "administrator"
+  }
+ }
+}

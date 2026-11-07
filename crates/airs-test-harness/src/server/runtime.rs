@@ -216,6 +216,8 @@ pub struct RuntimeData {
     pub breakdowns: BTreeMap<String, Value>,
     /// The sessions of `sessionsoverview`.
     pub sessions: Vec<Value>,
+    /// Exact app ID/name/session response overrides, independent of arrival order.
+    pub session_records: BTreeMap<(String, String, String), Value>,
     /// The largest dashboard page served (a larger `limit` is capped).
     pub page_cap: Option<usize>,
     /// Report this `total_items` instead of the count.
@@ -595,10 +597,25 @@ pub(crate) fn answer(data: &mut RuntimeData, route: Rx, request: &RecordedReques
         Rx::AppsList => Planned::json(200, &fx::apps_list()),
         Rx::SessionsChart => Planned::json(200, &fx::sessions_chart()),
         Rx::SessionsOverview => dash_page(data, request, &data.sessions, "items"),
-        Rx::Session => Planned::json(
-            200,
-            &fx::session(request.query_value("session_id").unwrap_or_default()),
-        ),
+        Rx::Session => {
+            let key = (
+                request.query_value("app_id").unwrap_or_default().to_owned(),
+                request
+                    .query_value("app_name")
+                    .unwrap_or_default()
+                    .to_owned(),
+                request
+                    .query_value("session_id")
+                    .unwrap_or_default()
+                    .to_owned(),
+            );
+            let value = data
+                .session_records
+                .get(&key)
+                .cloned()
+                .unwrap_or_else(|| fx::session(&key.2));
+            Planned::json(200, &value)
+        }
         Rx::SessionTransaction => Planned::json(
             200,
             &fx::transaction(

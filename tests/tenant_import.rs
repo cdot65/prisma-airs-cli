@@ -270,7 +270,7 @@ mod validation {
         let group = rs(&sandbox, &["tenant", "--help"], RunOptions::new());
         assert!(
             group.stdout.contains(
-                "import  Copy tenants from the TypeScript airs-cli; its files are not changed"
+                "import    Copy tenants from the TypeScript airs-cli; its files are not changed"
             ),
             "{}",
             group.stdout

@@ -1766,11 +1766,11 @@ mod streams {
         let out = rs(&Sandbox::new(), &["tenant", "--help"], RunOptions::new());
         out.assert_success();
         for line in [
-            "create  Create a tenant with guided prompts; does not select it",
-            "set     Update one tenant setting; prompt when omitted, hide secrets",
-            "unset   Remove one tenant setting so the default applies; credentials cannot be cleared",
-            "switch  Select the tenant for subsequent commands",
-            "delete  Delete a tenant and its config file; clears the selection if it was selected [aliases: rm]",
+            "create    Create a tenant with guided prompts; does not select it",
+            "set       Update one tenant setting; prompt when omitted, hide secrets",
+            "unset     Remove one tenant setting so the default applies; credentials cannot be cleared",
+            "switch    Select the tenant for subsequent commands",
+            "delete    Delete a tenant and its config file; clears the selection if it was selected [aliases: rm]",
         ] {
             assert!(out.stdout.contains(line), "{line}\n{}", out.stdout);
         }

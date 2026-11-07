@@ -1,0 +1,45 @@
+[package]
+name = "airs-runtime-core"
+description = "Shared runtime evidence, privacy, collection and rendering core for the airs CLI and the optional airs-mcp service"
+version = "8.2.0-dev.1"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+readme = false
+# Published in lockstep with airs-cli (exact `=` version); publication is a separate
+# release action (RUNTIME_MCP_CONTRACT §1).
+include = ["/src/**/*.rs", "/schemas/*.json", "/Cargo.toml", "/LICENSE", "/NOTICE"]
+
+[dependencies]
+# Exactly the CLI's SDK pin and features (contract §1): the unified graph is unchanged.
+scm = { package = "scm-sdk", version = "=0.2.4", default-features = false, features = ["reqwest-transport", "scan", "management", "red-team", "dlp", "model-security", "gateway", "agentguard"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["http2", "gzip", "stream"] }
+futures-util = { version = "0.3", default-features = false, features = ["alloc"] }
+httpdate = "=1.0.3"
+ryu-js = "=1.0.3"
+rustix = { version = "=1.1.5", features = ["fs", "termios", "system", "process"] }
+serde = { version = "1.0", features = ["derive"] }
+sha2 = { version = "=0.10.9", default-features = false }
+# Never enable `preserve_order`: feature unification would change SDK wire bytes.
+serde_json = "1.0"
+tokio = { version = "1.50", features = ["rt", "macros", "signal", "time", "sync"] }
+toml = { version = "=1.1.2", default-features = false, features = ["std", "serde", "parse"] }
+url = "2.5"
+uuid = { version = "1", features = ["v4"] }
+# Timezone arithmetic with an embedded, versioned tzdb (no host zoneinfo; contract §1, §8).
+jiff = { version = "=0.2.39", default-features = false, features = ["std", "tzdb-bundle-always"] }
+
+[features]
+# Test-only: exposes the choice-187 rule checker and corpus to the CLI's tests (a
+# dev-dependency feature; release builds never enable it, choice 187).
+test-support = []
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+airs-test-harness = { path = "../airs-test-harness" }
+regex = { version = "1", default-features = false, features = ["std", "unicode-perl"] }

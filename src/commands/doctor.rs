@@ -394,6 +394,16 @@ pub fn check_scanner_credentials(config: Option<&TenantConfig>, tenant: &str) ->
     };
     let keys = config.scanner_keys();
     if keys.is_empty() {
+        if let Some(named) = config.scanners().filter(|named| !named.is_empty()) {
+            return Check::new(
+                SCANNER_CREDENTIALS,
+                Status::Pass,
+                format!(
+                    "{} named scanner(s) configured; scan and bulk-scan require --scanner; bound copies do not follow flat credential rotation",
+                    named.len()
+                ),
+            );
+        }
         return Check::new(
             SCANNER_CREDENTIALS,
             Status::Skip,
@@ -402,7 +412,14 @@ pub fn check_scanner_credentials(config: Option<&TenantConfig>, tenant: &str) ->
         .hint(config::setting_remedy(Some(tenant), &["airsApiKey"]));
     }
     let detail: Vec<String> = keys.iter().map(|key| format!("{key} (file)")).collect();
-    Check::new(SCANNER_CREDENTIALS, Status::Pass, detail.join(", "))
+    let mut detail = detail.join(", ");
+    if let Some(named) = config.scanners().filter(|named| !named.is_empty()) {
+        detail.push_str(&format!(
+            "; {} named scanner(s); bound copies do not follow flat credential rotation",
+            named.len()
+        ));
+    }
+    Check::new(SCANNER_CREDENTIALS, Status::Pass, detail)
 }
 
 pub fn check_management_credentials(
@@ -811,6 +828,11 @@ pub async fn checks(invocation: &mut Invocation) -> Result<Vec<Check>, CliError>
         scanner_credentials.status == Status::Pass,
     );
     let scanner_api = match (&config, scanner_credentials.status) {
+        (Some(config), Status::Pass) if config.scanner_keys().is_empty() => Check::new(
+            SCANNER_API,
+            Status::Skip,
+            "skipped — named scanner credentials require explicit selection; no scanner was probed",
+        ),
         (Some(config), Status::Pass) => probe_scanner(invocation, config).await?,
         _ if scanner_credentials.is_not_evaluated() => Check::not_evaluated(SCANNER_API),
         _ => Check::new(
@@ -938,7 +960,15 @@ pub fn render(
 }
 
 pub async fn run(invocation: &mut Invocation, format: Format) -> Result<(), CliError> {
-    let checks = checks(invocation).await?;
+    let mut checks = checks(invocation).await?;
+    // Config and executable paths can coincide with an unused named secret.
+    // Project only after configuration and OAuth discovery, before any renderer.
+    for check in &mut checks {
+        check.detail = terminal_safe(invocation.secrets.scrub(&check.detail)).into_owned();
+        if let Some(hint) = &mut check.hint {
+            *hint = terminal_safe(invocation.secrets.scrub(hint)).into_owned();
+        }
+    }
     if render(&mut invocation.output, &checks, format)? {
         let _ = invocation.output.commit();
         return Err(CliError::Reported(crate::error::EXIT_OPERATIONAL));

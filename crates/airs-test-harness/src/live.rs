@@ -1033,7 +1033,7 @@ pub fn compare_verdicts(
     if rust.prompt != ts.prompt {
         differs.push("prompt detections");
     }
-    if ts.triggered != !rust.prompt.is_empty() {
+    if ts.triggered == rust.prompt.is_empty() {
         differs.push("triggered");
     }
     if !ts.response.is_empty() {

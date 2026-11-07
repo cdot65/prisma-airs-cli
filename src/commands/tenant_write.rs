@@ -58,6 +58,7 @@ pub fn write_command_name(command: &TenantCommand) -> Option<&'static str> {
         TenantCommand::Switch { .. } => Some("switch"),
         TenantCommand::Delete { .. } => Some("delete"),
         TenantCommand::Import(_)
+        | TenantCommand::Scanners(_)
         | TenantCommand::List
         | TenantCommand::Path { .. }
         | TenantCommand::Read { .. }
@@ -73,6 +74,11 @@ fn unknown_key() -> CliError {
 }
 
 fn known_key(key: &str) -> Result<&'static str, CliError> {
+    if key == "scanners" {
+        return Err(CliError::usage(
+            "Use 'airs tenant scanners' to change named scanner settings",
+        ));
+    }
     schema_key(key).ok_or_else(unknown_key)
 }
 
@@ -149,6 +155,7 @@ pub fn plan(command: &TenantCommand) -> Result<WritePlan, CliError> {
             force: *force,
         }),
         TenantCommand::Import(_)
+        | TenantCommand::Scanners(_)
         | TenantCommand::List
         | TenantCommand::Path { .. }
         | TenantCommand::Read { .. }
@@ -184,13 +191,14 @@ pub fn run(invocation: &mut Invocation, plan: WritePlan) -> Result<(), CliError>
 /// Prints the waiting status once (quiet-suppressed) and stops on a signal.
 struct StatusWaiter<'a> {
     output: &'a mut Output,
+    secrets: crate::error::SecretSet,
 }
 
 impl Waiter for StatusWaiter<'_> {
     fn waiting(&mut self, holder: &str) {
-        self.output.status(&format!(
+        self.output.status(self.secrets.scrub(&format!(
             "Waiting for another {PROGRAM} change to finish ({holder})"
-        ));
+        )));
     }
     fn interrupted(&mut self) -> Option<CliError> {
         self.output
@@ -211,6 +219,7 @@ pub(super) fn begin(
     let _waiting = signals.as_deref().map(|state| state.enter(Phase::Waiting));
     let mut waiter = StatusWaiter {
         output: &mut invocation.output,
+        secrets: invocation.secrets.clone(),
     };
     Transaction::begin(store, tenant_files, &mut waiter)
 }
@@ -218,7 +227,9 @@ pub(super) fn begin(
 /// Release the lock and print the directory-sync warnings (never quiet-suppressed).
 pub(super) fn finish(invocation: &mut Invocation, transaction: Transaction) {
     for warning in transaction.commit() {
-        invocation.output.warning(&warning);
+        invocation
+            .output
+            .warning(invocation.secrets.scrub(&warning));
     }
 }
 

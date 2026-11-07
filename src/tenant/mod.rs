@@ -5,8 +5,10 @@
 //! registry is not read here: only [`ts::registry_exists`] looks at its path, for the
 //! import suffix.
 
-pub mod config;
+pub use airs_runtime_core::tenant::config;
 pub mod import;
+pub use airs_runtime_core::tenant::scanners;
+pub use airs_runtime_core::tenant::{Selected, TenantContext};
 pub mod ts;
 
 use crate::error::CliError;
@@ -72,15 +74,6 @@ pub fn validate_tenant_flag(name: Option<&str>) -> Result<(), CliError> {
         Some(name) if !valid_tenant_name(name) => Err(CliError::usage(NAME_RULE)),
         _ => Ok(()),
     }
-}
-
-/// A selected tenant and how it was chosen.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Selected {
-    pub name: String,
-    /// The pinned TSG from `config.toml`.
-    pub tsg_id: String,
-    pub by_flag: bool,
 }
 
 /// Why a tenant file could not be used, in check order (§3.3, §3.7).
@@ -279,19 +272,6 @@ impl StoreView {
                 store::tenant_file_error(&self.tenant_path(&selected.name))
             }
         }
-    }
-}
-
-/// Everything an API command needs about the selected tenant.
-#[derive(Clone, Debug)]
-pub struct TenantContext {
-    pub selected: Selected,
-    pub config: TenantConfig,
-}
-
-impl TenantContext {
-    pub fn name(&self) -> &str {
-        &self.selected.name
     }
 }
 

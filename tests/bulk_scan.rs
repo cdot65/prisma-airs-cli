@@ -1281,7 +1281,15 @@ mod job {
             .map(|n| format!("{n}{}", "z".repeat(2_000_000)))
             .collect();
         let file = fx.prompts(&prompts);
-        fx.bulk(&file, &["--quiet"]).assert_success();
+        // This functional case serializes/checkpoints ten MiB and makes multiple
+        // bounded SDK calls. Allow emulated targets time without changing any
+        // production request deadline or the body/chunk assertions below.
+        fx.bulk_with(
+            &file,
+            &["--quiet"],
+            &fx.options().timeout(Duration::from_secs(120)),
+        )
+        .assert_success();
         // 4 × 2,000,000 bytes fit the 8 MiB − 64 KiB budget; a fifth does not.
         assert_eq!(fx.posted(), [vec![0, 1, 2, 3], vec![4]]);
         assert!(

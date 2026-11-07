@@ -40,3 +40,49 @@ airs tenant import --dry-run
 See [Configuration and tenants](../getting-started/configuration.md) for the store, the
 settings and the credential planes, [Upgrading from 7.x](../getting-started/upgrading-from-typescript.md)
 for `tenant import`, and the [reference](../reference/commands/tenant.md) for every flag.
+
+## Named application scanner credentials (8.1 development)
+
+Bind scanner access to the exact dashboard application ID so report enrichment
+uses the intended credential. Management discovery still lists applications with
+missing bindings and marks their scanner detail incomplete. Credentials and
+endpoints remain in the selected tenant TOML file.
+
+```sh
+# Explicitly copy an existing flat key. With both flat kinds, --use is required.
+airs tenant scanners bind-default development monitor --app-id APP_ID --use key
+airs tenant scanners list development
+
+# Add or rotate from a private 0600 TOML file; never pass secrets in argv.
+airs tenant scanners set development monitor --file ./scanner.toml --replace
+airs runtime scan --profile monitor --scanner monitor "Synthetic example"
+airs runtime scan-logs results --scanner monitor --scan-id SCAN_UUID
+```
+
+The input file contains `applicationId`, `endpoint`, exactly one of `apiKey` or
+`apiToken`, and optional `numRetries` (default 0). One application ID can have only
+one named set. Replacing a set generates a new public revision. Flat credential
+changes do not rotate an existing bound copy. Direct scan/results/reports use flat
+credentials unless `--scanner` is explicit; named-only tenants require selection.
+Reports and discovery use exact application bindings and never try alternate keys.
+
+**Configuration format upgrade:** the first named write saves a private, exact-byte
+rollback snapshot before adding the namespace. Older binaries refuse the new
+format. List and restore snapshots locally:
+
+```sh
+airs tenant scanners snapshots development
+airs tenant scanners restore development --file SNAPSHOT_PATH --expect-tsg TSG_ID --force
+airs tenant scanners delete-snapshot development --file SNAPSHOT_PATH --force
+airs tenant scanners remove development monitor --force
+```
+
+Restore first saves the current configuration as another private snapshot. These
+files contain credentials: retain them privately and delete them explicitly when
+no longer needed. Removing the final set preserves the new format marker; restoring
+a flat-format snapshot is the explicit downgrade path. Reads never rewrite files.
+
+Named bulk jobs save the scanner name, application, endpoint and revision, without
+secrets. Resume refuses a removed or retargeted binding. A rotation at the same
+application and endpoint uses that one current credential with a warning that
+historical access is unqualified; accepted scans are never resubmitted.

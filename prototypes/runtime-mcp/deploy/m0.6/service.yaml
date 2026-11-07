@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: airs-mcp
+spec:
+  selector: {app.kubernetes.io/name: airs-mcp-spike}
+  ports: [{name: https, port: 443, targetPort: https}]

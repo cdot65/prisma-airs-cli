@@ -779,69 +779,36 @@ mod consumption {
 
 mod scan_logs {
     use super::*;
-
-    const LINE: &str = "  ✗ Legacy scan-logs retrieval is broken and under refactor. Empty results do not mean no activity. Use airs runtime sessions list --interval 1 --unit day --output json, or airs runtime report.\n";
-
-    /// TS `management.spec.ts:1200-1225`, `flag-standardization.spec.ts:253-280`: the stub
-    /// sends nothing, not even the token, accepts its paging flags, and exits 1.
     #[test]
-    fn sends_nothing_and_exits_1() {
+    fn discovery_is_bounded_and_reports_unresolved_identifiers() {
         let f = fx();
-        for args in [
-            &["scan-logs", "query", "--interval", "24", "--unit", "hours"][..],
-            &[
-                "scan-logs",
-                "query",
-                "--interval",
-                "1",
-                "--unit",
-                "x",
-                "--limit",
-                "50",
-                "--offset",
-                "100",
-                "--page",
-                "4",
-                "--page-size",
-                "20",
-                "--filter",
-                "threat",
-            ],
-        ] {
-            let out = f.rt(args);
-            out.assert_code(1);
-            assert_eq!(out.stdout, "");
-            assert_eq!(out.stderr, LINE);
-        }
-        let out = f.run_with(
-            &[
-                "--quiet",
-                "runtime",
-                "scan-logs",
-                "query",
-                "--interval",
-                "24",
-                "--unit",
-                "hours",
-            ],
-            &RunOptions::new(),
-        );
+        let out = f.rt(&["scan-logs", "query", "--interval", "24", "--unit", "hours"]);
         out.assert_code(1);
-        assert_eq!(out.stderr, LINE, "never suppressed");
-        assert_eq!(f.server.request_count(), 0);
+        assert!(out.stdout.contains("coverage"));
+        assert!(out.stdout.contains("false"));
+        assert!(!out.stderr.contains("broken and under refactor"));
+        assert!(f.server.request_count() > 0);
+        let out = f.rt(&[
+            "scan-logs",
+            "query",
+            "--interval",
+            "1",
+            "--unit",
+            "x",
+            "--page",
+            "4",
+        ]);
+        out.assert_code(2);
     }
-
-    /// It reads the tenant selection (TS) but needs no credentials, and its `--output` is
-    /// validated first.
     #[test]
     fn the_tenant_is_read_and_output_validated() {
-        let f = fx_with(|config| {
-            config.remove("mgmtClientSecret");
+        let f = fx_with(|c| {
+            c.remove("mgmtClientSecret");
         });
         let out = f.rt(&["scan-logs", "query", "--interval", "1", "--unit", "hours"]);
         out.assert_code(1);
-        assert_eq!(out.stderr, LINE);
-        let out = f.rt(&[
+        assert!(out.stdout.contains("unavailable"));
+        f.rt(&[
             "scan-logs",
             "query",
             "--interval",
@@ -850,8 +817,8 @@ mod scan_logs {
             "hours",
             "--output",
             "yaml",
-        ]);
-        out.assert_code(2);
+        ])
+        .assert_code(2);
         let sandbox = Sandbox::new();
         let out = run(
             &rust(),
@@ -868,9 +835,9 @@ mod scan_logs {
             &RunOptions::new(),
         );
         out.assert_code(1);
-        assert!(out.stderr.contains("No tenant"), "{}", out.stderr);
-        let out = f.rt(&["scan-logs", "query", "--unit", "hours"]);
-        out.assert_code(2);
+        assert!(out.stderr.contains("No tenant"));
+        f.rt(&["scan-logs", "query", "--unit", "hours"])
+            .assert_code(2);
     }
 }
 
@@ -1089,7 +1056,7 @@ mod checks {
                 &[fx::AUTHCODE_MARKER, "LAST8-01"],
             );
         }
-        // The stub opens no log (debug policy `none`).
+        // Evidence reads refuse debug before opening a log.
         let f = fx();
         let state = debug_log::xdg_state_home(&f.sandbox).display().to_string();
         let out = f.run_with(
@@ -1105,7 +1072,7 @@ mod checks {
             ],
             &RunOptions::new().env("XDG_STATE_HOME", &state),
         );
-        out.assert_code(1);
+        out.assert_code(2);
         assert!(debug_log::log_files(&debug_log::log_dir(&f.sandbox)).is_empty());
     }
 

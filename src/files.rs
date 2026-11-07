@@ -9,62 +9,19 @@
 use crate::error::CliError;
 use std::ffi::OsStr;
 use std::fs::File;
-use std::io::Read;
 use std::path::Path;
+
+pub use airs_runtime_core::files::{names_a_file, read_bytes, read_text, shown};
 
 /// The `--config` limit (1 MiB).
 pub const CONFIG_LIMIT: u64 = 1_048_576;
 /// The `--prompts` limit (16 MiB).
 pub const PROMPTS_LIMIT: u64 = 16_777_216;
 
-/// The path as the messages show it (lossy for non-UTF-8 bytes).
-pub fn shown(path: &OsStr) -> String {
-    path.to_string_lossy().into_owned()
-}
-
 /// The red team `--script-file` limit (4 MiB, DESIGN §15.3).
 pub const SCRIPT_LIMIT: u64 = 4 * 1_048_576;
 /// The `prompt-sets upload` limit (7 MiB, below the SDK's 8 MiB request bound).
 pub const UPLOAD_LIMIT: u64 = 7 * 1_048_576;
-
-fn unreadable(path: &OsStr, limit: u64) -> CliError {
-    CliError::operational(format!(
-        "Cannot read {} (missing, not a regular file, unreadable or larger than {} MiB)",
-        shown(path),
-        limit / 1_048_576
-    ))
-}
-
-/// Read the whole regular file at `path` (symlinks followed) of at most `limit` bytes.
-pub fn read_bytes(path: &OsStr, limit: u64) -> Result<Vec<u8>, CliError> {
-    let fail = || unreadable(path, limit);
-    let target = Path::new(path);
-    // A FIFO or device is refused before it is opened (opening a FIFO blocks).
-    let metadata = std::fs::metadata(target).map_err(|_| fail())?;
-    if !metadata.is_file() || metadata.len() > limit {
-        return Err(fail());
-    }
-    let file = File::open(target).map_err(|_| fail())?;
-    // The file that was opened must still be a regular file within the limit.
-    let opened = file.metadata().map_err(|_| fail())?;
-    if !opened.is_file() || opened.len() > limit {
-        return Err(fail());
-    }
-    let mut bytes = Vec::new();
-    file.take(limit + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|_| fail())?;
-    if bytes.len() as u64 > limit {
-        return Err(fail());
-    }
-    Ok(bytes)
-}
-
-/// Read the whole file at `path` as UTF-8 text of at most `limit` bytes.
-pub fn read_text(path: &OsStr, limit: u64) -> Result<String, CliError> {
-    String::from_utf8(read_bytes(path, limit)?)
-        .map_err(|_| CliError::operational(format!("{} is not valid UTF-8", shown(path))))
-}
 
 /// Read a `--config` file: one JSON value that is an object (the D44 classes count as
 /// invalid JSON).
@@ -133,20 +90,6 @@ pub fn already_exists(path: &Path, flag: &str) -> CliError {
         "{} already exists; choose another {flag}",
         shown(path.as_os_str())
     ))
-}
-
-/// Whether the last component of `path` names a file: not empty (a trailing `/`), `.`
-/// or `..` (D226). `lstat("dir/")` of a missing `dir` is "not found" and its parent is
-/// the working directory, so such a path would pass every other check and fail only at
-/// the final `link`, after the request.
-pub fn names_a_file(path: &Path) -> bool {
-    use std::os::unix::ffi::OsStrExt;
-    let bytes = path.as_os_str().as_bytes();
-    let last = bytes
-        .rsplit(|byte| *byte == b'/')
-        .next()
-        .unwrap_or_default();
-    !last.is_empty() && last != b"." && last != b".."
 }
 
 /// Refuse a destination where anything exists (`lstat`: a dangling symlink included),
@@ -265,8 +208,7 @@ impl Reservation {
         self.sync = |_| Err(std::io::Error::other("fsync refused (test)"));
     }
 
-    /// The temporary's path.
-    #[cfg(test)]
+    /// The temporary's path (an MCP export re-screens what it wrote there).
     pub fn temp_path(&self) -> &Path {
         &self.temp
     }
@@ -281,6 +223,33 @@ impl Reservation {
             return Err(LinkError::Write);
         };
         if file.write_all(bytes).and_then(|()| file.flush()).is_err() {
+            return Err(LinkError::Write);
+        }
+        let synced = (self.sync)(&file).is_ok();
+        drop(file);
+        if !synced {
+            return Err(LinkError::NotSynced(self));
+        }
+        self.link(path).map(Self::finish)
+    }
+
+    /// Append `bytes` to the temporary (a streamed transfer, written chunk by chunk).
+    pub fn append(&mut self, bytes: &[u8]) -> std::io::Result<()> {
+        use std::io::Write;
+        match self.file.as_mut() {
+            Some(file) => file.write_all(bytes),
+            None => Err(std::io::Error::other("the reservation is closed")),
+        }
+    }
+
+    /// After [`Reservation::append`]: flush, `fsync` and close the temporary, then link
+    /// it to `path` (never overwriting); a failed `fsync` is [`LinkError::NotSynced`].
+    pub fn finish_written(mut self, path: &Path) -> Result<Published, LinkError> {
+        use std::io::Write;
+        let Some(mut file) = self.file.take() else {
+            return Err(LinkError::Write);
+        };
+        if file.flush().is_err() {
             return Err(LinkError::Write);
         }
         let synced = (self.sync)(&file).is_ok();

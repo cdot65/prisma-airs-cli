@@ -124,13 +124,19 @@ jobs:
           set -euo pipefail
           unset AIRS_RS_LIVE AIRS_E2E_TENANT AIRS_E2E_PROFILE AIRS_ALLOW_PARITY_SKIP
           export AIRS_REQUIRE_PARITY=1
+          # The job container has no CPU limit, so the test harness would otherwise run
+          # one thread per host core (16 on the dedicated runner's node) while the musl
+          # job compiles on the same cores. The runner is sized for 4 CPUs; the suite's
+          # wall-clock tests (deadline, budget and lock-contention cases) need that
+          # headroom to be real. Each test binary runs at most 4 tests at a time.
+          export RUST_TEST_THREADS=4
           if [ "$(id -u)" -eq 0 ]; then
             # Some tests chmod a file to 0000 and expect it to be unreadable, which root
             # ignores. Run the suite as an unprivileged user.
             id ci >/dev/null 2>&1 || useradd --create-home --shell /bin/bash ci
             chown -R ci:ci "$GITHUB_WORKSPACE" "$CARGO_HOME" "$RUSTUP_HOME"
             exec setpriv --reuid=ci --regid=ci --init-groups \
-              env HOME=/home/ci cargo test --workspace --locked --no-fail-fast
+              env HOME=/home/ci RUST_TEST_THREADS=4 cargo test --workspace --locked --no-fail-fast
           fi
           cargo test --workspace --locked --no-fail-fast
 

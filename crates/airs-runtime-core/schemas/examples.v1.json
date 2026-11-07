@@ -1,0 +1,842 @@
+{
+ "examples": {
+  "admin_confirm": {
+   "request": {
+    "params": {
+     "parameter_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "preview_id": "p1_0000000a_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "approval_id": "q1_00000000-0000-4000-8000-000000000001",
+    "expires_at": "2026-11-04T06:00:00Z",
+    "schema_version": 1
+   }
+  },
+  "artifacts_download": {
+   "request": {
+    "params": {
+     "length": 65536,
+     "name": "report.html",
+     "offset": 0,
+     "version_id": "v1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "chunk_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "data_base64": "PGg+",
+    "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "length": 3,
+    "offset": 0,
+    "schema_version": 1,
+    "total_bytes": 3
+   }
+  },
+  "artifacts_read": {
+   "request": {
+    "params": {
+     "name": "review.md",
+     "version_id": "v1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "next_cursor": null,
+    "schema_version": 1,
+    "segment": "# Review\n",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "total_bytes": 9
+   }
+  },
+  "assessments_submit": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "markdown": "No action needed.",
+     "review_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "version_id": "v1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "assessment_id": "a1_00000000-0000-4000-8000-000000000001",
+    "attributed_to": {
+     "kind": "principal",
+     "label": "claude-code"
+    },
+    "schema_version": 1
+   }
+  },
+  "collection_start": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "mode": "recent"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "job": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "collection_start",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "queued",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "joined_existing": false,
+    "schema_version": 1
+   }
+  },
+  "enrichment_start": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "max_reports": 5,
+     "report_id": "r1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "job": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "enrichment_start",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "queued",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "joined_existing": false,
+    "schema_version": 1
+   }
+  },
+  "export_read": {
+   "request": {
+    "params": {
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "length": 65536,
+     "offset": 0
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "chunk_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "data_base64": "AAAA",
+    "file_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "length": 3,
+    "offset": 0,
+    "schema_version": 1,
+    "total_bytes": 3
+   }
+  },
+  "history_coverage": {
+   "request": {
+    "params": {
+     "range": {
+      "since": "2026-11-03T06:00:00Z",
+      "until": "2026-11-04T06:00:00Z"
+     }
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "items": [
+     {
+      "application_id": "app-a",
+      "gap_seconds": null,
+      "source": "sessions",
+      "state": "complete",
+      "traversed_as_of": "2026-11-04T06:00:00Z"
+     }
+    ],
+    "next_cursor": null,
+    "schema_version": 1
+   }
+  },
+  "history_query": {
+   "request": {
+    "params": {
+     "group_by": [
+      "day"
+     ],
+     "page": {
+      "limit": 50
+     },
+     "range": {
+      "since": "2026-11-03T06:00:00Z",
+      "until": "2026-11-04T06:00:00Z"
+     }
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "cohort": {
+     "events": 10,
+     "unattributed_receipts": 1,
+     "unknown_time": 0
+    },
+    "display_truncated": false,
+    "next_cursor": "c1.AAAAAAAAAAAAAAAAAAAAAAAA",
+    "rows": [
+     {
+      "allowed": 1,
+      "blocked": 1,
+      "events": 10,
+      "key": {
+       "day": "2026-11-03"
+      },
+      "malicious": 2,
+      "unknown": 0
+     }
+    ],
+    "schema_version": 1
+   }
+  },
+  "history_status": {
+   "request": {
+    "params": {},
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "archive_present": true,
+    "falling_behind": false,
+    "last_collection": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "collection_start",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "queued",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "oldest_gap_seconds": null,
+    "schema": 1,
+    "schema_version": 1
+   }
+  },
+  "jobs_cancel": {
+   "request": {
+    "params": {
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "job": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "collection_start",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "cancel_requested",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "schema_version": 1
+   }
+  },
+  "jobs_get": {
+   "request": {
+    "params": {
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "job": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "collection_start",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "queued",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "schema_version": 1
+   }
+  },
+  "jobs_list": {
+   "request": {
+    "params": {
+     "states": [
+      "queued"
+     ]
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "items": [
+     {
+      "epoch": "0000000a",
+      "gaps": [],
+      "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+      "operation": "collection_start",
+      "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "progress": null,
+      "result": null,
+      "retry_after_seconds": null,
+      "state": "queued",
+      "submitted_at": "2026-11-04T06:00:00Z",
+      "submitter": {
+       "kind": "principal",
+       "label": "claude-code"
+      },
+      "updated_at": "2026-11-04T06:00:00Z"
+     }
+    ],
+    "next_cursor": null,
+    "schema_version": 1
+   }
+  },
+  "lifecycle_execute": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "parameter_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "preview_id": "p1_0000000a_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "job": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "lifecycle_execute",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "queued",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "joined_existing": false,
+    "schema_version": 1
+   }
+  },
+  "lifecycle_preview": {
+   "request": {
+    "params": {
+     "action": "prune",
+     "before": "2026-11-03T06:00:00Z"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "action": "prune",
+    "affected": {
+     "facts": 5,
+     "known_backups": 1,
+     "report_versions": 0
+    },
+    "data_generation": 7,
+    "expires_at": "2026-11-04T06:00:00Z",
+    "parameter_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "preview_id": "p1_0000000a_00000000-0000-4000-8000-000000000001",
+    "proof_nonce": "00000000000000000000000000000000",
+    "schema_version": 1,
+    "summary": "Prune facts before 2026-11-03."
+   }
+  },
+  "receipts_ingest": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "cloud_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "records": [
+      {
+       "action": "block",
+       "application_id": null,
+       "application_name": null,
+       "category": "malicious",
+       "declared_scanner": "monitor",
+       "identity_withheld": false,
+       "receipt_key": "bulk:job1:item:0001",
+       "received_at": "2026-11-04T06:00:00Z",
+       "report_id": null,
+       "scan_id": "00000000-0000-4000-8000-000000000001",
+       "session_id": null,
+       "status": "complete",
+       "sub_request": null
+      }
+     ]
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "accepted": 1,
+    "duplicates": 0,
+    "refused": [],
+    "schema_version": 1
+   }
+  },
+  "reports_create": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "range": {
+      "since": "2026-11-03T06:00:00Z",
+      "until": "2026-11-04T06:00:00Z"
+     }
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "job": {
+     "epoch": "0000000a",
+     "gaps": [],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "operation": "reports_create",
+     "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "progress": null,
+     "result": null,
+     "retry_after_seconds": null,
+     "state": "queued",
+     "submitted_at": "2026-11-04T06:00:00Z",
+     "submitter": {
+      "kind": "principal",
+      "label": "claude-code"
+     },
+     "updated_at": "2026-11-04T06:00:00Z"
+    },
+    "joined_existing": false,
+    "schema_version": 1
+   }
+  },
+  "reports_get": {
+   "request": {
+    "params": {
+     "report_id": "r1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "latest_version": "v1_00000000-0000-4000-8000-000000000001",
+    "manifest": {
+     "analysis_version": 1,
+     "as_of": "2026-11-04T06:00:00Z",
+     "completeness": "partial",
+     "files": [
+      {
+       "bytes": 10,
+       "name": "report.html",
+       "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+       "bytes": 10,
+       "name": "evidence.json",
+       "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+       "bytes": 10,
+       "name": "review.md",
+       "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+     ],
+     "gaps": [
+      "reports enrichment disabled"
+     ],
+     "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+     "kind": "daily",
+     "period": {
+      "since": "2026-11-03T06:00:00Z",
+      "until": "2026-11-04T06:00:00Z"
+     },
+     "predecessor": null,
+     "redaction_version": 1,
+     "report_id": "r1_00000000-0000-4000-8000-000000000001",
+     "scheduled_at": "2026-11-04T06:00:00Z",
+     "timezone": "America/Chicago",
+     "tzdb_version": "jiff-tzdb 0.1.9",
+     "version": 0,
+     "version_id": "v1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "summary": "Daily brief (partial)."
+   }
+  },
+  "reports_list": {
+   "request": {
+    "params": {},
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "items": [
+     {
+      "analysis_version": 1,
+      "as_of": "2026-11-04T06:00:00Z",
+      "completeness": "partial",
+      "files": [
+       {
+        "bytes": 10,
+        "name": "report.html",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       },
+       {
+        "bytes": 10,
+        "name": "evidence.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       },
+       {
+        "bytes": 10,
+        "name": "review.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+       }
+      ],
+      "gaps": [
+       "reports enrichment disabled"
+      ],
+      "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+      "kind": "daily",
+      "period": {
+       "since": "2026-11-03T06:00:00Z",
+       "until": "2026-11-04T06:00:00Z"
+      },
+      "predecessor": null,
+      "redaction_version": 1,
+      "report_id": "r1_00000000-0000-4000-8000-000000000001",
+      "scheduled_at": "2026-11-04T06:00:00Z",
+      "timezone": "America/Chicago",
+      "tzdb_version": "jiff-tzdb 0.1.9",
+      "version": 0,
+      "version_id": "v1_00000000-0000-4000-8000-000000000001"
+     }
+    ],
+    "next_cursor": null,
+    "schema_version": 1
+   }
+  },
+  "schedules_disable": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "effective_at": "2026-11-04T06:00:00Z",
+     "schedule_id": "s1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "revision": 3,
+    "schedule_id": "s1_00000000-0000-4000-8000-000000000001",
+    "schema_version": 1
+   }
+  },
+  "schedules_list": {
+   "request": {
+    "params": {},
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "schedules": [
+     {
+      "backlog_slots": 0,
+      "effective_at": "2026-11-04T06:00:00Z",
+      "enabled": true,
+      "interval_minutes": null,
+      "kind": "daily_report",
+      "last_completed_slot": "2026-11-04T06:00:00Z",
+      "revision_allowance": 6,
+      "revision_interval_hours": 4,
+      "schedule_id": "s1_00000000-0000-4000-8000-000000000001"
+     }
+    ],
+    "schema_version": 1
+   }
+  },
+  "schedules_set": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "effective_at": "2026-11-04T06:00:00Z",
+     "enabled": true,
+     "interval_minutes": 15,
+     "kind": "collection"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "revision": 2,
+    "schedule_id": "s1_00000000-0000-4000-8000-000000000001",
+    "schema_version": 1
+   }
+  },
+  "service_info": {
+   "request": {
+    "params": {},
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "contract_version": 1,
+    "effective_tier": "reader",
+    "epoch": "0000000a",
+    "health": "ok",
+    "negotiated_protocol": "2025-06-18",
+    "schema_version": 1,
+    "schema_version_supported": [
+     1
+    ],
+    "server": "airs-mcp",
+    "service_tenant": "tsg-1",
+    "tools": [
+     "service_info"
+    ],
+    "version": "8.2.0"
+   }
+  },
+  "transfer_upload_abort": {
+   "request": {
+    "params": {
+     "upload_id": "u1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "aborted": true,
+    "schema_version": 1,
+    "upload_id": "u1_00000000-0000-4000-8000-000000000001"
+   }
+  },
+  "transfer_upload_begin": {
+   "request": {
+    "expected_epoch": "0000000a",
+    "idempotency_key": "0123456789abcdef0123",
+    "params": {
+     "parameter_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "preview_id": "p1_0000000a_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "chunk_bytes": 65536,
+    "expires_at": "2026-11-04T06:00:00Z",
+    "schema_version": 1,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "total_bytes": 100,
+    "upload_id": "u1_00000000-0000-4000-8000-000000000001"
+   }
+  },
+  "transfer_upload_chunk": {
+   "request": {
+    "params": {
+     "chunk_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "data_base64": "AAAA",
+     "offset": 0,
+     "upload_id": "u1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "received_bytes": 3,
+    "schema_version": 1
+   }
+  },
+  "transfer_upload_finalize": {
+   "request": {
+    "params": {
+     "upload_id": "u1_00000000-0000-4000-8000-000000000001"
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   },
+   "result": {
+    "records": 10,
+    "schema_version": 1,
+    "upload_id": "u1_00000000-0000-4000-8000-000000000001",
+    "validated": true
+   }
+  }
+ },
+ "extra_requests": {
+  "lifecycle_preview": [
+   {
+    "params": {
+     "action": "upload_admit",
+     "upload": {
+      "expect_environment": "env1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expect_tsg": "1234567890",
+      "kind": "logical_transfer",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "total_bytes": 100
+     }
+    },
+    "schema_version": 1,
+    "tenant": "tsg-1"
+   }
+  ]
+ },
+ "format": "airs-mcp-tool-examples",
+ "job_examples": {
+  "failed_collection": {
+   "epoch": "0000000a",
+   "gaps": [],
+   "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+   "operation": "collection_start",
+   "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "progress": null,
+   "result": {
+    "committed_facts": 5,
+    "error": {
+     "code": "credential_blocked",
+     "credential_status": "needs_credentials",
+     "reason": "management credential denied",
+     "schema_version": 1
+    },
+    "operation": "collection_start",
+    "uncertain_sends": 1
+   },
+   "retry_after_seconds": null,
+   "state": "failed",
+   "submitted_at": "2026-11-04T06:00:00Z",
+   "submitter": {
+    "kind": "principal",
+    "label": "claude-code"
+   },
+   "updated_at": "2026-11-04T06:00:00Z"
+  },
+  "partial_report": {
+   "epoch": "0000000a",
+   "gaps": [
+    "sessions falling behind"
+   ],
+   "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+   "operation": "reports_create",
+   "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "progress": null,
+   "result": {
+    "completeness": "partial",
+    "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "operation": "reports_create",
+    "report_id": "r1_00000000-0000-4000-8000-000000000001",
+    "version_id": "v1_00000000-0000-4000-8000-000000000001"
+   },
+   "retry_after_seconds": null,
+   "state": "partial",
+   "submitted_at": "2026-11-04T06:00:00Z",
+   "submitter": {
+    "kind": "principal",
+    "label": "claude-code"
+   },
+   "updated_at": "2026-11-04T06:00:00Z"
+  },
+  "succeeded_collection": {
+   "epoch": "0000000a",
+   "gaps": [],
+   "job_id": "j1_0000000a_00000000-0000-4000-8000-000000000001",
+   "operation": "collection_start",
+   "params_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "progress": null,
+   "result": {
+    "duplicate_facts": 3,
+    "new_facts": 12,
+    "operation": "collection_start",
+    "sends": {
+     "management": 4,
+     "oauth": 1,
+     "reports": 0,
+     "results": 2
+    },
+    "sources": [
+     {
+      "application_id": "app-a",
+      "gap_seconds": null,
+      "source": "sessions",
+      "state": "complete",
+      "traversed_as_of": "2026-11-04T06:00:00Z"
+     }
+    ],
+    "unfinished_sources": 0
+   },
+   "retry_after_seconds": null,
+   "state": "succeeded",
+   "submitted_at": "2026-11-04T06:00:00Z",
+   "submitter": {
+    "kind": "principal",
+    "label": "claude-code"
+   },
+   "updated_at": "2026-11-04T06:00:00Z"
+  }
+ },
+ "schema_version": 1
+}

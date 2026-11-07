@@ -3,6 +3,7 @@
 
 use crate::cli::{GetFlags, ListFlags};
 use crate::error::CliError;
+pub use airs_runtime_core::limits::MAX_SAFE_INTEGER;
 use scm::pagination::{CollectOptions, Completion, Truncation};
 
 pub const DEFAULT_LIMIT: u32 = 100;
@@ -11,8 +12,6 @@ pub const DEFAULT_MAX: u64 = 10_000;
 pub const MAX_ITEMS_CEILING: u64 = 1_000_000;
 const MAX_PAGES: usize = 100_000;
 const MAX_BYTES: usize = 512 * 1024 * 1024;
-/// JavaScript's `Number.MAX_SAFE_INTEGER` (2^53 − 1), the bound of every JSON count.
-pub const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 /// [`MAX_SAFE_INTEGER`] as an `f64` (exact: 2^53 − 1 is representable).
 #[allow(clippy::cast_precision_loss)]
 pub const MAX_SAFE_INTEGER_F64: f64 = MAX_SAFE_INTEGER as f64;

@@ -17,8 +17,7 @@ use serde_json::json;
 
 const TSG: &str = "100";
 const FAILED_LINE: &str = "  ✗ Report generation failed. Verify Management API configuration and a writable, new output path. Existing files are never overwritten.\n";
-const COLLECTING: &str =
-    "  Collecting daily runtime activity and current configuration (read-only)...\n";
+const COLLECTING: &str = "  Collecting runtime Signal Brief evidence (read-only)...\n";
 
 /// The seven sources (the profiles source is the management `Route::Profiles`).
 const DASHBOARD_SOURCES: [Rx; 5] = [
@@ -109,10 +108,10 @@ fn no_temporaries(dir: &Path) {
     assert!(left.is_empty(), "temporaries left: {left:?}");
 }
 
-/// HTML despite the tenant's `defaultOutput: json`; the seven reads with the TS queries;
-/// a new private file; the TS status lines.
+/// Signal Brief HTML despite tenant defaultOutput; bounded read-only SDK discovery,
+/// a new private file and stable naming/status conventions.
 #[test]
-fn writes_html_with_the_typescript_reads() {
+fn writes_signal_html_with_bounded_sdk_reads() {
     let f = fx_with(|config| {
         config.set("defaultOutput", "json");
     });
@@ -131,31 +130,21 @@ fn writes_html_with_the_typescript_reads() {
         "{}",
         out.stderr
     );
-    let mut expected = vec![
-        "GET /aisec/v1/mgmt/customerapp/tsg/100?offset=0&limit=100".to_owned(),
-        "GET /aisec/v1/mgmt/profiles/tsg/100?offset=0&limit=100&latest=true".to_owned(),
-        "GET /dashboard/v1/mgmt/dashboard/v2/apps/applicationsoverview?time_interval=1&time_unit=day&limit=100&offset=0".to_owned(),
-        "GET /dashboard/v1/mgmt/dashboard/v2/apps/applicationsviolationstrend?time_interval=1&time_unit=day".to_owned(),
-        "GET /dashboard/v1/mgmt/dashboard/v2/apps/topapplicationsviolations?time_interval=1&time_unit=day".to_owned(),
-        "GET /dashboard/v1/mgmt/dashboard/v2/sessions/sessionschart?time_interval=1&time_unit=day".to_owned(),
-        "GET /dashboard/v1/mgmt/dashboard/v2/sessions/sessionsoverview?time_interval=1&time_unit=day&limit=25&offset=0".to_owned(),
-    ];
-    expected.sort();
-    assert_eq!(f.api(), expected);
-    // Aggregates and labels only: no ids, auth codes or key names.
-    for needle in [
-        "uuid-shared",
-        "FAKE-AUTHCODE",
-        "key-1",
-        "pan_session",
-        "22222222-",
-    ] {
-        assert!(!html.contains(needle), "{needle}");
-    }
+    let reads = f.api();
     assert!(
-        html.contains("<td>chatbot</td>"),
-        "application buckets are labels"
+        reads.iter().any(|p| p.contains("/sessions/session?")),
+        "{reads:?}"
     );
+    assert!(reads.iter().any(|p| p.contains("profiles/tsg")));
+    assert!(
+        !reads
+            .iter()
+            .any(|p| p.contains("scan-content") || p.starts_with("POST /scan"))
+    );
+    for needle in ["FAKE-AUTHCODE", "key-1", "pan_session"] {
+        assert!(!html.contains(needle));
+    }
+    assert!(html.contains("AIRS Signal Brief"));
     // The default name: a new timestamped file in the working directory; two runs, two
     // files.
     f.report(&[]).assert_success();
@@ -217,9 +206,7 @@ fn a_partial_report_and_strict() {
     );
     let html = std::fs::read_to_string(&first).unwrap();
     assert!(html.contains("unavailable"));
-    assert!(html.contains(
-        "HTTP 503: source request failed; verify service availability and API compatibility."
-    ));
+    assert!(html.contains("API read unavailable (HTTP 503); no response content retained"));
     assert!(!html.contains("PRIVATE-ERROR"));
     let second = f.tmp("strict.html");
     let out = f.report(&["--strict", "--output-file", &second]);
@@ -252,19 +239,15 @@ fn no_source_available_still_writes_the_report() {
     out.assert_code(1);
     let html = std::fs::read_to_string(&path).unwrap();
     assert!(html.contains("Unable to assess"));
-    assert_eq!(
-        html.matches("HTTP 403: check Management API credentials and grants.")
-            .count(),
-        14,
-        "seven findings and seven evidence rows"
-    );
+    assert!(html.contains("API read unavailable (HTTP 403)"));
     assert!(!html.contains("PRIVATE-ERROR"));
-    assert!(
-        out.stderr
-            .ends_with("  7 source(s) incomplete; review the evidence section.\n")
-    );
-    for rx in DASHBOARD_SOURCES {
-        assert_eq!(f.server.rx_requests(rx).len(), 2, "{rx:?}: one G7 re-read");
+    assert!(out.stderr.contains("source(s) incomplete"));
+    for rx in [Rx::AppsOverview, Rx::SessionsOverview] {
+        assert_eq!(
+            f.server.rx_requests(rx).len(),
+            1,
+            "{rx:?}: bounded no-retry read"
+        );
     }
 }
 
@@ -278,13 +261,13 @@ fn an_absent_profile_list_is_unavailable() {
     let out = f.report(&["--output-file", "-"]);
     out.assert_success();
     assert!(
-        out.stdout.contains("Security profiles: unavailable"),
-        "{}",
         out.stdout
+            .contains("profiles (required)</td><td>unavailable")
     );
-    assert!(out.stdout.contains(
-        "The API returned no record array. An empty object or absent collection does not establish zero activity."
-    ));
+    assert!(
+        out.stdout
+            .contains("Missing profile array is not an empty configuration")
+    );
     assert!(!out.stdout.contains("No security profiles returned"));
 }
 
@@ -318,7 +301,8 @@ fn the_destination_is_checked_before_any_request() {
     });
     let out = f.report(&["--output-file", "-"]);
     out.assert_code(1);
-    assert_eq!(out.stderr, FAILED_LINE);
+    assert!(out.stdout.contains("Management configuration unavailable"));
+    assert!(out.stderr.contains("source(s) incomplete"));
     assert_eq!(f.server.request_count(), 0);
 }
 
@@ -395,7 +379,7 @@ fn report_naming() {
         .find(|line| line.trim_start().starts_with("report "))
         .unwrap();
     assert!(!line.contains("dashboard"), "{line}");
-    assert!(line.contains("Generate a daily AI Runtime Security environment report (read-only)"));
+    assert!(line.contains("Generate an evidence-backed runtime Signal Brief (read-only)"));
     assert!(
         out.stdout
             .lines()

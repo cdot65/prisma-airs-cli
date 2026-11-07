@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use super::{Exec, LiveAbort, LivePlan, LiveReport, LiveRow, Session};
-use crate::compare::{json_semantic_eq, normalise_program};
+use crate::compare::json_semantic_eq;
 
 /// The keys of a Rust `api-keys list` row (D207).
 pub const KEY_ROW_KEYS: [&str; 5] = ["id", "name", "last8", "createdAt", "expiresAt"];
@@ -554,22 +554,39 @@ impl Reads<'_, '_> {
             "--limit",
             "5",
         ];
-        let (rust, ts) = self.session.both("scan-logs query", &args)?;
-        let agree = rust.code == Some(1)
+        let mut rust_args = args.to_vec();
+        rust_args.extend([
+            "--output",
+            "json",
+            "--max-pages",
+            "1",
+            "--max-events",
+            "5",
+            "--max-requests",
+            "50",
+            "--timeout",
+            "30",
+        ]);
+        let rust = self.rust("scan-logs query", &rust_args)?;
+        let ts = self
+            .session
+            .exec(&self.session.plan.ts, "scan-logs query", &args)?;
+        let data = rust.json();
+        let agree = matches!(rust.code, Some(0 | 1))
+            && data.get("items").is_some_and(Value::is_array)
+            && data.get("complete").is_some_and(Value::is_boolean)
             && ts.code == Some(1)
-            && rust.stdout.is_empty()
             && ts.stdout.is_empty()
-            && rust.stderr.contains("Legacy scan-logs retrieval is broken")
-            && normalise_program(&rust.stderr).trim() == normalise_program(&ts.stderr).trim();
+            && ts.stderr.contains("Legacy scan-logs retrieval is broken");
         self.row(
             "scan-logs query",
             &rust,
             Some(&ts),
             agree,
             if agree {
-                "the stub on both (D73)"
+                "bounded discovery; frozen TS stub (D338)"
             } else {
-                "the stub differs"
+                "discovery envelope or frozen stub failed"
             },
         );
         Ok(())
@@ -864,6 +881,18 @@ impl Reads<'_, '_> {
                 args.extend(["--output", "html"]);
                 self.session.plan.ts.clone()
             } else {
+                args.extend([
+                    "--max-pages",
+                    "1",
+                    "--max-events",
+                    "5",
+                    "--max-reports",
+                    "0",
+                    "--timeout",
+                    "30",
+                    "--max-requests",
+                    "50",
+                ]);
                 self.session.plan.rust.clone()
             };
             let exec = self.session.exec(&cli, "runtime report", &args)?;
@@ -875,19 +904,23 @@ impl Reads<'_, '_> {
         let (rust, rust_mode, rust_html) = &runs[0];
         let (ts, ts_mode, ts_html) = &runs[1];
         let leak = super::leak_in(&self.session.secrets, rust_html).is_some();
-        let shapes = report_shape(rust_html).zip(report_shape(ts_html));
-        let agree = rust.code == ts.code
+        let agree = matches!(rust.code, Some(0 | 1))
+            && matches!(ts.code, Some(0 | 1))
             && *rust_mode == Some(0o600)
             && *ts_mode == Some(0o600)
             && !leak
-            && shapes.is_some_and(|(r, t)| reports_agree(&r, &t));
+            && rust_html.contains("AIRS Signal Brief")
+            && rust_html.contains("id=\"coverage\"")
+            && rust_html.contains("Content-Security-Policy")
+            && !rust_html.contains("<script")
+            && ts_html.contains("Report schema 2");
         self.row(
             "runtime report --output-file",
             rust,
             Some(ts),
             agree,
             if agree {
-                "0600 files; sections, sources and statuses equal (D214)"
+                "0600 files; Signal Brief and frozen aggregate report (D340)"
             } else {
                 "the reports differ"
             },

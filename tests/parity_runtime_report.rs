@@ -2,7 +2,7 @@
 //!
 //! Each scenario runs once against airs-cli-rs and once against the TypeScript reference,
 //! each on a fresh seeded [`FixtureServer`] and a fresh [`Sandbox`]. The HTML is compared
-//! byte for byte after the timestamps are normalised (each CLI reads its own clock); the
+//! as the intentional Signal Brief replacement (D340); the
 //! requests are compared as a sorted set (TypeScript reads the seven sources concurrently,
 //! airs-cli-rs one after the other, choice 17). The `divergence` tests pin both sides of
 //! the §12 rows of the report (D155, D156, D214).
@@ -62,34 +62,6 @@ fn context(r: &Side, t: &Side) -> String {
     format!("\n--- rust ---\n{:?}\n--- ts ---\n{:?}", r.run, t.run)
 }
 
-/// Every `YYYY-MM-DDTHH:MM:SS.mmmZ` as `<time>`.
-fn without_times(text: &str) -> String {
-    let bytes = text.as_bytes();
-    let mut out = String::with_capacity(text.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        let candidate = text.get(index..index + 24).unwrap_or_default();
-        let shape = candidate.len() == 24
-            && candidate.bytes().enumerate().all(|(i, b)| match i {
-                4 | 7 => b == b'-',
-                10 => b == b'T',
-                13 | 16 => b == b':',
-                19 => b == b'.',
-                23 => b == b'Z',
-                _ => b.is_ascii_digit(),
-            });
-        if shape {
-            out.push_str("<time>");
-            index += 24;
-        } else {
-            let c = text[index..].chars().next().unwrap_or_default();
-            out.push(c);
-            index += c.len_utf8();
-        }
-    }
-    out
-}
-
 fn mode(path: &Path) -> u32 {
     std::fs::metadata(path).unwrap().permissions().mode() & 0o777
 }
@@ -97,11 +69,10 @@ fn mode(path: &Path) -> u32 {
 mod parity {
     use super::*;
 
-    /// The HTML is TypeScript's document byte for byte (times normalised) for a complete
-    /// report, one unavailable source and every source unavailable; the same status
-    /// lines, exit codes and requests.
+    /// D340: the default report uses Signal Brief evidence and SDK discovery;
+    /// the frozen reference retains its seven-source aggregate report.
     #[test]
-    fn the_report_matches_typescript() {
+    fn d340_signal_brief_replaces_legacy_runtime_report() {
         let scenarios: [&Edit<'_>; 5] = [
             &|_, _| {},
             &|server, _| {
@@ -152,7 +123,7 @@ mod parity {
         ];
         for (index, edit) in scenarios.iter().enumerate() {
             let Some((r, t)) = sides_with(
-                "the_report_matches_typescript",
+                "d340_signal_brief_replaces_legacy_runtime_report",
                 &[
                     "runtime",
                     "report",
@@ -165,29 +136,25 @@ mod parity {
             ) else {
                 return;
             };
-            assert_eq!(
-                r.run.code,
-                t.run.code,
+            assert!(
+                r.run.stdout.contains("AIRS Signal Brief"),
                 "scenario {index}{}",
                 context(&r, &t)
             );
-            assert!(r.run.stdout.starts_with("<!doctype html>\n"));
-            assert_eq!(
-                without_times(&r.run.stdout),
-                without_times(&t.run.stdout),
-                "scenario {index}"
+            assert!(t.run.stdout.contains("Report schema 2"));
+            assert!(!t.run.stdout.contains("AIRS Signal Brief"));
+            assert_ne!(r.run.stdout, t.run.stdout);
+            assert!(
+                r.run
+                    .stderr
+                    .starts_with("  Collecting runtime Signal Brief evidence")
             );
-            assert_eq!(
-                r.run.stderr,
-                t.run.stderr,
-                "scenario {index}{}",
-                context(&r, &t)
+            assert!(
+                t.run
+                    .stderr
+                    .starts_with("  Collecting daily runtime activity")
             );
-            if index != 3 {
-                // TS re-sends a 5xx read (its SDK maximum is not 0 for 500s); the
-                // scenario without 5xx compares the request sets.
-                assert_eq!(r.requests, t.requests, "scenario {index}");
-            }
+            assert_ne!(r.requests, t.requests);
             assert!(!r.run.stdout.contains("PRIVATE"));
         }
     }
@@ -281,7 +248,11 @@ mod divergence {
         };
         assert!(t.run.stdout.contains("No security profiles returned"));
         assert!(!r.run.stdout.contains("No security profiles returned"));
-        assert!(r.run.stdout.contains("Security profiles: unavailable"));
+        assert!(
+            r.run
+                .stdout
+                .contains("profiles (required)</td><td>unavailable")
+        );
         let missing = "nodir/r.html";
         let Some((r, t)) = sides_with(
             "d214_absent_profiles_and_the_destination_parent",

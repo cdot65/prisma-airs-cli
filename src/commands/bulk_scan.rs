@@ -17,7 +17,7 @@ use crate::output::{Format, Output, terminal_safe};
 use crate::render::pretty;
 use crate::render::style::Style;
 use crate::store::PROGRAM;
-use crate::tenant::config;
+use crate::tenant::scanners::{self, ScannerReference};
 use serde::Serialize;
 use std::collections::BTreeSet;
 use std::ffi::OsString;
@@ -34,6 +34,7 @@ pub fn nothing_submitted() -> InterruptContext {
 /// A validated `bulk-scan`, its input file read and checked (§14.2, §14.3).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BulkPlan {
+    pub scanner: Option<String>,
     pub profile: String,
     pub prompts: Vec<String>,
     pub output_file: Option<OsString>,
@@ -66,6 +67,9 @@ fn batch_size(value: &str) -> Option<u64> {
 
 /// §14.2 steps 4–9 (clap, the `--input` warning, `--output` and `--tenant` come first).
 pub fn plan(args: &BulkScanArgs, format: Format) -> Result<BulkPlan, CliError> {
+    if let Some(name) = &args.scanner {
+        scanners::validate_name(name)?;
+    }
     let file = args
         .file
         .as_ref()
@@ -100,6 +104,7 @@ pub fn plan(args: &BulkScanArgs, format: Format) -> Result<BulkPlan, CliError> {
     let session = args.session_id.clone().unwrap_or_else(default_session);
     bulk::plan::check_encoded(&prompts, &args.profile, &session, bulk::plan::body_budget())?;
     Ok(BulkPlan {
+        scanner: args.scanner.clone(),
         profile: args.profile.clone(),
         prompts,
         output_file: args.output_file.clone(),
@@ -213,11 +218,16 @@ pub fn finish(
     title: &str,
 ) -> Result<(), CliError> {
     let (total, blocked, allowed, failed) = job.counts();
+    // What `--record-history` may retain: the checkpoint's received results.
+    invocation.retained = super::mcp_ops::bulk_receipts(&job.state).0;
     let summary = Summary {
-        profile: &job.state.profile,
-        session_id: &job.state.session_id,
-        state: job.file.path().to_string_lossy().into_owned(),
-        output: job.state.output.path.clone(),
+        profile: invocation.secrets.scrub(&job.state.profile),
+        session_id: invocation.secrets.scrub(&job.state.session_id),
+        state: invocation
+            .secrets
+            .scrub(&job.file.path().to_string_lossy())
+            .to_owned(),
+        output: invocation.secrets.scrub(&job.state.output.path).to_owned(),
         prompts: job.state.items.len(),
         total,
         blocked,
@@ -251,18 +261,28 @@ struct Scanning {
     tenant: String,
     endpoint: String,
     api: ScannerApi,
+    reference: Option<ScannerReference>,
 }
 
-fn connect(invocation: &mut Invocation) -> Result<Scanning, CliError> {
+fn connect(invocation: &mut Invocation, scanner: Option<&str>) -> Result<Scanning, CliError> {
     let tenant = invocation.load_tenant()?;
-    config::require_scanner(&tenant.config, Some(tenant.name()))?;
+    connect_tenant(invocation, &tenant, scanner)
+}
+
+fn connect_tenant(
+    invocation: &mut Invocation,
+    tenant: &crate::tenant::TenantContext,
+    scanner: Option<&str>,
+) -> Result<Scanning, CliError> {
+    let (scanner_config, reference) =
+        scanners::select(&tenant.config, scanner, Some(tenant.name()))?;
     let endpoint = clients::admit(
         "airsApiEndpoint",
-        tenant.config.effective_str("airsApiEndpoint"),
+        scanner_config.effective_str("airsApiEndpoint"),
         DEFAULT_SCAN_ENDPOINT,
     )?;
     let (scanner, last_status) = clients::build_observed_scanner(
-        &tenant.config,
+        &scanner_config,
         &invocation.session,
         invocation.debug.as_ref(),
     )?;
@@ -273,6 +293,7 @@ fn connect(invocation: &mut Invocation) -> Result<Scanning, CliError> {
             scanner,
             last_status,
         },
+        reference,
     })
 }
 
@@ -290,7 +311,8 @@ pub async fn run(invocation: &mut Invocation, plan: &BulkPlan) -> Result<(), Cli
         tenant,
         endpoint,
         api,
-    } = connect(invocation)?;
+        reference,
+    } = connect(invocation, plan.scanner.as_deref())?;
     let session = invocation.session.clone();
     let interrupted = || CliError::Interrupted(nothing_submitted());
 
@@ -337,7 +359,7 @@ pub async fn run(invocation: &mut Invocation, plan: &BulkPlan) -> Result<(), Cli
             return Err(error);
         }
     };
-    let state = JobState::new(NewJob {
+    let mut state = JobState::new(NewJob {
         job_id: &job_id,
         tenant: &tenant,
         scan_endpoint: &endpoint,
@@ -348,6 +370,10 @@ pub async fn run(invocation: &mut Invocation, plan: &BulkPlan) -> Result<(), Cli
         output: identity,
         prompts: plan.prompts.clone(),
     });
+    if reference.is_some() {
+        state.version = bulk::state::NAMED_VERSION;
+        state.scanner_reference = reference;
+    }
     let mut job = Job {
         state,
         file,
@@ -366,22 +392,31 @@ pub async fn run(invocation: &mut Invocation, plan: &BulkPlan) -> Result<(), Cli
     }
     job.lock = created.lock.take();
     if let Rewritten::Warning(text) = claim_report {
-        invocation.output.warning(&text);
+        invocation.output.warning(invocation.secrets.scrub(&text));
     }
     invocation.interrupt = Some(job.saved_context());
 
     // Step 7: the status lines, then the batches.
     let out = &mut invocation.output;
     out.status("Prisma AIRS Bulk Scan");
-    out.status(&format!("Profile:  {}", terminal_safe(&plan.profile)));
-    out.status(&format!("Session:  {}", terminal_safe(&session_id)));
+    out.status(&format!(
+        "Profile:  {}",
+        terminal_safe(invocation.secrets.scrub(&plan.profile))
+    ));
+    out.status(&format!(
+        "Session:  {}",
+        terminal_safe(invocation.secrets.scrub(&session_id))
+    ));
     out.status(&format!("Prompts:  {}", plan.prompts.len()));
     out.status(&format!(
         "Batches:  {} (size {})",
         bulk::plan::batch_count(plan.prompts.len(), plan.batch_size),
         plan.batch_size
     ));
-    out.status(&format!("State:    {}", job.state_shown()));
+    out.status(&format!(
+        "State:    {}",
+        invocation.secrets.scrub(&job.state_shown())
+    ));
     let secrets = invocation.secrets.clone();
     let engine = Engine {
         api: &api,
@@ -392,7 +427,7 @@ pub async fn run(invocation: &mut Invocation, plan: &BulkPlan) -> Result<(), Cli
     let ran = engine.run_new(&mut job, out).await;
     invocation.interrupt = Some(job.saved_context());
     ran?;
-    job.save_with_output(&mut invocation.output)?;
+    job.save_with_output(&mut invocation.output, &invocation.secrets)?;
     invocation.interrupt = Some(job.saved_context());
     job.release_lock();
     finish(invocation, &job, plan.format, "Bulk Scan Complete")
@@ -661,15 +696,51 @@ pub async fn resume(invocation: &mut Invocation, plan: &ResumePlan) -> Result<()
     }
     let lock = JobLock::acquire(&dir, &job_id, &state_shown)?;
 
-    // The tenant, its scanner credentials and the client (§14.2), under the lock.
+    // Preserve legacy tenant/credential-before-state validation for old configs.
+    // Named configs must read the saved reference before selecting a scanner.
+    let tenant_context = invocation.load_tenant()?;
+    let legacy = if tenant_context.config.scanners().is_none() {
+        Some(connect_tenant(invocation, &tenant_context, None)?)
+    } else {
+        None
+    };
+
+    // Step 4: the state, read and validated under the lock.
+    let (file, mut state) = StateFile::load(dir, &job_id)?;
+    let selected = if let Some(saved) = &state.scanner_reference {
+        let current = tenant_context
+            .config
+            .scanners()
+            .and_then(|map| map.get(&saved.name))
+            .ok_or_else(|| {
+                CliError::operational(
+                    "Saved scanner is not configured; restore the original binding before resuming",
+                )
+            })?;
+        if current.application_id != saved.application_id || current.endpoint != saved.endpoint {
+            return Err(CliError::operational(
+                "Saved scanner association or endpoint changed; restore the original binding before resuming",
+            ));
+        }
+        connect_tenant(invocation, &tenant_context, Some(&saved.name))?
+    } else if let Some(legacy) = legacy {
+        legacy
+    } else {
+        connect_tenant(invocation, &tenant_context, None)?
+    };
     let Scanning {
         tenant,
         endpoint,
         api,
-    } = connect(invocation)?;
-
-    // Step 4: the state, read and validated under the lock.
-    let (file, mut state) = StateFile::load(dir, &job_id)?;
+        reference,
+    } = selected;
+    let reference_changed = state.scanner_reference != reference;
+    if reference_changed {
+        invocation.output.warning(invocation.secrets.scrub(
+            "Scanner credentials changed since submission; historical lookup access is unqualified",
+        ));
+        state.scanner_reference = reference;
+    }
     let mut job = Job {
         output: OutputFile::new(PathBuf::from(&state.output.path)),
         state: state.clone(),
@@ -692,7 +763,7 @@ pub async fn resume(invocation: &mut Invocation, plan: &ResumePlan) -> Result<()
     let settled = settle_submitting(&mut state);
     job.state = state;
     job.output = resolved.output;
-    if (resolved.changed || settled)
+    if (resolved.changed || settled || reference_changed)
         && let Err(error) = job.checkpoint(&Consequence::NothingSubmitted)
     {
         if let Some(identity) = resolved.claimed {
@@ -701,7 +772,7 @@ pub async fn resume(invocation: &mut Invocation, plan: &ResumePlan) -> Result<()
         return Err(error);
     }
     if let Some(text) = resolved.warning {
-        invocation.output.warning(&text);
+        invocation.output.warning(invocation.secrets.scrub(&text));
     }
     invocation.interrupt = Some(job.saved_context());
     let secrets = invocation.secrets.clone();
@@ -717,7 +788,7 @@ pub async fn resume(invocation: &mut Invocation, plan: &ResumePlan) -> Result<()
         let ran = engine.recover(&mut job, &mut invocation.output).await;
         invocation.interrupt = Some(job.saved_context());
         ran?;
-        job.save_with_output(&mut invocation.output)?;
+        job.save_with_output(&mut invocation.output, &invocation.secrets)?;
         job.release_lock();
         return Err(refusal);
     }
@@ -731,7 +802,10 @@ pub async fn resume(invocation: &mut Invocation, plan: &ResumePlan) -> Result<()
         .filter_map(|item| item.scan_id.as_deref())
         .collect();
     out.status("Prisma AIRS Resume Poll");
-    out.status(&format!("Profile:  {}", terminal_safe(&job.state.profile)));
+    out.status(&format!(
+        "Profile:  {}",
+        terminal_safe(invocation.secrets.scrub(&job.state.profile))
+    ));
     out.status(&format!("Scan IDs: {}", scan_ids.len()));
     out.status(&format!("Prompts:  {}", job.state.items.len()));
     let ran = engine.run_resume(&mut job, out).await;
@@ -739,7 +813,7 @@ pub async fn resume(invocation: &mut Invocation, plan: &ResumePlan) -> Result<()
     ran?;
 
     // Step 9: the final checkpoint and CSV rewrite, then the summary.
-    job.save_with_output(&mut invocation.output)?;
+    job.save_with_output(&mut invocation.output, &invocation.secrets)?;
     invocation.interrupt = Some(job.saved_context());
     job.release_lock();
     finish(invocation, &job, plan.format, "Resume Poll Complete")

@@ -13,11 +13,10 @@ pub mod resolve;
 pub mod secrets;
 pub mod views;
 pub mod window;
-pub mod withhold;
-/// The withholding rules (DESIGN §19.3, choices 185, 187). The test harness compiles the same
-/// files for the live tier; the checker and the test helpers are `#[cfg(test)]` here, so the
-/// binary carries only what its traversal calls.
-pub mod withhold_rules;
+/// The withholding traversal and its rules (DESIGN §19.3) live in airs-runtime-core.
+pub use airs_runtime_core::withhold;
+#[cfg(test)]
+mod withhold_printed;
 pub mod writes;
 
 use crate::error::CliError;
