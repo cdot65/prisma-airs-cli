@@ -103,52 +103,23 @@ Confirm the following exist:
 - `airs-mcp-tls`, issued by cert-manager for `mcp-backend-airs.goshawks.io`;
 - `harbor-pull`, the pull secret for the registry.
 
-## 4. nas1 retention record (contract §9.4, open check 1)
+## 4. Off-volume backup policy (operator record; optional)
 
-On nas1 (DSM, read-only inspection), record:
+The service stores everything in SQLite on its data volume and knows nothing about
+backup targets. If your environment copies the volume or the backup sets elsewhere,
+record for your own operations: where the copies go, their retention and rotation, who
+can delete them, and whether a mirror propagates deletions. This is an operator record,
+not an acceptance gate (contract §9.4, revised 2026-11-07); `skip` it in the checklist
+with the reason "no off-volume copies" when none exist.
 
-- whether the nas2 → nas1 sync **mirrors deletions**;
-- its retention or rotation for the Longhorn backup share;
-- the job name and schedule.
+## 5. Agent access to backup copies (operator record; optional)
 
-Save a screenshot or an export of the settings and give its path to the checklist. If
-nas1 keeps copies indefinitely, update §9.4's deletion bound before storing real data.
-
-## 5. No agent-accessible R2 delete right (contract §9.4, open check 2)
-
-The check is in two parts. **You** inspect the credentials, from an owner workstation
-(never from an agent workspace). The helper then validates what you recorded, **offline**.
-It makes no network call, reads no credential, environment variable or credential file,
-and runs no Cloudflare, AWS, rclone or cluster command.
-
-1. **Inventory, per agent workspace image** (each Coder template, or equivalent):
-   - List every credential source that environment can reach, by **name** only:
-     environment variable names, AWS profile names, rclone remote names, `wrangler`/`cf`
-     login state, mounted secret file paths, and any other secret source.
-   - For each Cloudflare API token among them, read its permission groups and resource
-     scopes in the dashboard (My Profile → API Tokens) or with the `cf` CLI on your
-     workstation. An R2 S3 access key inherits its parent token's permissions, so
-     record the parent token.
-   - Write a sanitized `INVENTORY.json`: names, permission group names and resource
-     scopes only, never a value. The schema, with an example, is the header of
-     `scripts/m8/check-r2-delete-rights.sh`, and the helper enforces it strictly: an
-     unknown field, credential kind, permission name or scope form **blocks** the
-     verdict. It is never read as harmless.
-2. **Validate:**
-
-   ```sh
-   scripts/m8/check-r2-delete-rights.sh INVENTORY.json
-   ```
-
-   | Exit | Meaning | What to do |
-   |---|---|---|
-   | 0 | clean: the inventory is complete, and no credential can write, delete or administer the backup bucket | record it |
-   | 2 | invalid input, or a value that looks like a secret (never echoed) | fix the file; never paste a value |
-   | 3 | incomplete or unknown: a source unchecked, a credential uninspected, or an unknown kind, permission or scope | inspect it and add it |
-   | 4 | violation: a credential can remove objects in the bucket | narrow or revoke it, then re-inventory |
-
-Repeat for every agent workspace image until each exits 0. Give the evidence files to
-the checklist. Real data waits for this step (contract §9.4).
+If agent workspaces in your environment can reach credentials for an off-volume backup
+store, confirm none of them can delete backup objects. For a Cloudflare R2 bucket,
+`scripts/m8/check-r2-delete-rights.sh INVENTORY.json` validates a sanitized inventory
+offline (schema in its header: names, kinds, permission groups and scopes only, never a
+value; exit 0 clean, 3 incomplete/unknown, 4 violation). Optional; `skip` with a reason
+when not applicable.
 
 ## 6. Deploy
 
@@ -246,7 +217,7 @@ running volume does not meet it, and it is not substituted here.
 | Time | What | Where defined |
 |---|---|---|
 | 03:00 | The daily set job: Deployment scaled to 0 → `control-backup-set` → `control-backup-verify` → Deployment scaled to 1 → success marker. Normally a few minutes; bounded at 65 min (`activeDeadlineSeconds: 3900`), with the restore trap allowed 33 min (`terminationGracePeriodSeconds: 1980`) if that deadline hits | `deploy/airs-mcp/backup-cronjob.json` |
-| 03:15 | The Longhorn recurring backup of the data volume (the existing job group) carries the new set, and the stopped-then-restarted volume, off-volume to nas2, then nas1 and R2 | the cluster's Longhorn recurring jobs |
+| 03:15 | The operator's volume backup, if configured (the reference cluster: a Longhorn recurring job), carries the new set and the stopped-then-restarted volume off-volume | the operator's backup jobs |
 
 **The daily set job** runs in the `airs-mcp` namespace with a ServiceAccount that may only
 scale `deploy/airs-mcp`. It must:
@@ -309,9 +280,8 @@ or did not finish before 03:15:
 - *On the volume:* keep the newest **3** verified sets under `/data/airs/backups/`.
   Remove an older on-volume set only after a newer set has verified. Sets are part
   of the §9.5 capacity budget (about 1× the databases each).
-- *Off the volume:* only the cluster's Longhorn retention and owner-initiated pruning
-  remove backups: on nas2, 14 daily and 8 weekly; on R2, plus 30 days; nas1 as recorded
-  in step 4. **No agent deletes a backup or a mirrored copy** (§9.4).
+- *Off the volume:* the operator's policy (step 4 record). **No agent deletes a backup
+  or a mirrored copy** (§9.4).
 
 **Before an upgrade,** run the job by hand, as above, and check its verified line
 before changing the image.

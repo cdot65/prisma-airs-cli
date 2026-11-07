@@ -1608,59 +1608,41 @@ through the frozen §10 edge table (`jobs.rs`).
   `automountServiceAccountToken: false`. The admitted subtree has a root-owned
   non-writable parent chain; NFS/SMB is refused by `statfs` magic.
 
-### 9.4 Backups (accepted policy; custody named in M0.6)
+### 9.4 Backups (operator-owned policy; revised 2026-11-07)
 
 - **Content:** a coordinated, SQLite-consistent set under exclusive maintenance:
   `VACUUM INTO` copies of control and archive(s), the artifact manifest list, and a
   `manifest.json`
   (`format: airs-mcp-backup/1`, `created_at`, `epoch`, `stores[{name, schema, sqlite_version, bytes, sha256, rows_digest}]`, `artifacts[{id, sha256, bytes}]`, `complete: true`).
-  It is written to `DATA/backups/<id>/` with 0700/0600, no-clobber, and fsynced.
-- **Off-volume copy:** the data volume uses an **encrypted Longhorn StorageClass**
-  (dm-crypt; the passphrase is delivered as a Conjur → ESO Secret referenced by the
-  class). The existing Longhorn backup target is today `nfs://nas2/longhorn-backups`,
-  mirrored nas2 → nas1 → R2, and source inspection found it unencrypted. Encrypted
-  volumes keep their backups ciphertext, so the plaintext marker test (runbook
-  step 9) must find no marker on the target. A daily Longhorn backup after the
-  application set (03:15 job group) gives a **24 h RPO**. A **monthly isolated
-  restore drill** follows the runbook's restore procedure. The owner is accountable
-  for the policy and the drill.
-- **Accepted backup policy (owner, 2026-11-05; replaces the earlier proposal):**
-  - *Retention:* the cluster's Longhorn retention, not "indefinite". On nas2,
-    `backup-daily` keeps 14 and `backup-weekly` (Sunday 04:45) keeps 8, so about two
-    months. Each mirrored copy has its own retention:
-    - R2 (`truffles-prod-backups/longhorn/`, nightly `rclone sync` at 06:00Z): a
-      block pruned on nas2 is moved to `longhorn-deleted/<date>/` and kept 30 more
-      days.
-    - nas1 (scheduled nas2 → nas1 sync): retention is **unverified**. The owner does
-      not know whether it mirrors deletions. M8 records it before real data is stored.
-  - *Deletion:* only Longhorn retention and owner-initiated pruning remove backups.
-    No agent deletes a backup or a mirrored copy. An application deletion is not
-    erased from backups until every copy above has aged out, so a deletion completes
-    in backups after at most about two months plus 30 days (plus nas1's unknown
-    rotation). §9.6 never claims a backup predating a deletion preserves that
-    deletion.
-  - *Access, by role:*
-    - *write:* Longhorn on the cluster nodes. The nas2 export admits only the node
-      subnet `192.168.255.0/24`, and the R2 mirror job writes R2 with its own
-      credential (`k8s-backups/r2-credentials`), reading nas2 through a read-only
-      mount.
-    - *read:* the same paths and the owner. Every copy is ciphertext. The key is
-      readable only through Conjur `data/airs-mcp/backup/volume-passphrase` (ESO in
-      `longhorn-system`) and the owner's offline escrow.
-    - *administer and delete:* the owner alone holds the nas1 and nas2 Synology
-      admin accounts and the Cloudflare account that holds the bucket. Kubernetes
-      `cluster-admin` is bound only to `system:masters`, the owner's admin
-      credential.
-    - *agents:* no delete right on any backup copy. Open check, to pass before
-      deployment (M8): Coder workspace images document account-level Cloudflare
-      credentials that include R2 S3 keys. M8 verifies that no agent-accessible
-      credential can delete objects in `truffles-prod-backups`, or narrows those
-      credentials until none can.
-- **Key custody:** the passphrase lives in Conjur (`data/airs-mcp/backup/volume-passphrase`),
-  with an offline escrow copy held by the user. Losing both makes backups
-  unrecoverable. This is stated plainly in the runbook.
-- If the encrypted class, the target or custody cannot be established, **deployment
-  stays blocked**. A retained PVC or replica is not a backup.
+  It is written to `DATA/backups/<id>/` with 0700/0600, no-clobber, and fsynced. The
+  service keeps the newest three verified sets on its volume (`control-backup-set
+  --keep 3`); nothing in the service deletes a set that a newer verified set has not
+  superseded.
+- **Where the data lives:** SQLite databases and report bundles on the service's own
+  data volume. The service knows nothing about any backup target, mirror, NAS or object
+  store. Carrying the volume (or the sets) off-volume, and the retention, deletion and
+  access rules of those copies, are the **operator's** policy and the operator's
+  environment, not part of this contract or of any phase gate.
+- **Reference deployment (deploy/airs-mcp):** the data volume uses an encrypted
+  StorageClass (dm-crypt; the passphrase delivered as a Secret the class references),
+  so any volume-level backup the operator takes stays ciphertext. The manifests encode no
+  backup target. The daily set job (runbook §9a) produces a verified set before the
+  operator's volume backup, if any, runs: a **24 h RPO** when the operator backs the
+  volume up daily. A **periodic isolated restore drill** (runbook §11) is recommended;
+  the operator is accountable for the policy and the drill.
+- **Key custody (when the encrypted class is used):** the passphrase lives in the
+  operator's secret store (the reference deployment: Conjur
+  `data/airs-mcp/backup/volume-passphrase`, delivered by ESO) with an offline escrow
+  copy held by the operator. Losing both makes volume backups unrecoverable. This is
+  stated plainly in the runbook.
+- **History.** Until 2026-11-07 this section carried the reference environment's own
+  backup chain (an NFS target mirrored to a second NAS and to an R2 bucket, with two
+  "open checks": the second NAS's retention record and an inventory proving no
+  agent-accessible credential could delete objects in the bucket). The owner withdrew
+  them as acceptance gates: they described one environment, not the product. Operators
+  with mirrored targets should still record the equivalent facts for their environment;
+  `scripts/m8/check-r2-delete-rights.sh` remains available as an optional offline helper
+  for Cloudflare R2 inventories.
 
 ### 9.5 Capacity model and initial PVC
 
@@ -1692,17 +1674,10 @@ size from measured growth.
   data-volume size and free bytes, and archive and control store bytes. It carries no
   tenant, principal, path or credential data. Capacity alerts at 70% and 85% (§9.5) use
   the volume series.
-- **Backup-policy checks (§9.4).** They are user-run scripts.
-  - `scripts/m8/check-r2-delete-rights.sh` is offline. It never contacts a service,
-    reads a token or reads the environment. The owner inventories, separately and on
-    their own workstation, every credential an agent can reach, by name, with its kind,
-    permissions and scopes (from the dashboard or the `cf` CLI). The owner writes that
-    sanitized `INVENTORY.json`, which holds no secret value, under the strict schema in
-    the script header. The checker validates it. An unknown kind, key, permission, scope
-    or source blocks the verdict (exit 3). A modify permission on any scope covering the
-    backup bucket is a violation (exit 4).
-  - The nas1 retention record is a checklist step.
-  - Both stay **open until the owner records them**.
+- **Backup-policy helpers (§9.4).** Optional, operator-run, offline.
+  `scripts/m8/check-r2-delete-rights.sh` validates a sanitized credential inventory for a
+  Cloudflare R2 bucket (strict schema in its header; exit 3 unknown, exit 4 violation).
+  It is not an acceptance gate (owner decision, 2026-11-07).
 - **M8.2 local qualification.** `qualify_restore_and_contention_at_scale` (opt-in) seeds
   the qualified dataset, runs report readers against a live writer, and restores and
   verifies a `VACUUM INTO` backup copy. It records peak RSS and I/O. Production storage,

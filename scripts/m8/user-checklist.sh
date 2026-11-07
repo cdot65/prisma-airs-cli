@@ -93,13 +93,14 @@ digest
 step 3 "Encrypted storage class and secrets" \
 "Confirm the longhorn-airs-encrypted StorageClass exists with its Conjur/ESO passphrase, and the
 ESO secrets airs-mcp-airs-credentials and airs-mcp-tls (cert-manager) are Ready."
-step 4 "nas1 retention record (contract §9.4)" \
-"On nas1 (DSM, read-only inspection), record whether the nas2 -> nas1 sync mirrors deletions and
-its retention/rotation. Record the setting names and a screenshot path."
-step 5 "No agent-accessible R2 delete right (contract §9.4)" \
-"From an owner workstation (not an agent workspace), export the sanitized credential inventory of each
-agent workspace image as described in scripts/m8/check-r2-delete-rights.sh, then run it on that file
-and record the evidence file it writes. It must exit 0; narrow any credential it flags first."
+step 4 "Off-volume backup policy (operator record; optional)" \
+"If your environment copies the data volume or the backup sets elsewhere, record where, the retention
+and rotation, who can delete them, and whether a mirror propagates deletions. Not an acceptance gate
+(contract §9.4, 2026-11-07): answer skip with the reason 'no off-volume copies' when none exist."
+step 5 "Agent access to backup copies (operator record; optional)" \
+"If agent workspaces can reach credentials for an off-volume backup store, confirm none can delete backup
+objects. For a Cloudflare R2 bucket run scripts/m8/check-r2-delete-rights.sh on a sanitized inventory and
+record its evidence file (exit 0). Optional: answer skip with a reason when not applicable."
 step 6 "Deploy" \
 "kubectl apply -k deploy/airs-mcp (your GitOps path). Confirm one pod Running, the PVC Bound
 (ReadWriteOncePod), /readyz 200 and /metrics serving from the pod (kubectl port-forward 8081)."
