@@ -5622,8 +5622,10 @@ metrics clean) and answered the CLI and Claude Code through the gateway. Three f
    `collection_start` succeeded (4 management sends, 0 unfinished) and
    `history coverage` for 22:45–22:57Z, a range only that run covers, shows inventory,
    profiles, results and sessions all **complete** with gap 0 (the first run on the
-   reviewed image had inventory and sessions unavailable). These are source changes after
-   review 8 and are part of the final combined review's scope.
+   reviewed image had inventory and sessions unavailable); repeated on the final image
+   (`sha-e3060b7`, sha256:7c81056d…, 2026-11-07T23:06Z): job succeeded, 4 management
+   sends, all four sources complete, gap 0, for 22:58–23:06Z. These are source changes
+   after review 8 and are part of the final combined review's scope.
 
 The marker report (step 9b) was created on real data and its positive control passed
 (`grep -c` of the marker in the downloaded `report.html` = 1). Steps 10–12 and the final
