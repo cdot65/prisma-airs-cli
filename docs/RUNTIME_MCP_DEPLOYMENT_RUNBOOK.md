@@ -216,10 +216,15 @@ qualification integration never reuses it.
 
 ```sh
 airs mcp connections set <name> --url https://mcp.goshawks.io/<path> ...   # see airs mcp connections set --help
-airs mcp login <name>
+airs mcp login <name> --open --port 53682
 airs mcp status <name>
 airs runtime history status --mcp <name>
 ```
+
+`--port 53682` is required: the gateway registered the `airs-cli` public client with the
+exact loopback redirect `http://127.0.0.1:53682/callback` (the `airs-admin-cli` client
+uses 53683) and matches it exactly, so the default random port is refused with
+`invalid_request: Invalid redirect_uri`. Free the port rather than changing it.
 
 Record the outputs. They contain no secrets.
 
