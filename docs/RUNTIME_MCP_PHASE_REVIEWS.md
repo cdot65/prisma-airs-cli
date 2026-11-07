@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source-side review 7: 8.8/10, revise; round 8 corrections submitted for review 8 (reviews 1–6 scored 6.5, 6.5, 7.5, 8.0, 8.5 and 8.7)** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
+Status: ****source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate; overall M8 still pending the owner's live evidence (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8)** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
 integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
 accepted). The plan's exit gate needs an
 independent source and receipts review at or above the owner-set 9.0 threshold **plus**
@@ -5582,7 +5582,47 @@ Material findings:
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
 
-### M8 round 8 corrections (submitted for source-side review 8)
+### M8 source-side review 8 (preserved; 2026-11-07T16:03Z, Codex, frozen tree a02899d7, receipts m8/run9)
+
+**9.0/10, accept (source side).** "The round-7 termination defect and both minors are
+fixed. The source, artifacts, checks and procedures are sufficient for the owner to
+produce the remaining integration evidence. This does not accept the deployment or
+complete overall M8." Material findings: none outstanding. Minor findings: none
+outstanding. 709 files matched the manifest before and after; no external services,
+credentials, images or cluster resources accessed.
+
+Independent virtual-time probes: SIGTERM then slow failing release queries, scale-up and
+exit at 1,265 s; slow nonterminal polls and releases, whole run 2,520 s; SIGTERM at the
+start of a 29 s request, restoration at 29 s; five-request release invocations each cut
+at REQ, exit at 1,265 s; hung first poll killed after 35 s, polling continues, run ends
+at 1,260 s; hung first release query killed after 35 s, next query succeeds, restoration
+45 s after SIGTERM; **combined SIGTERM + hung poll + failing multi-request releases: trap
+starts at 35 s, scale-up and exit at 1,295 s** (within 1,300 and grace − margin 1,680;
+exit 1, no false restoration or completion event). A real `/bin/sh` + GNU `timeout`
+probe at a 20× clock: trap entry 1.755 s, scale-up 64.788 s, exit 64.810 s real (≈35.09,
+1,295.76, 1,296.20 virtual s). Arithmetic matches the code: 3,570 < 3,900;
+(30+5) + (1260+5) + (360+5) + 300 = 1,965 ≤ 1,980. Mutations discriminate: `$r` bound
+(static check and executable bound assertions; combined case reaches scale-up at
+2,525 s), `sleep 5` for `nap` (static and phase-sleep assertion), unconditional 5 s
+`nap` (next phase at 1,270 against 1,265), no `-k`, no wrapper, grace 1,960.
+
+Remaining scope judged sound within source-review limits (manifests with 32 security
+mutations and pin checks passing; metrics; helpers; the honestly-scoped tmpfs
+qualification; release/runbook; no M2–M7 regression; CLI dependency graph excludes the
+server, history store and SQLite). Receipt: 4,243 passed, 0 failed, 9 ignored, no
+parity skips; the reviewer's own service tests were socket/storage-blocked; dash
+execution rests on the disclosed CI evidence.
+
+**Overall M8 acceptance still requires the owner's live evidence**: image/platform
+provenance; actual hardening, secret readability, TLS and network isolation; dedicated
+gateway binding and CLI/Claude operation; nas1 retention and the complete R2-access
+inventory; a verified coordinated backup followed by off-volume capture; positive
+encryption evidence, wrong-key refusal and correct-key marker recovery; fenced
+disposable-node reacquisition without overlapping writers; isolated restore and epoch
+handling; production-storage low-space recovery, capacity and coordinated-backup memory
+measurements (`scripts/m8/user-checklist.sh`, runbook steps 1–12).
+
+### M8 round 8 corrections (reviewed by source-side review 8: 9.0, accept)
 
 1. **The wrapper's bound is the lesser of `REQ` and the time left, never the whole
    phase.** `kc` runs `timeout -k "$KGRACE" "$t" kubectl … --request-timeout="${t}s"`
