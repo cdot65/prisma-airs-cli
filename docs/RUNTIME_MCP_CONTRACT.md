@@ -766,7 +766,7 @@ as text content, which roughly doubles the size. The JSON-RPC envelope adds unde
 | Item | Default | Bound | Notes |
 | --- | --- | --- | --- |
 | Collection interval | 15 min, UTC quarter-hours | 5–60 min | Missed ticks coalesce into one catch-up job. |
-| Tick lower bound | last traversed-as-of − 15 min overlap | narrowest rolling selector, ≥1 h | Advances per source only after a valid traversal. |
+| Tick lower bound | last traversed-as-of − 15 min overlap | narrowest rolling selector the dashboard API accepts (24 hours, or 1, 7, 30 or 60 days), ≥1 h | Advances per source only after a valid traversal. The span is rounded **up** to the next accepted shape (a 24 h target derived seconds later is 7 days, not 25 hours, which the API refuses); past 60 days the exact count is kept so the refusal stays visible. |
 | Tick budget | 120 s, 200 sends incl. OAuth, 40 pages/source | config ≤ 600 s / 1000 / 200 | A ceiling, not a per-application allowance. |
 | First collection | recent 24 h | — | Older backfill explicit, ≤87,600 h selector bound. |
 | Reports per job | 5 IDs default, 10 max, ≤2 sends | compiled | Serial, stop on 429, cached reuse. |
