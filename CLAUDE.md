@@ -2,7 +2,8 @@
 
 Follow [AGENTS.md](AGENTS.md). It holds the invariants and the required checks.
 [docs/DESIGN.md](docs/DESIGN.md) is the behavioural contract. Its §12 lists every
-intentional difference from the TypeScript CLI.
+intentional difference from the TypeScript CLI. Issue tracking is on BonBon: see the
+`## Issue tracking: BonBon` section of AGENTS.md and `docs/agents/issue-tracker.md`.
 
 This repository, `cdot/prisma-airs-cli`, held the TypeScript CLI through 7.x. From 8.0 it
 holds the Rust CLI (crate `airs-cli`, command `airs`); the TypeScript reference the
