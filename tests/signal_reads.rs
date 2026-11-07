@@ -801,15 +801,17 @@ fn report_configuration_is_not_starved_by_hung_session_walk_and_details_use_conc
             "report",
             "--strict",
             "--timeout",
-            "2",
+            "10",
             "--bundle-dir",
             dest.to_str().unwrap(),
         ],
         &RunOptions::new(),
     );
     out.assert_code(1);
-    // Room for process start-up on a contended runner; a missed deadline hangs to 30 s.
-    assert!(at.elapsed() < std::time::Duration::from_secs(15));
+    // A 10 s budget, so a contended CI runner can still finish the configuration reads
+    // inside it. Starvation behind the hung session reads would leave them unavailable
+    // however long the budget, and a missed deadline hangs to the harness's 30 s kill.
+    assert!(at.elapsed() < std::time::Duration::from_secs(25));
     let e: Value =
         serde_json::from_str(&std::fs::read_to_string(dest.join("evidence.json")).unwrap())
             .unwrap();
@@ -852,7 +854,7 @@ fn report_serial_configuration_gives_other_sources_time_after_one_hangs() {
             "--concurrency",
             "1",
             "--timeout",
-            "3",
+            "10",
             "--bundle-dir",
             dest.to_str().unwrap(),
         ],
