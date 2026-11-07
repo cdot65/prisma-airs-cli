@@ -487,8 +487,21 @@ pub fn tenant_guard_violation(bytes: &[u8]) -> Option<String> {
             // The three URL-rule keys reject a value that is not a WHATWG URL.
             Some(toml::Value::String(url))
                 if URL_RULE_KEYS.contains(&key) && url::Url::parse(url).is_err() => {}
-            Some(toml::Value::String(_)) => external.push(key),
+            Some(toml::Value::String(_)) => external.push(key.to_owned()),
             Some(_) => {}
+        }
+    }
+    if let Some(scanners) = table.get("scanners").and_then(toml::Value::as_table) {
+        for (name, value) in scanners {
+            if let Some(endpoint) = value
+                .as_table()
+                .and_then(|v| v.get("endpoint"))
+                .and_then(toml::Value::as_str)
+                && !endpoint.is_empty()
+                && !is_loopback_url(endpoint)
+            {
+                external.push(format!("scanners.{name}.endpoint"));
+            }
         }
     }
     let mut problems = Vec::new();
@@ -742,5 +755,13 @@ mod tests {
         );
         let rejected = good.replace("iamEndpoint = \"http://127.0.0.1:9/x\"", "iamEndpoint = 5");
         assert_eq!(tenant_guard_violation(rejected.as_bytes()), None);
+        let named = format!("{good}\n[scanners.monitor]\nendpoint = \"http://127.0.0.1:9/scan\"\n");
+        assert_eq!(tenant_guard_violation(named.as_bytes()), None);
+        let named = named.replace("http://127.0.0.1:9/scan", "https://example.com/scan");
+        assert!(
+            tenant_guard_violation(named.as_bytes())
+                .unwrap()
+                .contains("scanners.monitor.endpoint")
+        );
     }
 }

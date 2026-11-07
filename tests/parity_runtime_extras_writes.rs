@@ -270,16 +270,6 @@ mod parity {
                 &["--updated-by <email>  Email of user performing deletion"],
                 &["--force"],
             ),
-            (
-                &["runtime", "report"],
-                &[
-                    "--max-pages <n>  Page budget per source, 1–100 (25 sessions/page) (default: \"40\")",
-                    "--output-file <path>  Destination (default: new timestamped file in CWD); - for stdout; never overwrite",
-                    "--strict  Exit 1 after writing if any source is incomplete",
-                    "--title <text>  Report title (default: \"Daily environment report\")",
-                ],
-                &[],
-            ),
         ] {
             let (t, r) = (squash(&help(&ts, path)), squash(&help(&rust(), path)));
             let about = squash(help(&ts, path).lines().nth(2).unwrap_or_default());

@@ -221,8 +221,7 @@ and `json` (control characters escaped) and also support `table`; any failure af
 client is built is TypeScript's one `Dashboard operation failed` line. `sessions list --all` keeps
 TypeScript's page checks and exits 1 after printing a partial list at its item or page cap.
 `sessions scan-content` prints the stored prompt and response only with `--show-content`, or
-writes them into a new 0600 `--output-file`, checked before any request. `scan-logs query`
-is TypeScript's stub: it sends nothing and exits 1 with a pointer to `sessions list`.
+writes them into a new 0600 `--output-file`, checked before any request. `scan-logs query` discovers sessions and resolves scan results using the SDK, with explicit coverage and incomplete-read exit 1. Direct `results --scan-id` and `reports --report-id` use scanner credentials only. The old stub endpoint is not used.
 
 ## Writes and the environment report
 
@@ -248,13 +247,89 @@ fields the file drops and a rename. Each write is sent once (a 401 is replayed o
 token); a timeout or 5xx says the outcome is unknown and what to check. The writes print
 their record in `pretty`, `table` or `json`, and their outcome lines on stderr.
 
-`runtime report` reads seven sources (application activity, security profiles, registered
-applications, sessions, the session chart, top violations and the violation trend) and writes one
-self-contained HTML file (strict Content Security Policy, no network access) that is new, 0600 and
-never overwritten. The destination and its directory are checked before any request. It
-keeps aggregates and names only; a source that could not be read is shown as unavailable, never as
-zero. It exits 1 when no source could be read, or with `--strict` when one is incomplete.
-`--output` and `--debug` are refused.
+`runtime report` now produces an AIRS Signal Brief: scoped runtime evidence,
+malicious detector findings with separate allow/block enforcement, current profile
+comparisons, and explicit collection gaps. The default window is rolling 24 hours;
+use `--interval 7 --unit days` or repeat `--app-id` to change scope. Detail sampling
+uses five example reports by default, with a hard maximum of ten distinct report
+IDs and two serial Reports API attempts per invocation. Report requests are not
+retried; HTTP 429 stops example enrichment without waiting. Metadata-backed findings
+remain available with `--max-reports 0` or missing examples. The collection defaults
+to 120 seconds and four concurrent metadata reads. Counts describe collected
+evidence, never projected population rates. Unsupported daily token telemetry is shown as unavailable.
+
+Required configuration is collected before session traversal. Missing scan results
+can receive at most ten exact-identity management transaction reads for metadata;
+transaction status never supplies missing allow/block decisions or report IDs.
+Large traversals can still reach page/time limits and fail strict completeness.
+Direct `scan-logs reports` accepts at most ten distinct report IDs and shares the
+two-attempt limit; `scan-logs results` retains its separate scan-ID limits.
+
+Current profile posture is a matrix: profiles form rows, detection services form
+columns, and check marks show explicitly enabled services. Direction and allow/block
+settings remain available in expandable details; blank cells do not establish
+enablement.
+
+HTML is self-contained, works offline, and uses native expandable evidence sections.
+Snippet excerpts are masked and bounded; DLP matched values are fully withheld.
+The report never automatically retrieves stored full prompts/responses. Allowed
+malicious detections can reflect intentional monitoring, rather than a configuration
+error. Current configuration does not establish historical enforcement policy.
+
+```sh
+airs runtime report --bundle-dir ./brief-review
+airs runtime report --interval 7 --unit days --app-id APP_A --output-file ./brief.html
+airs runtime report --from-evidence ./brief-review/evidence.json --output-file ./replay.html
+airs runtime scan-logs query --interval 24 --unit hours --filter threat --output json
+airs runtime scan-logs results --scan-id SCAN_UUID --output json
+airs runtime scan-logs reports --report-id REPORT_ID --output json
+```
+
+The optional new bundle directory contains `report.html`, masked `evidence.json`
+and `review.md` with a coding-agent prompt and evidence references. Directory mode is
+0700 and files are 0600. Publication never overwrites an existing destination.
+Offline replay verifies schema and digest and does not access a tenant or network.
+To import a review, annotate the packet's JSON frontmatter reviewer and marked
+assessment array, then run:
+
+```sh
+airs runtime report --from-evidence ./brief-review/evidence.json \
+  --review-file ./brief-review/review.md --output-file ./reviewed.html
+```
+
+Agent assessments and human reviews are labeled separately with self-attributed
+reviewer name, model and time. Assessments can propose priorities and explain context;
+they cannot change API verdicts/actions, collected counts or coverage. The CLI never
+launches an agent or executes packet instructions. Collection ID, digest and finding
+references must match; stale or malformed packets are refused.
+
+If a saved snapshot needs additional privacy projection, safe HTML replay is allowed,
+but republishing the original evidence into a bundle is refused.
+Normal reports retain available evidence when a source fails; `--strict` exits 1
+after writing if a required source is incomplete. Unknown health exits 1 even
+without strict. Supplemental gaps or a reached detail sample cap alone do not fail
+strict. `--output` and `--debug` remain refused.
+
+Privacy projection refuses evidence when distinct correlation or grouping values
+would become indistinguishable after masking. This can reject a collection with
+multiple sensitive identity labels; it prevents merged scan counts, application
+buckets or false profile associations. Malformed semantic labels never normalize
+into an allow decision or stronger configuration confidence.
+
+## Runtime history (optional service, in development)
+
+The `airs` CLI keeps no runtime history. The 8.2 development builds briefly had local
+`runtime history` and `runtime sync` commands, automatic retention for `scan`,
+`bulk-scan` and `resume-poll`, and the `--history-dir`/`--no-history` flags. None of
+these was published, and all have been removed. Persistent history, collection and
+historical reports belong to the optional `airs-mcp` service, which is still being built.
+When it ships, the CLI will reach it only through an explicit `--mcp CONNECTION`
+selection, or `--record-history CONNECTION` for scans. Without that selection the CLI
+never opens a history database and never contacts the service.
+
+The CLI does not open, change or delete existing local archive files (by default under
+`~/.local/share/airs-cli/history`). They stay in place for an explicit migration into
+the service.
 
 ## Profile backup and restore
 
@@ -282,3 +357,17 @@ list in an answer is an error, never an empty inventory. `--debug` is refused.
 ## Every flag
 
 Every command and flag is in the [command reference](../reference/commands/runtime.md).
+
+### Report evidence when scan detail is unavailable
+
+The next 8.1 candidate retains positive detector metadata from management action
+logs even when a scanner binding is missing or a result cannot be retrieved.
+Direction and enforcement stay unknown when the source does not supply them.
+Session overview observations remain session-level; they are not copied to scans.
+Collection prioritizes positive sessions while sharing pages fairly across apps.
+
+The summary shows management-reported session totals and violations alongside
+collected scans and findings, with each unit labeled. Coverage diagnostics separate
+empty responses, pending rows, rejected rows, missing IDs and actual requests per
+application. Missing data does not prove a key-scope problem. Report examples retain
+the global five-ID default, ten-ID hard cap, two serial sends and stop-on-429 policy.

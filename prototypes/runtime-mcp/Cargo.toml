@@ -1,0 +1,30 @@
+# Isolated M0.2 feasibility workspace (docs/RUNTIME_MCP_M0_FEASIBILITY.md).
+# Not part of the root workspace and not linked into the shipped `airs` binary.
+# The skeleton crates use the approved package names so name/package/feature
+# checks exercise the real boundary; M1 creates the production crates.
+[workspace]
+members = [
+    "crates/airs-mcp-client",
+    "crates/airs-mcp-spike",
+    "crates/cli-link",
+    "crates/airs-mcp-spike-cli",
+]
+resolver = "3"
+
+[workspace.package]
+version = "8.2.0-dev.1"
+edition = "2024"
+rust-version = "1.89"
+license = "Apache-2.0"
+repository = "https://git.cdot.io/cdot/prisma-airs-cli"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

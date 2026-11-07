@@ -260,7 +260,7 @@ fn count(value: Option<&OValue>) -> Step<u64> {
 
 /// TS `Date.parse` (the §15.17 approximation plus the date-only form, §19.15).
 fn date(value: Option<&OValue>) -> Option<i64> {
-    super::runtime::parse_date(value)
+    super::parse_date_text(value?.as_str()?)
 }
 
 /// The collection in progress.

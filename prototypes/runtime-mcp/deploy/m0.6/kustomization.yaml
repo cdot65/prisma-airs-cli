@@ -1,0 +1,26 @@
+# M0.6 disposable spike: no AIRS credentials, no customer history.
+# Deployed from talos-cluster/airs-mcp/spike (namespace and Conjur/ESO pieces in
+# talos-cluster/airs-mcp/cluster). Own namespace: `goshawks` enforces the restricted
+# Pod Security level, which forbids the CHOWN init container. Remove with `kubectl delete -k` (the PVC is Retain: delete
+# the PV/Longhorn volume explicitly after the drill).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: airs-mcp
+resources:
+  - certificate.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  - name: airs-mcp-spike-config
+    files: [spike.toml=spike-config.toml]
+generatorOptions:
+  disableNameSuffixHash: false
+images:
+  - name: airs-mcp-spike
+    newName: registry.cdot.io/airs-mcp/spike
+    digest: sha256:b41a2b3bedd9babf148c3839d97b3e0c54f0bde8b4ea15a892e26f38f536db32
+labels:
+  - pairs: {app.kubernetes.io/part-of: airs-mcp-m06-spike}
+    includeSelectors: false

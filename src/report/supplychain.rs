@@ -346,7 +346,7 @@ impl Collector {
             .filter(|row| {
                 row.created_at
                     .as_deref()
-                    .and_then(crate::report::runtime::parse_date_text)
+                    .and_then(crate::report::parse_date_text)
                     .is_some_and(|at| at >= start_ms && at <= end_ms)
             })
             .collect();

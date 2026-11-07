@@ -63,7 +63,18 @@ after `scripts/build-reference-cli.sh` (BENCHMARKS "Reproduce").
 
 ## Status
 
-Version 8.0.0 covers milestones 1–3, the M3.5 foundations, M4t tenant writes, M4 runtime
+**8.2.0-dev.1 is the current development version**. Persistent history is being
+rebuilt as an optional, separately deployed MCP service; the CLI itself keeps no history
+and contains no SQLite. The qualified **8.1.0-rc.4** binaries remain the validation build
+for stable 8.1.0 after real-tenant validation. RC4 adds the AIRS Signal Brief,
+working scan-log discovery, application-bound scanner results/report lookups,
+private bundles and offline attributed review. Follow the service's development in
+[the phase record](docs/RUNTIME_MCP_PHASE_REVIEWS.md).
+The published stable version remains 8.0.0; these changes have not been published.
+See [test builds](docs/SIGNAL_BRIEF_TEST_BUILDS.md) and
+[release candidate notes](docs/RELEASE-NOTES/8.1.0-rc.4.md).
+
+Version 8.2.0-dev.1 covers milestones 1–3, the M3.5 foundations, M4t tenant writes, M4 runtime
 writes, M5 bulk scanning, M6a Red Team, M6b DLP, M6c Model Security, M6d Runtime extras, M6e
 Gateway and M6f Supplychain, renames the executable to `airs` (1.0, DESIGN §21;
 [docs/MILESTONES.md](docs/MILESTONES.md)), and replaces the TypeScript CLI (8.0).
@@ -92,7 +103,7 @@ or 1.1.0 release.
 | M6a Red Team reports and backups | `redteam report\|dashboard <jobId>` (one scan's report), `redteam report` (the HTML environment report), `targets backup`, `targets restore` |
 | M6b DLP | `runtime dlp filtering-profiles list/get/replace`, `patterns list/get/create/replace/patch/delete`, `profiles list/get/create/replace/patch` (and `profiles delete`, which explains why the API cannot delete a profile), `dictionaries list/get/create/replace/patch/delete`, `runtime dlp backup`, `runtime dlp restore` |
 | M6c Model Security | `model-security groups list/get/create/update/delete`, `rules list/get`, `rule-instances list/get/update`, `scans list/get/create/evaluations/evaluation/violations/violation/files`, `models list/get/versions/version/files`, `labels keys/values/add/set/delete`, `pypi-auth`, `install` (uv only, with `--fetch-uv`) |
-| M6d runtime extras | `runtime api-keys list/create/regenerate/delete`, `customer-apps list/get/update/delete/consumption`, `deployment-profiles list`, `scan-logs query` (the TypeScript stub), `dashboard applications/application/application-violations/top-applications/violations-trend/apps-list`, `sessions chart/list/get/transaction/scan-content`, `runtime report` (the HTML environment report), `runtime profiles backup`, `runtime profiles restore` |
+| M6d runtime extras | `runtime api-keys list/create/regenerate/delete`, `customer-apps list/get/update/delete/consumption`, `deployment-profiles list`, `scan-logs query/results/reports`, `dashboard applications/application/application-violations/top-applications/violations-trend/apps-list`, `sessions chart/list/get/transaction/scan-content`, `runtime report` (the AIRS Signal Brief), `runtime profiles backup`, `runtime profiles restore` |
 | M6e Gateway reads | `gateway workspaces list/get`, `gateway scopes list/get`, every `gateway telemetry` read (`cost`, `cache summary/trend`, `error-category-trends`, `error-trends`, `errors`, `feedback distribution/models/trend/weighted`, `filter-boundaries`, `group-by`, `grouped-errors`, `latency`, `logs list`, `requests`, `rescued-retries`, `tokens`, `user-trends`, `users`), every inventory and admin-guardrail read (`api-keys service/user list/get`, `audit-logs list`, `configs list/get/versions`, `deployments list/get/ping`, `guardrails list/get/catalog`, `integrations list/get/providers/models list/workspaces list`, `mcp integrations list/get/capabilities list/metadata/workspaces list`, `organisations info/self get/auth-settings get`, `plugins list`, `providers list/get`, `admin-guardrails list/get/mcp-servers list`) |
 | M6e Gateway writes | `gateway workspaces create/update/archive`, `scopes create/bind/delete`, and the `configs`, `guardrails`, `providers`, `api-keys`, `deployments`, `integrations`, `mcp integrations`, `organisations`, `plugins` and `admin-guardrails` creates, updates, deletes, rotations, sets, syncs and upserts (one-time credentials only to a new `--secret-output` file) |
 | M6e Gateway inference and report | `gateway inference chat/responses/embeddings`, `gateway report` (alias `dashboard`, the HTML environment report) |
@@ -106,6 +117,18 @@ TypeScript `aigateway` group is `gateway` here, with no `aigateway` alias, and `
 Prebuilt, signed binaries are attached to each
 [Forgejo release](https://git.cdot.io/cdot/prisma-airs-cli/releases). The user
 documentation is at <https://cdot65.github.io/prisma-airs-cli/> (built from `docs-site/`).
+
+RC4 adds named application scanner routing and preserves positive management
+detector evidence when scanner detail is unavailable.
+Use `airs tenant scanners bind-default TENANT NAME --app-id APP_ID` to explicitly
+associate a flat credential, or `tenant scanners set` with private TOML input for
+separate keys. Reports retain management-visible metadata for unbound applications
+and mark scanner detail incomplete. Direct scans and result/report lookups accept
+`--scanner NAME`. This is an explicit configuration-format upgrade with private
+rollback snapshots; see [named scanner setup](docs-site/docs/commands/tenant.md).
+The unpublished 8.2 development tree's local history commands and automatic retention
+were removed when history moved to the optional service; the frozen 8.1 RC4 packages
+never included them. See [runtime history](docs-site/docs/commands/runtime.md#runtime-history-optional-service-in-development).
 
 ## Install
 
@@ -182,7 +205,7 @@ it is a native arm64 executable. Copy it onto your `PATH`, or install it with
 `cargo install --path .`.
 
 ```sh
-airs --version     # prints the version, e.g. 8.0.0
+airs --version     # prints the version, e.g. 8.2.0-dev.1
 airs --help
 ```
 
@@ -191,7 +214,7 @@ order. Homebrew's Node puts npm's global commands in `/opt/homebrew/bin`, where 
 Homebrew formula links `airs` and `airs-cli` too, so an npm install and a Homebrew install
 collide there; a 7.x TypeScript `airs-cli` or an unrelated npm package named `airs` may
 also come first. Check with `type -a airs airs-cli airs-cli-rs` and `airs --version`
-(this CLI prints a bare version such as `8.0.0`). `airs doctor` reports it: its first
+(this CLI prints a bare version such as `8.2.0-dev.1`). `airs doctor` reports it: its first
 check, `Executable`, warns when another `airs`, `airs-cli` or `airs-cli-rs` earlier on
 `PATH` resolves to a different file than the running program (it never fails the run).
 Keep one channel and uninstall the others.
@@ -462,7 +485,7 @@ airs runtime topics revert --profile Directional --name Restricted --direction p
   the record carries one; in the live run no `get` or `list` returned it. Settings you do
   not pass are never written; unknown directions are kept; a `--config`
   file's new fields are checked before the tenant (a string `dlp_tenant_id`, never `null`).
-  `runtime report` adds a `Protection configurations` column, and profile backup and
+  `runtime report` compares current protections by detector and direction, and profile backup and
   restore carry every direction.
 
 #### Known limitations of directional profiles
@@ -471,8 +494,7 @@ Directional profiles are **supported, for single-entry profiles**: a live run (2
 accepted every direction for creates, edits, topics, backup and restore.
 
 - **Not verified live:** profiles with several AI entries (`--ai-profile-index`), DLP blocks
-  inside a direction (`--dlp-action`, `--dlp-profiles`), and the runtime report's
-  `Protection configurations` column. The offline tests cover them.
+  inside a direction (`--dlp-action`, `--dlp-profiles`), and the Signal Brief's current protection comparison. The offline tests cover them.
 - **Service rules are not checked before sending, except one.** Every directional entry needs
   all four direction keys (`prompt`, `response`, `tool-call`, `tool-response`; a flag create
   writes the ones it does not fill as `{}`, and a `--config` body must list all four); the
@@ -855,8 +877,7 @@ and `json` (control characters escaped) and also support `table` (D212); any fai
 client is built is TypeScript's one `Dashboard operation failed` line. `sessions list --all` keeps
 TypeScript's page checks and exits 1 after printing a partial list at its item or page cap.
 `sessions scan-content` prints the stored prompt and response only with `--show-content`, or
-writes them into a new 0600 `--output-file`, checked before any request (D225). `scan-logs query`
-is TypeScript's stub: it sends nothing and exits 1 with a pointer to `sessions list`.
+writes them into a new 0600 `--output-file`, checked before any request (D225). `scan-logs query` discovers sessions and resolves scan results using the SDK, with explicit coverage and incomplete-read exit 1. Direct `results --scan-id` and `reports --report-id` use scanner credentials only. The old stub endpoint is not used.
 
 ### Supplychain
 
@@ -1103,13 +1124,74 @@ fields the file drops and a rename. Each write is sent once (a 401 is replayed o
 token); a timeout or 5xx says the outcome is unknown and what to check (D95). The writes print
 their record in `pretty`, `table` or `json` (D223), and their outcome lines on stderr.
 
-`runtime report` reads seven sources (application activity, security profiles, registered
-applications, sessions, the session chart, top violations and the violation trend) and writes one
-self-contained HTML file (strict Content Security Policy, no network access) that is new, 0600 and
-never overwritten. The destination and its directory are checked before any request (D214). It
-keeps aggregates and names only; a source that could not be read is shown as unavailable, never as
-zero. It exits 1 when no source could be read, or with `--strict` when one is incomplete.
-`--output` and `--debug` are refused (D155, D156).
+`runtime report` now produces an AIRS Signal Brief: scoped runtime evidence,
+malicious detector findings with separate allow/block enforcement, current profile
+comparisons, and explicit collection gaps. The default window is rolling 24 hours;
+use `--interval 7 --unit days` or repeat `--app-id` to change scope. Detail sampling
+uses five example reports by default, with a hard maximum of ten distinct report
+IDs and two serial Reports API attempts per invocation. Report requests are not
+retried; HTTP 429 stops example enrichment without waiting. Metadata-backed findings
+remain available with `--max-reports 0` or missing examples. The collection defaults
+to 120 seconds and four concurrent metadata reads. Counts describe collected
+evidence, never projected population rates. Unsupported daily token telemetry is shown as unavailable.
+
+Required configuration is collected before session traversal. Missing scan results
+can receive at most ten exact-identity management transaction reads for metadata;
+transaction status never supplies missing allow/block decisions or report IDs.
+Large traversals can still reach page/time limits and fail strict completeness.
+Direct `scan-logs reports` accepts at most ten distinct report IDs and shares the
+two-attempt limit; `scan-logs results` retains its separate scan-ID limits.
+
+Current profile posture is a matrix: profiles form rows, detection services form
+columns, and check marks show explicitly enabled services. Direction and allow/block
+settings remain available in expandable details; blank cells do not establish
+enablement.
+
+HTML is self-contained, works offline, and uses native expandable evidence sections.
+Snippet excerpts are masked and bounded; DLP matched values are fully withheld.
+The report never automatically retrieves stored full prompts/responses. Allowed
+malicious detections can reflect intentional monitoring, rather than a configuration
+error. Current configuration does not establish historical enforcement policy.
+
+```sh
+airs runtime report --bundle-dir ./brief-review
+airs runtime report --interval 7 --unit days --app-id APP_A --output-file ./brief.html
+airs runtime report --from-evidence ./brief-review/evidence.json --output-file ./replay.html
+airs runtime scan-logs query --interval 24 --unit hours --filter threat --output json
+airs runtime scan-logs results --scan-id SCAN_UUID --output json
+airs runtime scan-logs reports --report-id REPORT_ID --output json
+```
+
+The optional new bundle directory contains `report.html`, masked `evidence.json`
+and `review.md` with a coding-agent prompt and evidence references. Directory mode is
+0700 and files are 0600. Publication never overwrites an existing destination.
+Offline replay verifies schema and digest and does not access a tenant or network.
+To import a review, annotate the packet's JSON frontmatter reviewer and marked
+assessment array, then run:
+
+```sh
+airs runtime report --from-evidence ./brief-review/evidence.json \
+  --review-file ./brief-review/review.md --output-file ./reviewed.html
+```
+
+Agent assessments and human reviews are labeled separately with self-attributed
+reviewer name, model and time. Assessments can propose priorities and explain context;
+they cannot change API verdicts/actions, collected counts or coverage. The CLI never
+launches an agent or executes packet instructions. Collection ID, digest and finding
+references must match; stale or malformed packets are refused.
+
+If a saved snapshot needs additional privacy projection, safe HTML replay is allowed,
+but republishing the original evidence into a bundle is refused.
+Normal reports retain available evidence when a source fails; `--strict` exits 1
+after writing if a required source is incomplete. Unknown health exits 1 even
+without strict. Supplemental gaps or a reached detail sample cap alone do not fail
+strict. `--output` and `--debug` remain refused.
+
+Privacy projection refuses evidence when distinct correlation or grouping values
+would become indistinguishable after masking. This can reject a collection with
+multiple sensitive identity labels; it prevents merged scan counts, application
+buckets or false profile associations. Malformed semantic labels never normalize
+into an allow decision or stronger configuration confidence.
 
 ### Profile backup and restore
 

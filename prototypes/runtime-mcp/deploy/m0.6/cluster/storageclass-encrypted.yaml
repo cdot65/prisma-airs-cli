@@ -1,0 +1,26 @@
+# Cluster-scoped. Encrypted Longhorn volumes (dm-crypt); Longhorn backups of an
+# encrypted volume stay ciphertext on the backup target. The passphrase Secret is
+# delivered from Conjur by cluster/longhorn-crypto-externalsecret.yaml.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-airs-encrypted
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "3"
+  staleReplicaTimeout: "30"
+  fsType: ext4
+  diskSelector: bare-metal
+  encrypted: "true"
+  csi.storage.k8s.io/provisioner-secret-name: airs-mcp-volume-crypto
+  csi.storage.k8s.io/provisioner-secret-namespace: longhorn-system
+  csi.storage.k8s.io/node-publish-secret-name: airs-mcp-volume-crypto
+  csi.storage.k8s.io/node-publish-secret-namespace: longhorn-system
+  csi.storage.k8s.io/node-stage-secret-name: airs-mcp-volume-crypto
+  csi.storage.k8s.io/node-stage-secret-namespace: longhorn-system
+  csi.storage.k8s.io/node-expand-secret-name: airs-mcp-volume-crypto
+  csi.storage.k8s.io/node-expand-secret-namespace: longhorn-system
+  recurringJobSelector: '[{"name":"default","isGroup":true}]'

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: airs-mcp-spike-restored, namespace: airs-m06-restore}
+spec:
+  accessModes: [ReadWriteOncePod]
+  storageClassName: longhorn-airs-restore-drill
+  resources: {requests: {storage: 2Gi}}

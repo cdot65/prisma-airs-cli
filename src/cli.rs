@@ -11,7 +11,7 @@ use std::ffi::OsString;
 
 /// How each leaf command uses `--output` (DESIGN §2.4). [`command`] writes it into each
 /// leaf's help, and planning (`commands::plan`) reads the same table.
-pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 268] = [
+pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 277] = [
     (&["tenant", "list"], RENDERS),
     (&["tenant", "path"], FormatPolicy::Ignored),
     (&["tenant", "read"], RENDERS),
@@ -22,6 +22,19 @@ pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 268] = [
     (&["tenant", "switch"], FormatPolicy::NoData),
     (&["tenant", "delete"], FormatPolicy::NoData),
     (&["tenant", "import"], RENDERS),
+    (&["tenant", "scanners", "list"], RENDERS),
+    (&["tenant", "scanners", "snapshots"], RENDERS),
+    (&["tenant", "scanners", "set"], FormatPolicy::NoData),
+    (
+        &["tenant", "scanners", "bind-default"],
+        FormatPolicy::NoData,
+    ),
+    (&["tenant", "scanners", "remove"], FormatPolicy::NoData),
+    (&["tenant", "scanners", "restore"], FormatPolicy::NoData),
+    (
+        &["tenant", "scanners", "delete-snapshot"],
+        FormatPolicy::NoData,
+    ),
     (&["doctor"], RENDERS),
     (&["runtime", "scan"], RENDERS),
     (&["runtime", "bulk-scan"], RENDERS),
@@ -194,7 +207,9 @@ pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 268] = [
     (&["runtime", "customer-apps", "get"], TENANT_DEFAULT),
     (&["runtime", "customer-apps", "consumption"], TENANT_DEFAULT),
     (&["runtime", "deployment-profiles", "list"], TENANT_DEFAULT),
-    (&["runtime", "scan-logs", "query"], FormatPolicy::NoData),
+    (&["runtime", "scan-logs", "query"], TENANT_DEFAULT),
+    (&["runtime", "scan-logs", "results"], TENANT_DEFAULT),
+    (&["runtime", "scan-logs", "reports"], TENANT_DEFAULT),
     // The M6d writes print their record (D223) and ignore `defaultOutput` (choice 18);
     // the deletes print nothing; the report is HTML only (D155).
     (&["runtime", "api-keys", "create"], RENDERS),
@@ -564,6 +579,8 @@ pub enum TopCommand {
     Doctor,
     /// Manage and observe Prisma AIRS AI Gateway resources
     Gateway(GatewayGroup),
+    /// Optional runtime MCP service: connections and sign-in
+    Mcp(McpGroup),
     /// AI Model Security operations — groups, rules, scans
     ModelSecurity(ModelSecGroup),
     /// Runtime prompt scanning against AIRS profiles
@@ -714,6 +731,8 @@ pub struct TenantGroup {
 
 #[derive(Subcommand)]
 pub enum TenantCommand {
+    /// Manage application-bound scanner credentials locally
+    Scanners(ScannersGroup),
     /// List registrations without reading credentials
     #[command(visible_alias = "ls")]
     List,
@@ -827,6 +846,101 @@ pub struct SetArgs {
 }
 
 #[derive(Args)]
+pub struct ScannersGroup {
+    #[command(subcommand)]
+    pub command: Option<ScannersCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum ScannersCommand {
+    /// List public scanner metadata; credentials are never displayed
+    List(ScannerTenantArgs),
+    /// Save credentials from private TOML; first write snapshots old format (older binaries cannot read named tables)
+    Set(ScannerSetArgs),
+    /// Copy flat credentials into an explicit app binding; older binaries need the rollback snapshot
+    BindDefault(ScannerBindArgs),
+    /// Remove one named binding
+    Remove(ScannerRemoveArgs),
+    /// List private format rollback snapshot metadata
+    Snapshots(ScannerTenantArgs),
+    /// Restore a private snapshot for the same registered TSG
+    Restore(ScannerRestoreArgs),
+    /// Delete one explicitly selected rollback snapshot
+    DeleteSnapshot(ScannerSnapshotArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct ScannerTenantArgs {
+    #[arg(id = "scanner_tenant", value_name = "TENANT")]
+    pub tenant: String,
+}
+
+#[derive(Args, Clone)]
+#[command(group(clap::ArgGroup::new("credential_input").required(true).args(["file", "stdin"])))]
+pub struct ScannerSetArgs {
+    #[arg(id = "scanner_tenant", value_name = "TENANT")]
+    pub tenant: String,
+    #[arg(value_name = "NAME")]
+    pub name: String,
+    /// Private TOML input with applicationId, endpoint and exactly apiKey or apiToken
+    #[arg(long, value_name = "PATH")]
+    pub file: Option<std::path::PathBuf>,
+    /// Read bounded credential TOML from piped stdin
+    #[arg(long)]
+    pub stdin: bool,
+    #[arg(long)]
+    pub replace: bool,
+}
+
+#[derive(Args, Clone)]
+pub struct ScannerBindArgs {
+    #[arg(id = "scanner_tenant", value_name = "TENANT")]
+    pub tenant: String,
+    #[arg(value_name = "NAME")]
+    pub name: String,
+    /// Exact dashboard application ID; this is an explicit operator association
+    #[arg(long = "app-id", value_name = "ID")]
+    pub application_id: String,
+    /// Required when both flat key and token are set; legacy SDK sends both headers
+    #[arg(long="use", value_parser=["key", "token"])]
+    pub kind: Option<String>,
+    #[arg(long)]
+    pub replace: bool,
+}
+
+#[derive(Args, Clone)]
+pub struct ScannerRemoveArgs {
+    #[arg(id = "scanner_tenant", value_name = "TENANT")]
+    pub tenant: String,
+    #[arg(value_name = "NAME")]
+    pub name: String,
+    #[arg(long, required = true)]
+    pub force: bool,
+}
+
+#[derive(Args, Clone)]
+pub struct ScannerRestoreArgs {
+    #[arg(id = "scanner_tenant", value_name = "TENANT")]
+    pub tenant: String,
+    #[arg(long, value_name = "PATH")]
+    pub file: std::path::PathBuf,
+    #[arg(long = "expect-tsg", value_name = "ID")]
+    pub expect_tsg: String,
+    #[arg(long, required = true)]
+    pub force: bool,
+}
+
+#[derive(Args, Clone)]
+pub struct ScannerSnapshotArgs {
+    #[arg(id = "scanner_tenant", value_name = "TENANT")]
+    pub tenant: String,
+    #[arg(long, value_name = "PATH")]
+    pub file: std::path::PathBuf,
+    #[arg(long, required = true)]
+    pub force: bool,
+}
+
+#[derive(Args)]
 pub struct RuntimeGroup {
     #[command(subcommand)]
     pub command: Option<RuntimeCommand>,
@@ -848,9 +962,15 @@ pub enum RuntimeCommand {
     DeploymentProfiles(DeploymentProfilesGroup),
     /// DLP management (filtering-profiles, patterns, profiles, dictionaries, backup/restore)
     Dlp(DlpGroup),
+    /// Persistent runtime history on the optional MCP service (--mcp CONNECTION)
+    History(McpHistoryGroup),
+    /// Jobs on the optional MCP service (--mcp CONNECTION)
+    Jobs(McpJobsGroup),
     /// Manage AIRS security profiles
     Profiles(ProfilesGroup),
-    /// Generate a daily AI Runtime Security environment report (read-only)
+    /// Retain already-received scan metadata on the optional MCP service (--mcp CONNECTION)
+    Receipts(McpReceiptsGroup),
+    /// Generate an evidence-backed runtime Signal Brief (read-only)
     #[command(after_help = RUNTIME_REPORT_EXAMPLES)]
     Report(RuntimeReportArgs),
     /// Resume polling for a previously submitted bulk scan
@@ -858,10 +978,14 @@ pub enum RuntimeCommand {
     /// Scan a single prompt against an AIRS security profile
     #[command(after_help = SCAN_EXAMPLES)]
     Scan(ScanArgs),
-    /// BROKEN legacy retrieval — under refactor; use runtime sessions
+    /// Discover runtime events and retrieve scan results or detector reports
     ScanLogs(ScanLogsGroup),
+    /// Collection schedules on the optional MCP service (--mcp CONNECTION)
+    Schedules(McpSchedulesGroup),
     /// Verified SCM session inventory and drill-down (OAuth)
     Sessions(SessionsGroup),
+    /// Submit a collection job to the optional MCP service (--mcp CONNECTION)
+    Sync(McpSyncArgs),
     /// Manage AIRS custom topics
     Topics(TopicsGroup),
 }
@@ -1011,18 +1135,59 @@ const RUNTIME_REPORT_EXAMPLES: &str = "Examples:
 /// `runtime report` (§18.14). TypeScript's leaf `--output` is the global flag (D155).
 #[derive(Args, Clone)]
 pub struct RuntimeReportArgs {
+    #[command(flatten)]
+    pub budget: EvidenceBudgetArgs,
+    /// Rolling interval (default 24)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub interval: Option<String>,
+    /// Rolling unit: hour/hours/day/days (default hours)
+    #[arg(long, value_name = "unit", allow_hyphen_values = true)]
+    pub unit: Option<String>,
+    /// Application ID filter (repeatable)
+    #[arg(long="app-id", action=clap::ArgAction::Append)]
+    pub app_ids: Vec<String>,
+    /// Retained normalized event cap (1–10000; default 10000)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub max_events: Option<String>,
+    /// Distinct example report cap (0–10; default 5; at most two API attempts)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub max_reports: Option<String>,
+    /// New private directory containing report.html, evidence.json and review.md
+    #[arg(long, value_name = "path", conflicts_with = "output_file")]
+    pub bundle_dir: Option<std::path::PathBuf>,
+    /// Render a saved Signal Brief evidence snapshot without tenant or network access
+    #[arg(long, value_name = "path")]
+    pub from_evidence: Option<std::path::PathBuf>,
+    /// Import attributed agent assessments or human review from a saved packet
+    #[arg(long, value_name = "path", requires = "from_evidence")]
+    pub review_file: Option<std::path::PathBuf>,
     /// Destination (default: new timestamped file in CWD); - for stdout; never overwrite
     #[arg(long = "output-file", value_name = "path", value_parser = clap::value_parser!(OsString))]
     pub output_file: Option<OsString>,
-    /// Report title (default: "Daily environment report")
+    /// Report title (default: "AIRS Signal Brief")
     #[arg(long, value_name = "text", allow_hyphen_values = true)]
     pub title: Option<String>,
     /// Page budget per source, 1–100 (25 sessions/page) (default: "40")
     #[arg(long = "max-pages", value_name = "n", allow_hyphen_values = true)]
     pub max_pages: Option<String>,
-    /// Exit 1 after writing if any source is incomplete
+    /// Exit 1 after writing if a required source is incomplete
     #[arg(long)]
     pub strict: bool,
+    /// Render on the optional MCP service from its archive (zero AIRS calls)
+    #[arg(long = "mcp", value_name = "CONNECTION")]
+    pub mcp: Option<String>,
+    /// With --mcp: report range start (UTC, RFC 3339; with --until)
+    #[arg(long, value_name = "UTC", requires = "mcp")]
+    pub since: Option<String>,
+    /// With --mcp: report range end (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC", requires = "mcp")]
+    pub until: Option<String>,
+    /// With --mcp: print the accepted job and exit once admission is durable
+    #[arg(long, requires = "mcp", conflicts_with = "wait")]
+    pub no_wait: bool,
+    /// With --mcp: wait for the report (the default)
+    #[arg(long, requires = "mcp")]
+    pub wait: bool,
 }
 
 #[derive(Args)]
@@ -1078,13 +1243,31 @@ pub struct ScanLogsGroup {
 
 #[derive(Subcommand)]
 pub enum ScanLogsCommand {
-    /// Unavailable legacy query; use runtime sessions list
-    Query(ScanLogsQueryArgs),
+    /// Discover runtime events through dashboard sessions (OAuth and scanner reads)
+    Query(Box<ScanLogsQueryArgs>),
+    /// Retrieve existing scan results (scanner credentials only)
+    Results(ScanLogResultsArgs),
+    /// Retrieve existing detector reports and masked snippets (scanner credentials only)
+    Reports(ScanLogReportsArgs),
 }
 
 /// Every value is accepted and ignored (TS); only `--interval` and `--unit` are required.
 #[derive(Args)]
 pub struct ScanLogsQueryArgs {
+    #[command(flatten)]
+    pub budget: EvidenceBudgetArgs,
+    /// Limit discovery to these application IDs (repeatable)
+    #[arg(long="app-id", action=clap::ArgAction::Append)]
+    pub app_ids: Vec<String>,
+    /// Emit all collected events within the collection bounds; conflicts with limit/offset
+    #[arg(long)]
+    pub all: bool,
+    /// Aggregate pages per endpoint family (1–100; default 40)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub max_pages: Option<String>,
+    /// Retained normalized event cap (1–10000; default 10000)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub max_events: Option<String>,
     /// Time interval
     #[arg(long, value_name = "n", required = true, allow_hyphen_values = true)]
     pub interval: Option<String>,
@@ -1107,14 +1290,14 @@ pub struct ScanLogsQueryArgs {
         long,
         value_name = "n",
         allow_hyphen_values = true,
-        help = "Max results per page (API page size) (default: \"50\")"
+        help = "Output slice size after bounded discovery (default: \"50\")"
     )]
     pub limit: Option<String>,
     #[arg(
         long,
         value_name = "n",
         allow_hyphen_values = true,
-        help = "Starting offset — rounds down to a page boundary (default: \"0\")"
+        help = "Offset in the filtered normalized output slice (default: \"0\")"
     )]
     pub offset: Option<String>,
     /// Deprecated page number (hidden)
@@ -1128,6 +1311,42 @@ pub struct ScanLogsQueryArgs {
         allow_hyphen_values = true
     )]
     pub page_size: Option<String>,
+}
+
+/// Common hard bounds for read-only evidence requests.
+#[derive(Args, Clone, Default)]
+pub struct EvidenceBudgetArgs {
+    /// Collection seconds (1–3600; default 120)
+    #[arg(long, value_name = "seconds", allow_hyphen_values = true)]
+    pub timeout: Option<String>,
+    /// Concurrent SDK operations, including response decoding (1–16; default 4)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub concurrency: Option<String>,
+    /// Actual outbound attempts including OAuth and replay (1–10000; default 1000)
+    #[arg(long, value_name = "n", allow_hyphen_values = true)]
+    pub max_requests: Option<String>,
+}
+#[derive(Args)]
+pub struct ScanLogResultsArgs {
+    /// Named application-bound scanner (default: legacy flat credentials)
+    #[arg(long, value_name = "NAME")]
+    pub scanner: Option<String>,
+    /// Existing canonical scan UUID (repeatable; up to 1000 IDs)
+    #[arg(long="scan-id", required=true, action=clap::ArgAction::Append)]
+    pub ids: Vec<String>,
+    #[command(flatten)]
+    pub budget: EvidenceBudgetArgs,
+}
+#[derive(Args)]
+pub struct ScanLogReportsArgs {
+    /// Named application-bound scanner (default: legacy flat credentials)
+    #[arg(long, value_name = "NAME")]
+    pub scanner: Option<String>,
+    /// Existing opaque detector report ID (repeatable; up to 10 distinct IDs)
+    #[arg(long="report-id", required=true, action=clap::ArgAction::Append)]
+    pub ids: Vec<String>,
+    #[command(flatten)]
+    pub budget: EvidenceBudgetArgs,
 }
 
 /// `runtime dashboard` (DESIGN §18.12).
@@ -1973,6 +2192,9 @@ pub struct DlpDictionaryReplaceArgs {
 /// messages are kept (§14.2).
 #[derive(Args, Clone)]
 pub struct BulkScanArgs {
+    /// Named application-bound scanner; stored with the polling checkpoint
+    #[arg(long, value_name = "NAME")]
+    pub scanner: Option<String>,
     /// Security profile name
     #[arg(long, value_name = "name", required = true, allow_hyphen_values = true)]
     pub profile: String,
@@ -1996,6 +2218,9 @@ pub struct BulkScanArgs {
     /// Deprecated alias of --file (hidden; DESIGN §14.1)
     #[arg(long, value_name = "file", hide = true, value_parser = clap::value_parser!(std::ffi::OsString))]
     pub input: Option<std::ffi::OsString>,
+    /// Also retain the received results' metadata on the optional MCP service (needs --scanner)
+    #[arg(long = "record-history", value_name = "CONNECTION")]
+    pub record_history: Option<String>,
 }
 
 /// `runtime resume-poll <stateFile>` (DESIGN §14.1, §14.13).
@@ -2007,6 +2232,9 @@ pub struct ResumePollArgs {
     /// Output CSV file path
     #[arg(long = "output-file", value_name = "file", value_parser = clap::value_parser!(std::ffi::OsString))]
     pub output_file: Option<std::ffi::OsString>,
+    /// Also retain the received results' metadata on the optional MCP service
+    #[arg(long = "record-history", value_name = "CONNECTION")]
+    pub record_history: Option<String>,
 }
 
 #[derive(Args)]
@@ -2581,6 +2809,9 @@ pub struct TopicGetArgs {
 
 #[derive(Args, Clone)]
 pub struct ScanArgs {
+    /// Named application-bound scanner (default: legacy flat credentials)
+    #[arg(long, value_name = "NAME")]
+    pub scanner: Option<String>,
     /// Security profile name
     #[arg(long, value_name = "name", required = true, allow_hyphen_values = true)]
     pub profile: String,
@@ -2590,6 +2821,9 @@ pub struct ScanArgs {
     /// Prompt text (use `--` before a prompt that starts with '-')
     #[arg(value_name = "prompt")]
     pub prompt: String,
+    /// Also retain the received result's metadata on the optional MCP service (needs --scanner)
+    #[arg(long = "record-history", value_name = "CONNECTION")]
+    pub record_history: Option<String>,
 }
 
 const TARGETS_LIST_EXAMPLES: &str = "Examples:
@@ -6248,6 +6482,127 @@ pub fn redacted_parse_error(args: &[OsString], error: &clap::Error) -> Option<cl
     Some(clap::Error::raw(kind, message).format(&mut leaf_command))
 }
 
+/// New evidence commands reject repeated local scalar flags, unlike the inherited
+/// TypeScript last-value-wins setting. Consume option values so flag-shaped text
+/// in a title, ID or path cannot be mistaken for another option occurrence.
+pub fn evidence_repetitions(args: &[std::ffi::OsString], cli: &Cli) -> Option<String> {
+    let (evidence, direct, named) = match &cli.command {
+        Some(TopCommand::Runtime(group)) => (
+            matches!(
+                &group.command,
+                Some(RuntimeCommand::ScanLogs(_) | RuntimeCommand::Report(_))
+            ),
+            matches!(
+                &group.command,
+                Some(
+                    RuntimeCommand::Scan(_)
+                        | RuntimeCommand::BulkScan(_)
+                        | RuntimeCommand::ResumePoll(_)
+                )
+            ),
+            false,
+        ),
+        Some(TopCommand::Tenant(group)) => (
+            false,
+            false,
+            matches!(&group.command, Some(TenantCommand::Scanners(_))),
+        ),
+        _ => (false, false, false),
+    };
+    if !evidence && !direct && !named {
+        return None;
+    }
+    let evidence_scalars = [
+        "--scanner",
+        "--file",
+        "--expect-tsg",
+        "--force",
+        "--timeout",
+        "--concurrency",
+        "--max-requests",
+        "--interval",
+        "--unit",
+        "--filter",
+        "--limit",
+        "--offset",
+        "--max-pages",
+        "--max-events",
+        "--max-reports",
+        "--output-file",
+        "--from-evidence",
+        "--review-file",
+        "--bundle-dir",
+        "--title",
+        "--all",
+        "--strict",
+    ];
+    let named_scalars = [
+        "--file",
+        "--stdin",
+        "--replace",
+        "--app-id",
+        "--use",
+        "--force",
+        "--expect-tsg",
+    ];
+    let scalars: &[&str] = if named {
+        &named_scalars
+    } else if evidence {
+        &evidence_scalars
+    } else {
+        &["--scanner"]
+    };
+    let bools = [
+        "--stdin",
+        "--replace",
+        "--force",
+        "--all",
+        "--strict",
+        "--quiet",
+        "--debug",
+        "--help",
+        "--version",
+        "-h",
+        "-V",
+    ];
+    let mut seen = std::collections::BTreeSet::new();
+    let mut i = 1;
+    while i < args.len() {
+        let text = args[i].to_string_lossy();
+        if text == "--" {
+            break;
+        }
+        if text.starts_with('-') {
+            let flag = text.split('=').next().unwrap_or_default();
+            if scalars.contains(&flag) && !seen.insert(flag.to_owned()) {
+                return Some(format!("{flag} may be supplied only once"));
+            }
+            let takes_value = (scalars.contains(&flag) && !bools.contains(&flag))
+                || [
+                    "--profile",
+                    "--response",
+                    "--file",
+                    "--input",
+                    "--session-id",
+                    "--batch-size",
+                    "--output-file",
+                    "--tenant",
+                    "--output",
+                    "--format",
+                    "--app-id",
+                    "--scan-id",
+                    "--report-id",
+                ]
+                .contains(&flag);
+            if takes_value && !text.contains('=') {
+                i += 1;
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -6621,6 +6976,23 @@ mod tests {
                 let mut args = vec!["airs"];
                 args.extend_from_slice(path);
                 args.extend(match *path {
+                    ["tenant", "scanners", "list" | "snapshots"] => &["prod"][..],
+                    ["tenant", "scanners", "set"] => &["prod", "monitor", "--stdin"][..],
+                    ["tenant", "scanners", "bind-default"] => {
+                        &["prod", "monitor", "--app-id", "app-a"][..]
+                    }
+                    ["tenant", "scanners", "remove"] => &["prod", "monitor", "--force"][..],
+                    ["tenant", "scanners", "restore"] => &[
+                        "prod",
+                        "--file",
+                        "snapshot.toml",
+                        "--expect-tsg",
+                        "100",
+                        "--force",
+                    ][..],
+                    ["tenant", "scanners", "delete-snapshot"] => {
+                        &["prod", "--file", "snapshot.toml", "--force"][..]
+                    }
                     ["redteam", "scan"] => &[
                         "--target",
                         "00000000-0000-4000-8000-000000000001",
@@ -6677,6 +7049,10 @@ mod tests {
                     ["runtime", "scan"] => &["--profile", "p", "hi"][..],
                     ["runtime", "bulk-scan"] => &["--profile", "p", "--file", "p.txt"][..],
                     ["runtime", "resume-poll"] => &["s.bulk-scan.json"][..],
+                    ["runtime", "scan-logs", "results"] => {
+                        &["--scan-id", "00000000-0000-4000-8000-0000000000b2"][..]
+                    }
+                    ["runtime", "scan-logs", "reports"] => &["--report-id", "report-1"][..],
                     ["runtime", "scan-logs", "query"] => {
                         &["--interval", "1", "--unit", "hours"][..]
                     }
@@ -6882,4 +7258,456 @@ mod tests {
             "$ airs runtime scan --profile prod-guard \"Ignore all previous instructions\""
         ));
     }
+}
+
+// ---------------------------------------------------------------------------
+// The optional runtime MCP client (RUNTIME_MCP_CONTRACT §7; DESIGN §22.8, D350–D354).
+
+/// `mcp` (§7.2).
+#[derive(Args)]
+pub struct McpGroup {
+    #[command(subcommand)]
+    pub command: Option<McpCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum McpCommand {
+    /// Manage named connections in the selected tenant (no secrets)
+    Connections(McpConnectionsGroup),
+    /// Sign in to a connection (PKCE, loopback callback; the only interactive command on an ordinary connection)
+    Login(McpLoginArgs),
+    /// Remove the private session of a connection
+    Logout(McpConnectionArg),
+    /// Connections, sessions and unresolved operation receipts (local, no network)
+    Status(McpStatusArgs),
+    /// Approve another actor's lifecycle preview (admin connection; a fresh sign-in)
+    Confirm(McpConfirmArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct McpConfirmArgs {
+    /// The preview to approve (p1_…)
+    #[arg(value_name = "PREVIEW_ID")]
+    pub preview_id: String,
+    /// The admin-role connection that signs the approval
+    #[arg(long, value_name = "CONNECTION")]
+    pub connection: String,
+    /// The preview's parameter digest (default: the local preview record)
+    #[arg(long, value_name = "SHA256")]
+    pub digest: Option<String>,
+    /// The preview's proof nonce (default: the local preview record)
+    #[arg(long = "proof-nonce", value_name = "HEX")]
+    pub proof_nonce: Option<String>,
+    /// Open the sign-in URL in a browser (otherwise it is only printed)
+    #[arg(long)]
+    pub open: bool,
+    /// Loopback callback port (0 picks a free port)
+    #[arg(long, value_name = "N", default_value_t = 0)]
+    pub port: u16,
+}
+
+#[derive(Args)]
+pub struct McpConnectionsGroup {
+    #[command(subcommand)]
+    pub command: Option<McpConnectionsCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum McpConnectionsCommand {
+    /// List the selected tenant's connections
+    List,
+    /// Add or replace a connection; the first write saves a private rollback snapshot
+    Set(McpSetArgs),
+    /// Remove a connection
+    Remove(McpRemoveArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct McpConnectionArg {
+    /// Connection name
+    #[arg(value_name = "CONNECTION")]
+    pub connection: String,
+}
+
+#[derive(Args, Clone)]
+pub struct McpStatusArgs {
+    /// Connection name (all when omitted)
+    #[arg(value_name = "CONNECTION")]
+    pub connection: Option<String>,
+}
+
+#[derive(Args, Clone)]
+pub struct McpLoginArgs {
+    /// Connection name
+    #[arg(value_name = "CONNECTION")]
+    pub connection: String,
+    /// Open the authorization URL in a browser (otherwise it is only printed)
+    #[arg(long)]
+    pub open: bool,
+    /// Loopback callback port (0 picks a free port)
+    #[arg(long, value_name = "N", default_value_t = 0)]
+    pub port: u16,
+}
+
+#[derive(Args, Clone)]
+pub struct McpSetArgs {
+    /// Connection name
+    #[arg(value_name = "CONNECTION")]
+    pub connection: String,
+    /// Gateway MCP route (HTTPS; loopback HTTP only for tests)
+    #[arg(long, value_name = "URL")]
+    pub url: String,
+    /// Public OAuth client ID (no secret)
+    #[arg(long, value_name = "ID")]
+    pub client_id: String,
+    /// Expected public service tenant
+    #[arg(long, value_name = "ID")]
+    pub service_tenant: String,
+    /// Expected TSG of the service's archive
+    #[arg(long, value_name = "TSG")]
+    pub expected_tsg: String,
+    /// An origin discovery and sign-in may use (repeatable; must include the URL's)
+    #[arg(long = "approved-origin", value_name = "ORIGIN", required = true)]
+    pub approved_origin: Vec<String>,
+    /// ordinary or admin
+    #[arg(long, value_name = "ROLE", default_value = "ordinary")]
+    pub role: String,
+    /// Replace an existing connection (a new revision invalidates its session)
+    #[arg(long)]
+    pub replace: bool,
+}
+
+#[derive(Args, Clone)]
+pub struct McpRemoveArgs {
+    /// Connection name
+    #[arg(value_name = "CONNECTION")]
+    pub connection: String,
+    /// Required: removing a connection cannot be undone
+    #[arg(long, required = true)]
+    pub force: bool,
+}
+
+/// The connection selector every service command requires (no fallback, §7.1).
+#[derive(Args, Clone, Default)]
+pub struct McpSelect {
+    /// The optional MCP service connection (required)
+    #[arg(long = "mcp", value_name = "CONNECTION")]
+    pub mcp: Option<String>,
+}
+
+#[derive(Args)]
+pub struct McpHistoryGroup {
+    #[command(subcommand)]
+    pub command: Option<McpHistoryCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum McpHistoryCommand {
+    /// Archive presence, schema, last collection and gaps
+    Status(McpSelect),
+    /// Per-source traversed-as-of coverage for a range (at most 90 days)
+    Coverage(McpCoverageArgs),
+    /// Bounded aggregate summaries of a range (never raw payloads)
+    Query(McpQueryArgs),
+    /// Report versions on the service
+    Reports(McpReportsArgs),
+    /// Download a report version's files into a new private directory (hash-verified)
+    Download(McpDownloadArgs),
+    /// Import a logical transfer file (admin connection; staged and validated first)
+    Import(McpImportArgs),
+    /// Export the whole archive to a new private file (admin connection)
+    Export(McpExportArgs),
+    /// Preview (or execute) an examples-only prune
+    Prune(McpPruneArgs),
+    /// Preview (or execute) archive compaction
+    Compact(McpLifecycleArgs),
+    /// Preview (or execute) a backup (offline maintenance on the service)
+    Backup(McpLifecycleArgs),
+    /// Preview (or execute) archive recovery
+    Recover(McpLifecycleArgs),
+    /// Preview (or execute) a restore (offline maintenance on the service)
+    Restore(McpRestoreArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct McpQueryArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// Range start (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub since: String,
+    /// Range end (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub until: String,
+    /// Limit to an application (repeatable)
+    #[arg(long = "app-id", value_name = "ID")]
+    pub app_id: Vec<String>,
+    /// day, application, detector, verdict, action or profile (repeatable, at most 3)
+    #[arg(long = "group-by", value_name = "KEY")]
+    pub group_by: Vec<String>,
+    /// At most this many rows (1-100)
+    #[arg(long, value_name = "N")]
+    pub max: Option<u64>,
+}
+
+#[derive(Args, Clone)]
+pub struct McpReportsArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// Range start (UTC, RFC 3339; with --until)
+    #[arg(long, value_name = "UTC")]
+    pub since: Option<String>,
+    /// Range end (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub until: Option<String>,
+    /// daily, revision, manual or catch_up
+    #[arg(long, value_name = "KIND")]
+    pub kind: Option<String>,
+    /// At most this many versions (1-50)
+    #[arg(long, value_name = "N")]
+    pub max: Option<u64>,
+}
+
+#[derive(Args, Clone)]
+pub struct McpDownloadArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// The report version (v1_…); not `--version`, which prints the CLI version anywhere
+    #[arg(long = "version-id", value_name = "VERSION_ID")]
+    pub version: String,
+    /// report.html, evidence.json or review.md (repeatable; default: all three)
+    #[arg(long = "file", value_name = "NAME")]
+    pub file: Vec<String>,
+    /// A new private directory for the files (never overwritten)
+    #[arg(long = "output-dir", value_name = "NEW_DIR")]
+    pub output_dir: std::path::PathBuf,
+}
+
+#[derive(Args, Clone)]
+pub struct McpImportArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// The logical transfer file to import
+    #[arg(long, value_name = "PATH")]
+    pub file: std::path::PathBuf,
+    /// The TSG the file must belong to
+    #[arg(long = "expect-tsg", value_name = "TSG")]
+    pub expect_tsg: String,
+    /// The environment the file must belong to (env1:…)
+    #[arg(long = "expect-environment", value_name = "ENV_ID")]
+    pub expect_environment: String,
+    #[command(flatten)]
+    pub sign_in: McpSignInArgs,
+}
+
+#[derive(Args, Clone)]
+pub struct McpExportArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// A new private file for the export (never overwritten)
+    #[arg(long, value_name = "NEW_PATH")]
+    pub file: std::path::PathBuf,
+    #[command(flatten)]
+    pub sign_in: McpSignInArgs,
+}
+
+/// The fresh administrative sign-in of an admin connection (no session is kept).
+#[derive(Args, Clone, Default)]
+pub struct McpSignInArgs {
+    /// Open the sign-in URL in a browser (otherwise it is only printed)
+    #[arg(long)]
+    pub open: bool,
+    /// Loopback callback port (0 picks a free port)
+    #[arg(long, value_name = "N", default_value_t = 0)]
+    pub port: u16,
+}
+
+#[derive(Args, Clone)]
+pub struct McpLifecycleArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// Execute this preview (admin connection, or with --approval on the previewing connection)
+    #[arg(long, value_name = "PREVIEW_ID")]
+    pub execute: Option<String>,
+    /// The one-use approval of the preview (from 'airs mcp confirm')
+    #[arg(long, value_name = "APPROVAL_ID", requires = "execute")]
+    pub approval: Option<String>,
+    /// With --execute: print the accepted job and exit once admission is durable
+    #[arg(long)]
+    pub no_wait: bool,
+    #[command(flatten)]
+    pub sign_in: McpSignInArgs,
+}
+
+#[derive(Args, Clone)]
+pub struct McpPruneArgs {
+    #[command(flatten)]
+    pub lifecycle: McpLifecycleArgs,
+    /// Prune examples of events before this instant (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub before: Option<String>,
+    /// Limit to an application (repeatable)
+    #[arg(long = "app-id", value_name = "ID")]
+    pub app_id: Vec<String>,
+    /// Remove only example excerpts (required in this version)
+    #[arg(long)]
+    pub examples_only: bool,
+    /// Report versions whose artifacts to delete (not offered online in this version)
+    #[arg(long = "delete-artifacts", value_name = "VERSION_ID", num_args = 1..)]
+    pub delete_artifacts: Vec<String>,
+}
+
+#[derive(Args, Clone)]
+pub struct McpRestoreArgs {
+    #[command(flatten)]
+    pub lifecycle: McpLifecycleArgs,
+    /// The backup to restore
+    #[arg(long, value_name = "BACKUP_ID")]
+    pub backup: Option<String>,
+}
+
+#[derive(Args)]
+pub struct McpReceiptsGroup {
+    #[command(subcommand)]
+    pub command: Option<McpReceiptsCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum McpReceiptsCommand {
+    /// Retain the received results of an existing bulk-scan checkpoint (no AIRS calls)
+    Upload(McpReceiptsUploadArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct McpReceiptsUploadArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// The bulk-scan state file (<job>.bulk-scan.json)
+    #[arg(long = "from-bulk-state", value_name = "PATH")]
+    pub from_bulk_state: std::path::PathBuf,
+}
+
+#[derive(Args, Clone)]
+pub struct McpCoverageArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// Range start (UTC, RFC 3339); default: 24 hours before --until
+    #[arg(long, value_name = "UTC")]
+    pub since: Option<String>,
+    /// Range end (UTC, RFC 3339); default: now
+    #[arg(long, value_name = "UTC")]
+    pub until: Option<String>,
+    /// Limit to an application (repeatable)
+    #[arg(long = "app-id", value_name = "ID")]
+    pub app_id: Vec<String>,
+}
+
+#[derive(Args)]
+pub struct McpJobsGroup {
+    #[command(subcommand)]
+    pub command: Option<McpJobsCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum McpJobsCommand {
+    /// Your jobs on the service
+    List(McpJobsListArgs),
+    /// One of your jobs
+    Get(McpJobArgs),
+    /// Request cancellation of one of your jobs
+    Cancel(McpJobArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct McpJobsListArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// Only jobs in this state (repeatable)
+    #[arg(long = "state", value_name = "STATE")]
+    pub state: Vec<String>,
+    /// At most this many jobs (1-50)
+    #[arg(long, value_name = "N")]
+    pub max: Option<u64>,
+}
+
+#[derive(Args, Clone)]
+pub struct McpJobArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// The job ID
+    #[arg(value_name = "JOB_ID")]
+    pub job_id: String,
+}
+
+#[derive(Args)]
+pub struct McpSchedulesGroup {
+    #[command(subcommand)]
+    pub command: Option<McpSchedulesCommand>,
+}
+
+#[derive(Subcommand)]
+pub enum McpSchedulesCommand {
+    /// Schedules, last completed slots and backlog
+    List(McpSelect),
+    /// Enable or re-time a schedule from an explicit effective time
+    Set(McpScheduleSetArgs),
+    /// Stop a schedule from an explicit effective time (history is kept)
+    Disable(McpScheduleDisableArgs),
+}
+
+#[derive(Args, Clone)]
+pub struct McpScheduleSetArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// collection, daily_report or daily_enrichment
+    #[arg(long, value_name = "KIND")]
+    pub kind: String,
+    /// true or false
+    #[arg(long, value_name = "BOOL")]
+    pub enabled: String,
+    /// When the change takes effect (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub effective_at: String,
+    /// Collection interval (5-60, dividing an hour)
+    #[arg(long, value_name = "N")]
+    pub interval_minutes: Option<i64>,
+}
+
+#[derive(Args, Clone)]
+pub struct McpScheduleDisableArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// The schedule ID
+    #[arg(value_name = "SCHEDULE_ID")]
+    pub schedule_id: String,
+    /// When the disable takes effect (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub effective_at: String,
+}
+
+#[derive(Args, Clone)]
+pub struct McpSyncArgs {
+    #[command(flatten)]
+    pub select: McpSelect,
+    /// Backfill range start (UTC, RFC 3339; with --until and --backfill)
+    #[arg(long, value_name = "UTC")]
+    pub since: Option<String>,
+    /// Backfill range end (UTC, RFC 3339)
+    #[arg(long, value_name = "UTC")]
+    pub until: Option<String>,
+    /// An explicit historical backfill of --since..--until
+    #[arg(long)]
+    pub backfill: bool,
+    /// Limit to an application (repeatable)
+    #[arg(long = "app-id", value_name = "ID")]
+    pub app_id: Vec<String>,
+    /// Print the job and exit once admission is durable
+    #[arg(long, conflicts_with = "wait")]
+    pub no_wait: bool,
+    /// Wait for the job to finish (the default)
+    #[arg(long)]
+    pub wait: bool,
+    /// Wait at most this many seconds (1-3600)
+    #[arg(long, value_name = "S", default_value_t = 600)]
+    pub timeout: u64,
 }

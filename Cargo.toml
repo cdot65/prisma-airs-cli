@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "crates/airs-test-harness"]
+members = [".", "crates/airs-runtime-core", "crates/airs-history-store", "crates/airs-mcp", "crates/airs-mcp-client", "crates/airs-test-harness"]
 resolver = "3"
 
 [workspace.package]
@@ -19,7 +19,7 @@ all = { level = "warn", priority = -1 }
 [package]
 # The crate is `airs-cli`; the executable is `airs` (DESIGN §21.2).
 name = "airs-cli"
-version = "8.0.0"
+version = "8.2.0-dev.1"
 description = "Native Rust CLI for Prisma AIRS (the airs command), built on the scm-sdk crate"
 edition.workspace = true
 rust-version.workspace = true
@@ -31,7 +31,7 @@ readme = "README.md"
 keywords = ["prisma-airs", "ai-security", "cli", "paloaltonetworks"]
 categories = ["command-line-utilities"]
 # Only what builds the executable; tests, fixtures, docs and CI stay in the repository.
-include = ["/src/**/*.rs", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/NOTICE"]
+include = ["/src/**/*.rs", "/src/**/*.sql", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/NOTICE"]
 default-run = "airs"
 
 [[bin]]
@@ -53,6 +53,10 @@ name = "airs_cli_rs"
 path = "src/lib.rs"
 
 [dependencies]
+# The shared runtime core (RUNTIME_MCP_CONTRACT §1): lockstep, exact version.
+airs-runtime-core = { path = "crates/airs-runtime-core", version = "=8.2.0-dev.1" }
+# The optional runtime MCP client (RUNTIME_MCP_CONTRACT §7, M7): no SQLite, no server.
+airs-mcp-client = { path = "crates/airs-mcp-client", version = "=8.2.0-dev.1" }
 # scm-sdk 0.2.4 (DESIGN §15.25): the TypeScript 0.35.0 directional profile models. Exact pin;
 # `management` carries the profile operations. Never enable `serde_json/preserve_order`.
 scm = { package = "scm-sdk", version = "=0.2.4", default-features = false, features = ["reqwest-transport", "scan", "management", "red-team", "dlp", "model-security", "gateway", "agentguard"] }
@@ -62,6 +66,8 @@ clap = { version = "4.5", features = ["derive"] }
 # unification changes nothing in the SDK's own transport.
 reqwest = { version = "=0.13.5", default-features = false, features = ["http2", "gzip", "stream"] }
 futures-util = { version = "0.3", default-features = false, features = ["alloc"] }
+# Already pinned by the SDK; honor both HTTP Retry-After forms without early retries.
+httpdate = "=1.0.3"
 # gunzip of the pinned uv archive (`model-security install --fetch-uv`, DESIGN §17.14,
 # choice 35). Already in the lock file through reqwest's gzip; the tar reader is our own.
 flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
@@ -88,6 +94,15 @@ uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 airs-test-harness = { path = "crates/airs-test-harness" }
+# M7 loopback end-to-end: the real server behind a fixture gateway and authorization
+# server (test-only; never in the CLI's normal graph).
+airs-mcp = { path = "crates/airs-mcp" }
+axum = { version = "=0.8.9", default-features = false, features = ["http1", "tokio", "json", "form", "query"] }
+jsonwebtoken = { version = "=11.1.0", default-features = false, features = ["aws_lc_rs", "use_pem"] }
+tokio = { version = "1.50", features = ["rt-multi-thread", "macros", "net", "time"] }
+base64 = "0.22"
+# The choice-187 rule checker and corpus for the CLI's tests (never in a release build).
+airs-runtime-core = { path = "crates/airs-runtime-core", version = "=8.2.0-dev.1", features = ["test-support"] }
 serde_json = "1.0"
 
 [lints]

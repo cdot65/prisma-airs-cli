@@ -17,7 +17,7 @@ use std::time::Duration;
 use airs_test_harness::fixtures::runtime as fx;
 use airs_test_harness::{
     Cli, FixtureServer, NormalizedRequest, Planned, Route, Run, RunOptions, RuntimeData, Rx,
-    Sandbox, normalise_program, normalize_all, require_ts, run, spawn,
+    Sandbox, normalize_all, require_ts, run, spawn,
 };
 use serde_json::{Value, json};
 
@@ -229,40 +229,38 @@ mod parity {
         }
     }
 
-    /// The `scan-logs query` stub: the same line (program name D73), exit 1, nothing sent.
+    /// D338: Rust discovers through dashboard sessions; the frozen reference keeps its stub.
     #[test]
-    fn scan_logs_matches_typescript() {
-        for args in [
-            &["scan-logs", "query", "--interval", "24", "--unit", "hours"][..],
-            &[
-                "scan-logs",
-                "query",
-                "--interval",
-                "1",
-                "--unit",
-                "x",
-                "--page",
-                "4",
-                "--page-size",
-                "20",
-                "--limit",
-                "50",
-                "--offset",
-                "100",
-            ],
-        ] {
-            let Some((r, t)) = sides("scan_logs_matches_typescript", args) else {
-                return;
-            };
-            assert_eq!(r.run.code, 1);
-            assert_eq!(t.run.code, 1);
-            assert!(
-                r.lines.is_empty() && t.lines.is_empty(),
-                "no request, not even the token"
-            );
-            assert_eq!(r.run.stdout, t.run.stdout);
-            assert_eq!(normalise_program(&r.run.stderr), t.run.stderr);
-        }
+    fn d338_scan_log_discovery_replaces_stub() {
+        let args = ["scan-logs", "query", "--interval", "24", "--unit", "hours"];
+        let Some((r, t)) = sides("d338_scan_log_discovery_replaces_stub", &args) else {
+            return;
+        };
+        assert_eq!(t.run.code, 1);
+        assert!(t.run.stdout.is_empty());
+        assert!(t.lines.is_empty());
+        assert!(t.run.stderr.contains("broken and under refactor"));
+        assert_eq!(r.run.code, 1);
+        assert!(!r.lines.is_empty());
+        assert!(r.run.stdout.contains("coverage"));
+        assert!(!r.run.stderr.contains("broken and under refactor"));
+        let args = [
+            "scan-logs",
+            "query",
+            "--interval",
+            "1",
+            "--unit",
+            "x",
+            "--page",
+            "4",
+        ];
+        let Some((r, t)) = sides("d338_scan_log_discovery_validation", &args) else {
+            return;
+        };
+        assert_eq!(r.run.code, 2);
+        assert_eq!(t.run.code, 1);
+        assert!(r.lines.is_empty());
+        assert!(t.lines.is_empty());
     }
 
     /// The tenant `defaultOutput` applies to the reads on both sides (choice 18).
@@ -360,7 +358,6 @@ mod parity {
             "customer-apps",
             "dashboard",
             "deployment-profiles",
-            "scan-logs",
             "sessions",
         ];
         let (t, r) = (help(&ts, &["runtime"]), help(&rust(), &["runtime"]));
@@ -422,7 +419,7 @@ mod parity {
                 problems.push(format!("{group}: {rust_subs:?} vs {ts_subs:?}"));
             }
         }
-        let leaves: [&[&str]; 22] = [
+        let leaves: [&[&str]; 20] = [
             &["runtime", "dashboard"],
             &["runtime", "dashboard", "applications"],
             &["runtime", "dashboard", "application"],
@@ -441,10 +438,8 @@ mod parity {
             &["runtime", "customer-apps", "get"],
             &["runtime", "customer-apps", "consumption"],
             &["runtime", "deployment-profiles", "list"],
-            &["runtime", "scan-logs", "query"],
             &["runtime", "api-keys"],
             &["runtime", "customer-apps"],
-            &["runtime", "scan-logs"],
         ];
         for path in leaves {
             let (t, r) = (help(&ts, path), help(&rust(), path));

@@ -1,0 +1,26 @@
+{
+  "_comment": "Template modelled on talos-cluster/bonbon/gateway/production.json. Provision with `airs gateway mcp integrations` as for Bonbon; pass secrets via --configurations. PLACEHOLDERs are new airs-mcp registrations, never Bonbon IDs.",
+  "name": "airs",
+  "transport": "http",
+  "url": "https://mcp-backend-airs.goshawks.io/mcp",
+  "auth": {
+    "mode": "oauth_auto",
+    "token_endpoint_auth_method": "client_secret_post",
+    "client_id": "PLACEHOLDER_GATEWAY_ENTRA_CLIENT_ID",
+    "client_secret": "PROVIDED_AT_PROVISION_TIME_NEVER_COMMITTED",
+    "scopes": [
+      "https://mcp-backend-airs.goshawks.io/mcp/AirsHistory.Read",
+      "https://mcp-backend-airs.goshawks.io/mcp/AirsHistory.Operate",
+      "https://mcp-backend-airs.goshawks.io/mcp/AirsHistory.Admin",
+      "offline_access"
+    ]
+  },
+  "user_identity_forwarding": {
+    "method": "jwt_header",
+    "header_name": "X-User-JWT",
+    "include_claims": ["sub", "client_id", "workspace_id", "organisation_id", "scope"],
+    "jwt_expiry_seconds": 120,
+    "_required_for_m1": "A signed per-backend binding: `aud` = https://mcp-backend-airs.goshawks.io/mcp, or a per-integration signing key (contract §2.2). Record whether the gateway supports either; if not, M0.6 fails P1."
+  },
+  "workspaces": ["PLACEHOLDER_WORKSPACE_ID"]
+}

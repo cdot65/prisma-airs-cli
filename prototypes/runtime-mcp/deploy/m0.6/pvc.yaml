@@ -1,0 +1,9 @@
+# ReadWriteOncePod on the encrypted Longhorn class (cluster/storageclass-encrypted.yaml).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airs-mcp-spike-data
+spec:
+  accessModes: [ReadWriteOncePod]
+  storageClassName: longhorn-airs-encrypted
+  resources: {requests: {storage: 2Gi}}

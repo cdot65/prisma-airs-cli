@@ -10,3 +10,17 @@ tenant*.json
 *.key
 *.log
 .DS_Store
+# Synthetic, disposable test keys (fixture JWT signing for the MCP loopback suites).
+!crates/airs-mcp/tests/fixtures/*.pem
+!prototypes/runtime-mcp/crates/airs-mcp-spike/tests/fixtures/*.pem
+# Build output anywhere (prototype workspaces have their own targets).
+target/
+# Local agent state and private validation output (real report data); never committed.
+/.claude/
+/signal-brief-*/
+/AIRS_SIGNAL_BRIEF_PROMPT.txt
+/airs-mcp-probe-results.md
+# M0.6 live-deployment artifacts with real tenant, application and owner identifiers
+# (kept locally; the repository is mirrored publicly).
+/prototypes/runtime-mcp/deploy/m0.6/spike-config*.toml
+/prototypes/runtime-mcp/deploy/m0.6/entra/provision.sh

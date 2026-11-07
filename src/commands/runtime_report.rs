@@ -1,32 +1,25 @@
-//! `runtime report` (DESIGN §18.14): the runtime environment report's reader and
-//! collection. The seven sources are read one after the other, each under its own budget
-//! with `with_retries(0)` and the G7 re-read. The destination checks before the tenant
-//! (anything at the path, and its parent directory, D214), the publishing (one new 0600
-//! file, or stdout with `--output-file -`), the exit code and the single failure line are
-//! `report_command`'s, shared with `redteam report`.
-
-use super::Invocation;
-use super::report_command::{self as rc, ParentCheck, ReportDestination, SourceBudget, Verdict};
-use crate::clients::{ManagementClients, Planes, WALK_BUDGET};
-use crate::error::CliError;
-use crate::json::OValue;
-use crate::report::runtime::{self, PAGE_SIZE, Reader, SESSION_PAGE};
-use crate::report::{Health, ReadError};
-use scm::airs::management::{
-    DashboardApplicationsOverviewQuery, DashboardClient, DashboardSessionsOverviewQuery,
-    DashboardTimeRangeQuery, PaginationOptions,
+//! Runtime Signal Brief: collect or load -> safe evidence -> analyze -> publish.
+use super::{
+    Invocation,
+    report_command::{self as rc, ParentCheck, ReportDestination, Verdict},
 };
+use crate::{
+    error::{CliError, InterruptContext},
+    report::signal::{self, privacy},
+    runtime::scan_logs::CollectionOptions,
+};
+use std::path::PathBuf;
 
-/// A validated `runtime report`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeReportPlan {
     pub destination: ReportDestination,
     pub title: String,
-    pub max_pages: u32,
     pub strict: bool,
+    pub from_evidence: Option<PathBuf>,
+    pub review_file: Option<PathBuf>,
+    pub bundle_dir: Option<PathBuf>,
+    pub collection: CollectionOptions,
 }
-
-/// `airs-runtime-report-<ISO time, ':' → '-'>-<8 hex>.html` (TS name).
 pub fn default_name(now: std::time::SystemTime) -> String {
     format!(
         "airs-runtime-report-{}-{}.html",
@@ -34,149 +27,106 @@ pub fn default_name(now: std::time::SystemTime) -> String {
         &uuid::Uuid::new_v4().simple().to_string()[..8]
     )
 }
-
-/// The SDK behind the collector: every read with `with_retries(0)` (TS `numRetries: 0`)
-/// and no response defaults (G27) under one walk budget per source, and one re-read after
-/// an HTTP 401 or 403 rejection (G7).
-struct SdkReader<'a> {
-    clients: &'a ManagementClients,
-    dashboard: DashboardClient,
-    budget: SourceBudget,
+pub async fn run(inv: &mut Invocation, plan: &RuntimeReportPlan) -> Result<(), CliError> {
+    let result = generate(inv, plan).await;
+    rc::conclude(inv, result)
 }
-
-fn daily() -> DashboardTimeRangeQuery {
-    let mut query = DashboardTimeRangeQuery::default();
-    query.time_interval = Some(1);
-    query.time_unit = Some("day".to_owned());
-    query
+fn path_label(path: &std::path::Path, inv: &Invocation) -> String {
+    privacy::text_with_spans(
+        &rc::status_path(path),
+        &inv.secrets,
+        &inv.payload_spans,
+        "output_path",
+        4096,
+    )
 }
-
-impl Reader for SdkReader<'_> {
-    async fn applications(&self, offset: u64) -> Result<OValue, ReadError> {
-        let mut query = DashboardApplicationsOverviewQuery::default();
-        query.time_interval = Some(1);
-        query.time_unit = Some("day".to_owned());
-        query.limit = Some(PAGE_SIZE);
-        query.offset = Some(offset);
-        self.budget
-            .read("applications", async |options| {
-                self.dashboard
-                    .applications_overview(&query, Some(&options))
-                    .await
-            })
-            .await
-    }
-    async fn profiles(&self, offset: u64) -> Result<OValue, ReadError> {
-        let mut page = PaginationOptions::default();
-        page.offset = offset;
-        page.limit = 100;
-        page.latest = Some(true);
-        self.budget
-            .read("profiles", async |options| {
-                self.clients
-                    .management
-                    .profiles()
-                    .list(page, Some(&options))
-                    .await
-            })
-            .await
-    }
-    async fn customer_apps(&self, offset: u64) -> Result<OValue, ReadError> {
-        let mut page = PaginationOptions::default();
-        page.offset = offset;
-        page.limit = 100;
-        self.budget
-            .read("customer apps", async |options| {
-                self.clients
-                    .management
-                    .customer_apps()
-                    .list(page, Some(&options))
-                    .await
-            })
-            .await
-    }
-    async fn sessions(&self, offset: u64) -> Result<OValue, ReadError> {
-        let mut query = DashboardSessionsOverviewQuery::default();
-        query.time_interval = Some(1);
-        query.time_unit = Some("day".to_owned());
-        query.limit = Some(SESSION_PAGE);
-        query.offset = Some(offset);
-        self.budget
-            .read("sessions", async |options| {
-                self.dashboard
-                    .sessions_overview(&query, Some(&options))
-                    .await
-            })
-            .await
-    }
-    async fn sessions_chart(&self) -> Result<OValue, ReadError> {
-        let query = daily();
-        self.budget
-            .read("chart", async |options| {
-                self.dashboard.sessions_chart(&query, Some(&options)).await
-            })
-            .await
-    }
-    async fn top_applications(&self) -> Result<OValue, ReadError> {
-        let query = daily();
-        self.budget
-            .read("top", async |options| {
-                self.dashboard
-                    .top_applications_violations(&query, Some(&options))
-                    .await
-            })
-            .await
-    }
-    async fn violations_trend(&self) -> Result<OValue, ReadError> {
-        let query = daily();
-        self.budget
-            .read("trend", async |options| {
-                self.dashboard
-                    .applications_violations_trend(&query, Some(&options))
-                    .await
-            })
-            .await
-    }
-}
-
-/// `runtime report`. Any failure after the argument checks prints only
-/// [`GENERATION_FAILED`](rc::GENERATION_FAILED) (exit 1); an interruption keeps its
-/// context.
-pub async fn run(invocation: &mut Invocation, plan: &RuntimeReportPlan) -> Result<(), CliError> {
-    let result = generate(invocation, plan).await;
-    rc::conclude(invocation, result)
-}
-
-/// The report run; `Ok(exit code)`.
-async fn generate(invocation: &mut Invocation, plan: &RuntimeReportPlan) -> Result<i32, CliError> {
-    let path = rc::check_destination(&plan.destination, ParentCheck::Checked)?;
-    let connected = invocation
-        .connect_runtime(Planes {
-            dashboard: true,
-            dlp: false,
-        })
-        .map_err(rc::before_report)?;
-    invocation
-        .output
-        .status("Collecting daily runtime activity and current configuration (read-only)...");
-    let reader = SdkReader {
-        dashboard: connected.clients.management.dashboard(),
-        clients: &connected.clients,
-        budget: SourceBudget::new(|| crate::runtime::dashboard_read_options(WALK_BUDGET)),
+async fn generate(inv: &mut Invocation, plan: &RuntimeReportPlan) -> Result<i32, CliError> {
+    let bundle = plan
+        .bundle_dir
+        .as_deref()
+        .map(signal::bundle::preflight)
+        .transpose()?;
+    let path = if bundle.is_none() {
+        rc::check_destination(&plan.destination, ParentCheck::Checked)?
+    } else {
+        None
     };
-    let options = runtime::Options {
-        title: &plan.title,
-        max_pages: plan.max_pages,
-        now: &rc::now_ms,
+    // Discover all user-visible text before projecting evidence, including path labels.
+    let _ = privacy::text(&plan.title, &inv.secrets, usize::MAX);
+    if let Some(path) = bundle.as_ref().or(path.as_ref()) {
+        let _ = privacy::text(&rc::status_path(path), &inv.secrets, usize::MAX);
+    }
+    let (evidence, saved, changed) = if let Some(input) = &plan.from_evidence {
+        let loaded = signal::load(input, &inv.secrets, &inv.payload_spans)?;
+        (loaded.evidence, loaded.original, loaded.changed)
+    } else {
+        let tenant = inv.load_tenant().map_err(rc::before_report)?;
+        inv.output
+            .status("Collecting runtime Signal Brief evidence (read-only)...");
+        let evidence =
+            signal::collect::collect(&inv.collect_context(), &tenant, &plan.collection, true)
+                .await
+                .map_err(rc::before_report)?;
+        (evidence.clone(), evidence, false)
     };
-    let collected = runtime::collect_report(&reader, &options)
-        .await
-        .map_err(|_| rc::no_report())?;
-    let html = crate::report::runtime_html::render(&collected);
+    let review = plan
+        .review_file
+        .as_deref()
+        .map(|path| signal::review::load(path, &saved, &evidence, &inv.secrets, &inv.payload_spans))
+        .transpose()?;
+    let html = signal::html::render_reviewed(
+        &evidence,
+        &plan.title,
+        &inv.secrets,
+        &inv.payload_spans,
+        review.as_ref(),
+    )?;
     let verdict = Verdict {
-        incomplete: collected.incomplete(),
-        health_unknown: collected.health == Health::Unknown,
+        incomplete: evidence.incomplete(),
+        health_unknown: evidence.health_unknown(),
         strict: plan.strict,
     };
-    rc::publish(invocation, path.as_deref(), &html, verdict)
+    if let Some(dir) = bundle {
+        let mut verify = saved.clone();
+        let additional =
+            privacy::project_with_spans(&mut verify, &inv.secrets, &inv.payload_spans)?;
+        if changed || additional {
+            return Err(CliError::operational(
+                "Saved evidence requires additional privacy projection; use HTML-only output",
+            ));
+        }
+        if inv.session.is_cancelled() || inv.output.pending_signal().is_some() {
+            return Err(rc::no_report());
+        }
+        let json = serde_json::to_string_pretty(&saved).map_err(|_| signal::invalid())?;
+        let packet = signal::review::packet_with_review(&evidence, review.as_ref())?;
+        let warning = signal::bundle::publish(&dir, &html, &json, &packet)?;
+        let label = path_label(&dir, inv);
+        inv.interrupt = Some(InterruptContext::Context(format!(
+            "the report bundle was saved in {label}"
+        )));
+        if warning {
+            inv.output.warning(&format!(
+                "Bundle at {label} was saved, but directory durability could not be confirmed"
+            ));
+        }
+        inv.output.status(&format!(
+            "Report bundle → {label} (directory 0700; files 0600)"
+        ));
+        if verdict.incomplete > 0 {
+            inv.output.status(&format!(
+                "{} required source(s) incomplete; review the evidence section.",
+                verdict.incomplete
+            ));
+        }
+        return Ok(
+            if verdict.health_unknown || (verdict.strict && verdict.incomplete > 0) {
+                1
+            } else {
+                0
+            },
+        );
+    }
+    let label = path.as_ref().map(|path| path_label(path, inv));
+    rc::publish_with_path_label(inv, path.as_deref(), &html, verdict, label.as_deref())
 }

@@ -19,6 +19,8 @@ pub mod gateway_telemetry;
 pub mod gateway_workspaces;
 pub mod gateway_write_plan;
 pub mod gateway_writes;
+pub mod mcp_client;
+pub mod mcp_ops;
 pub mod modelsec;
 pub mod modelsec_groups;
 pub mod modelsec_install;
@@ -48,12 +50,14 @@ pub mod runtime_extras;
 pub mod runtime_inventory;
 pub mod runtime_keys;
 pub mod runtime_report;
+pub mod runtime_scan_logs;
 pub mod runtime_write;
 pub mod scan;
 pub mod supplychain;
 pub mod supplychain_report;
 pub mod tenant;
 pub mod tenant_import;
+pub mod tenant_scanners;
 pub mod tenant_write;
 pub mod topic_assign;
 pub mod topic_eval;
@@ -82,6 +86,7 @@ pub struct Invocation {
     /// Secrets seen this invocation (shared with the OAuth provider, which adds every
     /// lease); server text carrying one is never printed.
     pub secrets: SecretSet,
+    pub payload_spans: crate::report::signal::privacy::PayloadSpans,
     /// The `--debug` API log, when this run writes one (DESIGN §2.9); every client's
     /// transport records into it.
     pub debug: Option<DebugLog>,
@@ -94,9 +99,23 @@ pub struct Invocation {
     /// not set: a multi-step write after its first step (`topics revert`), or the scans
     /// sent so far (`topics eval`) (DESIGN §13.2). `None` keeps the plan's context.
     pub interrupt: Option<InterruptContext>,
+    /// Normalized receipts of what this command received (scan/bulk-scan/resume-poll),
+    /// retained on the MCP service only with `--record-history` (contract §7.2).
+    pub retained: Vec<serde_json::Value>,
 }
 
 impl Invocation {
+    /// What the shared collector reads from this invocation (session, secrets, payload
+    /// spans and the CLI version).
+    pub fn collect_context(&self) -> crate::report::signal::sink::CollectContext<'_> {
+        crate::report::signal::sink::CollectContext {
+            session: &self.session,
+            secrets: &self.secrets,
+            payload_spans: &self.payload_spans,
+            version: crate::VERSION,
+        }
+    }
+
     pub fn new(output: Output, tenant_flag: Option<String>) -> Self {
         Self {
             output,
@@ -104,10 +123,12 @@ impl Invocation {
             env: Environment::capture(),
             tenant_flag,
             secrets: SecretSet::default(),
+            payload_spans: crate::report::signal::privacy::PayloadSpans::default(),
             debug: None,
             terminals: crate::input::Terminals::detect(),
             committed: false,
             interrupt: None,
+            retained: Vec::new(),
         }
     }
 
@@ -116,7 +137,7 @@ impl Invocation {
     pub fn open_debug_log(&mut self) -> Result<(), CliError> {
         let dir =
             crate::debug::directory(self.env.xdg_state_home.as_deref(), self.env.home.as_deref())?;
-        let log = DebugLog::open(
+        let log = crate::debug::open(
             &dir,
             self.secrets.clone(),
             crate::render::style::stderr_color(),
@@ -356,6 +377,9 @@ pub fn profile_walk_options() -> Result<scm::RequestOptions, CliError> {
 pub enum Plan {
     /// A command group without a subcommand: its help on stderr, exit 2.
     GroupHelp(&'static [&'static str]),
+    /// A direct scan command whose received results are then retained on the MCP
+    /// connection (`--record-history CONNECTION`); the inner command's outcome stands.
+    Recorded(Box<Plan>, String),
     TenantList(Format),
     TenantPath(Option<String>),
     TenantRead(Option<String>, Format),
@@ -372,6 +396,7 @@ pub enum Plan {
     TopicsGet(GetParams, Option<Format>),
     /// `tenant create|set|unset|switch|delete` (§3.11).
     TenantWrite(tenant_write::WritePlan),
+    TenantScanners(tenant_scanners::ScannerPlan),
     /// `tenant import` (§3.12).
     TenantImport(tenant_import::ImportPlan),
     /// `runtime topics create` (§13.5).
@@ -412,6 +437,8 @@ pub enum Plan {
     Gateway(Box<gateway::GwPlan>),
     /// A `supplychain` command (§20).
     Supplychain(Box<supplychain::ScPlan>),
+    /// The optional runtime MCP client (contract §7).
+    Mcp(Box<mcp_client::McpPlan>),
 }
 
 impl Plan {
@@ -420,8 +447,10 @@ impl Plan {
     pub fn interrupt_context(&self) -> InterruptContext {
         match self {
             Self::Scan(..) => InterruptContext::ScanOutcomeUnknown,
+            Self::Recorded(inner, _) => inner.interrupt_context(),
+            Self::Mcp(plan) => plan.interrupt_context(),
             // `the change was saved` once the commit point passed (lib::execute).
-            Self::TenantWrite(_) | Self::TenantImport(_) => {
+            Self::TenantWrite(_) | Self::TenantImport(_) | Self::TenantScanners(_) => {
                 InterruptContext::NoConfigurationChanged
             }
             // `the change was saved` once a write completed (lib::execute, §13.2).
@@ -467,6 +496,7 @@ impl Plan {
     pub fn debug_policy(&self) -> DebugPolicy {
         match self {
             Self::RedTeam(plan) if plan.is_environment_report() => DebugPolicy::Refused,
+            Self::Recorded(inner, _) => inner.debug_policy(),
             Self::Dlp(plan) => plan.debug_policy(),
             Self::ModelSecurity(plan) => plan.debug_policy(),
             Self::RuntimeExtras(plan) => plan.debug_policy(),
@@ -499,6 +529,9 @@ impl Plan {
             | Self::TenantGet { .. }
             | Self::TenantWrite(_)
             | Self::TenantImport(_) => DebugPolicy::None,
+            Self::TenantScanners(_) => DebugPolicy::None,
+            // MCP calls are not SDK traffic; the API log covers AIRS calls only.
+            Self::Mcp(_) => DebugPolicy::None,
         }
     }
 }
@@ -508,6 +541,18 @@ impl Plan {
 /// from the tenant later.
 pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
     let explicit = cli.global.output.as_deref();
+    if let Some(TopCommand::Tenant(crate::cli::TenantGroup {
+        command: Some(TenantCommand::Scanners(group)),
+    })) = &cli.command
+    {
+        let format = output::resolve(explicit)?;
+        if cli.global.tenant.is_some() {
+            return Err(CliError::usage(
+                "--tenant cannot be used with 'tenant scanners'; name the tenant as an argument",
+            ));
+        }
+        return tenant_scanners::plan(group, format);
+    }
     // `tenant import` renders its report: `--output` is resolved first, then any
     // `--tenant` is refused, then its own checks run (§3.11, §3.12).
     if let Some(TopCommand::Tenant(crate::cli::TenantGroup {
@@ -588,6 +633,7 @@ pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
                 | TenantCommand::Delete { .. }
                 | TenantCommand::Import(_),
             ) => unreachable!("write commands are planned above"),
+            Some(TenantCommand::Scanners(_)) => unreachable!("scanner commands are planned above"),
             Some(TenantCommand::List) => Plan::TenantList(output::resolve(explicit)?),
             // The path is printed in every format; an invalid name is still rejected.
             Some(TenantCommand::Path { name }) => {
@@ -599,7 +645,7 @@ pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
             }
             Some(TenantCommand::Get { name, key }) => {
                 // The key is validated before the format (D34 order).
-                let key = crate::tenant::config::schema_key(key).ok_or_else(|| {
+                let key = crate::tenant::config::read_schema_key(key).ok_or_else(|| {
                     CliError::usage(format!(
                         "Unknown configuration key. Supported keys: {}",
                         crate::tenant::config::KEYS.join(", ")
@@ -617,17 +663,49 @@ pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
             None => Plan::GroupHelp(&["runtime"]),
             Some(RuntimeCommand::Scan(args)) => {
                 let format = output::resolve(explicit)?;
-                Plan::Scan(scan::validate_input(args)?, format)
+                recorded(
+                    Plan::Scan(scan::validate_input(args)?, format),
+                    &args.record_history,
+                    args.scanner.is_some(),
+                )?
             }
             Some(RuntimeCommand::BulkScan(args)) => {
                 let format = output::resolve(explicit)?;
-                Plan::BulkScan(Box::new(bulk_scan::plan(args, format)?))
+                recorded(
+                    Plan::BulkScan(Box::new(bulk_scan::plan(args, format)?)),
+                    &args.record_history,
+                    args.scanner.is_some(),
+                )?
             }
             Some(RuntimeCommand::ResumePoll(args)) => {
                 let format = output::resolve(explicit)?;
-                Plan::ResumePoll(bulk_scan::plan_resume(args, format)?)
+                recorded(
+                    Plan::ResumePoll(bulk_scan::plan_resume(args, format)?),
+                    &args.record_history,
+                    true,
+                )?
             }
+            Some(RuntimeCommand::Receipts(group)) => {
+                mcp_client::plan_receipts(group, output::resolve(explicit)?)?
+            }
+            Some(RuntimeCommand::Report(args)) if args.mcp.is_some() => mcp_client::plan_report(
+                args,
+                args.mcp.as_deref().unwrap_or_default(),
+                output::resolve(explicit)?,
+            )?,
             Some(RuntimeCommand::Dlp(group)) => dlp::plan(group, explicit)?,
+            Some(RuntimeCommand::History(group)) => {
+                mcp_client::plan_history(group, output::resolve(explicit)?)?
+            }
+            Some(RuntimeCommand::Jobs(group)) => {
+                mcp_client::plan_jobs(group, output::resolve(explicit)?)?
+            }
+            Some(RuntimeCommand::Schedules(group)) => {
+                mcp_client::plan_schedules(group, output::resolve(explicit)?)?
+            }
+            Some(RuntimeCommand::Sync(args)) => {
+                mcp_client::plan_sync(args, output::resolve(explicit)?)?
+            }
             Some(
                 command @ (RuntimeCommand::ApiKeys(_)
                 | RuntimeCommand::CustomerApps(_)
@@ -733,13 +811,39 @@ pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
         TopCommand::ModelSecurity(group) => modelsec::plan(group, explicit)?,
         TopCommand::Gateway(group) => gateway::plan(group, explicit, cli.global.debug)?,
         TopCommand::Supplychain(group) => supplychain::plan(group, explicit, cli.global.debug)?,
+        TopCommand::Mcp(group) => mcp_client::plan(group, output::resolve(explicit)?)?,
     })
+}
+
+/// `--record-history CONNECTION` (contract §7.2): a connection name, and a named
+/// scanner whose association attributes the receipts (resume-poll reads the saved
+/// one); validated before any tenant access.
+fn recorded(plan: Plan, connection: &Option<String>, named: bool) -> Result<Plan, CliError> {
+    let Some(name) = connection else {
+        return Ok(plan);
+    };
+    if !airs_runtime_core::tenant::mcp::valid_name(name) {
+        return Err(CliError::usage(
+            "--record-history must name an MCP connection (1-63 of [a-z0-9-])",
+        ));
+    }
+    if !named {
+        return Err(CliError::usage(
+            "--record-history needs a named scanner (--scanner NAME): receipts are attributed by its association",
+        ));
+    }
+    Ok(Plan::Recorded(Box::new(plan), name.clone()))
 }
 
 /// Run a validated plan (everything except `GroupHelp`, which `lib` renders).
 pub async fn dispatch(invocation: &mut Invocation, plan: Plan) -> Result<(), CliError> {
     match plan {
         Plan::GroupHelp(_) => Ok(()),
+        Plan::Recorded(inner, connection) => {
+            let outcome = Box::pin(dispatch(invocation, *inner)).await;
+            mcp_ops::record_history(invocation, &connection).await;
+            outcome
+        }
         Plan::TenantList(format) => tenant::list(invocation, format),
         Plan::TenantPath(name) => tenant::path(invocation, name.as_deref()),
         Plan::TenantRead(name, format) => tenant::read(invocation, name.as_deref(), format),
@@ -751,6 +855,8 @@ pub async fn dispatch(invocation: &mut Invocation, plan: Plan) -> Result<(), Cli
         Plan::TopicsList(params, format) => topics::list(invocation, &params, format).await,
         Plan::TopicsGet(params, format) => topics::get(invocation, &params, format).await,
         Plan::TenantWrite(write) => tenant_write::run(invocation, write),
+        Plan::TenantScanners(plan) => tenant_scanners::run(invocation, plan),
+        Plan::Mcp(plan) => mcp_client::run(invocation, *plan).await,
         Plan::TenantImport(import) => tenant_import::run(invocation, import),
         Plan::TopicsCreate(plan) => topic_write::create(invocation, &plan).await,
         Plan::TopicsUpdate(plan) => topic_write::update(invocation, &plan).await,

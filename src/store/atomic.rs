@@ -96,6 +96,11 @@ fn not_changed(path: &Path) -> CliError {
     CliError::operational(format!("Cannot save {}; it was not changed", shown(path)))
 }
 
+fn same_file(path: &Path, identity: (u64, u64)) -> bool {
+    std::fs::symlink_metadata(path)
+        .is_ok_and(|metadata| metadata.is_file() && (metadata.dev(), metadata.ino()) == identity)
+}
+
 /// `<path> is read-only; restore write permission (chmod 600) to change it`.
 pub fn read_only_error(path: &Path) -> CliError {
     CliError::operational(format!(
@@ -352,6 +357,7 @@ fn check_tenants_dir(dir: &Path) -> Result<(), CliError> {
 struct Entry {
     path: PathBuf,
     previous: Option<Vec<u8>>,
+    owned_identity: Option<(u64, u64)>,
 }
 
 /// An open write transaction (§3.9 "Transaction" steps 2–7): the directories exist,
@@ -413,6 +419,7 @@ impl Transaction {
         self.journal.push(Entry {
             path: path.to_path_buf(),
             previous,
+            owned_identity: None,
         });
         let mut synced = saved == Saved::Durable;
         if self.created_tenants_dir && dir == self.store.tenants_dir() {
@@ -423,6 +430,80 @@ impl Transaction {
             self.warnings.push(dir_sync_warning(path));
         }
         Ok(())
+    }
+
+    /// Durable, private, no-clobber format rollback copy under the config lock.
+    /// Failed callers roll back the transaction. Raced replacements are never removed.
+    pub fn scanner_snapshot(
+        &mut self,
+        tenant: &str,
+        kind: &str,
+        bytes: &[u8],
+    ) -> Result<PathBuf, CliError> {
+        let failed = || {
+            CliError::operational(
+                "Cannot safely save scanner rollback snapshot; tenant configuration was not changed",
+            )
+        };
+        if !valid_tenant_name(tenant) || !["pre-scanners", "pre-restore", "pre-mcp"].contains(&kind)
+        {
+            return Err(failed());
+        }
+        let dir = self.store.tenants_dir();
+        let name = format!(".{tenant}.{kind}.{}.toml", uuid::Uuid::new_v4());
+        let path = dir.join(&name);
+        check_size(&path, bytes)?;
+        let parent = open_dir_checked(&dir)
+            .map_err(|_| failed())?
+            .ok_or_else(failed)?;
+        let temp = temp_name(&format!("{tenant}.toml"));
+        let temp_path = dir.join(&temp);
+        count_write();
+        injected(Step::TempCreate).map_err(|_| failed())?;
+        let fd = rustix::fs::openat(
+            &parent,
+            &temp,
+            OFlags::WRONLY | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+            Mode::from_raw_mode(0o600),
+        )
+        .map_err(|_| failed())?;
+        let mut file = File::from(fd);
+        let metadata = file.metadata().map_err(|_| failed())?;
+        let identity = (metadata.dev(), metadata.ino());
+        let saved = (|| -> std::io::Result<()> {
+            rustix::fs::fchmod(&file, Mode::from_raw_mode(0o600))?;
+            injected(Step::Write)?;
+            file.write_all(bytes)?;
+            injected(Step::Fsync)?;
+            file.sync_all()?;
+            injected(Step::Rename)?;
+            rustix::fs::renameat_with(
+                &parent,
+                &temp,
+                &parent,
+                &name,
+                rustix::fs::RenameFlags::NOREPLACE,
+            )?;
+            Ok(())
+        })();
+        if saved.is_err() {
+            if same_file(&temp_path, identity) {
+                let _ = rustix::fs::unlinkat(&parent, &temp, rustix::fs::AtFlags::empty());
+            }
+            return Err(failed());
+        }
+        self.journal.push(Entry {
+            path: path.clone(),
+            previous: None,
+            owned_identity: Some(identity),
+        });
+        injected(Step::DirSync)
+            .and_then(|()| parent.sync_all())
+            .map_err(|_| failed())?;
+        if !same_file(&path, identity) {
+            return Err(failed());
+        }
+        Ok(path)
     }
 
     /// Remove `path` under the lock (no rollback entry). The unlink is relative to its
@@ -454,6 +535,12 @@ impl Transaction {
         let mut restored = true;
         while let Some(entry) = self.journal.pop() {
             let undone = match entry.previous {
+                None if entry
+                    .owned_identity
+                    .is_some_and(|identity| !same_file(&entry.path, identity)) =>
+                {
+                    false
+                }
                 None => match std::fs::remove_file(&entry.path) {
                     Ok(()) => true,
                     Err(error) => error.kind() == std::io::ErrorKind::NotFound,
@@ -487,6 +574,52 @@ mod tests {
     use super::super::testdir::TestDir;
     use super::*;
     use std::os::unix::fs::symlink;
+
+    #[test]
+    fn scanner_snapshot_is_private_durable_and_rollback_removes_only_owned_copy() {
+        let dir = TestDir::new("scanner-snapshot");
+        let store = Store::at(dir.path().join("D"));
+        let mut tx = Transaction::begin(&store, true, &mut lock::Silent).unwrap();
+        let bytes = b"mgmtTsgId = \"100\"\n";
+        let first = tx.scanner_snapshot("prod", "pre-scanners", bytes).unwrap();
+        assert_eq!(std::fs::read(&first).unwrap(), bytes);
+        assert_eq!(mode(&first), 0o600);
+        let second = tx.scanner_snapshot("prod", "pre-scanners", bytes).unwrap();
+        assert_ne!(first, second);
+        let held = File::open(&second).unwrap();
+        std::fs::remove_file(&second).unwrap();
+        std::fs::write(&second, b"raced replacement").unwrap();
+        assert!(!tx.rollback(), "raced object must not be unlinked");
+        assert!(!first.exists());
+        assert_eq!(std::fs::read(&second).unwrap(), b"raced replacement");
+        drop(held);
+        tx.commit();
+    }
+
+    #[test]
+    fn scanner_snapshot_failures_leave_live_bytes_and_no_owned_temps() {
+        for step in [
+            Step::TempCreate,
+            Step::Write,
+            Step::Fsync,
+            Step::Rename,
+            Step::DirSync,
+        ] {
+            let dir = TestDir::new("scanner-snapshot-failure");
+            let store = Store::at(dir.path().join("D"));
+            let mut tx = Transaction::begin(&store, true, &mut lock::Silent).unwrap();
+            let live = store.tenant_path("prod");
+            write_atomic(&store.tenants_dir(), &live, b"original").unwrap();
+            fail_at(Some(step));
+            let result = tx.scanner_snapshot("prod", "pre-scanners", b"original");
+            fail_at(None);
+            assert!(result.is_err(), "{step:?}");
+            assert!(tx.rollback());
+            tx.commit();
+            assert_eq!(std::fs::read(&live).unwrap(), b"original");
+            assert_eq!(names(&store.tenants_dir()), ["prod.toml"]);
+        }
+    }
 
     fn names(dir: &Path) -> Vec<String> {
         let mut names: Vec<String> = std::fs::read_dir(dir)

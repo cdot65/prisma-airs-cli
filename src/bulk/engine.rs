@@ -79,6 +79,8 @@ impl CallError {
 
 /// The three async scan calls (the SDK scanner; a fake in unit tests).
 pub trait Api {
+    /// Secondary local metadata may flush only after essential job state is durable.
+    fn checkpointed(&self, _state: &JobState) {}
     /// One POST of `objects`, and the HTTP status of its response when one arrived.
     async fn submit(
         &self,
@@ -202,7 +204,20 @@ impl Job {
     /// temporary cannot be written, the results are still checkpointed (without
     /// `output.next`) before the CSV failure is reported, so the state never depends on
     /// whether the CSV is writable and the failure's "results are saved" is true.
-    pub fn save_with_output(&mut self, out: &mut Output) -> Result<(), CliError> {
+    pub fn save_with_output(
+        &mut self,
+        out: &mut Output,
+        secrets: &SecretSet,
+    ) -> Result<(), CliError> {
+        self.save_with_output_observed(out, secrets, |_| {})
+    }
+
+    fn save_with_output_observed(
+        &mut self,
+        out: &mut Output,
+        secrets: &SecretSet,
+        after: impl FnOnce(&JobState),
+    ) -> Result<(), CliError> {
         let shown = self.state_shown();
         let bytes = super::output::projection(&self.state);
         let prepared = match self.output.prepare(bytes.as_bytes(), &shown) {
@@ -210,6 +225,7 @@ impl Job {
             Err(csv_failure) => {
                 self.state.output.next = None;
                 self.checkpoint(&Consequence::Results)?;
+                after(&self.state);
                 return Err(csv_failure);
             }
         };
@@ -218,8 +234,10 @@ impl Job {
             self.output.abandon(prepared);
             return Err(error);
         }
-        if let Rewritten::Warning(text) = self.output.commit(prepared, &mut self.state, &shown)? {
-            out.warning(&text);
+        let rewritten = self.output.commit(prepared, &mut self.state, &shown);
+        after(&self.state);
+        if let Rewritten::Warning(text) = rewritten? {
+            out.warning(secrets.scrub(&text));
         }
         Ok(())
     }
@@ -778,6 +796,7 @@ impl<A: Api> Engine<'_, A> {
                 None => Consequence::NothingSubmitted,
             };
             job.checkpoint(&consequence)?;
+            self.api.checkpointed(&job.state);
             match outcome {
                 Outcome::Accepted { .. } => {
                     if self.session.is_cancelled() {
@@ -835,6 +854,7 @@ impl<A: Api> Engine<'_, A> {
         resolved: Vec<(u64, ItemResult)>,
     ) -> Result<(), CliError> {
         if resolved.is_empty() {
+            self.api.checkpointed(&job.state);
             return Ok(());
         }
         for (index, result) in resolved {
@@ -847,7 +867,7 @@ impl<A: Api> Engine<'_, A> {
             };
             item.result = Some(result);
         }
-        job.save_with_output(out)
+        job.save_with_output_observed(out, self.secrets, |state| self.api.checkpointed(state))
     }
 
     fn poll_stop(&self, job: &Job, message: String) -> CliError {
@@ -992,7 +1012,10 @@ impl<A: Api> Engine<'_, A> {
             for chunk in chunks {
                 self.submit_chunk(job, out, &chunk).await?;
             }
-            out.status(&format!("Scan IDs saved: {}", job.state_shown()));
+            out.status(&format!(
+                "Scan IDs saved: {}",
+                self.secrets.scrub(&job.state_shown())
+            ));
             self.poll_batch(job, out, start, end).await?;
         }
         Ok(())
@@ -1723,7 +1746,7 @@ mod tests {
         }
         let (mut out, _, _) = crate::output::testing::capture(false);
         super::super::checkpoint::fail_at(Some(super::super::checkpoint::Step::OutputTemp));
-        let error = job.save_with_output(&mut out);
+        let error = job.save_with_output(&mut out, &SecretSet::default());
         super::super::checkpoint::fail_at(None);
         let message = error.unwrap_err().message();
         assert_eq!(

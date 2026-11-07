@@ -8,6 +8,7 @@
 pub mod consumption;
 pub mod keys;
 pub mod list;
+pub use airs_runtime_core::scan_logs;
 pub mod transfer;
 pub mod views;
 
@@ -183,6 +184,17 @@ pub fn updated_by(value: &str) -> Result<String, CliError> {
 /// a secret of the invocation (§18.3 "Server text").
 pub fn shown(text: &str, secrets: &crate::error::SecretSet) -> String {
     terminal_safe(secrets.scrub(text)).into_owned()
+}
+
+/// The evidence budget flags (`--timeout`, `--concurrency`, `--max-requests`, DESIGN §17).
+pub fn evidence_limits(
+    args: &crate::cli::EvidenceBudgetArgs,
+) -> Result<scan_logs::Limits, CliError> {
+    scan_logs::Limits::parse(
+        args.timeout.as_deref(),
+        args.concurrency.as_deref(),
+        args.max_requests.as_deref(),
+    )
 }
 
 #[cfg(test)]

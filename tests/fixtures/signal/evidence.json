@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "rules_version": 1,
+  "redaction_version": 1,
+  "collection_id": "11111111-1111-4111-8111-111111111111",
+  "cli_version": "8.0.0",
+  "sdk_version": "0.2.4",
+  "tenant": "synthetic",
+  "app_ids": [],
+  "window": {
+    "start_ms": 1793491200000,
+    "end_ms": 1793577600000,
+    "interval": 24,
+    "unit": "hours"
+  },
+  "collected_ms": 1793577602000,
+  "sources": [
+    {
+      "name": "synthetic reports",
+      "status": "complete",
+      "required": true,
+      "records": 1,
+      "pages": 1,
+      "unit": "scans",
+      "population": "synthetic fixture",
+      "started_ms": 1793577600000,
+      "ended_ms": 1793577602000,
+      "notes": []
+    }
+  ],
+  "events": [
+    {
+      "identity": {
+        "app_id": "app-1",
+        "app_name": "Synthetic assistant",
+        "session_id": "session-1",
+        "scan_id": "00000000-0000-4000-8000-0000000000b2",
+        "sub_request": 0
+      },
+      "timestamp_ms": 1793545200000,
+      "profile": "Monitor",
+      "verdict": "malicious",
+      "action": "allow",
+      "report_ids": [
+        "report-1"
+      ],
+      "detections": [
+        {
+          "detector": "prompt_injection",
+          "direction": "prompt",
+          "verdict": "malicious",
+          "action": "allow",
+          "report_id": "report-1",
+          "row": 0,
+          "snippets": [
+            {
+              "family": "pi",
+              "state": "present",
+              "excerpts": [
+                "Synthetic example: ignore earlier instructions."
+              ],
+              "variants": 1,
+              "truncated": false
+            },
+            {
+              "family": "dlp",
+              "state": "absent",
+              "excerpts": [],
+              "variants": 0,
+              "truncated": false
+            },
+            {
+              "family": "dbs",
+              "state": "empty",
+              "excerpts": [],
+              "variants": 0,
+              "truncated": false
+            },
+            {
+              "family": "tc",
+              "state": "unavailable",
+              "excerpts": [],
+              "variants": 0,
+              "truncated": false
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "synthetic reports"
+      ],
+      "notes": [],
+      "detector_hints": [
+        "prompt/injection"
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "name": "Monitor",
+      "revision": 1,
+      "protections": [
+        {
+          "detector": "prompt_injection",
+          "direction": "prompt",
+          "action": "allow",
+          "active": true,
+          "location": "AI[0]/prompt",
+          "confidence": "explicit"
+        }
+      ]
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-1",
+      "name": "Synthetic assistant",
+      "profile": "Monitor"
+    }
+  ],
+  "sampling": {
+    "algorithm": "stratified-round-robin-v1",
+    "candidates": 1,
+    "selected_report_ids": [
+      "report-1"
+    ],
+    "uncovered_groups": [],
+    "limit": 100
+  },
+  "budgets": {
+    "seconds": 120,
+    "concurrency": 4,
+    "requests": 1000,
+    "max_pages": 40,
+    "max_events": 10000,
+    "max_reports": 100,
+    "attempts": 3
+  },
+  "metrics": [],
+  "digest": "66ac90bbd4364cae0c966253a92ef385360e8571e461c209a9170a55d8a3d315"
+}

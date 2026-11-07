@@ -61,6 +61,16 @@ fails when a cited test, a §12 row or a `dNN`-named parity test is missing from
 
 ## Working in this repository
 
+- **Current acceptance threshold (user instruction, 2026-11-06): 9.0/10 or higher.** (Was 9.1 from 2026-11-04.)
+  Apply this threshold to outstanding implementation and requalification reviews,
+  including runtime-history phases B3–B6. Preserve historical review scores as
+  recorded; acceptance at the new threshold requires a fresh independent review
+  of the actual source and verification evidence. Required checks must pass, and
+  unresolved findings must be corrected before the work is reported complete.
+  [Independent B4/B5 review notes](docs/RUNTIME_HISTORY_B4_B5_PRE_REVIEW.md)
+  record source-grounded acceptance probes and B6 preparation requirements;
+  they do not certify unimplemented phases.
+
 - Rust tools live in `~/.cargo/bin`; prefix shell commands with
   `export PATH="$HOME/.cargo/bin:$PATH";` when it is not on PATH.
 - Checks before finishing a change:

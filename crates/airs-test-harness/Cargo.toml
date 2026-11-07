@@ -28,5 +28,10 @@ tokio = { version = "1.50", features = ["rt-multi-thread", "net", "time", "sync"
 toml = { version = "=1.1.2", default-features = false, features = ["std", "serde", "parse"] }
 url = "2.5"
 
+[features]
+# Declared so the shared rule files (choice 185), compiled here by `#[path]`, can name core's
+# dev-only `test-support` feature; never enabled in this crate.
+test-support = []
+
 [lints]
 workspace = true

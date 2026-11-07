@@ -12,6 +12,7 @@ use super::Invocation;
 use crate::error::{CliError, InterruptContext};
 use crate::json::OValue;
 use crate::report::ReadError;
+pub use airs_runtime_core::time::now_ms;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 
@@ -71,15 +72,6 @@ pub fn status_path(path: &Path) -> String {
         .collect()
 }
 
-/// Milliseconds since the Unix epoch.
-pub fn now_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |elapsed| {
-            i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX)
-        })
-}
-
 /// The destination checks before the tenant and any request: a path that names no file
 /// (`sub/`, `a/.`; D226), anything at the absolute path (a dangling symlink included)
 /// and, with [`ParentCheck::Checked`], a parent that is not an existing directory (D214)
@@ -129,6 +121,15 @@ pub fn publish(
     html: &str,
     verdict: Verdict,
 ) -> Result<i32, CliError> {
+    publish_with_path_label(invocation, path, html, verdict, None)
+}
+pub fn publish_with_path_label(
+    invocation: &mut Invocation,
+    path: Option<&Path>,
+    html: &str,
+    verdict: Verdict,
+    label: Option<&str>,
+) -> Result<i32, CliError> {
     if invocation.output.pending_signal().is_some() {
         return Err(no_report());
     }
@@ -136,14 +137,20 @@ pub fn publish(
         Some(path) => {
             let published = crate::files::publish_new(path, html.as_bytes(), "--output-file")
                 .map_err(|_| failed())?;
-            let shown = status_path(path);
+            let shown = label
+                .map(str::to_owned)
+                .unwrap_or_else(|| status_path(path));
             invocation.interrupt = Some(InterruptContext::Context(format!(
                 "the report was saved in {shown}"
             )));
             if published == crate::files::Published::DirectoryNotSynced {
-                invocation
-                    .output
-                    .warning(&crate::store::atomic::dir_sync_warning(path));
+                if label.is_some() {
+                    invocation.output.warning(&format!("Report at {shown} was saved, but its directory could not be synced; it may not survive a system crash"));
+                } else {
+                    invocation
+                        .output
+                        .warning(&crate::store::atomic::dir_sync_warning(path));
+                }
             }
             invocation
                 .output

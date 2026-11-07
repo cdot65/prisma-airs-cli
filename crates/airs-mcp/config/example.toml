@@ -1,0 +1,97 @@
+# airs-mcp service configuration (RUNTIME_MCP_CONTRACT §11). Synthetic example: every
+# identifier below is a placeholder. Public identifiers, URLs, bounds and paths only;
+# secrets are referenced by file. Unknown keys are refused at every level.
+revision = "example-1"
+
+[server]
+listen = "0.0.0.0:8443"
+allowed_hosts = ["mcp-backend-airs.example.test"]
+resource = "https://mcp-backend-airs.example.test/mcp"
+authorization_servers = ["https://login.microsoftonline.com/00000000-0000-4000-8000-000000000001/v2.0"]
+scopes_supported = [
+  "https://mcp-backend-airs.example.test/mcp/AirsHistory.Read",
+  "https://mcp-backend-airs.example.test/mcp/AirsHistory.Operate",
+  "https://mcp-backend-airs.example.test/mcp/AirsHistory.Admin",
+  "offline_access",
+]
+data_dir = "/data/airs"
+health_listen = "0.0.0.0:8081"
+
+[server.tls]
+cert_file = "/etc/airs-mcp/tls/tls.crt"
+key_file = "/etc/airs-mcp/tls/tls.key"
+
+[upstream]
+issuer = "https://login.microsoftonline.com/00000000-0000-4000-8000-000000000001/v2.0"
+audiences = ["00000000-0000-4000-8000-000000000002"]
+tenant_id = "00000000-0000-4000-8000-000000000001"
+jwks_url = "https://login.microsoftonline.com/00000000-0000-4000-8000-000000000001/discovery/v2.0/keys"
+algorithms = ["RS256"]
+accepted_permissions = ["AirsHistory.Read", "AirsHistory.Operate", "AirsHistory.Admin"]
+allowed_client_ids = ["00000000-0000-4000-8000-000000000003"]
+owner_object_ids = ["00000000-0000-4000-8000-000000000004"]
+
+[assertion]
+header = "x-user-jwt"
+issuer = "https://mcp.example.test"
+audiences = ["org-example"]
+algorithms = ["RS256"]
+jwks_url = "https://mcp.example.test/.well-known/jwks.json"
+max_lifetime_seconds = 300
+workspace_ids = ["ws-example"]
+organization_ids = ["org-example"]
+
+[assertion.claims]
+subject = "email"
+client_id = "client_id"
+workspace = "workspace_id"
+organization = "organisation_id"
+
+[admin]
+mode = "disabled"
+
+[service]
+tenant = "airs-tsg-1234567890"
+timezone = "America/Chicago"
+
+[airs]
+tsg = "1234567890"
+management_endpoint = "https://api.apps.paloaltonetworks.com/aisec"
+dashboard_endpoint = "https://api.apps.paloaltonetworks.com/aisec"
+token_endpoint = "https://auth.apps.paloaltonetworks.com/oauth2/access_token"
+management_client_id_file = "/run/airs-mcp/secrets/mgmt-client-id"
+management_client_secret_file = "/run/airs-mcp/secrets/mgmt-client-secret"
+management_revision = "00000000-0000-4000-8000-000000000005"
+
+[[airs.scanners]]
+name = "monitor"
+applicationId = "app-example"
+endpoint = "https://service.api.aisecurity.paloaltonetworks.com"
+numRetries = 0
+revision = "00000000-0000-4000-8000-000000000006"
+api_key_file = "/run/airs-mcp/secrets/scanner-monitor"
+
+[[receipt_associations]]
+subject = "PLACEHOLDER_CALLER_SUB"
+client_id = "PLACEHOLDER_AIRS_CLI_PUBLIC_CLIENT_ID"
+declared_scanner = "monitor"
+scanner = "monitor"
+
+[limits]
+collection_interval_minutes = 15
+
+[[grants]]
+subject = "PLACEHOLDER_CALLER_SUB"
+client_id = "PLACEHOLDER_CLAUDE_CODE_CLIENT_ID"
+owner_object_id = "00000000-0000-4000-8000-000000000004"
+permission = "reader"
+label = "claude-code"
+tools = ["service_info", "history_status", "history_coverage"]
+
+[[grants]]
+subject = "PLACEHOLDER_CALLER_SUB"
+client_id = "PLACEHOLDER_AIRS_CLI_PUBLIC_CLIENT_ID"
+owner_object_id = "00000000-0000-4000-8000-000000000004"
+permission = "operator"
+label = "airs-cli"
+tools = ["service_info", "history_status", "history_coverage", "collection_start", "receipts_ingest"]

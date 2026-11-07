@@ -522,6 +522,45 @@ impl Sandbox {
         self.write_tenant_file_raw(name, converted.to_toml().as_bytes(), 0o600)
     }
 
+    /// Explicit fixture-only app association, copied from the specified flat kind.
+    /// Returns false when that kind/endpoint is absent (missing-credential tests).
+    /// Does not alter the TypeScript config or weaken the runtime endpoint guard.
+    pub fn bind_fixture_scanner(
+        &self,
+        tenant: &str,
+        name: &str,
+        application: &str,
+        kind: &str,
+    ) -> bool {
+        let path = self.store_tenant_path(tenant);
+        let mut bytes = fs::read_to_string(&path).expect("fixture tenant");
+        let table: toml::Table = bytes.parse().expect("valid fixture TOML");
+        let (flat, named) = match kind {
+            "key" => ("airsApiKey", "apiKey"),
+            "token" => ("airsApiToken", "apiToken"),
+            _ => panic!("explicit key/token fixture kind required"),
+        };
+        let Some(secret) = table.get(flat).and_then(toml::Value::as_str) else {
+            return false;
+        };
+        let Some(endpoint) = table.get("airsApiEndpoint").and_then(toml::Value::as_str) else {
+            return false;
+        };
+        assert!(
+            !table
+                .get("scanners")
+                .and_then(toml::Value::as_table)
+                .is_some_and(|v| v.contains_key(name)),
+            "fixture name already bound"
+        );
+        if !table.contains_key("scanners") {
+            bytes.push_str("\n[scanners]\n");
+        }
+        bytes.push_str(&format!("\n[scanners.{}]\napplicationId = {}\nendpoint = {}\nnumRetries = 0\nrevision = \"00000000-0000-4000-8000-000000000001\"\n{named} = {}\n",crate::store::toml_string(name),crate::store::toml_string(application),crate::store::toml_string(endpoint),crate::store::toml_string(secret)));
+        self.write_tenant_file_raw(tenant, bytes.as_bytes(), 0o600);
+        true
+    }
+
     /// Appends `line` (plus `\n`) to the provisioned `store/tenants/<name>.toml` (for a
     /// Rust-side state TypeScript cannot express: a TOML type, an unknown or renamed
     /// key, a dead `defaultOutput`) and stops mirroring. The file keeps mode 0600.

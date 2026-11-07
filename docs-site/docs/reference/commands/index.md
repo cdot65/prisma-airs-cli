@@ -15,6 +15,7 @@ Every page in this section is the `--help` text of `airs`, generated from its cl
 | [`airs tenant`](./tenant.md) | Manage tenants (the only configuration source) |
 | [`airs doctor`](./doctor.md) | Check the selected tenant, its config file, credentials, and API connectivity (preflight) |
 | [`airs gateway`](./gateway.md) | Manage and observe Prisma AIRS AI Gateway resources |
+| [`airs mcp`](./mcp.md) | Optional runtime MCP service: connections and sign-in |
 | [`airs model-security`](./model-security.md) | AI Model Security operations — groups, rules, scans |
 | [`airs runtime`](./runtime.md) | Runtime prompt scanning against AIRS profiles |
 | [`airs redteam`](./redteam.md) | AI Red Team scan operations |
@@ -31,6 +32,7 @@ Commands:
   tenant          Manage tenants (the only configuration source)
   doctor          Check the selected tenant, its config file, credentials, and API connectivity (preflight)
   gateway         Manage and observe Prisma AIRS AI Gateway resources
+  mcp             Optional runtime MCP service: connections and sign-in
   model-security  AI Model Security operations — groups, rules, scans
   runtime         Runtime prompt scanning against AIRS profiles
   redteam         AI Red Team scan operations

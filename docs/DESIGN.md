@@ -86,7 +86,7 @@ are `docs/research/ts-model-security.md` (**MS§n**), `docs/research/ts-model-se
 (**MI§n**) and `docs/research/rs-sdk-model-security.md` (**MK§n**).
 
 0.9 (M6d Runtime extras) adds the API key, customer-app, deployment-profile, dashboard and session commands, the
-`scan-logs query` stub, the HTML runtime environment report and the security-profile backup and restore: every write is one
+original `scan-logs query` stub (replaced by D338–D339), the runtime report (now Signal Brief, D340) and the security-profile backup and restore: every write is one
 attempt with confirmations for the destructive ones, an API key value is never printed (a new private `--key-file` is its
 only channel), no command shows a value the server did not send, and the backup is a Rust-only format that never
 overwrites a file and whose restore never duplicates a profile (§18; D204–D226). It is built in three steps (§18.1). The
@@ -755,8 +755,9 @@ written, D87).
 1. The directory checks of §3.8 for `D/tenants`, then the file checks for the file. A
    missing directory or file gives `Cannot read a valid tenant config at <path>`; a
    safety refusal gives its own message (§3.8).
-2. The file must be UTF-8 TOML of at most 1,048,576 bytes, and every key must be one of
-   the 27 keys below with a value of the listed type that passes the read rule.
+2. The file must be UTF-8 TOML of at most 1,048,576 bytes. Each scalar key must be
+   one of the 27 keys below with its listed type/read rule. From 8.1, the optional
+   strict scanners table follows §3.15; it is not a scalar setting.
    Unknown keys, the TypeScript names (`aiGw*`, `agentGuard*`, `typesafe*`, `dataDir`,
    the retired `*TokenEndpoint` keys) included, make the file invalid (D71, D72).
 3. Any failure in 1–2 except a safety refusal: `Cannot read a valid tenant config at <path>`
@@ -766,7 +767,7 @@ written, D87).
 5. The effective config is the file's values plus the one default, `scanConcurrency`
    = 5. There are no empty values to strip (they are invalid).
 
-**Schema.** 27 keys in **this order**. The order is used by `tenant read`, by the
+**Schema.** 27 scalar keys in **this order**, plus the optional §3.15 namespace. The order is used by `tenant read`, by the
 canonical bytes and by the unknown-key message (D71). "Read rule" applies to every
 file read; "write rule" applies in addition to every value `create` and `set` accept
 from argv, stdin or a prompt (§3.10, §3.11). `import` applies the read rules only
@@ -845,7 +846,7 @@ such a value fails when it is used (D28, D48), as before.
      `Invalid value for configuration setting`.
 
 **Canonical bytes.** One `<key> = <value>\n` line per present key, in schema order, no
-blank lines, no comments: strings as TOML basic strings (§3.2), integers in decimal. A
+blank lines, no comments for scalar-only files: strings as TOML basic strings (§3.2), integers in decimal. The optional named namespace appends the §3.15 tables. A
 `create` writes, for example:
 
 ```
@@ -1543,6 +1544,79 @@ TypeScript text.
 | `  ℹ Aborted` (TS text, info line) | 0 | §3.10 |
 | `Interrupted; no configuration was changed`, `Interrupted; the change was saved` | 130 / 143 | §3.9, §3.10 |
 
+### 3.15 Application-bound scanner credentials (8.1, D342–D343)
+
+The exact schema, command grammar, error catalog, snapshot ordering and SDK identity
+basis are specified in [RUNTIME_CREDENTIAL_CONTRACT.md](RUNTIME_CREDENTIAL_CONTRACT.md).
+That contract is part of this section. Existing scalar-only files retain their
+canonical bytes, 27 scalar rules and read-only behavior. The optional scanners
+namespace is a strict table of at most100 case-unambiguous valid names, each with
+one applicationId, admitted scanner endpoint, integer numRetries0–5, non-secret
+UUID revision and exactly apiKey or apiToken. Unknown nested fields invalidate
+scanners without echoing values. Each app ID has at most one active binding.
+
+Named secrets are included in SecretSet, including unused bindings. Presence of
+the namespace (including empty) or a scanner-management invocation enables the
+§6 final local-error filter; scanner management enables it before consuming input.
+The flag is invocation-local and shared by SecretSet clones. Pure legacy
+invocations retain their existing final-error behavior. Public
+read/get/list/doctor views expose metadata and hasApiKey/hasApiToken booleans only;
+credential coincidences and controls are withheld, and projected-key collisions
+refuse output. No raw named credential Serialize/Debug output is provided.
+Generic tenant set/unset scanners refuses before store access. New local leaves:
+scanners list, set, bind-default, remove, snapshots, restore and delete-snapshot.
+Mutations require explicit positional tenant; global --tenant is refused. set
+reads bounded private TOML or piped stdin before store access; no new secret argv
+option. Destructive leaves require --force. Readers do not create or lock files.
+
+Writes use Transaction. Before first named-table publication, a private no-clobber
+snapshot of the previous exact bytes is fsynced under config.lock; snapshot
+failure leaves the live file unchanged. Snapshot names are .TENANT.pre-scanners.
+UUID.toml or .TENANT.pre-restore.UUID.toml inside D/tenants (no whitespace in the
+actual filename). They are not indexed tenant entries. Restore requires matching
+store/prefix/TSG and --expect-tsg/--force, rechecks under lock and preserves the
+current config before replacement. Listing reveals metadata only; deletion is
+explicit. Snapshot failures/rollback never unlink a raced replacement. Older
+strict-schema binaries refuse named tables; the first opt-in write explains the
+format upgrade. There is no automatic upgrade on read or automatic downgrade.
+Keep old Homebrew/npm/RC testing in isolated config roots. Snapshot files never
+enter evidence, exports, debug attachments or build archives.
+
+bind-default copies a flat credential and the effective scanner endpoint/retries
+into one explicit app association; it does not maintain a live link. With both
+flat secrets configured, --use key|token is required: the pinned SDK sends both
+headers and provides no client-side precedence. A configured retry value is
+copied; its missing effective value is5. New set input defaults retries to0.
+Bounded lookups retain zero retries. Changing flat credentials does not rotate a
+named copy; doctor explains this. A named-only tenant has configured credentials,
+but doctor skips the default scanner probe instead of guessing a named key.
+
+scan/bulk-scan/scan-logs results/reports accept --scanner NAME. Default direct
+operations preserve flat behavior; named-only configurations require selection.
+Selection cannot try alternate credentials. Management discovery/report lookups
+require an exact explicit applicationId binding. Customer-app IDs, display names,
+API key labels, auth_code and api_key_last8 do not establish dashboard ownership.
+Unbound apps retain management observations with a binding remedy and required
+scan-results coverage gap; strict report exits1 after producing artifacts. This
+is an intentional migration from the previous automatic flat-key lookup (D343).
+
+Per-app scanner clients admit only their own endpoint and selected secret; all
+clients share the invocation's request/deadline/concurrency/report budget. Result
+batches never cross configured apps; exact app-name/session buckets remain
+separate. Ambiguous same-scan/subrequest attribution without an identifying
+session stays unresolved. Report selection is global: default5 IDs, hard10,
+at most2 serial actual sends, immediate invocation-wide stop on429. Separate
+credential groups can reduce examples; missing examples alone do not fail strict.
+No management OAuth credential is sent to the scanner plane.
+
+Named bulk jobs use §14.9 version2 with a non-secret scannerReference. Legacy
+jobs retain version1. resume-poll selects the saved name and refuses missing or
+rebound app/endpoint before a request; there is no selector override. Same-app/
+endpoint revision changes warn about unqualified historic access, checkpoint the
+current reference and poll with exactly that active secret. This neither proves
+post-rotation service access nor authorizes scan resubmission. Real-service
+qualification remains user-run and separate from loopback compatibility evidence.
+
 ## 4. Environment handling
 
 - Credentials and endpoints come only from the tenant file. Credential environment
@@ -1600,6 +1674,13 @@ TypeScript text.
   request), which really cancels the request.
 
 ## 6. SDK error → CLI message (secret-safe, deterministic)
+
+From 8.1 named-credential integration (§3.15), an invocation that reads a named
+namespace or runs a local scanner-management command filters every final failure
+message, detail and dynamic interruption context through the completed SecretSet
+before rendering. This covers local paths that coincide with credentials, including
+unused named sets, without changing exit codes or safe messages. Tenant writer
+wait notices and durability warnings receive the same filtering.
 
 The SDK never retains server text; the CLI never echoes response bodies, URLs with
 queries, tokens or keys. Messages use the TS SDK shape `<ERROR_TYPE>:<text>` with
@@ -1787,6 +1868,11 @@ line):
 
 ### 8.2 Request
 
+From 8.1, optional `--scanner NAME` selects the exact named scanner (§3.15, D342).
+Validate its syntax before tenant access. Without it, preserve flat credentials;
+a named-only tenant requires explicit selection. The selected endpoint and single
+credential replace the flat scanner configuration only in the invocation.
+
 `POST {airsApiEndpoint}/v1/scan/sync/request`, body
 `{"ai_profile":{"profile_name":"<P>"},"contents":[{"prompt":"<X>"[,"response":"<R>"]}]}`.
 An empty `--response ""` is omitted. Headers from the SDK: `x-pan-token` +
@@ -1877,6 +1963,10 @@ triggered, detections, responseDetections`, plus `error` last for a failed scan.
 The status lines, the stderr failure line and the exit code are those of pretty.
 
 ## 9. M1 doctor (scoped subset of the TypeScript checks)
+
+After configuration and OAuth lease discovery, every check detail/hint passes the
+invocation SecretSet and terminal filter before JSON, pretty or table rendering.
+Known credential coincidences in local paths are withheld (§3.15).
 
 Checks, always all nine (seven before 0.10, eight before 8.0), in order: `Executable` (§21.15, D331),
 `Tenant`, `Config file`, `Environment`, `Scanner credentials`, `Management credentials`, `Scanner API`,
@@ -2744,8 +2834,10 @@ Tiers (specified here; [TESTING.md](TESTING.md) explains how to run and extend t
          Rust `null`) and D210 (one array; a TS `[]` against Rust rows of the one app, each with
          `"detector": null`); the all-apps mode never runs live (unbounded requests);
        - `deployment-profiles list`: equal (auth codes compared in memory, never written);
-       - `scan-logs query --interval 1 --unit hours --limit 5`: both exit 1 with the stub line (program
-         names normalised, D73) and empty stdout (that neither sends a request is a loopback self-test);
+       - `scan-logs query --interval 1 --unit hours --limit 5`: Rust validates the JSON discovery
+         envelope and explicit completeness (exit 0/1), bounded to max-pages 1, max-events 5,
+         max-requests 50 and timeout 30 seconds; frozen TypeScript retains its no-request failure
+         stub (D338). JSON data is inspected in memory only; no customer payload is summarized;
        - `dashboard applications --limit 5`, `top-applications`, `violations-trend`, `apps-list`, and
          `application` and `application-violations` of the first bucket with `--interval 7`; `sessions chart`,
          `sessions list --limit 5`, `sessions get` of the first listed session (`--limit 5`) and
@@ -2755,11 +2847,11 @@ Tiers (specified here; [TESTING.md](TESTING.md) explains how to run and extend t
          (choice 37 of §18.20; `--show-content` never runs live): both exit 0 with empty stdout, both files
          0600, equal as JSON in memory, stderr free of their content; removed right after the check;
        - `runtime report`, both CLIs, `--output-file <run tmp>/<cli>/report.html` (TS with `--output html`):
-         both 0600 and starting `<!doctype html>`; the same section ids, evidence source names, method
-         labels and statuses (counts may drift; D214 tolerated: a TS `complete` empty profile source
-         against a Rust `unavailable` one only when the Rust note is the no-record-array note); a CSP meta
-         and no external URL or `src=` attribute; the Rust file holds no `SecretSet` value; removed right
-         after the check;
+         both 0600; Rust has the standalone Signal Brief/CSP/coverage sections and no script, while
+         frozen TS retains schema 2 (D340). Rust is bounded to max-pages 1, max-events 5,
+         max-reports 0, timeout 30 seconds and max-requests 50, so this existing live tier
+         does not automatically collect violation snippets. Rust file is checked against the
+         invocation SecretSet in memory; files removed right after the check;
        - `runtime profiles backup "<first profile name of a Rust profiles list --limit 1>" --output-file <run tmp>/<cli>/backup.json`,
          both CLIs (read-only on the tenant; TS writes its own format): equal exit codes, both 0600, the
          Rust file parsing as the §18.15 format; the Rust `profiles[0].record` equal to the TS
@@ -3772,6 +3864,35 @@ M6e additions (0.10; the research is GW§13, GR§17, GK§11, adapted to §19):
 
 ## 11. Module layout
 
+Since M1 of the optional runtime MCP service (RUNTIME_MCP_IMPLEMENTATION_PLAN "Workspace
+boundary", RUNTIME_MCP_CONTRACT §1) the workspace has these product packages:
+
+- `airs-cli` (the root package, `src/`): the CLI. It owns argument parsing, planning,
+  output and signals, the tenant store and its writers, and every command. It re-exports
+  the shared modules below at their former paths (`crate::error`, `crate::report::signal`,
+  …), so the CLI's behavior and its module paths are unchanged.
+- `airs-runtime-core` (`crates/airs-runtime-core/src/`, published in lockstep): the code the
+  CLI and the server share. It covers failures and the secret set, ordered JSON,
+  terminal-safe text and number formatting (`text.rs`), the output format names, the
+  tenant credential model (`tenant/`), SDK client construction and URL admission, the
+  `--debug` record format and transport over caller-supplied sinks, pure styling, the read budget, the scan verdict (`scan_verdict.rs`), withholding
+  and its rules, and the Signal Brief evidence, privacy, analysis, renderers and live
+  collector (`signal/`). The collector reaches persistent history only through
+  `signal/sink.rs` (`HistorySink`); the CLI passes no sink. It has no SQLite, no listener
+  and no CLI I/O.
+- `airs-mcp` (`crates/airs-mcp/`, `publish = false`, from M2): the optional service binary.
+  It covers the frozen catalogue (`catalogue.rs`), strict configuration (`config.rs`),
+  two-token verification (`auth.rs`), routing, reload and health (`run.rs`), the
+  data-subtree admission, owner lock and control seed (`storage.rs`), and the tools
+  (`tools.rs`). The CLI never depends on it.
+- `airs-history-store` (`crates/airs-history-store/`, `publish = false`): the server-owned
+  SQLite archive (database, repository, identity, paths, inspection, work, receipts, sync,
+  transfer, compaction and recovery). Its executable tests drive `airs-history-driver`, a
+  test-only binary that no release or documented procedure builds or installs (building
+  the CLI never compiles it). The CLI never depends on it.
+
+The paths below name each module where it lives now.
+
 ```
 src/main.rs            thin: std::process::exit(airs_cli_rs::run(std::env::args_os())); the `airs`
                        binary (1.0, §21.2)
@@ -3782,9 +3903,9 @@ src/lib.rs             run(): version pre-scan, clap parse, runtime, dispatch, e
 src/signals.rs         the process-lifetime signal thread and its decisions (§2.5)
 src/cli.rs             clap definitions (all 0.2 commands, the global --output, --quiet,
                        --tenant and --debug), per-command --output help
-src/error.rs           CliError {Usage, Operational, Interrupted, Reported} + rendering,
+crates/airs-runtime-core/src/error.rs           CliError {Usage, Operational, Interrupted, Reported} + rendering,
                        SDK mapping (§6); re-exports SecretSet
-src/secrets.rs         SecretSet: the registered forms (one ordered set) and their checks, the
+crates/airs-runtime-core/src/secrets.rs         SecretSet: the registered forms (one ordered set) and their checks, the
                        multi-pattern matcher (Matcher, its step count in test builds only), the
                        base64 forms (§6, §8; choice 187); withhold, the D47 document pass of the
                        runtime, gateway and supplychain output (choice 81 of §18; moved from
@@ -3794,7 +3915,7 @@ src/output.rs          Output (stdout buffer, data vs decoration, status, quiet,
                        per-stream colour state), Format {Pretty, Table, Json} and the
                        per-command format policy (§2.4), terminal_safe; JSON printing
                        delegates to json.rs
-src/json.rs            order-preserving JSON values, pretty and compact JSON writers with
+crates/airs-runtime-core/src/json.rs            order-preserving JSON values, pretty and compact JSON writers with
                        js_number (§2.2, §2.7), D44 classes, the shared number-member read
                        (json::number: pagination counts of red team, model security and runtime),
                        json_text and escape_c1 (the D212 writer of the runtime, gateway and
@@ -3803,10 +3924,13 @@ src/render/mod.rs      (M3.5) cell_text, js_number, display width (§2.7)
 src/render/table.rs    (M3.5) the TS table algorithm with display-width padding (§2.7)
 src/render/pretty.rs   (M3.5) banner, section, key/value, bullet, empty list: the ui.ts
                        primitives, writing data or decoration into Output (§2.7)
-src/render/style.rs    (M3.5) the colour decision and chalk-compatible styling (§2.8)
-src/debug.rs           (M3.5) DebugLog: directory, file, retention, record
-                       schema, header allow-list, line check, write-failure handling, and
-                       the DebugTransport wrapper (§2.9)
+src/render/style.rs    (M3.5) the per-stream colour decision (environment and terminal, §2.8)
+crates/airs-runtime-core/src/style.rs    chalk-compatible styling (pure; §2.8)
+src/debug.rs           (M3.5) the --debug log's directory, private file, retention and stderr
+                       warning sink (§2.9)
+crates/airs-runtime-core/src/debug.rs    DebugLog over caller sinks: record schema, header
+                       allow-list, line check, token holds, write-failure handling, and the
+                       DebugTransport wrapper (§2.9)
 src/env.rs             ignored-environment report (§4)
 src/store/mod.rs       (M4t) store location (§3.1), the §3.8 directory and file checks,
                        config.toml schema, reader and canonical writer (§3.2), the TOML
@@ -3817,7 +3941,7 @@ src/store/atomic.rs    (M4t) the transaction steps, atomic write, directory fsyn
                        temp cleanup, rollback of multi-file changes (§3.9)
 src/tenant/mod.rs      selection from the store, --tenant, name resolution, the import
                        suffix, the shared config loader (§3.4, §3.6, §3.7)
-src/tenant/config.rs   the 27-key schema, read and write rules, effective config,
+crates/airs-runtime-core/src/tenant/config.rs   the 27-key schema, read and write rules, effective config,
                        redaction, credentials, the canonical tenant-file writer (§3.3, §3.5)
 src/tenant/ts.rs       (M4t) the TypeScript registry path and readers, JS coercion, kept
                        read-only for import and the existence check (§3.13)
@@ -3825,7 +3949,7 @@ src/tenant/import.rs   (M4t) the import plan, key conversion and notes (§3.12)
 src/input.rs           (M4t) terminal gates, prompts, hidden input with termios restore
                        (registered with signals.rs), the confirmation, the piped-stdin
                        reader (§3.10)
-src/clients.rs         endpoint admission, transports (wrapped by debug::DebugTransport),
+crates/airs-runtime-core/src/clients.rs         endpoint admission, transports (wrapped by debug::DebugTransport),
                        the lease-recording OAuth provider, management + scanner client
                        construction (§5)
 src/pagination.rs      list flag validation, collect options, status strings (§7.1, §7.3)
@@ -3851,7 +3975,7 @@ src/policy.rs          (M4) pure serde_json::Value surgery: the profile builder 
                        from 8.0 the TS 7.3.0 forms (directional create, the selected
                        block's recursive merge, the selector-aware topic edits and the
                        0.35.0 request validation, §13.17); unit-tested without I/O
-src/profile_policy.rs  (8.0) TS 7.3.0 profile-policy.ts: the legacy and directional
+crates/airs-runtime-core/src/profile_policy.rs  (8.0) TS 7.3.0 profile-policy.ts: the legacy and directional
                        layouts, protection locations, the --direction /
                        --ai-profile-index selector, entry and block selection with their
                        refusals, and the recursive detector merge (§13.17)
@@ -4152,11 +4276,9 @@ src/runtime/transfer/plan.rs the TS planner and executor rules (latestProfiles, 
 src/runtime/transfer/policy.rs compareRuntimePolicies verbatim on serde_json::Value (§18.16); the TS
                        runtime-policy.spec.ts cases as its unit tests, the planner cases of
                        runtime-profiles.spec.ts in src/runtime/transfer/plan_tests.rs
-src/report/runtime.rs  the runtime collector (seven sources, TS collect), analysis, findings and the
-                       model (§18.14), on the shared report types; its unit tests (the TS
+src/report/runtime.rs  historical test-only collector/model (superseded by §18.14/D340); its unit tests (the TS
                        runtime.spec.ts and render.spec.ts cases) in src/report/runtime_tests.rs
-src/report/runtime_html.rs   renderRuntimeReportHtml: its CSS, JS, CSP hashes, entity escaping and the
-                       en-US number formatter (§18.14)
+src/report/runtime_html.rs   historical test-only TypeScript renderer; production uses signal/html.rs
 src/commands/runtime_extras.rs   the M6d planning (every §18.3 argument check before the tenant),
                        RxPlan, dispatch, Invocation::runtime_tenant (the tenant, the §3.5 check
                        and the trimmed mgmtTsgId, no client), connect_tenant (build_for with the
@@ -4164,13 +4286,15 @@ src/commands/runtime_extras.rs   the M6d planning (every §18.3 argument check b
                        the transfer commands run their tenant checks between them, choice 77)
 src/commands/runtime_keys.rs     api-keys list, create, regenerate, delete (§18.4–§18.6)
 src/commands/runtime_apps.rs     customer-apps list, get, update, delete, consumption (§18.7–§18.9)
-src/commands/runtime_inventory.rs deployment-profiles list and the scan-logs stub (§18.10, §18.11)
+src/commands/runtime_inventory.rs deployment-profiles list (§18.10)
+src/commands/runtime_scan_logs.rs discovery and scanner-only direct lookups (§18.11)
+crates/airs-runtime-core/src/signal/       normalized evidence, collection, privacy, analysis, HTML, bundles and review (§18.14)
 src/commands/runtime_dashboard.rs dashboard and sessions, sessions list --all, scan-content (§18.12,
                        §18.13)
 src/commands/runtime_write.rs    the M6d wrapper of commands/write_common.rs: the tenant and client
                        without a request, the token, the write format (D223), send with the plain
                        contexts (D95); gate, confirm and body re-exported (D206, D116)
-src/commands/runtime_report.rs   runtime report's reader and collection (§18.14); its destination,
+src/commands/runtime_report.rs   Signal Brief orchestration (§18.14), offline replay/review and bundles; its destination,
                        publishing and exit stages are commands/report_command.rs
 src/commands/write_common.rs     feature-neutral write machinery shared by the red team, DLP,
                        model-security and M6d writes: the D81 gate (gate, gate_on_terminals) and
@@ -4227,7 +4351,7 @@ src/gateway/mod.rs     shared: the id checks with the TS field words (UUIDs, num
 src/gateway/views.rs   the TS projections (workspace list and detail, scope, cost record), the
                        generic list (responseItems, displayColumns) and Field/Value detail, the
                        empty phrases, the banner and the pretty and table layouts of §19.5–§19.9
-src/gateway/withhold.rs  the one withholding policy (the SDK secret rules per resource, read from
+crates/airs-runtime-core/src/withhold.rs  the one withholding policy (the SDK secret rules per resource, read from
                        AI_GATEWAY_SECRET_FIELDS, the name rule, the URL, scheme and key=value
                        rules, the audit-log rule):
                        the traversals that rewrite a document, each decision asked of the
@@ -4236,7 +4360,7 @@ src/gateway/withhold.rs  the one withholding policy (the SDK secret rules per re
                        SecretSet registration of everything withheld
                        (§19.3); its tests in withhold/tests/ (name_rule, headers, schemas, paths,
                        audit, texts, corpus; shared helpers in mod.rs)
-src/gateway/withhold_rules/  the withholding rules (choices 172, 185, 187), std and serde_json only, which
+crates/airs-runtime-core/src/withhold_rules/  the withholding rules (choices 172, 185, 187), std and serde_json only, which
                        the test harness compiles too (by #[path], so inside them a sibling is
                        super::, never crate::): names.rs (normalisation, the NAME_RULES table, the
                        action table, headers, pairs, registration), values.rs (the string tests,
@@ -4324,17 +4448,17 @@ src/report/supplychain.rs  the collector: the source wrapper, the page loop, lab
 ```
 
 Where a change to the withholding rules starts (choice 188.5): the name table and everything decided by a member's
-name is `src/gateway/withhold_rules/names.rs` (`NAME_RULES` and its word lists, the action tables, the header and
+name is `crates/airs-runtime-core/src/withhold_rules/names.rs` (`NAME_RULES` and its word lists, the action tables, the header and
 pair classes, the schema keyword lists and the one registration filter `registrable` with `PLACEHOLDER_WORDS` and
 `MODE_WORDS`); the value rules are `values.rs` (what a string looks like, the URL, scheme, header and key=value text
 rules, what a credential's value registers); the corpus is `corpus.rs` (`PINNED_DOCUMENTS`, the generated `planted`
 documents, `REAL_WORLD_NAMES` and `REAL_WORLD_TEXTS`); the checker is `check.rs`; the traversal that carries the rules
-out on the CLI's value is `src/gateway/withhold.rs`. The tests that pin them: `names.rs::tests` and `values.rs::tests`;
-`src/gateway/withhold/tests/name_rule.rs::the_design_table_is_the_name_rules` (the "Rule 3 by name" table of §19.3
-must be `names::rules_table()`); `src/gateway/withhold/tests/corpus.rs` (`the_live_tier_accepts_what_the_cli_prints`
+out on the CLI's value is `crates/airs-runtime-core/src/withhold.rs`. The tests that pin them: `names.rs::tests` and `values.rs::tests`;
+`crates/airs-runtime-core/src/withhold/tests/name_rule.rs::the_design_table_is_the_name_rules` (the "Rule 3 by name" table of §19.3
+must be `names::rules_table()`); `crates/airs-runtime-core/src/withhold/tests/corpus.rs` (`the_live_tier_accepts_what_the_cli_prints`
 over the pinned documents, `d238_a_planted_credential_never_prints_in_any_format` over the generated ones,
 `the_checker_names_every_value_the_cli_changes`, which holds the checker equal to the traversal, and
-`the_rules_compile_outside_the_cli`); the other files of `src/gateway/withhold/tests/`, one per sub-rule; the
+`the_rules_compile_outside_the_cli`); the other files of `crates/airs-runtime-core/src/withhold/tests/`, one per sub-rule; the
 executable `tests/gateway_inventory.rs::withholding` and `tests/gateway_reads.rs`; and the harness's
 `live::gateway::tests`, which run the same corpus through the checker on `serde_json::Value`. TESTING.md §5.19 is the
 procedure for adding a name, a text shape or a sub-rule.
@@ -4359,7 +4483,7 @@ policies).
 crates/airs-test-harness additions (M6e): the gateway, IAM and inference routes, datasets, knobs, counters, traps and
 markers in src/server/gateway.rs, src/server/gateway_writes.rs, src/server/inference.rs and src/fixtures_gateway.rs
 (`Route::Gateway`, folding `Route::AiGwWorkspaces`); src/withhold.rs (the CLI's rules module compiled by `#[path]`:
-its root `src/gateway/withhold_rules/mod.rs`, and its `check.rs` and `corpus.rs` for the live tier and the
+its root `crates/airs-runtime-core/src/withhold_rules/mod.rs`, and its `check.rs` and `corpus.rs` for the live tier and the
 workspace's other tests, choices 185, 187);
 `--secret-output` in `PATH_FLAGS`,
 `is_gateway_command`, `TZ=UTC` for TypeScript gateway runs, `RunOptions::signal_marker` and
@@ -4700,6 +4824,33 @@ raw scan read, §20.16 choice 77).
 | D334 | a profile answer (`profiles get`, `list`, the `create` and `update` answers, the reads of `topics apply\|revert`, `profiles backup`) whose newly modelled scm-sdk 0.2.4 fields hold an unexpected value: an explicit `null` or a wrong type for `dlp_tenant_id`, `content-type-mode`, `content-type-configurations`, a known direction or `enable-full-conversation-inspection` (8.0) | TS SDK 0.35.0's response schema refuses the whole read: `AISEC_RESPONSE_VALIDATION:Response did not match schema: …` (exit 1), nothing printed | the read succeeds (scm-sdk 0.2.4's tolerant response binding keeps the value in the model's extensions) and the value is printed and backed up as sent: `dlpTenantId` is the record's value (`null`, a number), the pretty `DLP tenant` line its compact JSON, the policy every key as sent; a flag update, `topics apply\|revert` or a restore that would send the value back fails the request schema before its write (the D116 text; exit 2 for `profiles update`, exit 1 for the topic commands and restore) (§13.17, §15.25) | a faithful read must not hide what the service stores (G25, D306), and the request schema still guards every write |
 | D335 | `profiles create --direction <d>` with flags: the directions it writes (8.0) | `content-type-configurations` holds only `<d>`; the live service refuses that body with HTTP 400 for every direction (B7, 2026-10-22) | `<d>` holds the flags' protections and the other three known directions (`prompt`, `response`, `tool-call`, `tool-response`) are written as empty objects; the rest of the body is TS's (§13.17) | the service requires all four direction keys in a directional entry (observed live; the body padded this way is accepted), so the TS body can never be created |
 | D336 | `profiles create --direction <d>` whose flags fill no direction: no policy flag, or shared settings only (`--max-inline-latency`, `--inline-timeout-action`, `--[no-]mask-data-in-storage`, `--[no-]enable-full-conversation-inspection`) (8.0) | refuses only the flagless create, with `Directional flag creation requires at least one protection or shared setting; use --config for an empty policy` (exit 2); a shared-only create is sent (`{<d>: {}}` and the shared settings), and the live service refuses it with HTTP 400 (B7) | the flagless and the shared-only create are both refused before OAuth (exit 2, no request) with `Directional flag creation requires at least one protection flag, not only shared settings: the service refuses a directional policy with no protection in any direction` (§13.12, §13.17); the D102 flag checks run first, so an invalid shared value (`--max-inline-latency 1.5`) gets its D102 text | the service refuses a directional policy whose four directions are all empty (observed live, B7, also with the shared settings set), so the request can only fail; and an empty policy through `--config`, which TS's text suggests, is refused too |
+
+| D337 | `runtime report --from-evidence` | unknown option, exit 1 | bounded versioned evidence rendered offline without tenant resolution; input untrusted, shared privacy projection applied (§18.14.1) | reproducible reporting and safe agent review |
+
+| D338 | runtime scan-log discovery and validation | fixed failure stub, exit 1 and no requests; ignores values | SDK-backed bounded discovery, complete or partial data with coverage; strict options before tenant; debug refused (§18.11) | working investigation without the broken legacy route |
+| D339 | runtime scan-logs results/reports | unknown subcommands, exit 1 | scanner-only ID lookups, at most10 distinct report IDs/two report sends, masked evidence and explicit missing/unresolved ledger (§18.11) | expose existing supported SDK read APIs |
+| D340 | Default runtime report and private bundles | seven-source aggregate HTML and no bundles | Signal Brief pipeline with scoped rolling evidence, profile/service enablement matrix and optional atomic private HTML/JSON/Markdown bundle (§18.14) | evidence-backed review with explicit collection gaps |
+| D341 | Offline attributed review import | no review-file option | bounded collection/digest/finding-bound Markdown packet import; separate agent-assessed/human-reviewed labels (§18.14.2) | coding-agent judgments without changing API observations |
+| D342 | Application-bound scanner configuration and selection | no tenant scanners group or --scanner options | private named TOML sets, explicit scanner selectors, rollback snapshots, masked views and referenced named bulk state (§3.15, §14.9) | deterministic credential/endpoint selection without probing unrelated keys |
+| D343 | Unbound strict runtime report | legacy aggregate report has no scanner-binding requirement | management metadata retained; no automatic flat-key scanner lookup; explicit migration remedy and required scan-results gap (§3.15, §18.14) | respect application-scoped scanner access while retaining tenant-wide metadata |
+| D344 | Management detector evidence, fair positive priority and report diagnostics | aggregate report schema2 has no scan-specific action-breakdown findings or per-app scanner-send diagnostics | typed positive action breakdowns remain source-attributed metadata with unknown direction/action, overview evidence stays session-level, positive session queues retain app fairness, and summary shows session aggregates beside scan/findings units; diagnostics distinguish returned/pending/rejected/missing data from actual transport sends (§18.11, §18.14) | preserve usable evidence and uncertainty without additional report requests or invented credential causes |
+| D345 | Local runtime history inspection (**retired in M1**: the CLI has no archive; inspection belongs to the optional airs-mcp service, §22.8) | no history command or local archive | no history command or local archive (TS parity) | persistent history is server-owned; the number is not reused |
+| D346 | Explicit legacy evidence import (**retired in M1**, §22.8) | no SQLite history import | no history import (TS parity); the import moved to airs-history-store | service import in M5; the number is not reused |
+| D347 | Explicit local archive maintenance (**retired in M1**, §22.8) | no SQLite history maintenance | no archive maintenance (TS parity); compact/recover moved to airs-history-store | service tools in M5; the number is not reused |
+| D348 | Automatic local retention of received scan metadata (**retired in M1**, §22.8) | scan/bulk/resume have no archive or history controls | scan/bulk/resume have no archive or history controls (TS parity); `--history-dir`/`--no-history` are unknown options | explicit `--record-history` arrives in M7; the number is not reused |
+| D349 | Explicit resumable runtime collection (**retired in M1**, §22.8) | no persistent sync or local retry command | no sync or retry command (TS parity); collection moved to airs-history-store | service jobs in M3/M4; the number is not reused |
+| D350 | `airs mcp connections set\|list\|remove` and the tenant file's `mcp` namespace (M7) | unknown command, exit 1; a tenant file with an `mcp` table is refused (unknown key) | named connections to the optional airs-mcp service in a strict `[mcp.connections.NAME]` table (HTTPS only, loopback HTTP for tests; at most 16; no secrets), written through the tenant transaction; the first write saves a private `.TENANT.pre-mcp.UUID.toml` rollback snapshot; list writes nothing (RUNTIME_MCP_CONTRACT §7.3) | the optional service needs explicit, auditable connection configuration; older binaries refuse the table rather than misread it |
+| D351 | `airs mcp login\|logout\|status` and the private MCP session cache (M7) | unknown command, exit 1 | PKCE sign-in with a loopback callback (the only interactive command on an ordinary connection; administrative commands on an admin connection start their own fresh, nonce-bound sign-in, D357; the URL is printed, a browser opens only with `--open`), exact state/issuer checks and an origin allowlist for every discovered endpoint; sessions under `$XDG_STATE_HOME/airs-cli/mcp/` (0700/0600, bound to resource, client and connection revision, atomic writes, `flock`-serialized refresh); status is local (RUNTIME_MCP_CONTRACT §7.4) | a documented carve-out from "readers never write": only token refresh writes session state |
+| D352 | `runtime history status\|coverage`, `runtime jobs list\|get\|cancel`, `runtime schedules list\|set\|disable` and `runtime sync` with `--mcp CONNECTION` (M7) | unknown commands, exit 1 | typed, bounded calls to the selected service (≤256 KiB complete results; refusals print the service's fixed code and reason); `sync` and `schedules` mint idempotency keys under the service's recovery epoch; `sync` waits by default (`--no-wait` prints the accepted job) and an interruption prints the job ID and does not cancel | persistent history, jobs and schedules belong to the optional server (§22.8) |
+| D353 | Service commands without `--mcp` (M7) | unknown commands, exit 1 | usage error (exit 2) naming the optional service, before any tenant, state or network access; no fallback to live collection or local state | explicit selection only (contract §7.1) |
+| D354 | Durable MCP operation receipts (M7) | none | before the first submission send, a private `receipts/<connection>/<key>.json` (0600, ≤4 KiB, ≤1,000 per connection; no token or payload) records operation, parameter digest, key, epoch and later the job ID (format `airs-mcp-op/2`; a job ID is stored only when well formed and free of the invocation's secrets); it is removed only after the job is terminal and the result written to stdout, and `airs mcp status` lists unresolved ones (a version-1 receipt keeps its key but never shows its job ID; an unreadable receipt or directory fails `status`, removing nothing) | a lost response or interruption never resubmits a scan or collection blindly |
+| D355 | `runtime report --mcp CONNECTION` (M7) | `--mcp` unknown, exit 1 | `reports_create` on the service (archive-only render, zero AIRS calls) under a receipted key; waits by default (`--no-wait` prints the accepted job); `--since/--until` or `--interval/--unit` (≤90 days); `--bundle-dir` downloads the three files, `--output-file` the HTML, both hash-verified and published without clobbering; `--strict` exits 1 on a partial report; `--from-evidence`, `--review-file` and the live budget options conflict with `--mcp` (exit 2) before any tenant or network access; `--timeout` bounds the wait | remote reports render from the durable archive (contract §6.2) |
+| D356 | `runtime history query\|reports\|download --mcp` (M7) | unknown commands | bounded `history_query`/`reports_list` reads; `download --version-id VERSION_ID [--file NAME]... --output-dir NEW_DIR` fetches 64 KiB chunks, checks each chunk's offset and SHA-256, the file SHA-256 and the manifest length, retries a chunk at most three times from its verified offset, and publishes each file without clobbering into a new 0700 directory. `--version-id`, not the frozen `--version`: the CLI prints its version for `--version` anywhere (TS parity pre-scan) | hash-bound retrieval (contract §5.2, §5.5) |
+| D357 | `runtime history prune\|compact\|backup\|recover\|restore --mcp` and `airs mcp confirm` (M7) | unknown commands | without `--execute` a `lifecycle_preview` (nothing changes) recorded privately (`previews/<connection>/<id>.json`, 0600: digest, proof nonce, expiry); `--execute PREVIEW_ID` on an admin-role connection signs in afresh (`max_age=0` and the preview's nonce as `airs_proof_nonce`, never a cached session) and runs `lifecycle_execute`; on the connection that made the preview, `--execute` needs `--approval APPROVAL_ID` from `airs mcp confirm PREVIEW_ID --connection ADMIN [--digest --proof-nonce]` (its own fresh, nonce-bound sign-in). No controlling-terminal check: a pty is not a proof (contract §3); the security is the gateway-signed fresh proof | administrative authority is a fresh, nonce-bound proof per mutation (contract §3 option B) |
+| D358 | `runtime history export\|import --mcp` (M7) | unknown commands | admin-role connection only; `export` previews, signs in with the nonce, executes, then streams `export_read` chunks (each verified) into a private no-clobber `--file`; `import` stages `--file` through `upload_admit` → nonce-bound `transfer_upload_begin` → verified chunks → `finalize`, then a separate nonce-bound `import_finalize` execute; any failure after the upload begins aborts it | whole-archive transfer through the service only (contract §5.1) |
+| D359 | `runtime receipts upload --mcp C --from-bulk-state PATH` (M7) | unknown command | the validated checkpoint's received results become `client_asserted` receipts (named scanner, its application ID, never an application name; withheld text is null) of the tenant's cloud ID, sent in batches of ≤200 records whose complete serialized request (JSON-RPC wrapper and call envelope included, with 2 KiB of slack) fits the 256 KiB limit, under deterministic keys; a record too large to send alone is never sent and is counted as `oversized`, and a record carrying a secret the invocation knows is counted as `withheld` (a retry returns the stored batch result); items without received metadata and checkpoints without a named scanner are reported as gaps; zero AIRS calls | explicit remote retention of already-received metadata (plan M7.3) |
+| D360 | `--record-history CONNECTION` on `runtime scan\|bulk-scan\|resume-poll` (M7) | unknown option | after the command's normal result, its received results are retained as in D359 within a 2-second overall budget; no interactive sign-in; any failure, and any record not retained (unsent, refused, withheld because it carries a credential, or too large to send), warns once on stderr and never changes the output or exit code; batch planning is linear in the input, so it fits the budget; needs `--scanner NAME` on scan and bulk-scan (usage error otherwise) | opt-in retention without a local database or spool |
+| D361 | One bounded authentication recovery of a submission (M7) | none | when a session's token is refused at a submission's epoch read or send, the CLI refreshes once (never a sign-in) and replays the same idempotency key; a second failure is reported, the receipt (if a key was minted) kept | a lost token never creates a second job |
 
 ## 13. M4 runtime writes (0.4)
 
@@ -5424,7 +5575,7 @@ its `docs-site/docs/cli/runtime/profiles.md`, `src/airs/profile-policy.ts`,
 `src/cli/builders/profile-builder.ts`, `src/cli/commands/runtime.ts`, `topics-apply.ts`
 and `topics-revert.ts`, and its `tests/integration/directional-security-profiles.spec.ts`,
 whose scenarios run on both CLIs in `tests/parity_runtime_directional.rs`. The Rust form is
-`src/profile_policy.rs` (layout rules, selector, recursive merge) and `src/policy.rs`
+`crates/airs-runtime-core/src/profile_policy.rs` (layout rules, selector, recursive merge) and `src/policy.rs`
 (builders, merge, topic surgery). **Status: accepted live** (8.0 B7, 2026-10-22, against
 `redtail-prod`; `docs/research/live-directional-profiles.md`, MILESTONES 8.0): flag creation
 of each of the four directions (with D335), a `--config` create, a protection edit of each
@@ -5673,6 +5824,10 @@ Help texts are TypeScript's (B§1); the `Examples:` use the program name `airs`.
 - **`--output`** is the global format flag on both commands (§14.14). TypeScript's
   `--output <file>` alias for `--output-file` is unreachable there (its root parser
   consumes every `--output`), so it has no counterpart (D130).
+
+From 8.1, `bulk-scan --scanner NAME` selects a named scanner (§3.15, D342),
+validated before tenant access. Its saved version-2 reference controls resume;
+`resume-poll` offers no selector override. Legacy flat jobs remain version 1.
 
 ### 14.2 Validation order and argument checks
 
@@ -5989,6 +6144,17 @@ in `S`: `<job>.bulk-scan.json` (the state), `<job>.lock` (§14.11) and temporari
 rule (`O_NOFOLLOW` open, same device and inode as the `statat`, regular, owned by the
 effective uid, `mode & 0o077 == 0`) with the §3.8 refusal text.
 
+**Schema versions.** Flat-credential jobs keep version1 and the exact bytes below.
+Named jobs use version2 and add scannerReference after scanEndpoint:
+{name, revision, applicationId, endpoint}, all non-secret; no credential material.
+Version1 forbids this field and version2 requires a valid matching reference.
+The reference endpoint is the admitted/canonical scanner endpoint. Unsupported
+versions above2 remain newer-state refusals. Older binaries refuse version2.
+Named config resumes load the reference under the job lock before selecting a
+credential; legacy scalar-only config preserves its existing validation order.
+Same-app rotation checkpoints a changed reference before polling. All other
+exactly-once, input/output identity and endpoint/tenant checks remain unchanged.
+
 **Schema** (JSON, written in the §2.2 two-space layout plus `"\n"`, keys in this order,
 read with unknown keys refused):
 
@@ -6274,6 +6440,10 @@ never re-polled). An abandon option for ambiguous items is not part of 0.5.
   printed; the refusal is the last line on stderr (no status line precedes it).
 
 ### 14.14 Status lines, summary, formats and streams
+
+Profile/session previews, state/output paths in summaries and status, save warnings
+and dynamic interruption/error text are filtered against all invocation credentials,
+including unselected named entries (§3.15). Safe legacy bytes remain unchanged.
 
 **Status lines** (stderr, dim, quiet-suppressed, the same in every format; TS B§12), after
 the debug notice:
@@ -6656,7 +6826,7 @@ command prints data (§15.3 "Formats").
 ### 15.3 Common rules
 
 **Clients and endpoints.** Every red team command builds its client with
-`RedTeamClients::build` (`src/clients.rs`, RK§1.2) from the selected tenant only:
+`RedTeamClients::build` (`crates/airs-runtime-core/src/clients.rs`, RK§1.2) from the selected tenant only:
 - `redTeamDataEndpoint`, `redTeamMgmtEndpoint`, `redTeamNetworkBrokerEndpoint` (else the SDK
   defaults `https://api.apps.paloaltonetworks.com/ai-red-teaming/data-plane`, `…/mgmt-plane`,
   `…/data-plane/network-broker`) and `mgmtTokenEndpoint` (else the §5 default), each admitted
@@ -8644,10 +8814,10 @@ unknown-value fallbacks; `profiling_status` is reconciled without a flag, choice
   before the tenant (`tests/redteam_reads.rs::contract::an_error_log_skip_is_a_usage_error_before_the_tenant`).
 - The `api.apps` defaults stay and no endpoint is rewritten: the CLI's red team and
   management defaults equal scm-sdk's, and a tenant's `api.sase` endpoint is used as
-  written (`src/clients.rs::tests::red_team_endpoints_are_the_defaults_or_the_tenant_values_unchanged`).
+  written (`crates/airs-runtime-core/src/clients.rs::tests::red_team_endpoints_are_the_defaults_or_the_tenant_values_unchanged`).
 - `serde_json` is built without `preserve_order` (`cargo tree -e features -i serde_json`:
   `default`, `raw_value`, `std`), guarded by
-  `src/json.rs::tests::serde_json_is_built_without_preserve_order`.
+  `crates/airs-runtime-core/src/json.rs::tests::serde_json_is_built_without_preserve_order`.
 
 ## 16. M6b DLP (0.7)
 
@@ -8772,7 +8942,7 @@ options take no value; "repeatable" options take one value per occurrence.
 ### 16.3 Common rules
 
 **Clients and endpoints.** Every DLP command that sends requests builds its client with
-`DlpClients::build` (`src/clients.rs`, DK§1.2) from the selected tenant only:
+`DlpClients::build` (`crates/airs-runtime-core/src/clients.rs`, DK§1.2) from the selected tenant only:
 - `dlpEndpoint` (else `https://api.dlp.paloaltonetworks.com`, `scm::constants::DEFAULT_DLP_ENDPOINT`)
   and `mgmtTokenEndpoint` (else the §5 default), each admitted by §5 (the D48 message names the
   key, never the value); a trailing `/` of the base is ignored (both SDKs), and requests go to
@@ -9904,7 +10074,7 @@ the group help lists only the commands that exist (`install` and `pypi-auth` are
 step 3).
 
 **Step 1 is built** (`src/walk.rs`, `src/modelsec/{mod,views}.rs`, `src/commands/modelsec.rs`,
-`src/commands/modelsec_reads.rs`, `ModelSecurityClients` in `src/clients.rs`; the fixture's
+`src/commands/modelsec_reads.rs`, `ModelSecurityClients` in `crates/airs-runtime-core/src/clients.rs`; the fixture's
 `Route::ModelSecurity(Ms)` read routes and `fixtures::modelsec`; `tests/modelsec_reads.rs`,
 `tests/parity_modelsec_reads.rs`). The details it settled are choices 41–48 of §17.18.
 
@@ -9983,7 +10153,7 @@ is no `--labels-file` (choice 21) and no reveal flag for the PyPI credential (ch
 ### 17.3 Common rules
 
 **Clients and endpoints.** Every model-security command that sends requests builds its client with
-`ModelSecurityClients::build` (`src/clients.rs`, MK§1.2) from the selected tenant only:
+`ModelSecurityClients::build` (`crates/airs-runtime-core/src/clients.rs`, MK§1.2) from the selected tenant only:
 - `modelSecDataEndpoint` (else `https://api.apps.paloaltonetworks.com/aims/data`,
   `scm::constants::DEFAULT_MODEL_SEC_DATA_ENDPOINT`), `modelSecMgmtEndpoint` (else
   `…/aims/mgmt`) and `mgmtTokenEndpoint` (else the §5 default), each admitted by §5 (the D48
@@ -11189,8 +11359,8 @@ green.
 
 | Step | Commands and work |
 |---|---|
-| 1. Reads | `runtime api-keys list\|ls`; `runtime customer-apps list\|ls`, `get`, `consumption`; `runtime deployment-profiles list\|ls`; `runtime scan-logs query` (the stub); `runtime dashboard applications`, `application`, `application-violations`, `top-applications`, `violations-trend`, `apps-list`; `runtime sessions chart`, `list\|ls`, `get`, `transaction`, `scan-content`. Shared: `ManagementClients::build_for` with the dashboard plane, the argument checks of §18.3, the options helper, `walk.rs` extended with `walk_with` (§18.13), the views and layouts of §18.4, §18.7, §18.9–§18.13, the `api_key` withholding (D205), the fixture's runtime read and dashboard routes |
-| 2. Writes and the report | `runtime api-keys create`, `regenerate`, `delete\|rm`; `runtime customer-apps update`, `delete\|rm`; `runtime report`. Shared: the `--key-file` reservation (`files::Reservation`), the G26 raw writes, the `--config` readers, the confirmations, the M6d `Change` words and hints, the runtime collector and HTML renderer (`src/report/runtime.rs`, `runtime_html.rs`), the fixture's write routes, counters and markers |
+| 1. Reads | `runtime api-keys list\|ls`; `runtime customer-apps list\|ls`, `get`, `consumption`; `runtime deployment-profiles list\|ls`; `runtime scan-logs query` (repaired by D338; direct lookups D339); `runtime dashboard applications`, `application`, `application-violations`, `top-applications`, `violations-trend`, `apps-list`; `runtime sessions chart`, `list\|ls`, `get`, `transaction`, `scan-content`. Shared: `ManagementClients::build_for` with the dashboard plane, the argument checks of §18.3, the options helper, `walk.rs` extended with `walk_with` (§18.13), the views and layouts of §18.4, §18.7, §18.9–§18.13, the `api_key` withholding (D205), the fixture's runtime read and dashboard routes |
+| 2. Writes and the report | `runtime api-keys create`, `regenerate`, `delete\|rm`; `runtime customer-apps update`, `delete\|rm`; `runtime report`. Shared: the `--key-file` reservation (`files::Reservation`), the G26 raw writes, the `--config` readers, the confirmations, the M6d `Change` words and hints, the original runtime model (now test-only) and replacement Signal Brief (`crates/airs-runtime-core/src/signal/`, D340), the fixture's write routes, counters and markers |
 | 3. Transfer and live | `runtime profiles backup [profile]`, `runtime profiles restore <file>`: the Rust format, the strict reader, the TS planner, `compareRuntimePolicies`, the executor; the live tier's M6d reads and the profile-transfer write flow with their loopback self-tests (§10) |
 
 Each step registers its own commands: until a step lands, its commands are not in the clap tree (`runtime
@@ -11276,7 +11446,7 @@ option is added: there is no `--show-key` or reveal flag for API keys (choice 3)
 
 **Clients and planes** (RX§1.2). Every M6d command that sends requests builds its client with
 `ManagementClients::build_for(config, session, secrets, debug, Planes { dashboard, dlp })`
-(`src/clients.rs`; the existing `build` is `build_for(.., Planes::default())`, so no existing command's
+(`crates/airs-runtime-core/src/clients.rs`; the existing `build` is `build_for(.., Planes::default())`, so no existing command's
 destination policy widens) from the selected tenant only:
 - `mgmtEndpoint` (else `https://api.apps.paloaltonetworks.com/aisec`) for api keys, customer apps,
   deployment profiles, profiles and topics; with `dashboard`, `mgmtDashboardEndpoint` (else the same TS
@@ -11687,14 +11857,115 @@ prints empty), then `"\n"`; empty
 `  No deployment profiles found` (pretty only; json `[]`, table nothing; D222). table `Name │ Status │ Auth Code`.
 json the bare array (TS shape). Auth codes are printed on stdout (choice 6).
 
-### 18.11 `scan-logs query`
+### 18.11 `scan-logs query|results|reports` (Signal Brief phase 3, D338–D339)
 
-The TS stub (TX§8): clap checks (`--interval` and `--unit` required, exit 2, D1; their values, `--filter`,
-`--limit`, `--offset`, `--page` and `--page-size` are accepted and ignored, TS; the hidden two keep their help
-hidden), `--output` (§2.4), the tenant selection (TS reads it to resolve the format; no credential check, TS), then
-on stderr `  ✗ Legacy scan-logs retrieval is broken and under refactor. Empty results do not mean no activity. Use airs runtime sessions list --interval 1 --unit day --output json, or airs runtime report.`
-(red, never suppressed; the program name per D73), stdout empty, **exit 1, no request** (not even the token; the
-SDK's `scan_logs().query` is never called, G32). Debug policy `none`.
+The former TypeScript failure stub is replaced by bounded dashboard/session discovery
+and scanner lookups. The legacy ScanLogsClient route is never called. Query requires
+--interval and --unit; interval is decimal 1–87600, unit hour/hours/day/days. Filter
+all (default), benign or threat applies after result resolution, then offset (0–9999,
+default 0), then limit (1–100, default 50). --all conflicts with explicit limit/offset.
+Hidden --page/--page-size now fail with a migration usage error. Application-ID
+filters repeat (max 1000, nonempty, <=4096 bytes, no controls). All local scalar
+options reject repetition, consuming flag-shaped option values correctly.
+
+From 8.1, direct results/reports accept `--scanner NAME`; discovery routes by
+exact configured application ID (§3.15, D342–D343). Discovery never probes flat
+credentials or another named set when an application is unbound. All configured
+credentials join the output secret filter regardless of which set is selected.
+
+Results requires repeatable --scan-id canonical 36-byte hyphenated UUIDs; reports
+requires repeatable --report-id opaque identifiers (<=1024 bytes, no commas/controls).
+Accept 1–1000 scan IDs or at most 10 distinct report IDs (at most 1000 supplied
+occurrences), batch at five unique IDs. Report lookup has at most two actual
+transport attempts per invocation, is serial without retries and stops on HTTP 429
+without waiting for Retry-After. These direct reads require scanner
+credentials only, never management OAuth; discovery uses both planes separately.
+--debug is refused before any tenant read or log creation. Data formats are tenant
+preferred pretty/table/json; partial records are committed before operational exit 1.
+Quiet suppresses status only. Invalid options exit 2 before tenant access. Missing,
+unrequested, conflicting or duplicate response identities remain incomplete; empty
+requested lookups are not successful not-found conclusions. Verdict/action and
+unknown values remain separate, and arbitrary SDK extension fields are excluded.
+
+All reads use --timeout seconds (1–3600, default120), --concurrency (1–16, default4),
+--max-requests (1–10000, default1000) including actual OAuth/replay sends. SDK-operation
+slots last through authentication and response decoding. Queued and active work is
+cancelled by session signals and monotonic deadlines. Query --max-pages is an
+aggregate per endpoint-family cap (1–100, default40), --max-events is an invocation
+normalized-event cap (1–10000, default10000). Endpoint families never get a fresh cap
+per session. Discovery interleaves exact application buckets, then round-robin session pages within each bucket and retains exact app ID/name/
+session identity. It resolves only matching scan UUID/sub-request results; absent
+req_id is not zero. Only complete/completed result wrappers with error=false, timeout=false, empty
+errors and recognized category/action resolve an event. Failed, pending, timed-out
+or unfamiliar outcomes remain unknown/incomplete and never normalize to allow or
+pass benign/threat filters. Exact36-byte UUID validation happens before outbound
+batching so one opaque/noncanonical dashboard ID cannot poison valid candidates.
+First-seen dedup preserves supplied/sampled priority order in lookup batches.
+When scan outcomes remain unresolved, the shared collector may read at most ten
+exact-identity session transactions (also bounded by max-pages), using at most ten
+percent of the total collection time and shared concurrency/attempt limits. Match
+application ID, exact name, session, scan and explicit sub-request identity before
+using typed profile/time or positive detector-breakdown metadata. Direction remains
+unknown; a positive breakdown contributes one event/detector observation, never its
+aggregate violation number as an event count. Timeout=true suppresses those hints.
+Transaction status never becomes allow/block or scan category; unknown outcomes and
+the required scan-results gap remain. No report identity, full content or arbitrary
+extensions are imported. Fallback source pages count attempted SDK operations; the
+shared budget counts actual transport sends, which can differ for local failures. This supplemental fallback is not proof of the reason
+scanner results are absent.
+
+Eligible query output is ordered by timestamp descending then composite identity;
+missing/out-of-window times stay quarantined in coverage, not returned as window
+activity. Slice completeness never implies complete discovery.
+
+Report collection reserves 20/50/30 percent of time and actual attempts for current
+configuration, session discovery and result/example enrichment, carrying unused
+allowance forward. The three required configuration walks start together, merge in
+fixed order and share bounded operation slots; each configuration operation has at
+most one third of the configuration time allowance after acquiring its slot. Session
+detail pages run in bounded batches, preserving application/session round-robin order.
+Supplemental application telemetry runs after required reads and example enrichment.
+Query retains its 40-percent discovery reservation and uses the final allowance for
+result resolution. Direct reads use the whole budget.
+Actual attempts are admitted by an invocation-local transport wrapper; nested token
+refresh consumes attempts without taking a second SDK-operation slot. Raw lookup
+rows are capped at 10000 and 32 MiB cumulatively; report views cap detector rows at
+1000. Projection discovers credential-shaped values even in dropped extension
+fields before applying the typed field allowlist. Snippet masking is §18.14.1's,
+including complete DLP withholding and explicit presence/empty/unavailable states.
+PayloadSpans is separate from authentication SecretSet: matched DLP values are
+suppressed across free-text metadata and excerpts; short generic matches do not
+replace arbitrary substrings of protocol identities, nor closed schema constants.
+Whole identity-value matches and long identity spans remain withheld. Matched fields
+are withheld whole using the shared multi-pattern matcher; exact membership does
+not clone the registry. At most10000 distinct raw payload matches totaling4MiB are
+registered; exceeding this privacy-processing bound refuses artifact generation
+with the fixed sanitized evidence error rather than risking leakage or unbounded
+matching work. The same
+invocation-local registry reaches collection, direct output, offline loading and HTML,
+including titles. Credential discovery still precedes final untruncated projection.
+Snippet arrays retain at most 20 excerpts of512 Unicode characters, with an explicit
+truncated flag and received distinct-variant count; this intentional cap does not
+abort an otherwise valid report. Unknown DLP shapes register nested text before
+metadata projection, while remaining unavailable as typed snippets.
+
+Shared report collection preserves result detector hints for deterministic sampling
+by app ID/name, detector hint and scan enforcement. Unknown hints are explicit;
+selected report IDs deduplicate across strata and retain selection order. Reports
+are fetched only for in-window malicious candidates, up to the configured cap.
+Ambiguous identities do not get positional joins. Profile inventories are current, use explicit known protection locations (including DLP/URL controls),
+retain active/inactive layout provenance and suppress unknown-layout monitoring
+inferences; arbitrary extension strings do not become controls. Registered app names are not guessed to equal dashboard names, and source failures
+remain visible. Application overview windows only permit intervals1/7/30/60 with
+hour/day(s); convert equivalent windows exactly (24hours ->1day), otherwise mark a
+gap. Application details only permit7/30/60days, so daily token telemetry is explicitly
+unavailable rather than fetched from another window. Server daily/monthly token
+values retain scale and measurement-window caveats, never population rates.
+
+The default live runtime report is integrated in phase4; the shared collector is
+already exercised through a synthetic pinned-SDK loopback test. No live workflow
+qualification or scan submission is implied. Historical TS stub behavior remains
+asserted on the reference side of D338, not claimed as current Rust behavior.
 
 ### 18.12 `runtime dashboard applications|application|application-violations|top-applications|violations-trend|apps-list`
 
@@ -11776,84 +12047,292 @@ exclusive, never overwrites); stdout empty; status `  Scan content exported to t
 (TS text, the path not printed). Interrupt contexts: `no data was written`, or `<path> was written` once published.
 Scan content never reaches stderr, an error, the debug log or a summary.
 
-### 18.14 `runtime report` (the runtime environment report)
+### 18.14 `runtime report` (Signal Brief replacement, D340)
 
-The TypeScript collector and renderer (`src/reports/runtime.ts`, `render.ts`; TR§5) are ported unchanged except for
-the format (D155), the debug refusal (D156), G7, G27 (D214), the destination parent check (D214) and the sequential
-source order (choice 17). The report is already safe in TypeScript (aggregates only, no-clobber, 0600, CSP). From 8.0 the profile
-table has TS 7.3.0's `Protection configurations` column (§13.17).
+The production default now collects normalized evidence through the same bounded SDK
+service as §18.11 and renders §18.14.1's standalone Signal Brief. The frozen
+TypeScript seven-source aggregate schema-2 renderer remains reference behavior;
+`report::runtime` and `runtime_html` are compiled only for historical unit coverage.
+The former seven-source request order, aggregate-only identity exclusion, chart
+findings and byte-identical HTML are superseded by this section (D340).
 
-**Argument checks** (exit 2, in TS order, before the tenant and any request):
-1. `--debug` (debug policy `refused`): `Disable --debug for environment reports to avoid persisting sensitive traffic content`
-   (D156 extended).
-2. `--output` given (`pretty`, `table`, `json`; the other names already failed §2.4; the leaf help's `--output` line reads
-   `Refused by this command: the report is written as HTML (omit --output)`, format policy `HtmlReport`):
-   `The environment report is written as HTML; omit --output` (D155 extended: TS writes Markdown for
-   `--output markdown` and refuses other values with `Report output must be html or markdown`).
-3. `--max-pages`: `^[1-9][0-9]*$`, at most 100, else `--max-pages must be an integer from 1 to 100` (TS).
-4. `--title`: non-blank under JavaScript trim and at most 240 UTF-16 units, else `--title must contain 1–240 characters` (TS).
-5. `--output-file` blank under JavaScript trim: `--output-file cannot be empty` (TS).
+**Usage before tenant access.** Retain HTML-only output (D155), debug refusal
+(D156), nonblank title ≤240 UTF-16 units, max-pages 1–100 (default 40), and the
+existing output-file checks and exact error strings. Default title is `AIRS Signal
+Brief`. New live controls: interval 1–87600 (default 24), unit hour/hours/day/days
+(default hours), repeatable app-id (≤1000 nonempty strings ≤4096 bytes without
+controls), max-events 1–10000 (default 10000), max-reports 0–10 (default 5),
+timeout 1–3600 seconds (default 120), concurrency 1–16 (default 4), max-requests
+1–10000 (default 1000). Scalar report flags reject repetition; app-id repeats.
+Offline `--from-evidence` conflicts with explicitly supplied live controls. A blank
+bundle-dir is usage error `--bundle-dir cannot be empty`. Bundle-dir conflicts with
+output-file. Normal format, title and destination validation applies offline too.
 
-**Destination.** `--output-file -` is stdout. Otherwise `--output-file`, else
-`airs-runtime-report-<UTC ISO time with ':' → '-'>-<first 8 hex of a v4 UUID>.html` in the working directory (TS
-name, the `.` and `Z` kept), made absolute. Before the tenant: refuse a path whose last component is not a file name
-(`sub/`, `a/.`; D226), `lstat` the path (anything there, a dangling symlink included) and check that its parent is an
-existing directory (D214; TS sends every request first, TR§5.2); each failure is the failure line below (exit 1, no
-request).
+**Management evidence and diagnostic refinement (D344).** Positive typed session-action
+detector severity counts produce detector hints with unknown direction and original
+session-details provenance. They do not supply a scanner category, scan action,
+report identity or snippet. Extension-supplied action/direction is ignored. Positive
+overview status/breakdowns prioritize session reads and become session-level metrics;
+they never join every scan in that session. Positive sessions are stably prioritized
+inside each app queue and known-positive buckets begin before other buckets, while
+page scheduling remains round-robin across app buckets. Caps remain aggregate.
+New overview metadata and action-hint retention each have a 4 MiB cap; metrics also
+share the 10000-row cap. Truncation is explicit and incomplete.
 
-**Collection** (TR§5.3): the status line `  Collecting daily runtime activity and current configuration (read-only)...`
-once the client is built (without an upfront token request, as §15.17: a token failure is a failure of each source),
-then `end` = now, `start` = end − 24 h, and the seven sources **in TS order, one after the other**, each under its
-budget (§18.3):
+Per-app result/report diagnostics distinguish requested IDs, returned rows, usable
+event observations, pending rows, rejected/excluded rows, missing IDs, empty
+successful responses, failed SDK reads and actual sends. These are distinct units.
+Transport counters belong to each client and fixed SDK operation, inside shared
+budget admission, so concurrent apps cannot inflate each other's count. SDK
+validation/budget refusal is not a transport send. A missing binding has zero sends.
+No cause such as wrong credential or key scope is inferred from absent/empty data.
 
-| # | Name / method label | Window label | Read | Page rule (TS) | Identity |
-|---|---|---|---|---|---|
-| 1 | `Daily application activity` / `dashboard.applicationsOverview` | `Rolling 1 day` | `applicationsoverview?time_interval=1&time_unit=day&limit=100&offset=<o>` | total-based when `total_items` is a valid count (constant, `offset + size ≤ total`, no empty page before it), else a full page probes on | `[id, name]` |
-| 2 | `Security profiles` / `profiles.list (latest=true)` | `Current configuration` | `GET <mgmt>/v1/mgmt/profiles/tsg/<tsg>?offset=<o>&limit=100&latest=true` | `inventoryNext`: `next_offset` 0 ends; absent with a full page probes `offset + size` | `[profile_name, revision]` |
-| 3 | `Registered applications` / `customerApps.list` | `Current configuration` | `GET <mgmt>/v1/mgmt/customerapp/tsg/<tsg>?offset=<o>&limit=100` | as 2 | `customer_appId` |
-| 4 | `Daily session inventory` / `dashboard.sessionsOverview` | `Rolling 1 day` | `sessionsoverview?time_interval=1&time_unit=day&limit=25&offset=<o>` | `total_items` valid, `skip == offset`, `limit == 25`, constant total, `offset + size ≤ total`, `size ≤ 25`, no empty page before the total | `[application_id, application_name, session_id]` |
-| 5 | `Daily session chart` / `dashboard.sessionsChart` | `Rolling 1 day` | `sessionschart?time_interval=1&time_unit=day` | one page (`buckets`) | `bucket_number` |
-| 6 | `Top application violations` / `dashboard.topApplicationsViolations` | `Rolling 1 day; server-ranked subset` | `topapplicationsviolations?time_interval=1&time_unit=day` | one page (`applications`) | `[id, name]` |
-| 7 | `Daily violation trend` / `dashboard.applicationsViolationsTrend` | `Rolling 1 day` | `applicationsviolationstrend?time_interval=1&time_unit=day` | one page (`violations`) | `bucket_number` |
+The executive summary displays per-bucket reported total and violated sessions
+separately from scans, metadata and findings. It does not sum overlapping populations
+or turn unresolved scanner outcomes into zero session violations. Exact population
+and reported window define each summary row. Scaled, duplicate or unusable metric
+values display Unknown; violated counts greater than total are withheld with an
+explicit gap. Display is capped at 20 buckets with a note. Metric names, units,
+windows and scales must retain exact semantics through privacy projection, and
+populations must retain injectivity; normalization cannot create summary joins.
+Raw detector hints remain in evidence. Counting and report selection subsume an
+unknown-direction hint only when the same event supplies a known positive direction
+for the same canonical detector. Prompt and response remain separate observations.
 
-The collector is TS `collect` verbatim (TR§5.3: the statuses `complete`/`partial`/`unavailable`, the notes
-`The API returned no record array. An empty object or absent collection does not establish zero activity.`,
-`Overlapping or repeated records detected; duplicates excluded.`, `Pagination did not advance; collection stopped safely.`,
-`Reached the <n>-page budget; this is not a complete inventory.`, TS `safeFailure` for errors, and the source 1 and 4
-page-rule notes). With `without_response_defaults()` an absent `ai_profiles` is no record array, so source 2 is
-`unavailable` with that note, and the attention finding `No security profiles returned` is not raised (D214; TS reads
-the SDK default `[]` as a complete empty inventory). An absent `customer_apps` is unavailable in both CLIs.
+Application-bound scanner routing follows §3.15 (D343). Management observations
+survive missing bindings, with explicit incomplete detail and a binding remedy;
+flat scanner credentials are never guessed for discovered applications. Result
+storage limits and report attempt budgets are shared across all scanner clients.
 
-**Analysis and model** (TR§5.4, verbatim): `label` (`\p{Cc}` and `\p{Cf}` → space, trim, `Unknown`, the first **240**
-UTF-16 units; the §15.17 surrogate rule), `count`, `total`; the eight finding rules with their texts, the stable sort
-`attention` < `review` < `info`, `health`; the model (schema 2, product `Prisma AIRS AI Runtime Security`, the window
-description, `activity`, `profiles` (latest revision per name, timeout actions, storage masking, `modified`),
-`registeredApps` (`app_name`, `environment`, `cloud_provider`, `model_name` labels and the **count** of
-`api_keys_dp_info`; no key names, auth codes or ids), `sessions` (the half-open `[start, end)` window by
-`last_session_activity`, parsed with `report::parse_iso`, the §15.17 approximation of `Date.parse`, plus the date-only
-`YYYY-MM-DD` form as UTC midnight, which `Date.parse` also accepts; the profile `modified` the same way; choice 52),
-`dailyTelemetry`,
-the eight fixed `limitations`). No ids, tenant ids, session ids, prompts, users, key names or auth codes. Where TS would
-throw inside the analysis (a non-string label, a missing `violation_breakdown` or `policy_violations`, a non-array
-`api_keys_dp_info` or `ai-security-profiles`), the port reads the value as absent (`Unknown`, `null`, no rows), so one odd
-record cannot turn the whole report into the failure line (choice 53).
+**Collection.** Status `  Collecting runtime Signal Brief evidence (read-only)...`
+precedes the shared collector, never in offline mode. Applications, current profiles,
+registered-app associations, session discovery/details and candidate scan results
+are required sources. Selected detailed reports are supplemental examples: default 5
+unique IDs and hard maximum 10, batches up to 5, at most 2 actual report transport sends
+across the invocation, serial without retries; HTTP 429 stops report enrichment and
+never waits for Retry-After. The transport separately enforces report attempt/ID
+bounds, including any SDK replay. Direct reports obey these same endpoint bounds.
+Missing example reports, rate limiting and a valid sampling cap never independently
+fail strict metadata completeness. Explicit max-reports 0 makes zero report calls.
+Selection greedily favors uncovered scan action, application, detector, direction
+and observed profile coverage, then newest timestamp and lexical ID; raw strata,
+selected IDs, candidate count and uncovered groups are retained. Source pages for
+scan-reports count actual report attempts, including failures. Missing report IDs
+in otherwise usable scan results only prevent optional examples. The pipeline retains exact
+application-name buckets and event identities, quarantines unknown/out-of-window
+timestamps, and never fetches stored content or submits scans. Budgets, supported
+SDK windows and normalized safe views are §18.11; source failures stay visible.
+Profiles are explicitly tenant-wide current inventory. Supplemental application
+telemetry uses supported 7/30/60-day detail windows only; unsupported daily token
+telemetry is a visible gap. Metric units, scales, populations and unverified server
+windows are rendered without extrapolation.
 
-**Rendering** (TR§5.5): `renderRuntimeReportHtml` byte for byte (`src/report/runtime_html.rs`): its own CSS and JS
-constants and the CSP `default-src 'none'; script-src 'sha256-5LxzE6qTHVB6GkFp5aSlfgYy4D1HefDNuhJF25u8bAE='; style-src 'sha256-VLFdq2Qs156m0R7mhD0UAHR12n5y2Ki6ghMmFhbLmow='; base-uri 'none'; form-action 'none'; connect-src 'none'; img-src 'none'`
-(computed over the same constants, `'` written `&#39;`), `html()` escaping `& < > " '` as `&amp; &lt; &gt; &quot; &#39;`
-(`null` → `Unknown`; the red team report uses `&#<code>;`, so the escaper is per report), the `HEALTH` labels, `number()`
-as `toLocaleString('en-US', {maximumFractionDigits: 2})` (thousands separators, two decimals rounded half away from
-zero on the shortest round-trip decimal form, as ICU does: `1.005` → `1.01`, `100/3` → `33.33`), the eight tables and the four metrics, the sections, nav, toolbar and footer
-`Generated by Prisma AIRS CLI · Report schema 2 · Self-contained HTML; no network access required. All evidence remains readable with JavaScript disabled.`,
-one trailing `\n`. The Markdown renderer is not ported (D155).
+**Destinations.** Retain `--output-file -`, new-file 0600 output and default
+`airs-runtime-report-<UTC ISO timestamp with ':' replaced by '-'>-<8 UUID hex>.html`.
+Destination existence, valid last component and existing parent are checked before
+tenant access (D214, D226). Path labels pass the invocation's shared privacy filter.
+`--bundle-dir <new directory>` instead publishes exactly report.html, evidence.json
+and review.md. Preflight requires an absent target and existing directory parent.
+Safe rustix directory-relative calls write a random sibling staging directory at
+0700 and exclusive files at 0600 (an unusually restrictive umask may refuse
+the directory open; an early identity guard removes owned empty staging), fsync each file and populated directory, rename
+with NOREPLACE, then fsync parent. Unsupported no-replace operations fail closed;
+there is no overwrite fallback. Cleanup deletes only owned staging entries, never
+a raced final directory. Parent fsync failure after publication leaves saved data
+with `Bundle at <safe path> was saved, but directory durability could not be confirmed`.
+The status is `  Report bundle → <safe path> (directory 0700; files 0600)`.
+Bundles preserve saved evidence and its original digest only if it needs no extra
+privacy projection; unsafe republishing fails before publication. HTML-only rendering
+can apply additional projection without modifying its input (§18.14.1).
 
-**Publishing and exit** (TR§5.6, §15.17): stdout delivery writes the document as the stdout data; a file goes through
-`files::publish_new`, then the status `  Report → <abs path, \p{Cc}\p{Cf} → _> (mode 0600)`; then, when any source is not
-complete, `  <n> source(s) incomplete; review the evidence section.` Exit 1 when the health is `unknown` (the file is
-still written) or `--strict` and a source is incomplete; otherwise 0. Any error after the checks (an existing path, a
-missing parent, a tenant, config or credential error, a write failure) prints only TS's line
-`  ✗ Report generation failed. Verify Management API configuration and a writable, new output path. Existing files are never overwritten.`
-(stderr, red, never suppressed) and exits 1. Interrupt contexts: `no report was written`, or `the report was saved in <path>`.
+**Exits.** Write diagnostic artifacts despite unavailable sources. Normal exit 0
+unless health is unknown; strict exits 1 when any required source is incomplete.
+Unknown health means no primary source established usable observations or an explicit
+empty population. Only required primary observations qualify; zero-row inventory
+requires Complete status for sessions/profiles/registered-apps/applications. Partial
+empty sources, optional telemetry/reports, dependent empty detail/result sources
+and storage/archive-range metadata do not establish health.
+Supplemental gaps alone never fail strict. Status retains
+`  <n> source(s) incomplete; review the evidence section.` for single files, and
+`  <n> required source(s) incomplete; review the evidence section.` for bundles.
+Collection interruptions preserve `Interrupted; no report was written`. After bundle
+publication interruption context names the saved bundle. Other operational failures
+retain the fixed report-generation failure line; no raw error/file/server text.
+No other report family changes its output or publication contract.
+
+### 18.14.1 Offline Signal Brief evidence (D337)
+
+`runtime report --from-evidence <path>` renders a version-1 Signal Brief evidence
+snapshot without resolving a tenant, creating clients or making network requests.
+An inherited or explicit tenant selection is ignored. `--max-pages` is a live
+collection option and conflicts with this mode (usage exit 2 before tenant access).
+The existing debug/format/title/destination checks and report publication rules
+apply. Inputs are regular bounded UTF-8 files (32 MiB), duplicate JSON object keys
+and unknown schema fields are refused. Schema and redaction versions must be 1; analysis rules may be 1 or 2; SDK provenance must be 0.2.4. Identity/source references and documented resource
+bounds are validated; absent sub-request identity remains different from zero.
+
+Evidence digest: SHA-256 of compact UTF-8 JSON with recursively sorted object keys,
+array order preserved, serde_json integer serialization, excluding only the top-level
+digest field. It proves integrity, not authenticity. Verify it before projection.
+The snapshot also retains result detector hints and typed source-backed metrics
+(value, scale, unit, population, actual measurement-window label and source status).
+Finite fractional server telemetry uses serde_json's finite-number serialization;
+counts and timestamps remain integers. Metrics are never extrapolated from detail
+samples or silently aligned across different windows.
+The snapshot stores immutable collection/window/coverage provenance; offline view
+projection does not alter the source file or its digest. Additional withholding is
+labeled with original evidence and applied view redaction versions. Invalid/unsupported inputs
+fail operationally with the report failure line and no content echo.
+
+DLP snippet values are fully withheld; absent/empty/unavailable remain distinct.
+Register withheld DLP text in an excerpt-local span registry before projecting
+snippet excerpts, suppressing repeated sensitive spans across families and reports.
+Customer payload matches are distinct from authentication secrets: a DLP match such
+as "1" must not corrupt schema tags, counting units or generated correlation metadata. Discover/register credentials over a disposable full-document clone,
+then project the original untruncated strings after discovery completes; later
+credential fields must also mask earlier fields. The user title uses the same text
+projection. All strings use shared credential withholding plus conservative
+email/IP withholding and control removal. Other snippets are capped at 512 Unicode
+characters; metadata strings at 4096. No raw SDK extension maps are persisted.
+Before analysis, compare original and projected correlation/grouping strings,
+including unchanged originals. The transient projected-to-original map must be
+injective: if distinct originals collapse to the same withheld/truncated value,
+refuse the evidence operationally before publication. This preserves legitimate
+single-value masking while preventing false profile links, scan deduplication or
+application-bucket merging. No raw-value hash or guessed identity is persisted.
+Evidence detector labels and detector hints must remain unchanged under privacy
+projection; control stripping, truncation or withholding may not turn unknown names
+into recognized aliases. Such changes refuse report publication. Known public
+detector/hint spellings are closed protocol constants for payload matching, without
+relaxing authentication-secret withholding. Direct report views mark changed detector
+service/direction labels unknown rather than inventing recognized detectors.
+Evidence action/verdict/confidence, direction and source identifiers must retain
+exact semantics; changed semantic labels are refused. Direct normalized lookup
+views convert changed action/verdict/confidence text to explicit unknown, never
+normalize malformed text into allow/malicious/explicit. All formatted header dates
+and reviewer times use shared privacy filtering; numeric evidence stays immutable.
+Credential discovery runs before and after control removal so split authorization
+schemes cannot become printable credentials. DLP spans register raw and control-free
+forms. Fixed protocol direction/confidence values and generated short numeric/date
+metadata are distinct from customer payload text; long matching timestamp spans
+remain withheld.
+These rules cannot classify arbitrary confidential prose; artifacts remain private.
+Forged evidence receives the same projection. The initial offline evidence view
+exposes source coverage and expandable detector observations with HTML escaping and
+CSP default-src none, no callbacks/assets/scripts. It labels observations unreviewed.
+The findings and profile comparisons use the rules below.
+
+Sources retain required/optional status. Required incomplete sources cause exit 1
+only with --strict; all sources unavailable retains unknown-health exit 1 after
+writing the diagnostic view. Other partial evidence writes with normal exit 0.
+The default live report uses the same evidence/rendering pipeline (§18.14).
+
+
+#### Signal Brief offline analysis and rendering (Phase 2)
+
+New collections use rules v2: findings originate in explicit detector-positive
+result metadata, deduplicated by event/detector/direction; a malicious scan without
+flags remains an unknown-detector finding with zero detector-positive counts.
+Detailed reports attach optional examples and never create metadata counts or
+finding groups. Sampled detector-row counts remain a separate unit. Raw flags and
+report detector labels remain in evidence; only comparison/grouping uses explicit
+aliases: pi/injection/prompt_injection/prompt-injection, tc/toxic_content/toxic-content,
+uf/url_cats/url_filtering/url-filtering, dbs/db_security/database-security,
+mc/malicious_code/malicious-code, source_code/source-code and
+topic_guardrails/topic_violation/topic-violation (the additional SDK report aliases
+are implemented in8.2, §22.6). Unknown names are not
+case-folded or guessed; granular database controls are not equated to all database
+security. Conflicting aliased controls cannot establish monitoring. Scan action is
+never copied into a detector action. Findings and review context include metadata
+identities even without any selected examples. Rules v1 saved bundles retain their
+report-row grouping and finding IDs; old collection limits do not trigger new reads.
+
+
+The offline evidence view is now the standalone AIRS Signal Brief. Rules v1 group
+malicious detector rows by application ID/exact name, observed profile, detector,
+direction and scan-level enforcement. Distinct event identities, distinct scan IDs,
+and detector-row counts are separate. Only timestamps in the half-open saved window
+are eligible; missing/out-of-window counts remain explicit. Benign or unfamiliar
+verdict rows are context, never counted as malicious. Conflicting scan/detector
+verdict/action observations suppress specific enforcement recommendations.
+
+Review order: DLP, prompt injection, database security, then other detectors; within
+category, collected distinct-event count descending, then lexical group keys.
+This is a documented review order, not a severity or certainty score. Allowance
+alone never increases priority. Finding IDs hash the normalized group keys and
+remain collection-bound for review. An exact observed profile/detector/direction
+match with a configured allow supports current monitoring context only. No test,
+false-positive, confirmed-attack, owner or historical-drift label is inferred.
+
+The brief contains executive summary, grouped findings and prioritized reviews,
+a profile-by-detection-service enablement matrix, unreviewed/noise context and collection gaps with
+source provenance. It displays target window, collection and rendering times,
+scope, budgets, detail sampling and methodology. Native details/summary controls
+work without JavaScript; all assets are inline, CSP default-src none with SHA-256
+style hash, no network callbacks or required external assets. Print CSS expands
+evidence content. Every dynamic string is escaped after the shared privacy projection.
+Display caps are 250 finding groups, 10 detector rows per group, 2 excerpts per
+snippet family and 250 detector-volume rows. Profile posture shows up to 250 profiles
+as rows (name/revision sorted) and 32 canonical detection services as columns.
+A check mark means at least one explicitly active control in a direction or legacy
+section, independent of allow/block action; it does not imply every direction.
+Blank cells retain accessible inactive/unknown labels: absent controls or unfamiliar
+layout never imply disabled. Print uses a fixed-width matrix within the page and expands the raw details.
+Known aliases share a service column; raw direction,
+action, confidence and location remain in expandable configuration details (250
+rows). Matrix omissions and detail caps are disclosed; full configuration remains
+in saved evidence. Sticky profile row headers keep names visible during horizontal
+scrolling, and table headers/cell labels support assistive technology. Rendered HTML over 32 MiB is refused. Counts retain eligible
+collected evidence. Detector volumes retain detector/direction, detector-row counts,
+distinct events and scans with explicitly different units; no extrapolated rates.
+Repeated (report ID, detector row) observations across event identity associations
+are unresolved attribution, not additional violations: retain all provenance, expose
+the gap and exclude those rows from findings/malicious-row counts. Conflicting
+current protection actions for one detector/direction cannot establish monitoring.
+The renderer discovers title credentials before a final shared privacy projection
+over a clone of the evidence, so title-discovered secrets also mask evidence fields.
+The live report uses this same renderer (§18.14).
+
+### 18.14.2 Markdown review packets and offline review import (D341)
+
+`--review-file <path>` requires `--from-evidence` (usage exit 2 before tenant reads).
+The renderer remains offline even with an inherited/explicit tenant. No agent, tool,
+code, URL, template, YAML tag or frontmatter prompt is executed. Review input is a
+regular UTF-8 file ≤4 MiB. Exact `---` delimiters contain a strict JSON object
+(JSON-compatible YAML), packet_version 1, collection_id, evidence_digest, fixed
+prompt, reviewer (null or typed metadata), tenant, window, scope and sampling. All
+binding/context fields must equal original verified evidence. Duplicate JSON keys,
+unknown fields/versions or mismatches fail with the fixed report failure line.
+
+Generated packets provide a masked evidence index (≤250 findings, ≤3 detector rows
+per finding, ≤1 excerpt per family and ≤2 MiB compact index), inside a backtick fence
+longer than any data backtick run. The index is context only; edits there are not
+imported. Exactly one pair of standalone markers `<!-- airs-assessments:start -->`
+and `<!-- airs-assessments:end -->` encloses exactly one JSON array fence. Other
+Markdown is ignored as data. The parser accepts only that fence and metadata, never
+interprets Markdown or YAML. Delimiters must match; ambiguous/duplicated markers fail.
+
+Assessments (≤1000) contain only finding_id, classification, priority and rationale.
+Finding IDs must exist in the bound collection and be unique. Classification is
+needs-investigation, possible-test, possible-false-positive, potential-threat or
+insufficient-evidence; proposed priority is high, medium or low. Rationale must be
+nonblank and ≤4096 Unicode characters. Nonempty assessments require reviewer kind
+agent/human, nonblank name ≤120 characters, optional model ≤120 characters (required
+for agents), and a zoned ISO reviewed_at timestamp (or exactly `[sensitive value withheld]`
+after privacy projection). Reviewer name/model reject control
+characters. These claims are self-attributed, not authenticated. No assessment can
+rewrite an API verdict, allow/block action, source completeness, metric or count.
+Proposed priorities are displayed without reordering deterministic CLI findings.
+
+Credentials are discovered over the entire packet before text projection; reviewer
+name, model, time and rationale use the shared privacy filter and HTML escaping. If mandatory projection
+changes a finding identity so that attribution cannot be retained, refuse the review
+rather than display a stale association. Generated HTML distinguishes Agent-assessed,
+Human-reviewed and Unreviewed findings and their counts, with name/model/time and
+rationale attributed beside the API evidence. Imported judgments never establish API
+false positives or confirmed attacks. Annotation metadata stays outside immutable
+evidence. A new offline bundle preserves annotations in review.md and the original
+safe evidence/digest unchanged; input files are never edited.
 
 ### 18.15 `runtime profiles backup [profile]`
 
@@ -12170,7 +12649,7 @@ alternative in each item).
 16. `scan-content --output-file` writes the JSON text in every format and validates, then ignores `--output`; its path
     and parent are checked before the tenant. Rejected: a table in a file, and a usage error for `--output table` (the
     file format is fixed, so the flag cannot mislead).
-17. The report reads its seven sources and `consumption` its two per-app reads sequentially, in TS order. Rejected: TS's
+17. Historical runtime report ordering is superseded by §18.14/D340. `consumption` keeps its two per-app reads sequentially, in TS order. Rejected: TS's
     concurrent `Promise.all` (a nondeterministic request order in tests for no observable gain; each read evaluates its
     own server window either way).
 18. The tenant `defaultOutput` is honoured by the reads and transfer commands TS resolves it for, ignored by the writes and
@@ -12208,7 +12687,7 @@ alternative in each item).
 31. The dashboard JSON escapes C1 controls as `\u00XX` (lossless) in pretty and json. Rejected: TS's raw C1 (a terminal
     can read U+009B as CSI) and `terminal_safe` replacement in JSON (it changes the data). `Cf` characters stay as they
     are in JSON, as in every other command (only the report's labels strip them, TS).
-32. The `scan-logs query` stub reads the tenant selection as TS does, sends nothing and names `airs` in its hint
+32. Historical stub choice superseded by §18.11/D338. The frozen TypeScript `scan-logs query` stub reads the tenant selection, sends nothing and names `airs` in its hint
     (D73). Rejected: implementing the broken legacy query (TS removed it on purpose) and keeping `airs-cli` (the hint
     would name a program that is not running).
 33. `consumption ''` and the other empty names and ids that are sent are usage errors. Rejected: TS's empty query values
@@ -12894,7 +13373,7 @@ applies to **every gateway document printed** (every read, every write answer, e
    The secret-reference operations (`auth_config`; `data.*.auth_config`) have no command and reach the CLI only
    through rule 5. What a path rule withholds is registered by rule 3g (a final `*` member by its own name).
 3. **The name rule**, at any depth of every document (inside a revealed audit field as rule 5 says). One module
-   decides it for the CLI and the live tier alike, `src/gateway/withhold_rules/` (choice 172; the harness compiles
+   decides it for the CLI and the live tier alike, `crates/airs-runtime-core/src/withhold_rules/` (choice 172; the harness compiles
    the same files by `#[path]`, choice 185), in
    three steps, each data rather than code paths:
    1. the member name is **normalised**: lowercased; every character that is not a letter or a digit read as `_`,
@@ -13067,7 +13546,7 @@ applies to **every gateway document printed** (every read, every write answer, e
      `names::registrable` of the rules module, applied by every rules function that hands the CLI a registration, so
      what a rule says it registers is what is registered.
 
-   The `SecretSet` (`src/secrets.rs`) holds its forms as one ordered set (a form joins once, in logarithmic time, and
+   The `SecretSet` (`crates/airs-runtime-core/src/secrets.rs`) holds its forms as one ordered set (a form joins once, in logarithmic time, and
    is stored once) and checks a string for a form in one pass over its bytes (`carried_by` and
    `appears_in_ignoring_case`: a multi-pattern matcher, rebuilt on the first read after a form joins), so the final
    pass over a printed document is linear in its bytes, whatever the number of forms; only the fragment half of
@@ -14070,7 +14549,7 @@ the private alternatives.
 ### 19.19 Acceptance tests
 
 Chunk 1 ships `tests/gateway_reads.rs`, `tests/parity_gateway_reads.rs` and the unit tests of `src/gateway/`
-(`mod`, `window`, `views`, `withhold`, `resolve`), `src/commands/gateway*.rs` and `src/clients.rs`. Chunk 2 ships
+(`mod`, `window`, `views`, `withhold`, `resolve`), `src/commands/gateway*.rs` and `crates/airs-runtime-core/src/clients.rs`. Chunk 2 ships
 `tests/gateway_inventory.rs`, `tests/parity_gateway_inventory.rs`, the unit tests of `src/gateway/inventory.rs` and
 `src/commands/gateway_inventory.rs` (and the new ones of `mod`, `views`, `withhold`) and the harness test
 `gateway_inventory_routes_serve_their_fixture_ids_only`. Chunk 3 ships `tests/gateway_writes.rs`,
@@ -14512,7 +14991,7 @@ so a choice is read with its marks, never with the amending choices alone.
     tests that signal a run after its credential was saved (review). Rejected: a fixed sleep (a loaded host could
     release the stream before the signal is seen, and the run would end with exit 0), a signal record in the `--debug`
     log (a second record kind in the §2.9 contract for a test need) and a release-build variable.
-130. The live tier's credential-name rule is a copy of `src/gateway/withhold.rs`'s two lists, pinned equal and in
+130. The live tier's credential-name rule is a copy of `crates/airs-runtime-core/src/withhold.rs`'s two lists, pinned equal and in
     order by `withhold::tests::the_live_tier_checks_the_same_credential_names` (review). Rejected: sharing the constant
     (the harness cannot depend on the CLI crate, which dev-depends on it; a cycle builds two copies of the crate) and
     the shorter list the live check had (it missed `access_key`, `secret_key`, `subscription_key`, `signing_key` and
@@ -14862,7 +15341,7 @@ so a choice is read with its marks, never with the amending choices alone.
     `airs-cli-withhold`, not in a CLI file included by path, and the checker's traversal moved there too ("Rejected: a
     shared workspace crate" and "moving the traversal too" no longer hold: the crate is published with the CLI, and
     the traversal is generic over a small read-only trait); `Strength` is `names::Class`, with the count class of
-    choice 171. Choice 185 then folds that crate back into the CLI as `src/gateway/withhold_rules/`, which the
+    choice 171. Choice 185 then folds that crate back into the CLI as `crates/airs-runtime-core/src/withhold_rules/`, which the
     harness again includes by path, now the whole module with `super::` paths inside it.
 159. A `{"key": <name>, "value": …}` pair is read as one header in every document, not only in a header map and a
     revealed audit body: its value is withheld as a header value when the name is a credential header (a credential
@@ -15056,9 +15535,9 @@ so a choice is read with its marks, never with the amending choices alone.
     only on published crates, MILESTONES "Dependencies and releases"). Tests:
     `withhold::tests::name_rule::the_design_table_is_the_name_rules`, `withhold::tests::corpus::the_withholding_crate_has_the_cli_version` (removed by choice 185),
     `withhold::tests::corpus::the_checker_reads_both_value_types_alike`, `withhold::tests::name_rule::classes_order_the_name_rule`,
-    `src/gateway/withhold_rules/names.rs::tests` (normalisation, classification, actions, headers, pairs,
+    `crates/airs-runtime-core/src/withhold_rules/names.rs::tests` (normalisation, classification, actions, headers, pairs,
     registration).
-    *Superseded* in part by choice 185: the rules are the CLI's own module `src/gateway/withhold_rules/`, not a
+    *Superseded* in part by choice 185: the rules are the CLI's own module `crates/airs-runtime-core/src/withhold_rules/`, not a
     workspace crate published beside it, and the harness compiles its files by `#[path]` ("keeping the include by
     path" was rejected for a `use crate::` or a move breaking it; the files now name their siblings as `super::`,
     and `withhold::tests::corpus::the_rules_compile_outside_the_cli` fails on a `crate::` path or a file the module
@@ -15081,7 +15560,7 @@ so a choice is read with its marks, never with the amending choices alone.
     names outside the rows (the test would claim shapes the rule does not, and fail for the wrong reason). Tests:
     `withhold::tests::corpus::d238_a_planted_credential_never_prints_in_any_format`,
     `crates/airs-test-harness/src/live/gateway.rs::tests::every_planted_credential_is_refused`,
-    `src/gateway/withhold_rules/corpus.rs::tests::every_generated_name_is_a_credential_name_of_its_row`.
+    `crates/airs-runtime-core/src/withhold_rules/corpus.rs::tests::every_generated_name_is_a_credential_name_of_its_row`.
 174. Two updates that can weaken a resource's authentication confirm, worded as the organisation auth-settings
     prompt (review): a `deployments update` whose body has `auth_settings` (`Replace the authentication settings of
     deployment <id>? Clients of the deployment use them at once.`; a rotation that also replaces them says so in the
@@ -15127,8 +15606,8 @@ so a choice is read with its marks, never with the amending choices alone.
     `withhold::tests::name_rule::d238_more_credential_name_shapes_are_withheld`,
     `withhold::tests::name_rule::d238_every_name_typescript_masks_is_withheld`,
     `withhold::tests::corpus::d238_a_planted_credential_never_prints_in_any_format`,
-    `src/gateway/withhold_rules/corpus.rs::tests::every_real_world_credential_name_is_withheld_by_name`,
-    `src/gateway/withhold_rules/names.rs::tests::the_table_classifies_every_kind_of_name`, the pinned documents of
+    `crates/airs-runtime-core/src/withhold_rules/corpus.rs::tests::every_real_world_credential_name_is_withheld_by_name`,
+    `crates/airs-runtime-core/src/withhold_rules/names.rs::tests::the_table_classifies_every_kind_of_name`, the pinned documents of
     choice 166.
 177. Credentials shown by their value's shape or by a near-miss container are withheld (review: `auth_header:
     "Bearer sk-proj-…"`, `authentication: "Basic …"`, a `curl -H 'Authorization: Bearer …'` line, `extra_headers:
@@ -15150,9 +15629,9 @@ so a choice is read with its marks, never with the amending choices alone.
     `tests/gateway_inventory.rs::withholding::d238_pass_keys_scheme_and_header_shapes_are_withheld`,
     `tests/gateway_inventory.rs::withholding::d238_credentials_named_inside_schemas_are_withheld`,
     `crates/airs-test-harness/src/live/gateway.rs::tests::schemas_are_read_as_the_cli_reads_them`,
-    `src/gateway/withhold_rules/values.rs::tests::scheme_credentials_are_withheld_in_place`,
-    `src/gateway/withhold_rules/values.rs::tests::header_names_are_word_shaped`,
-    `src/gateway/withhold_rules/names.rs::tests::headers_and_pairs_take_the_strongest_name`, the pinned documents of
+    `crates/airs-runtime-core/src/withhold_rules/values.rs::tests::scheme_credentials_are_withheld_in_place`,
+    `crates/airs-runtime-core/src/withhold_rules/values.rs::tests::header_names_are_word_shaped`,
+    `crates/airs-runtime-core/src/withhold_rules/names.rs::tests::headers_and_pairs_take_the_strongest_name`, the pinned documents of
     choice 166 and the generated scheme texts and `{header, value}` and `_headers` containers of choice 173.
 178. A `deployments update` whose body archives the deployment (`status: "archived"`, from `--status archived`,
     `--set-string status=archived` or a `--file` member) confirms as `deployments archive` does: `Archive
@@ -15221,8 +15700,8 @@ so a choice is read with its marks, never with the amending choices alone.
     output. Tests: `withhold::tests::texts::d238_a_model_id_after_a_prose_scheme_word_stays_printed_elsewhere`,
     `withhold::tests::corpus::d238_real_world_texts_print_as_pinned`,
     `crates/airs-test-harness/src/live/gateway.rs::tests::the_real_world_texts_are_checked_as_the_cli_prints_them`,
-    `src/gateway/withhold_rules/values.rs::tests::scheme_registration_follows_the_header_form`,
-    `src/gateway/withhold_rules/values.rs::tests::key_value_credentials_are_withheld_in_place`, the pinned document
+    `crates/airs-runtime-core/src/withhold_rules/values.rs::tests::scheme_registration_follows_the_header_form`,
+    `crates/airs-runtime-core/src/withhold_rules/values.rs::tests::key_value_credentials_are_withheld_in_place`, the pinned document
     of choice 181 and the new `REAL_WORLD_NAMES`.
 182. *Superseded by choice 185.*
     The withholding crate's test corpus is behind a non-default `corpus` feature (review: a crate published to
@@ -15289,7 +15768,7 @@ so a choice is read with its marks, never with the amending choices alone.
        what the one before printed); the URL rule returns the credentials of the `key=value` segments inside each part
        it withholds, so the CLI runs each rule once per string instead of the key=value rule twice. Rejected: a
        pre-pass on the original text (the double scan the review named).
-    Tests: `src/gateway/withhold_rules/corpus.rs::tests::every_real_world_text_registers_as_pinned` (the crate's
+    Tests: `crates/airs-runtime-core/src/withhold_rules/corpus.rs::tests::every_real_world_text_registers_as_pinned` (the crate's
     `text_withheld` against every `REAL_WORLD_TEXTS` entry: printed form, idempotence, each registration
     registrable, each `registered` carried and no `kept` word carried), the new entries (two-word lowercase labels,
     `auth=none`, `Password=true`, `Pwd=********`, ODBC `Trusted_Connection=yes;Uid=;Pwd=;`, a SAS connection
@@ -15299,10 +15778,10 @@ so a choice is read with its marks, never with the amending choices alone.
     `withhold::tests::texts::d238_a_credential_key_word_stays_printed_elsewhere` (the review's documents: `mode`,
     `guardrail`, `enabled` and `ai_model` printed in other rows, in json, pretty and table),
     `withhold::tests::texts::d238_shared_access_signatures_and_api_key_headers_are_withheld`,
-    `src/gateway/withhold_rules/values.rs::tests::credential_header_values_are_withheld_in_place`,
+    `crates/airs-runtime-core/src/withhold_rules/values.rs::tests::credential_header_values_are_withheld_in_place`,
     `…::text_rules_apply_in_order`, `…::key_value_credentials_are_withheld_in_place`,
     `…::scheme_registration_follows_the_header_form` and
-    `src/gateway/withhold_rules/names.rs::tests::placeholder_words_and_masks_are_never_registered`.
+    `crates/airs-runtime-core/src/withhold_rules/names.rs::tests::placeholder_words_and_masks_are_never_registered`.
 184. *Superseded by choice 185.*
     The withholding crate ships its licence and a README (review: `airs-cli-withhold` would have been published to
     crates.io with neither; Apache-2.0 §4(a) expects a copy of the licence with each redistribution, and the
@@ -15319,7 +15798,7 @@ so a choice is read with its marks, never with the amending choices alone.
     gone (the CLI package ships the root `LICENSE` and `README.md` as before).
 185. *Amended by choice 187: the checker is compiled into the CLI's test builds only, and no blanket `dead_code` allow
     remains.*
-    The withholding rules are a module of the CLI, `src/gateway/withhold_rules/` (`mod.rs`, `names.rs`,
+    The withholding rules are a module of the CLI, `crates/airs-runtime-core/src/withhold_rules/` (`mod.rs`, `names.rs`,
     `values.rs`, `check.rs`, and `corpus.rs` under `#[cfg(test)]`), and the unpublished test harness compiles the
     same files by `#[path]` (`crates/airs-test-harness/src/withhold.rs`: the module root, re-exported as
     `airs_test_harness::withhold::{check, names, values, WITHHELD}`, and `corpus.rs` again outside the harness's own
@@ -15341,7 +15820,7 @@ so a choice is read with its marks, never with the amending choices alone.
     includes, and no manifest naming a withholding crate), `withhold::tests::corpus::the_checker_reads_both_value_types_alike`
     (the CLI's checker on `OValue` and on `serde_json::Value`, and the harness's, agree on every pinned document),
     and every harness test of the live check (`crates/airs-test-harness/src/live/gateway.rs::tests`), which now run
-    the CLI's files; `cargo package -p airs-cli --list` lists `src/gateway/withhold_rules/*.rs`, and `cargo publish
+    the CLI's files; `cargo package -p airs-cli --list` lists `crates/airs-runtime-core/src/withhold_rules/*.rs`, and `cargo publish
     -p airs-cli --dry-run` builds the packaged crate alone.
 186. The key=value rule reads three more shapes and registers less (review): `Server=db;User Id=sa;Password=p@ss
     w0rd;` printed `w0rd` and `PWD={p@ss;w0rd};` printed `w0rd}` (a value ended at whitespace or `;`), `password =
@@ -15371,7 +15850,7 @@ so a choice is read with its marks, never with the amending choices alone.
        (both run one `in_order` over their list of rules). Rejected: the CLI listing the two rules itself (the
        subset was the CLI's knowledge, outside the rules module).
     README's gateway paragraph lists what the text rules recognise and what they do not, as §19.3 does. Tests:
-    `src/gateway/withhold_rules/values.rs::tests::connection_string_values_run_to_their_segment_end`,
+    `crates/airs-runtime-core/src/withhold_rules/values.rs::tests::connection_string_values_run_to_their_segment_end`,
     `…::spaced_key_values_are_read_under_credential_names_only`, `…::key_value_credentials_are_withheld_in_place`
     (`Pwd=hunter2`, `auth=oauth2`, `secret=sha256`, `pwd=v2.0` not registered; `Pwd=hunter2x`, `Pwd=p@ss`
     registered), `…::model_output_gets_the_url_and_scheme_rules_only`,
@@ -15381,7 +15860,7 @@ so a choice is read with its marks, never with the amending choices alone.
     auth=oauth2 for remote` with `oauth2` kept, `secret=sha256 and pwd=v2.0`, and spaced `key = value` text that
     names no credential) run by `withhold::tests::corpus::d238_real_world_texts_print_as_pinned`, the harness's
     `the_real_world_texts_are_checked_as_the_cli_prints_them` and
-    `src/gateway/withhold_rules/corpus.rs::tests::every_real_world_text_registers_as_pinned`.
+    `crates/airs-runtime-core/src/withhold_rules/corpus.rs::tests::every_real_world_text_registers_as_pinned`.
 187. The name rule reads what describes a credential, registers less, and the `SecretSet` is linear (live run of
     `workspaces get <slug> --output json` against a tenant, compared with TypeScript: the workspace `settings`
     members `user_api_key_count`, `user_api_key_max_ttl`, `user_api_key_ttl` (numbers in TypeScript) and
@@ -15477,7 +15956,7 @@ so a choice is read with its marks, never with the amending choices alone.
        join order beside a hash index (every form stored twice; no reader needs the join order).
     6. The checker is compiled into the CLI's test builds only (`#[cfg(test)] pub mod check;`), and the harness
        compiles `check.rs` by `#[path]` in its own non-test builds, as it does `corpus.rs`; the value view both
-       traversals read shapes through moves to `src/gateway/withhold_rules/view.rs` (`view::Json`, `view::shape`,
+       traversals read shapes through moves to `crates/airs-runtime-core/src/withhold_rules/view.rs` (`view::Json`, `view::shape`,
        `view::is_schema`, `view::text_free`), and the checker's parsing reading is its own trait,
        `check::Document`, which the CLI's tests implement for `OValue`. The test-only helpers
        (`names::rules_table`, `names::is_credential_header`) are `#[cfg(test)]`, the checker-only string tests
@@ -15492,12 +15971,12 @@ so a choice is read with its marks, never with the amending choices alone.
        `user_api_key_count`, `user_api_key_max_ttl`, `user_api_key_ttl`, `user_api_key_rotation_period: ""`), so the
        loopback parity test of `workspaces get --output json` reads them against TypeScript.
     9. *Added by the milestone's second review.* The `SecretSet`, its forms and its matcher are their own module,
-       `src/secrets.rs` (with the base64 forms), and `error.rs` re-exports `SecretSet` and `base64_standard`, so every
+       `crates/airs-runtime-core/src/secrets.rs` (with the base64 forms), and `error.rs` re-exports `SecretSet` and `base64_standard`, so every
        caller is unchanged; the matcher's step count, the scale test's structural bound, is a test build's only
        (`secrets::Steps`, a zero-sized type elsewhere, which a `const` assertion holds in the binary). Rejected:
        keeping them in `error.rs` (an error-mapping module holding the CLI's central secret store and a string
        matcher) and a plain `u64` counter (every read of the binary counted steps nobody reads).
-    Tests: `src/gateway/withhold_rules/names.rs::tests::metadata_names_describe_a_credential`,
+    Tests: `crates/airs-runtime-core/src/withhold_rules/names.rs::tests::metadata_names_describe_a_credential`,
     `…::a_credential_name_registers_only_credential_shaped_values`,
     `…::the_action_table_prints_only_what_carries_no_credential`, `withhold::tests::name_rule::credential_names`,
     `withhold::tests::name_rule::d238_word_shaped_values_do_not_cascade`,
@@ -15510,10 +15989,10 @@ so a choice is read with its marks, never with the amending choices alone.
     echoed),
     `withhold::tests::audit::d239_a_large_audit_log_is_withheld_in_linear_work` (4000 records: no field text
     registered, at most four forms per record, at most two matcher steps per printed byte),
-    `src/secrets.rs::tests::the_matcher_agrees_with_contains_per_form`,
-    `src/secrets.rs::tests::forms_join_once_and_every_read_sees_the_latest`,
-    `src/secrets.rs::tests::the_forms_are_one_ordered_set`, `src/secrets.rs::tests::only_taints_reads_fragments`,
-    `src/secrets.rs::tests::the_step_counter_counts_reads`, `src/secrets.rs::tests::the_secret_set_is_its_own_module`,
+    `crates/airs-runtime-core/src/secrets.rs::tests::the_matcher_agrees_with_contains_per_form`,
+    `crates/airs-runtime-core/src/secrets.rs::tests::forms_join_once_and_every_read_sees_the_latest`,
+    `crates/airs-runtime-core/src/secrets.rs::tests::the_forms_are_one_ordered_set`, `crates/airs-runtime-core/src/secrets.rs::tests::only_taints_reads_fragments`,
+    `crates/airs-runtime-core/src/secrets.rs::tests::the_step_counter_counts_reads`, `crates/airs-runtime-core/src/secrets.rs::tests::the_secret_set_is_its_own_module`,
     `withhold::tests::corpus::the_rules_compile_outside_the_cli` (the file list with `view.rs`, the harness's three
     includes, the checker and the corpus under `#[cfg(test)]`, no `dead_code` allow on the module), the new pinned
     document of `corpus::PINNED_DOCUMENTS`, `tests/gateway_reads.rs::workspaces::d238_workspace_api_key_settings_print_as_sent`,
@@ -15564,7 +16043,7 @@ so a choice is read with its marks, never with the amending choices alone.
        withholds", stale since 187.1.
     5. §11 names where a change to the withholding rules starts (the name table, the value rules, the corpus, the
        checker, the traversal and the tests that pin them); TESTING.md §5.19 stays the procedure.
-    Tests: `src/gateway/withhold_rules/names.rs::tests::key_name_lists_are_printed`,
+    Tests: `crates/airs-runtime-core/src/withhold_rules/names.rs::tests::key_name_lists_are_printed`,
     `…::mode_words_are_never_registered`, `withhold::tests::name_rule::d238_mode_words_under_credential_names_do_not_cascade`,
     `withhold::tests::schemas::d238_an_empty_schema_value_prints`, `withhold::tests::name_rule::the_design_table_is_the_name_rules`,
     the three new documents of `corpus::PINNED_DOCUMENTS` (run by `withhold::tests::corpus::the_live_tier_accepts_what_the_cli_prints`,
@@ -16237,7 +16716,7 @@ timestamps, ids and counts are never `[withheld]`; only a planted copy of the te
 ### 20.14 Acceptance tests
 
 Chunk 1 ships `tests/supplychain_reads.rs`, `tests/parity_supplychain_reads.rs` and the unit tests of `src/supplychain/`
-(`mod`, `views`), `src/commands/supplychain.rs`, `src/walk.rs` (`shrink_last_page`) and `src/clients.rs`, and the harness
+(`mod`, `views`), `src/commands/supplychain.rs`, `src/walk.rs` (`shrink_last_page`) and `crates/airs-runtime-core/src/clients.rs`, and the harness
 test `supplychain_routes_check_the_bearer_and_the_tsg_header`. Chunk 2 ships `tests/supplychain_report.rs`,
 `tests/parity_supplychain_report.rs`, `src/report/supplychain_tests.rs`, the doctor cases of `tests/doctor.rs` and
 `tests/parity_doctor.rs` (D312), the renderer's profile tests (`src/report/html.rs`, the other reports byte-identical),
@@ -16264,7 +16743,7 @@ G71 (§20.16): `src/supplychain/scans_tests.rs` (every page the SDK's schema acc
 numbers written `2.0`, `1e0` and 2^53 − 1, projects to the typed model's bytes; the nulls; the refusals; nothing
 sensitive kept), `src/supplychain/tests.rs::a_refused_answer_is_the_contract_failure`,
 `src/report/supplychain_tests.rs::null_members_stay_unknown`, the reader's null row in
-`src/commands/supplychain_report.rs`, `src/debug.rs::named_raw_reads_take_the_scoped_operation`, the fixture's
+`src/commands/supplychain_report.rs`, `crates/airs-runtime-core/src/debug.rs::named_raw_reads_take_the_scoped_operation`, the fixture's
 `null_scans_keep_the_service_shape`, `tests/supplychain_reads.rs::g71` (json, pretty and table; an `--all` walk;
 `scans vulnerabilities` of the first scan of such a listing; the contract line in every format, under `--quiet`, on a
 single page and on a walk's third page; an empty `uuid` still the page check; the debug log's operation name),
@@ -17092,7 +17571,8 @@ Chunk 1:
 Chunk 2:
 - `docs/RELEASING.md` joins the docs scan of §21.6 (`tests/program_name.rs::current_docs_invoke_airs`, choice 36).
 - `tests/docs_consistency.rs::the_readme_version_example_matches_its_status_line` (the README `airs --version`
-  example is the version-neutral `# prints the version, e.g. X`, with `X` the version of the README status line,
+  example is the version-neutral `# prints the version, e.g. X`, with `X` the version of the README status line
+  and Cargo package, including prerelease versions (8.1.0-rc.1 validation preparation),
   choice 56) and
   `tests/docs_consistency.rs::no_section_21_rename_maps_a_name_to_itself` (every `` `a` → `b` `` in §21 names two
   different things, so the §21.6 list keeps the 0.11 test names; choice 57).
@@ -17412,3 +17892,458 @@ versions of the same package).
 - `NOTICE` (Apache-2.0, both CLIs) ships in the crate, the release tarballs and every npm package.
 - The docs site `https://cdot65.github.io/prisma-airs-cli/` is built from `docs-site/` (Docusaurus); its command
   reference is generated from the `--help` of every command (`tests/cli_reference.rs`).
+
+
+## 22. Runtime history (8.2 development; server-owned since M1)
+
+**Status after M1 (runtime MCP plan).** The `airs` CLI has no history: no
+`runtime history` or `runtime sync` command, no `--history-dir`/`--no-history` flag,
+no SQLite in its package graph, and `scan`, `bulk-scan` and `resume-poll` retain nothing
+(D345–D349 are retired, §12). Those were unpublished 8.2-development features; 8.1 had
+none of them. §22.1–§22.7 now describe the domain behavior of `airs-history-store`, the
+archive the optional `airs-mcp` service will own. Where they name a CLI command, flag or
+stream, read it as the operation that crate performs and that its test-only
+`airs-history-driver` exercises with the former grammar. The service exposes them as
+authenticated tools and durable jobs from M2–M5 (§22.8). Existing archives on disk are
+never opened, changed or deleted by the CLI; they wait for explicit server-side migration
+(M5).
+
+This section records implemented B1 behavior. The complete approved delivery
+contract is RUNTIME_HISTORY_STORAGE_CONTRACT.md; unimplemented later-phase
+commands there are not available merely because they are documented in that
+contract. B0 feasibility and its independent9/10 gate are recorded separately.
+
+### 22.1 Cloud identity and private local paths
+
+Cloud identity is the SHA256 of canonical JSON `[1, exactTSG, environmentID]`,
+where environmentID is `env1:` plus SHA256 of the admitted normalized management,
+dashboard and token endpoint tuple. Strip trailing slashes only; preserve paths,
+ports and schemes. The pin is1–32 ASCII digits. Nicknames and secret rotation do
+not change history identity. A custom endpoint requires all three endpoints to
+be explicit; no OAuth client or token is obtained for this resolution. Tenant
+TOML remains the sole configuration source. History contains no credentials.
+
+`--history-dir` is a nonempty absolute path, validated before tenant access;
+invalid syntax exits2. Otherwise use `XDG_DATA_HOME/airs-cli/history`, then
+`HOME/.local/share/airs-cli/history`; invalid environment path controls exit1.
+Each cloud is `ROOT/<64hex>/archive.sqlite3` with existing `writer.lock` and
+`maintenance.lock`. Missing archives are unknown, never zero traffic. Controlled
+directories are owned0700-or-stricter real directories, files owned0600-or-stricter
+regular single-link files. Refuse symlinks, loose/foreign ownership and unsafe
+ancestors; canonicalize parent OS aliases. Admission uses nonblocking descriptor
+opens and before/after identity checks. Identified network filesystems are refused.
+An arbitrary same-UID process can directly modify owned files and is not an
+isolation boundary; cooperating users must follow the archive lock protocol.
+
+The root manifest adopts exact rusqlite0.41.1 with bundled/hooks/limits/serialize,
+using the qualified bundled SQLite rather than a system library. Project code
+forbids unsafe. Initial schema/metadata are built in memory, serialized through a
+private owned descriptor, fsynced and no-clobber published; SQLite never mutates
+an unverified staging pathname. Runtime source packaging includes the SQL schema.
+
+### 22.2 Lock and SQLite policy
+
+Ordinary reads acquire the existing shared maintenance gate and use one coherent
+read transaction, bounded to2 seconds including gate/SQLite waits. Capture one
+monotonic deadline and cancellation session for busy/progress callbacks. Release
+all locks before rendering/output. Readers never create/chmod/migrate/recover or
+change journal mode. Reject WAL/SHM, unexpected schema/cloud and any active or
+unfinished journal without changing files; retry after an active writer or use
+explicit recovery. Every lock retains its descriptor/name and verifies identity
+after acquisition and before database access.
+
+Every mutating batch takes the exclusive maintenance gate before opening SQLite.
+This is B1's reviewed refinement of B0's initially shared retention gate, eliminating
+a cooperative peer's journal/recovery race without another lock file. Retention
+uses no network lease and has one250ms contention deadline. Explicit sync holds
+the writer/network lease across its invocation, taking/releasing the batch gate
+only around local commits. Maintenance takes writer/network lease, exclusive gate,
+then SQLite. No TOML lock or network work occurs while holding a database gate or
+transaction. Full read-only maintenance uses open-existing READONLY connections;
+it never calls an initialization-capable writer API.
+
+Connections use DELETE/FULL, foreign keys, secure_delete ON, trusted-schema off,
+MEMORY temp, mmap0,8MiB cache target and bounded SQL/row/parameter limits. Extension
+loading is disabled. The process sets a256MiB SQLite allocator cap (not total RSS).
+SQL is fixed/parameterized. Errors use safe classifications, never SQLite response
+text, file contents, URL queries or SDK debug models.
+
+### 22.3 Local inspection commands (D345)
+
+`runtime history status [--history-dir PATH]` succeeds with archive_present=false
+and null/unknown counters when missing, without creating files. Existing status
+reports event/fact/partial-receipt counts, size and date bounds. It does not compute
+an unbounded distinct UUID count; that field is null with a stats instruction.
+Raw scan UUID cardinality and full-event observations remain separate units.
+
+`runtime history coverage [--since UTC --until UTC] [--app-id ID...]` defaults to
+recent24hours. Bounds are paired, end in explicit Z, parse through the existing ISO
+parser and satisfy since<until; explicit application IDs are nonblank/no controls,
+at most4096bytes and at most1000 values. Output preserves source/segment states,
+counts all matching segments and displays at most1000/4MiB with explicit display
+truncation. Missing segments are unknown; traversed-as-of is not a provider watermark.
+
+`runtime history stats [--timeout1..3600]` is explicit full maintenance, default120s.
+It computes the full distinct scan UUID count and bounded coverage groups. Missing
+archives fail1 without initialization. Local scalar repeats fail2 before tenant
+access. Global output/tenant semantics remain; JSON is data-only, pretty/table
+render bounded cells, and all fields are protected with current invocation secrets.
+No history leaf builds an API client. Quiet does not suppress errors. Interrupts
+use130/143; cancellation is checked in gate waits and SQLite progress/busy callbacks.
+
+
+### 22.4 Explicit bounded legacy import (D346)
+
+`runtime history import-bundle --file EVIDENCE_JSON --expect-tsg ID
+--expect-environment env1:SHA256 [--history-dir PATH]` is the first normalized
+repository ingestion adapter. Its originally planned B4 chunk moved into B1 to
+make the foundation usable and independently testable without automatic retention
+or API work. B4's full logical transfer/lifecycle gate remains separate.
+
+Validate flag syntax before tenant access, then require exact selected TSG and
+public environment identity before opening the input. Read an existing regular
+single-link non-symlink file once, nonblocking, at most32MiB. Preserve source bytes,
+mode and mtime. Strictly validate evidence/digest/schema/rules versions, apply the
+current invocation privacy registry/payload rules, and validate all normalized
+records before archive creation. Oversized256KiB records or unsupported outcome,
+direction, integer/revision values fail1 without an archive. No API client exists.
+
+Keep original collection/digest plus projected digest and schema/rules/redaction/
+SDK versions in immutable run provenance. Same collection ID with changed
+provenance refuses before data writes. A finished identical reimport changes no
+archive files. A changed collection can add changed facts, deduplicating identical
+fact content and preserving separate run links. Profile/metric/example facts also
+retain run links without duplicating identical content. Legacy profile observations
+with unchanged public names use the exact-name `name:` namespace, not an invented SDK UUID. Privacy-changed or already-withheld names/populations use collection-scoped unlinked identities; no hashes of private labels become cross-run keys. Application inventory is retained even without scan events; an unsupported application identity has null identity columns and an unlinked observation key. Run links preserve every observation time, including A/B/A content and out-of-order arrivals, so as-of selection uses links rather than the first stored timestamp. No unsupported historical revision or rename association is asserted.
+
+An import holds one writer/network lease for its invocation; each batch takes and
+releases the exclusive data gate, writes at most200 records/256KiB and commits
+without network/output. There is a120s persistence deadline. A failed/interrupted
+import can leave committed batches with a running/incomplete run; it never claims
+whole-archive atomicity. Reimport safely resumes. Source states/windows/provenance
+remain separate from local event counts and do not establish provider completeness. Legacy complete source states become observed, never traversed-as-of. Coverage includes selected application context and whether its identity survived privacy projection. Only unchanged supported selectors can match application-filtered coverage; changed/withheld selectors remain explicitly unknown.
+
+Full events require app ID, exact app name, session, canonical scan UUID and an
+explicit subrequest; absent is never zero. Other observations become separate
+receipts, excluded from full-event and UUID totals. Promotion requires the exact
+same cloud/scan UUID, every supplied identity/report field, no conflicting known
+binding/endpoint provenance, at least app/session/subrequest support, and exactly
+one full candidate. An unknown endpoint cannot itself support a join; known
+incompatible endpoints refuse it. Preserve receipt facts, and atomically attach
+only their supported provenance/outcomes. Both arrival orders agree. A later
+competing identity invalidates promotion and recomputes affected projections.
+
+Materialized verdict/action/profile/time and detector projections rebuild from
+retained normalized facts. Unknown fields can be resolved; conflicting known
+values stay explicit unknown/conflict, never last-write wins. Detector aliases
+use the shared comparison map, retaining raw normalized hints and subsuming unknown
+positive direction only in projections. Unknown-direction report context remains available when its positive comparison contribution is subsumed; provenance records that flag and the moved hint sources. A benign directional observation cannot subsume a positive unknown-direction hint. Error plus allow resolves to unknown action/conflict. Reconciliation pages receipts and applies all supported candidate predicates before LIMIT 2; rebuilding combined event/receipt facts has one16MiB budget. Source aggregates are not added to observed scans.
+No raw SDK extension/payload, submitted prompt/response or credential is stored.
+
+
+### 22.5 Explicit maintenance and schema admission (D347)
+
+`runtime history compact --force [--timeout 1..3600]` defaults to600 seconds;
+`recover --force [--timeout 1..3600]` defaults to120 seconds. Missing force is
+usage2 before tenant access. Both open existing archives only, acquire writer
+lease then exclusive gate, check cancellation/deadline throughout, and produce
+metadata-only output after releasing locks. Missing/unsafe archives fail1 without
+initialization. Full stats also verifies integrity and foreign keys.
+
+Compaction checks space and source integrity, VACUUMs into a private owned empty
+copy, validates exact schema/cloud/integrity, fsyncs copy/directory, rechecks source
+and lock identities and atomically replaces the database, then fsyncs the
+directory. Prepublication failure preserves the source and cleans only owned
+staging. A failure after replacement reports uncertain durability and does not
+replace the new file with an older one.
+
+Recovery refuses WAL/SHM, unowned journals and superjournal references before
+SQLite can act on them. It saves immutable private no-clobber raw database/journal
+backups and a versioned checksum/size manifest, verifying copies by readback and
+fsync. That initial manifest describes expected cloud identity as unverified.
+A separate working copy is recovered first and must pass exact cloud/schema,
+integrity and foreign-key checks. Save its verified checksum manifest; then
+recheck the original files' identities and hashes plus both locks immediately
+before native SQLite recovery of the live pair. Retain raw backups and verified
+copy; failure never silently restores an older backup. SQLite's native rollback
+protocol, rather than a multi-file rename, provides crash recovery of the live
+pair. Healthy recovery is an unchanged verification; a zeroed stale journal is
+removed only while holding the native exclusive transaction and verified inode.
+
+Schema1 is the initial archive format. B1 implements versioned admission and
+refusal, with no supported upgrade path yet. Readers and ordinary writers refuse
+unknown/older/newer schemas unchanged; neither fabricates a predecessor nor runs
+an implicit migration. Before introducing schema2, its concrete transactional
+migration must implement the verified private backup/manifest protocol and failed
+migration/rollback/durability tests in the storage contract. Current recovery and
+compaction tests do not claim to qualify a future migration.
+
+
+### 22.6 Automatic metadata retention (D348)
+
+`runtime scan`, `bulk-scan` and `resume-poll` retain metadata already received by
+default. They accept `--no-history` or `--history-dir ABSOLUTE_PATH`, mutually
+exclusive. An empty/relative explicit path, repeated local history scalar or
+conflicting flags is usage2 before tenant access. The normal result/exit and
+existing submission/retry/poll requests remain; history never retrieves extra
+results or reports, probes keys or resubmits scans. Opt-out does not inspect,
+create or finalize an archive and does not remove old evidence or bulk state.
+
+Cloud/path admission is local and credential-free; missing management credentials
+do not prevent a default-environment scanner-only tenant from retaining metadata.
+An invalid context, unsafe filesystem, busy archive, privacy/size limit or failed
+write preserves the remote command outcome and joins one sanitized stderr warning
+per invocation, including under quiet. Warnings count observations with unconfirmed
+retention, including uncertain commits; they do not assert a failed commit was
+rolled back. A completion failure leaves an incomplete local run. Status/output
+never includes raw SQLite/server error text or credentials. There is no spool.
+
+Each write batch has at most200 records/256KiB and one cumulative250ms deadline
+covering gate/SQLite contention, with busy/progress callbacks. Receipt projections
+refresh per record; candidate reconciliation runs once per distinct resolved scan
+UUID after all batch facts are stored, preserving prior known identity when new
+fields are unknown. It uses the exclusive
+batch gate and no network/writer lease. Gates/connections are released before the
+next network call or output. Filesystem calls are not a hard real-time guarantee;
+a late uncertain commit warns rather than claiming confirmed retention. A fresh
+local session allows bounded persistence of already-received progress after the
+network session is cancelled; normal130/143 and saved-job semantics remain.
+
+Bulk submission metadata is captured in bounded memory before the essential C3
+checkpoint, and written only after C3 is durable. Poll results follow their durable
+job-state checkpoint; even a subsequent CSV failure can retain the metadata after
+the successful checkpoint. A failed C3 writes no secondary history. Capture is at
+most10000 records/4MiB, and the existing planner sends at most20 request objects per
+SDK chunk regardless of logical batch size. Over-cap observations are not retained
+and are counted in the same single warning; no unbounded response queue is built.
+The bounded payload-span registry (10000 distinct forms/4MiB) also fails retention
+closed on overflow, while scanning continues. No full submitted prompt/response,
+masked echo, raw SDK model/extension body or report snippet is archived by this
+adapter. Bounded sanitized examples still require B3's explicit reports path.
+
+Receipts use a stable bulk job/item identity across submit/results/reports/resume,
+or one synchronous invocation/item identity. Unsupported item association uses a
+distinct unlinked local observation ID, never a reset batch ordinal or a hash of
+private text. Raw UUIDs are canonicalized; absent subrequest/app-name/session fields
+stay absent. CLI SDK replies do not prove the exact management application name,
+so they remain partial receipts outside attributed event/UUID counts. Application
+IDs originate only in an intact explicit named binding, not names or key probing.
+Retain its public name/revision/app/endpoint provenance across rotation. Admitted
+public endpoint IPs and canonical trailing-slash handling preserve its exact
+namespace; secrets/userinfo/query material are still refused. Project all other
+labels with the invocation's complete credentials and payload spans before writes.
+Changed identities lose their association, never become shared masked identities.
+
+An asynchronous batch report ID is contextual provenance, not per-item ownership:
+retain it separately from leaf report IDs used in reconciliation. Known scanner
+endpoint receipts require a matching known full-event endpoint; legacy operator-
+bound unknown endpoints are insufficient proof. Multiple known full endpoints
+invalidate promotion deterministically in either arrival order. B1's full tuple,
+all supplied fields, unique candidate and later-ambiguity rules still apply.
+
+Typed statuses complete/completed are equivalent; a nested empty scan UUID can use
+the explicit matching lookup/row context. Pending/failed/unknown statuses remain
+explicit notes and fail closed. Known report verdict aliases unsafe/violation/
+detected provide positive metadata. An administrator block does not invent a
+malicious verdict or erase a known benign/error verdict; the preexisting bulk CSV
+triggered heuristic remains unchanged. Known API scan category context is retained
+separately from detector-positive inference. Preserve the actual per-detector administrator action, while
+overall missing/conflicting/truncated action context stays unknown. Known report
+service aliases include mc, topic_guardrails and url_filtering; recognized public
+case variants normalize in this adapter with raw label context retained. Unknown
+service spellings remain verbatim. Detector comparison uses the shared explicit
+map. No missing action becomes allow; malicious+allow continues to mean monitoring.
+
+Run completeness means the collection of already-received local metadata only,
+not completed remote scans or provider traversal. Runs retain provenance, partial/
+interrupted completion and observation times. Repeated completed resume makes no
+archive writes without a new response; meaningful variants and credential revisions
+remain facts, and stable identities avoid additional counted scans.
+
+
+### 22.7 Explicit resumable collection (D349, development)
+
+`runtime sync` collects into the private cloud archive. B3 development qualification
+is recorded separately in RUNTIME_HISTORY_B3_REVIEW.md; report still uses its 8.1
+live behavior until B5. Sync and local retry are Rust-only additions.
+
+Grammar: `runtime sync [--since UTC --until UTC --backfill] [--app-id ID...]`
+`[--with-examples] [--max-reports 0..10] [--history-dir PATH] [--strict]`, with
+`--timeout 1..3600` (120), `--concurrency 1..16` (4), `--max-requests 1..10000`
+(1000), `--max-pages 1..100` (100), `--max-events 1..10000` (10000). Times are paired
+half-open UTC instants ending in Z, since<until, describing past time. Backfill
+requires both. The supported rolling selector must cover since within 87600 hours,
+including ceiling to whole hours. Validation and repeated-scalar checks precede
+tenant/archive access. No global scanner override; disable debug for these reads.
+Explicit max-reports requires with-examples. Default requested range is 24 hours;
+older than the archive bootstrap requires explicit backfill. An offline gap is
+retained as falling-behind uncertainty instead of silently requesting older traffic.
+
+The pinned SDK has relative selectors only. Store requested bounds, relative query
+parameters, approximate rolling anchor and per-read traversal timestamps. Apply
+absolute bounds locally before scanner admission and sampling. Unknown timestamps
+remain explicit, outside window totals. Coverage is traversed-as-of with boundary,
+late-arrival and provider-retention uncertainty, never a provider watermark or a
+not-found claim. Native cloud-wide coverage is explicit; legacy unknown scope stays
+unknown. Configurations are observations at collection time, not historical policy
+proof. The public retrieval reference proves which configuration performed this
+lookup, not which API key originally submitted an older scan.
+
+Acquire the archive network/writer lease without waiting before any API client
+sends. An active sync/maintenance invocation causes an operational busy error with
+no HTTP calls. Release the exclusive gate and SQLite connection between bounded
+local transactions and every network request; ordinary readers and automatic scan
+retention can interleave. Explicit local batches use at most 5 seconds within the
+invocation deadline; cancellation/cooldown finalization has a fresh bounded 5 second
+local window. Automatic B2 retention keeps its separate cumulative 250ms policy.
+
+Keep exact application ID/name/session/UUID/subrequest identities. UUIDs are
+canonical; privacy-altered, already-withheld or truncated identities cannot become
+exact work joins. A durable non-sensitive identity_withheld flag distinguishes a
+privacy-erased supplied identity/report constraint from a genuinely missing field.
+Receipts carrying that flag cannot promote against an existing full bucket; a later
+flagged fact demotes prior promotion and rebuilds affected projections. No erased
+value or value-derived key is retained. Stable session work contains no server cursor or scanner epoch;
+re-query supported heads. A recent empty head cannot complete an older unfinished
+tail. Changing pagination retains valid unique native observations and marks the
+traversal partial. Result attribution considers all supported current and retained
+buckets, including those outside the five-ID transport chunk. Report ownership
+includes full facts and currently promoted receipt facts through a rebuildable
+indexed relation. An ambiguous/missing owner never triggers a credential probe.
+
+Results and reports reserve started attempts in committed storage before sending.
+There are at most 3 eligible attempts per work identity/binding revision/retry epoch,
+spaced at least 60 seconds then 900 seconds. Proven not-sent reservations release only
+their ordinal; an uncertain interrupted reservation consumes it conservatively.
+Persist a proven no-send or observed authorization/rate response through the bounded
+fresh-session finalizer before cancellation-sensitive snapshot storage.
+Append attempts and transitions; do not erase authorization evidence. 401/403 denies
+that application/revision across scanner services. A changed same-app/endpoint
+revision can use one currently configured set, with unqualified historical-access
+provenance; no flat credential fallback or other-key probing. Service 429 stops that
+service and persists a cloud-wide cooldown across credentials: positive seconds or
+future HTTP-date Retry-After (round up, cap 24 hours), otherwise 15 minutes. Zero,
+past dates and malformed headers have no usable future delay and use the fallback.
+Detected backwards wall-clock changes defer retries/cooldowns; management admission retains fixed safe clock/cooldown diagnostics in run progress
+and provenance. Hard request caps
+use monotonic time and do not depend on clock changes.
+
+`runtime history retry --source results|reports --force [--history-dir PATH]` is
+local maintenance only. Reset eligible pending/deferred work with a new epoch and
+an append-only transition, including local bounded-view deferrals with no send.
+Completed or authorization-ineligible work is not re-enabled; global cooldown and
+old attempts remain. The archive must exist. Invalid source/missing force fails
+before tenant access. It emits reset counts and remote_requests=0.
+
+Already-retained unfinished work can be revisited by its exact stored identity
+without widening the management window. Load due candidates before row limits,
+fairly across applications. Report candidates must have a malicious projection and
+known event time before the SQL candidate limit. Apply current app filters and same-app/endpoint revision
+eligibility. Bound candidate count 200 and decoded descriptors/events 256KiB. Reserve
+at most half the event-view budget for retained candidates; with one slot, odd/even
+sync invocations alternate retained/recent preference. Recheck the retained event
+at commit. Oversized views defer locally at the evaluated public revision without
+inventing a send; explicit retry can reconsider them. Revisit facts have individual
+work provenance and original event times; they emit no historical traversal coverage.
+Current-cohort observations and older work-attempt counts remain separate units.
+
+Ordinary sync makes zero Reports API calls. With-examples enables a combined
+strategic pool across current observations and eligible previously selected work.
+Cached usable examples establish covered features without a request. Reserve at
+most one selection slot for unfinished old work, then prefer uncovered app/profile/
+detector/direction/allow-block features; a one-ID budget alternates old/new preference
+when both are available. Five IDs default, ten maximum, at most two actual serial
+report transports globally across credentials, zero SDK retries, stop on429.
+Several work attempts can share one multi-ID transport; never call that several
+HTTP sends. Optional example gaps do not independently fail strict primary collection.
+
+Native in-memory snapshots preserve conflicting report contexts for posterity;
+public version1 evidence validation remains strict. No raw response body or SDK
+extension is stored. Received scanner normalization shares B2's explicit original
+API-category note and detector-derived classification; benign/block does not imply
+malicious. Payload and DLP privacy projection precedes archive commits. Cached
+facts preserve their original endpoint/reference; only newly attributed SDK rows
+can supply a new retrieval reference. Cached detector-row variants present one
+explicit deterministic view while raw variants remain stored.
+
+Management transport journals contain fixed operation/bounded projected descriptors,
+not headers, bodies or complete URLs. Record each transport separately from scanner
+attempts. A started read with actual_sends=0 is unconfirmed, never proof of no send;
+known no-send records use not_sent. Interrupted/uncertain records survive restarts.
+
+JSON output contains run_id/state, requested bounds, actual_rolling_query,
+observed_events (the locally requested cohort), admitted_transport_attempts and
+progress. Progress distinguishes retained full events/partial receipts for this run,
+unconfirmed management reads, revisited work attempts and scoped work-state counts
+whose unit is descriptors, not scans. Pretty/table provide a concise run summary.
+Status is stderr; stdout is data. Unavailable primary collection or strict incompleteness exits1 after
+retaining available data; ordinary success is0, operational failures1, usage2 and
+signals130/143. Interrupted runs keep durable progress and conservative attempts.
+
+The unpublished initial schema 1 now includes event_reports as a rebuildable
+ownership projection, plus authorization/clock and promoted-receipt indexes and an explicit receipt
+join-privacy marker constraint. Frozen development snapshots
+with a different exact schema are refused unchanged; no migration from such drafts
+is claimed. A real subsequent schema version still requires B1's concrete verified
+backup and transactional migration gate. The separately frozen B0 benchmark schema
+is unchanged.
+
+### 22.8 Optional runtime MCP service (M1 done; M2–M6 server implemented; M7 CLI client implemented; M8 not implemented)
+
+The user-approved architecture in RUNTIME_MCP_IMPLEMENTATION_PLAN.md (revision 7)
+moves every persistent history operation into an optional, separately deployed MCP
+service. Its M0 contract is RUNTIME_MCP_CONTRACT.md. M1 removed the local history from
+the CLI (below). No MCP command, flag, connection namespace, state directory or network
+call exists yet, and §22.1–§22.7 describe the domain behavior of `airs-history-store`
+(see §22's status note). Isolated prototypes live in `prototypes/runtime-mcp/` and are
+not linked into `airs`.
+
+Planned observable changes, each to be specified here with its §12 row, paired
+parity test and COMPATIBILITY entry in the phase that ships it:
+
+- **M2:** the `airs-mcp` binary serves the authenticated, stateless MCP endpoint with
+  `service_info`, `history_status` and `history_coverage` (RUNTIME_MCP_CONTRACT §4.3
+  status note). The CLI is unchanged by M2. It has no MCP commands until M7 and makes
+  no MCP calls.
+- **M3:** the server's durable control store (`control.sqlite3`) holds jobs, idempotency,
+  send reservations, allowances, epochs, backups and restore, and the single worker
+  dispatches fairly. `jobs_list`, `jobs_get`, `jobs_cancel` and `collection_start` are
+  served (RUNTIME_MCP_CONTRACT §9 status note). Collections stay queued until the M4
+  executor. The CLI is unchanged.
+- **M4:** the server collects. `collection_start` jobs run the shared collector with the
+  service's AIRS credentials. A quarter-hour schedule coalesces missed ticks. Credential
+  denials park jobs until a new revision. Sparse example enrichment is charged to the
+  daily allowance, and `receipts_ingest` and the `schedules_*` tools are served
+  (RUNTIME_MCP_CONTRACT §6.1). The CLI is unchanged.
+- **M5:** explicit transfer and lifecycle through Administrator tools: a fully validated
+  staged logical import, examples-only prune with tombstones, compact, recover, export
+  with chunked reads, and owned staged uploads (RUNTIME_MCP_CONTRACT §5.1). The CLI is
+  unchanged.
+- **M6:** the server renders historical reports from retained history only: daily at
+  Chicago midnight with revisions and catch-up, and manual. They are immutable private
+  bundles with a latest pointer and crash-safe publication. `reports_*`, `artifacts_*`,
+  `assessments_submit`, `enrichment_start` and `history_query` are served
+  (RUNTIME_MCP_CONTRACT §6.2). The CLI is unchanged.
+- **M7:** `airs mcp connections|login|logout|status|confirm`, `runtime
+  history|jobs|schedules|sync|receipts --mcp CONNECTION`, `runtime report --mcp` and
+  `--record-history CONNECTION` on scan/bulk-scan/resume-poll, through the
+  `airs-mcp-client` crate (no SQLite, no server code): D350–D361, RUNTIME_MCP_CONTRACT
+  §7.5. Admin-role connections keep no session and sign in afresh, nonce-bound, for
+  every administrative mutation. Live gateway support for that proof is unqualified
+  (M0.6 P3); the deployment keeps `[admin] mode = "disabled"` until M8 qualifies it.
+- **Done in M1:** SQLite and history-store code left the CLI package for
+  `airs-history-store`, and the shared code moved to `airs-runtime-core` (§11). The
+  unpublished local `--history-dir` and `--no-history` flags and the local
+  `runtime history`/`runtime sync` behavior are gone (unknown commands and options, exit
+  2). Archived local files are left in place for explicit server-side migration.
+- M7 adds `airs mcp login|logout|status|connections|confirm`. It adds explicit
+  `--mcp CONNECTION` selection for runtime report/sync/history/jobs/schedules,
+  `--record-history CONNECTION` on scan/bulk-scan/resume-poll, and `receipts upload
+  --from-bulk-state`. It adds the tenant TOML `mcp` namespace, with rollback
+  snapshots and older-binary refusal. It adds private generated session/receipt
+  state under the XDG state directory: a documented exception to "readers never
+  write" for token refresh only.
+- Without explicit selection the CLI keeps its 8.1 behavior: zero MCP calls, zero
+  SQLite access, no server requirement. Explicit selection never falls back to live
+  collection. Existing live `runtime report` and offline `--from-evidence` stay
+  unchanged, and `--from-evidence` conflicts with `--mcp` before any tenant access.

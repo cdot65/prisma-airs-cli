@@ -9,26 +9,21 @@
 // the dead-code lint working across the crate.
 mod bulk;
 mod cli;
-mod clients;
 mod commands;
 mod debug;
 mod dlp;
 mod env;
-mod error;
 mod files;
 mod gateway;
 mod input;
-mod json;
 mod modelsec;
 mod output;
 mod pagination;
 mod policy;
-mod profile_policy;
 mod redteam;
 mod render;
 mod report;
 mod runtime;
-mod secrets;
 mod segment;
 mod signals;
 mod store;
@@ -39,6 +34,9 @@ mod test_support;
 mod views;
 mod walk;
 mod writes;
+
+// The shared foundation lives in airs-runtime-core; its modules keep their CLI paths.
+use airs_runtime_core::{clients, error, json, profile_policy, secrets};
 
 use clap::FromArgMatches;
 use commands::{Invocation, Plan};
@@ -74,6 +72,12 @@ where
         }
     };
     let mut output = Output::stdio(cli.global.quiet);
+    if let Some(message) = cli::evidence_repetitions(&args, &cli) {
+        let error = error::CliError::usage(message);
+        output.report(&error);
+        return EXIT_USAGE;
+    }
+
     output.set_debug(cli.global.debug);
     // The deprecated `--format` alias warns before any other validation (DESIGN §13.1).
     if commands::uses_format_alias(&cli) {
@@ -174,6 +178,13 @@ fn execute(plan: Plan, mut invocation: Invocation) -> i32 {
         (_, Some(_)) => Err(CliError::Interrupted(fallback)),
         (result, None) => result,
     };
+    let result = result.map_err(|error| {
+        if invocation.secrets.guards_local_output() {
+            error.with_secrets(&invocation.secrets)
+        } else {
+            error
+        }
+    });
     finish(&mut invocation.output, result, signal)
 }
 

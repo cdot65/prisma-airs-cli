@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
         'commands/model-security',
         'commands/gateway',
         'commands/supplychain',
+        'commands/mcp',
       ],
     },
   ],

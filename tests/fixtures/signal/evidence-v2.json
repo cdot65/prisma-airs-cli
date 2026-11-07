@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "rules_version": 2,
+  "redaction_version": 1,
+  "collection_id": "22222222-2222-4222-8222-222222222222",
+  "cli_version": "8.1.0-rc.2",
+  "sdk_version": "0.2.4",
+  "tenant": "synthetic",
+  "app_ids": [],
+  "window": {
+    "start_ms": 1793491200000,
+    "end_ms": 1793577600000,
+    "interval": 24,
+    "unit": "hours"
+  },
+  "collected_ms": 1793577602000,
+  "sources": [
+    {
+      "name": "synthetic results",
+      "status": "complete",
+      "required": true,
+      "records": 2,
+      "pages": 1,
+      "unit": "events",
+      "population": "synthetic fixture",
+      "started_ms": 1793577600000,
+      "ended_ms": 1793577602000,
+      "notes": [
+        "Authored synthetic fixture; not a live API collection"
+      ]
+    },
+    {
+      "name": "scan-reports",
+      "status": "complete",
+      "required": false,
+      "records": 1,
+      "pages": 1,
+      "unit": "selected example reports",
+      "population": "synthetic fixture",
+      "started_ms": 1793577600000,
+      "ended_ms": 1793577602000,
+      "notes": [
+        "Authored synthetic fixture; not a live API collection"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "identity": {
+        "app_id": "app-1",
+        "app_name": "Synthetic assistant",
+        "session_id": "session-1",
+        "scan_id": "00000000-0000-4000-8000-0000000000b2",
+        "sub_request": 0
+      },
+      "timestamp_ms": 1793545200000,
+      "profile": "Monitor",
+      "verdict": "malicious",
+      "action": "allow",
+      "report_ids": [
+        "report-1"
+      ],
+      "detections": [
+        {
+          "detector": "pi",
+          "direction": "prompt",
+          "verdict": "malicious",
+          "action": "allow",
+          "report_id": "report-1",
+          "row": 0,
+          "snippets": [
+            {
+              "family": "pi",
+              "state": "present",
+              "excerpts": [
+                "Synthetic example: ignore earlier instructions."
+              ],
+              "variants": 1,
+              "truncated": false
+            },
+            {
+              "family": "dlp",
+              "state": "absent",
+              "excerpts": [],
+              "variants": 0,
+              "truncated": false
+            },
+            {
+              "family": "dbs",
+              "state": "empty",
+              "excerpts": [],
+              "variants": 0,
+              "truncated": false
+            },
+            {
+              "family": "tc",
+              "state": "unavailable",
+              "excerpts": [],
+              "variants": 0,
+              "truncated": false
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "synthetic results",
+        "scan-reports"
+      ],
+      "notes": [],
+      "detector_hints": [
+        "prompt/injection"
+      ]
+    },
+    {
+      "identity": {
+        "app_id": "app-1",
+        "app_name": "Synthetic assistant",
+        "session_id": "session-2",
+        "scan_id": "00000000-0000-4000-8000-0000000000b3",
+        "sub_request": 0
+      },
+      "timestamp_ms": 1793545201000,
+      "profile": "Block",
+      "verdict": "malicious",
+      "action": "block",
+      "report_ids": [],
+      "detections": [],
+      "sources": [
+        "synthetic results"
+      ],
+      "notes": [],
+      "detector_hints": [
+        "response/dlp"
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "name": "Monitor",
+      "revision": 1,
+      "protections": [
+        {
+          "detector": "prompt-injection",
+          "direction": "prompt",
+          "action": "allow",
+          "active": true,
+          "location": "AI[0]/prompt",
+          "confidence": "explicit"
+        }
+      ]
+    },
+    {
+      "name": "Block",
+      "revision": 1,
+      "protections": [
+        {
+          "detector": "dlp",
+          "direction": "response",
+          "action": "block",
+          "active": true,
+          "location": "AI[0]/response",
+          "confidence": "explicit"
+        }
+      ]
+    }
+  ],
+  "applications": [
+    {
+      "id": "app-1",
+      "name": "Synthetic assistant",
+      "profile": "Monitor"
+    }
+  ],
+  "sampling": {
+    "algorithm": "coverage-greedy-v2",
+    "candidates": 1,
+    "selected_report_ids": [
+      "report-1"
+    ],
+    "uncovered_groups": [],
+    "limit": 5
+  },
+  "budgets": {
+    "seconds": 120,
+    "concurrency": 4,
+    "requests": 1000,
+    "max_pages": 40,
+    "max_events": 10000,
+    "max_reports": 5,
+    "attempts": 3
+  },
+  "metrics": [],
+  "digest": "5b8fa35d8101d9227a3459b22c7a7d8930f18fdca079c107e08f96f55e57cd8e"
+}

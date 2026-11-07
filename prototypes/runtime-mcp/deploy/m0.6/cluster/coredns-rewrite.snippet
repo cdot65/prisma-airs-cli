@@ -1,0 +1,11 @@
+# Applied in talos-cluster coredns/configmap.yaml beside the mcp-backend-bonbon block.
+mcp-backend-airs.goshawks.io:53 {
+    errors
+    cache 30
+    rewrite name exact mcp-backend-airs.goshawks.io airs-mcp.airs-mcp.svc.cluster.local
+    kubernetes cluster.local in-addr.arpa ip6.arpa {
+        ttl 30
+    }
+    forward . 1.1.1.1 1.0.0.1
+}
+# Also add mcp-backend-airs.goshawks.io to aigw-goshawks TRUSTED_CUSTOM_HOSTS.

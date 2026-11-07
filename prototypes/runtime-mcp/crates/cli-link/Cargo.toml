@@ -1,0 +1,19 @@
+[package]
+name = "airs-cli-link-probe"
+description = "M0 probe: the real airs CLI library linked with the MCP client skeleton, for the unified feature graph and the binary-size delta"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "airs-with-mcp-client"
+path = "src/main.rs"
+
+[dependencies]
+airs-cli = { path = "../../../.." }
+airs-mcp-client = { path = "../airs-mcp-client" }
+tokio = { version = "1.50", features = ["rt"] }
+
+[lints]
+workspace = true

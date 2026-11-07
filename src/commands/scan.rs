@@ -6,46 +6,22 @@ use crate::clients::{self, SINGLE_REQUEST_BUDGET};
 use crate::error::{self, CliError, Operation, Phase, Plane, SdkContext, SecretSet, WITHHELD};
 use crate::json::{self, OValue};
 use crate::output::{Format, terminal_safe};
-use crate::tenant::config;
+pub use airs_runtime_core::scan_verdict::{
+    Flags, Normalized, PROMPT_KEYS, Verdict, normalize, reason_part,
+};
 use scm::airs::scan::Content;
 use scm::airs::scan::models::{AiProfile, ScanResponse};
 use scm::data::Optional;
 use serde::Serialize;
-use serde::ser::{SerializeMap, Serializer};
 
 const MAX_TEXT_BYTES: usize = 2_097_152;
 const MAX_PROFILE_NAME: usize = 100;
 const PREVIEW_UNITS: usize = 80;
-/// Longest server-provided `errors[]` part shown in a failure reason, in characters.
-const MAX_REASON_PART: usize = 200;
-
-/// Prompt detection keys, in report order.
-pub const PROMPT_KEYS: [&str; 8] = [
-    "topic_violation",
-    "injection",
-    "toxic_content",
-    "dlp",
-    "url_cats",
-    "malicious_code",
-    "source_code",
-    "agent",
-];
-
-/// Response detection keys, in report order.
-pub const RESPONSE_KEYS: [&str; 8] = [
-    "topic_violation",
-    "toxic_content",
-    "dlp",
-    "url_cats",
-    "malicious_code",
-    "agent",
-    "db_security",
-    "ungrounded",
-];
 
 /// Validated scan input. An empty `--response` is dropped (TS parity).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScanInput {
+    pub scanner: Option<String>,
     pub profile: String,
     pub prompt: String,
     pub response: Option<String>,
@@ -87,6 +63,9 @@ pub fn prompt_problem(prompt: &str) -> Option<String> {
 
 /// Local request validation (usage errors, before the tenant is read).
 pub fn validate_input(args: &ScanArgs) -> Result<ScanInput, CliError> {
+    if let Some(name) = &args.scanner {
+        crate::tenant::scanners::validate_name(name)?;
+    }
     let response = args.response.clone().filter(|text| !text.is_empty());
     if args.prompt.is_empty() && response.is_none() {
         return Err(payload_error(
@@ -106,6 +85,7 @@ pub fn validate_input(args: &ScanArgs) -> Result<ScanInput, CliError> {
     }
     check_profile(&args.profile)?;
     Ok(ScanInput {
+        scanner: args.scanner.clone(),
         profile: args.profile.clone(),
         prompt: args.prompt.clone(),
         response,
@@ -127,175 +107,6 @@ pub fn preview(prompt: &str) -> String {
         out.push_str("...");
     }
     out
-}
-
-/// The CLI verdict. Anything but a clean allow/block fails closed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Verdict {
-    Allow,
-    Block,
-    Failed,
-}
-
-impl Verdict {
-    pub fn name(self) -> &'static str {
-        match self {
-            Self::Allow => "allow",
-            Self::Block => "block",
-            Self::Failed => "failed",
-        }
-    }
-}
-
-/// Detection flags in fixed key order (serialised as an ordered object).
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Flags(pub Vec<(&'static str, bool)>);
-
-impl Flags {
-    pub fn triggered(&self) -> impl Iterator<Item = &'static str> + '_ {
-        self.0.iter().filter(|(_, on)| *on).map(|(key, _)| *key)
-    }
-}
-
-impl Serialize for Flags {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(Some(self.0.len()))?;
-        for (key, value) in &self.0 {
-            map.serialize_entry(key, value)?;
-        }
-        map.end()
-    }
-}
-
-/// The normalised scan result.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Normalized {
-    pub verdict: Verdict,
-    pub category: String,
-    pub triggered: bool,
-    pub prompt: Flags,
-    pub response: Flags,
-    pub error: Option<String>,
-}
-
-fn flag(value: &Optional<bool>) -> Option<bool> {
-    value.as_ref().into_option().copied()
-}
-
-fn prompt_flags(response: &ScanResponse) -> Flags {
-    let Optional::Value(detected) = &response.prompt_detected else {
-        return Flags::default();
-    };
-    // The explicit length ties this list to PROMPT_KEYS: adding a key to one and not
-    // the other does not compile (the order is pinned by the all-detections tests).
-    let values: [&Optional<bool>; PROMPT_KEYS.len()] = [
-        &detected.topic_violation,
-        &detected.injection,
-        &detected.toxic_content,
-        &detected.dlp,
-        &detected.url_cats,
-        &detected.malicious_code,
-        &detected.source_code,
-        &detected.agent,
-    ];
-    Flags(
-        PROMPT_KEYS
-            .into_iter()
-            .zip(values)
-            .filter_map(|(key, value)| flag(value).map(|on| (key, on)))
-            .collect(),
-    )
-}
-
-fn response_flags(response: &ScanResponse) -> Flags {
-    let Optional::Value(detected) = &response.response_detected else {
-        return Flags::default();
-    };
-    let values: [&Optional<bool>; RESPONSE_KEYS.len()] = [
-        &detected.topic_violation,
-        &detected.toxic_content,
-        &detected.dlp,
-        &detected.url_cats,
-        &detected.malicious_code,
-        &detected.agent,
-        &detected.db_security,
-        &detected.ungrounded,
-    ];
-    Flags(
-        RESPONSE_KEYS
-            .into_iter()
-            .zip(values)
-            .filter_map(|(key, value)| flag(value).map(|on| (key, on)))
-            .collect(),
-    )
-}
-
-/// One server-provided reason part: withheld when it carries a secret, bounded.
-pub fn reason_part(text: &str, secrets: &SecretSet) -> String {
-    let text = secrets.scrub(text);
-    match text.char_indices().nth(MAX_REASON_PART) {
-        Some((end, _)) => format!("{}...", &text[..end]),
-        None => text.to_owned(),
-    }
-}
-
-fn error_reason(response: &ScanResponse, secrets: &SecretSet) -> String {
-    let entries: Vec<String> = response
-        .errors
-        .iter()
-        .map(|entry| {
-            [&entry.feature, &entry.status, &entry.content_type]
-                .into_iter()
-                .filter_map(|part| part.as_ref().into_option())
-                .filter(|part| !part.is_empty())
-                .map(|part| reason_part(part, secrets))
-                .collect::<Vec<_>>()
-                .join(": ")
-        })
-        .filter(|entry| !entry.is_empty())
-        .collect();
-    if !entries.is_empty() {
-        entries.join("; ")
-    } else if response.timeout {
-        "AIRS scan timed out".to_owned()
-    } else if response.error {
-        "AIRS scan failed".to_owned()
-    } else {
-        format!(
-            "Unknown AIRS action: {}",
-            reason_part(&response.action, secrets)
-        )
-    }
-}
-
-/// Normalise a response: lower-cased allow/block pass through; error, timeout or any
-/// other action fails closed with a reason. Server text that carries a configured
-/// secret is withheld (DESIGN §8.3).
-pub fn normalize(response: &ScanResponse, secrets: &SecretSet) -> Normalized {
-    let action = response.action.to_lowercase();
-    let failed = response.error || response.timeout || (action != "allow" && action != "block");
-    let prompt = prompt_flags(response);
-    let response_detections = response_flags(response);
-    let triggered =
-        prompt.triggered().next().is_some() || response_detections.triggered().next().is_some();
-    Normalized {
-        verdict: if failed {
-            Verdict::Failed
-        } else if action == "block" {
-            Verdict::Block
-        } else {
-            Verdict::Allow
-        },
-        category: if failed {
-            "error".to_owned()
-        } else {
-            secrets.scrub(&response.category).to_owned()
-        },
-        triggered,
-        prompt,
-        response: response_detections,
-        error: failed.then(|| error_reason(response, secrets)),
-    }
 }
 
 /// The serialised response with every string that carries a configured secret
@@ -414,20 +225,25 @@ pub async fn run(
     format: Format,
 ) -> Result<(), CliError> {
     let tenant = invocation.load_tenant()?;
-    config::require_scanner(&tenant.config, Some(tenant.name()))?;
-    let scanner = clients::build_scanner(
+    let (scanner_config, reference) = crate::tenant::scanners::select(
         &tenant.config,
+        input.scanner.as_deref(),
+        Some(tenant.name()),
+    )?;
+    let scanner = clients::build_scanner(
+        &scanner_config,
         &invocation.session,
         invocation.debug.as_ref(),
     )?;
-
     invocation.output.status("Prisma AIRS Runtime Scan");
-    invocation
-        .output
-        .status(&format!("Profile: {}", input.profile));
-    invocation
-        .output
-        .status(&format!("Prompt:  \"{}\"", preview(&input.prompt)));
+    invocation.output.status(&format!(
+        "Profile: {}",
+        invocation.secrets.scrub(&input.profile)
+    ));
+    invocation.output.status(&format!(
+        "Prompt:  \"{}\"",
+        invocation.secrets.scrub(&preview(&input.prompt))
+    ));
 
     let local = |_| CliError::usage("AISEC_USER_REQUEST_PAYLOAD_ERROR:Validation error");
     let mut content = Content::builder().prompt(input.prompt.clone());
@@ -458,6 +274,37 @@ pub async fn run(
 
     let secrets = &invocation.secrets;
     let result = normalize(&response, secrets);
+    // What `--record-history` may retain: the received metadata, as the CLI shows it.
+    if let Some(reference) = &reference {
+        let scan_id = response.scan_id.to_ascii_lowercase();
+        if crate::bulk::is_scan_id(&scan_id) {
+            let (status, action) = match result.verdict {
+                airs_runtime_core::scan_verdict::Verdict::Allow => {
+                    ("complete", serde_json::json!("allow"))
+                }
+                airs_runtime_core::scan_verdict::Verdict::Block => {
+                    ("complete", serde_json::json!("block"))
+                }
+                airs_runtime_core::scan_verdict::Verdict::Failed => {
+                    ("failed", serde_json::Value::Null)
+                }
+            };
+            invocation.retained = vec![super::mcp_ops::receipt(
+                &format!("scan:{scan_id}"),
+                &reference.name,
+                &reference.application_id,
+                &scan_id,
+                secrets.scrub(&response.report_id),
+                &result.category,
+                status,
+                action,
+                &airs_runtime_core::time::iso(airs_runtime_core::time::now_ms()),
+                None,
+                None,
+            )];
+        }
+    }
+    let secrets = &invocation.secrets;
     let scrubbed = match format {
         Format::Json => scrubbed_result(&response, secrets)?,
         Format::Table | Format::Pretty => OValue::Null,
@@ -495,6 +342,7 @@ pub async fn run(
 mod tests {
     use super::*;
     use crate::output::testing::capture;
+    use airs_runtime_core::scan_verdict::MAX_REASON_PART;
     use serde_json::json;
 
     fn response(value: serde_json::Value) -> ScanResponse {
@@ -514,9 +362,11 @@ mod tests {
 
     fn args(profile: &str, prompt: &str, response: Option<&str>) -> ScanArgs {
         ScanArgs {
+            scanner: None,
             profile: profile.into(),
             prompt: prompt.into(),
             response: response.map(str::to_owned),
+            record_history: None,
         }
     }
 
@@ -561,65 +411,6 @@ mod tests {
         assert_eq!(preview(&"a".repeat(81)), format!("{}...", "a".repeat(80)));
         let emoji = format!("{}😀", "a".repeat(79));
         assert_eq!(preview(&emoji), format!("{}...", "a".repeat(79)));
-    }
-
-    #[test]
-    fn allow_and_block() {
-        let none = SecretSet::default();
-        let allow = normalize(&base(json!({})), &none);
-        assert_eq!(allow.verdict, Verdict::Allow);
-        assert_eq!(allow.category, "benign");
-        assert!(!allow.triggered);
-        assert_eq!(allow.error, None);
-
-        let block = normalize(
-            &base(json!({
-                "action": "BLOCK", "category": "malicious",
-                "prompt_detected": {"toxic_content": true, "injection": true, "dlp": false},
-                "response_detected": {"ungrounded": true, "dlp": false}
-            })),
-            &none,
-        );
-        assert_eq!(block.verdict, Verdict::Block);
-        assert_eq!(
-            block.prompt.0,
-            [("injection", true), ("toxic_content", true), ("dlp", false)]
-        );
-        assert_eq!(block.response.0, [("dlp", false), ("ungrounded", true)]);
-        assert!(block.triggered);
-    }
-
-    #[test]
-    fn response_detections_alone_trigger() {
-        let result = normalize(
-            &base(json!({"response_detected": {"db_security": true}})),
-            &SecretSet::default(),
-        );
-        assert!(result.triggered);
-        assert_eq!(result.verdict, Verdict::Allow);
-    }
-
-    #[test]
-    fn failures_close() {
-        let none = SecretSet::default();
-        let failed = normalize(
-            &base(json!({
-                "error": true,
-                "errors": [{"content_type": "prompt", "feature": "dlp", "status": "error"}, {"feature": "tc"}, {}]
-            })),
-            &none,
-        );
-        assert_eq!(failed.verdict, Verdict::Failed);
-        assert_eq!(failed.category, "error");
-        assert_eq!(failed.error.as_deref(), Some("dlp: error: prompt; tc"));
-        let timeout = normalize(&base(json!({"timeout": true, "action": "block"})), &none);
-        assert_eq!(timeout.verdict, Verdict::Failed);
-        assert_eq!(timeout.error.as_deref(), Some("AIRS scan timed out"));
-        let error = normalize(&base(json!({"error": true})), &none);
-        assert_eq!(error.error.as_deref(), Some("AIRS scan failed"));
-        let unknown = normalize(&base(json!({"action": "Alert"})), &none);
-        assert_eq!(unknown.verdict, Verdict::Failed);
-        assert_eq!(unknown.error.as_deref(), Some("Unknown AIRS action: Alert"));
     }
 
     #[test]

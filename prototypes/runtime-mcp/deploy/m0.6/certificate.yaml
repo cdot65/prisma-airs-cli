@@ -1,0 +1,8 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: airs-mcp-spike-tls
+spec:
+  secretName: airs-mcp-spike-tls
+  dnsNames: [mcp-backend-airs.goshawks.io]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}

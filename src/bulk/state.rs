@@ -13,6 +13,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub const FORMAT: &str = "airs-cli-rs.bulk-scan";
 /// `version`.
 pub const VERSION: u64 = 1;
+pub const NAMED_VERSION: u64 = 2;
 
 /// A result's `action`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -164,6 +165,8 @@ pub struct JobState {
     pub job_id: String,
     pub tenant: String,
     pub scan_endpoint: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scanner_reference: Option<crate::tenant::scanners::ScannerReference>,
     pub profile: String,
     pub session_id: String,
     pub batch_size: u64,
@@ -198,6 +201,7 @@ impl JobState {
             job_id: job.job_id.to_owned(),
             tenant: job.tenant.to_owned(),
             scan_endpoint: job.scan_endpoint.to_owned(),
+            scanner_reference: None,
             profile: job.profile.to_owned(),
             session_id: job.session_id.to_owned(),
             batch_size: job.batch_size,
@@ -257,8 +261,17 @@ impl JobState {
 
     /// The invariants (§14.9): `Err` carries the fixed reason.
     pub fn validate(&self) -> Result<(), String> {
-        if self.format != FORMAT || self.version != VERSION {
+        if self.format != FORMAT || ![VERSION, NAMED_VERSION].contains(&self.version) {
             return Err("unsupported format or version".into());
+        }
+        match (&self.scanner_reference, self.version) {
+            (None, VERSION) => {}
+            (Some(reference), NAMED_VERSION)
+                if reference.valid()
+                    && crate::tenant::scanners::canonical_endpoint(&self.scan_endpoint)
+                        .as_deref()
+                        == Some(reference.endpoint.as_str()) => {}
+            _ => return Err("scanner reference does not match state version or endpoint".into()),
         }
         if !is_job_id(&self.job_id) {
             return Err("jobId has the wrong shape".into());
@@ -442,7 +455,7 @@ pub fn parse(bytes: &[u8]) -> Result<JobState, LoadError> {
                     && object
                         .get("version")
                         .and_then(serde_json::Value::as_u64)
-                        .is_some_and(|version| version > VERSION) =>
+                        .is_some_and(|version| version > NAMED_VERSION) =>
             {
                 return Err(LoadError::Newer);
             }
@@ -628,6 +641,26 @@ pub mod tests {
         );
     }
 
+    #[test]
+    fn named_state_requires_a_valid_reference_and_legacy_state_forbids_one() {
+        let mut state = sample();
+        state.version = NAMED_VERSION;
+        assert!(state.validate().is_err());
+        state.scanner_reference = Some(crate::tenant::scanners::ScannerReference {
+            name: "monitor".into(),
+            revision: "00000000-0000-4000-8000-000000000001".into(),
+            application_id: "app-a".into(),
+            endpoint: crate::tenant::scanners::canonical_endpoint(&state.scan_endpoint).unwrap(),
+        });
+        assert_eq!(state.validate(), Ok(()));
+        assert_eq!(parse(&state.to_bytes().unwrap()), Ok(state.clone()));
+        state.version = VERSION;
+        assert!(state.validate().is_err());
+        state.version = NAMED_VERSION;
+        state.scanner_reference.as_mut().unwrap().endpoint = "https://different.example".into();
+        assert!(state.validate().is_err());
+    }
+
     /// state-spec #6: malformed, TypeScript (v2 and legacy) and newer states.
     #[test]
     fn foreign_states_are_classified() {
@@ -642,7 +675,7 @@ pub mod tests {
             Err(LoadError::TypeScript)
         );
         assert_eq!(
-            parse(br#"{"format":"airs-cli-rs.bulk-scan","version":2}"#),
+            parse(br#"{"format":"airs-cli-rs.bulk-scan","version":3}"#),
             Err(LoadError::Newer)
         );
         assert!(matches!(parse(b"[]"), Err(LoadError::Invalid(_))));

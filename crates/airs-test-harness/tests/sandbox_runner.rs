@@ -1530,6 +1530,9 @@ fn bulk_runs_never_reach_the_real_state_home() {
         inside("state/tenants.json"),
     );
     env.insert("TMPDIR".to_owned(), inside("tmp"));
+    // Automatic metadata retention needs its own safe data root. This test
+    // isolates the independent bulk-state fallback guard, not data-root admission.
+    env.insert("XDG_DATA_HOME".to_owned(), inside("tmp/data"));
     let input = inside("tmp/p.txt");
     let output = inside("tmp/o.csv");
     let state = inside("tmp/x.bulk-scan.json");
@@ -1554,7 +1557,7 @@ fn bulk_runs_never_reach_the_real_state_home() {
             "{args:?}"
         );
     }
-    // A non-bulk runtime command still needs only the store and the registry.
+    // A non-bulk scan does not need the bulk-state path control.
     assert_eq!(
         airs_test_harness::escape_violation(&root, &cwd, &env, &["runtime", "scan", "x"]),
         None
@@ -2073,4 +2076,130 @@ fn runtime_extras_runs_check_the_markers() {
         ts_run.stdout.contains(&key),
         "the TypeScript side is not checked"
     );
+}
+
+#[test]
+fn history_path_controls_cannot_escape_or_fall_back_to_the_real_home() {
+    let sandbox = Sandbox::new();
+    let root = sandbox.root();
+    let cwd = sandbox.cwd();
+    let mut env = std::collections::BTreeMap::from([
+        (
+            "AIRS_CLI_CONFIG_DIR".into(),
+            sandbox.store_dir().display().to_string(),
+        ),
+        (
+            "PRISMA_AIRS_TENANTS_PATH".into(),
+            sandbox
+                .state_dir()
+                .join("tenants.json")
+                .display()
+                .to_string(),
+        ),
+    ]);
+    let args = ["runtime", "history", "status"];
+    let error = airs_test_harness::escape_violation(root, &cwd, &env, &args).unwrap();
+    assert!(error.contains("XDG_DATA_HOME"));
+    env.insert(
+        "XDG_DATA_HOME".into(),
+        sandbox.tmp().join("data").display().to_string(),
+    );
+    assert!(airs_test_harness::escape_violation(root, &cwd, &env, &args).is_none());
+    let inside = sandbox.tmp().join("history");
+    let inside = inside.to_str().unwrap();
+    env.remove("XDG_DATA_HOME");
+    assert!(
+        airs_test_harness::escape_violation(
+            root,
+            &cwd,
+            &env,
+            &["runtime", "history", "status", "--history-dir", inside]
+        )
+        .is_none()
+    );
+    assert!(
+        airs_test_harness::escape_violation(
+            root,
+            &cwd,
+            &env,
+            &[
+                "runtime",
+                "history",
+                "status",
+                "--history-dir",
+                "/outside-sandbox"
+            ]
+        )
+        .is_some()
+    );
+    env.insert(
+        "AIRS_CLI_TEST_HISTORY_BATCH_MARKER".into(),
+        "/outside-sandbox/marker".into(),
+    );
+    assert!(
+        airs_test_harness::escape_violation(
+            root,
+            &cwd,
+            &env,
+            &["runtime", "history", "status", "--history-dir", inside]
+        )
+        .is_some()
+    );
+}
+
+/// The history driver's `runtime sync` writes an archive under the default data
+/// directory: without HOME it needs XDG_DATA_HOME or an explicit sandbox --history-dir,
+/// and an outside --history-dir is refused. Since M1 the CLI's `scan`, `bulk-scan` and
+/// `resume-poll` keep no history, so they need neither.
+#[test]
+fn automatic_history_cannot_use_real_home_or_escape_through_explicit_controls() {
+    let s = Sandbox::new();
+    let mut env = std::collections::BTreeMap::from([
+        (
+            "AIRS_CLI_CONFIG_DIR".into(),
+            s.store_dir().display().to_string(),
+        ),
+        (
+            "PRISMA_AIRS_TENANTS_PATH".into(),
+            s.registry_path().display().to_string(),
+        ),
+        (
+            "XDG_STATE_HOME".into(),
+            s.tmp().join("state").display().to_string(),
+        ),
+    ]);
+    let violation = |env: &std::collections::BTreeMap<String, String>, args: &[&str]| {
+        airs_test_harness::escape_violation(s.root(), &s.cwd(), env, args)
+    };
+    assert!(
+        violation(&env, &["runtime", "sync"])
+            .unwrap()
+            .contains("XDG_DATA_HOME")
+    );
+    let inside = s.tmp().join("history");
+    assert!(
+        violation(
+            &env,
+            &["runtime", "sync", "--history-dir", inside.to_str().unwrap()]
+        )
+        .is_none()
+    );
+    assert!(
+        violation(
+            &env,
+            &["runtime", "sync", "--history-dir", "/outside-sandbox"]
+        )
+        .is_some()
+    );
+    for command in ["scan", "bulk-scan", "resume-poll"] {
+        assert!(
+            violation(&env, &["runtime", command]).is_none(),
+            "{command}"
+        );
+    }
+    env.insert(
+        "XDG_DATA_HOME".into(),
+        s.tmp().join("data").display().to_string(),
+    );
+    assert!(violation(&env, &["runtime", "sync"]).is_none());
 }

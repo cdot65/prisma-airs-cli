@@ -445,3 +445,26 @@ From 1.0 (DESIGN §21), each stable release is also done when:
   list across README, the docs site, CHANGELOG and MIGRATION (directional profiles supported, for single-entry
   profiles); the `DLP tenant` line hedged; the B7 live-rule departures and their waiver recorded (above); the parity
   test renamed to `an_empty_directional_flag_creation_is_refused`, the D335 test checking the method and path.
+
+## Signal Brief implementation (unreleased)
+
+Authorized scope: replace runtime report output and repair scan-log discovery,
+with bounded report snippets, safe normalized evidence and offline agent review.
+The phased plan is docs/SIGNAL_BRIEF_IMPLEMENTATION_PLAN.md; independent phase
+scores are recorded in docs/SIGNAL_BRIEF_PHASE_REVIEWS.md. Every phase 0–6 passed
+independent Codex review at 9/10. Implementation and final validation are complete:
+3,674 tests passed with no failures or parity skips; formatting, Clippy, MSRV and
+site build passed. Outcomes are recorded in
+docs/SIGNAL_BRIEF_VALIDATION.md. This does not declare the release milestone complete.
+
+The implementation replaces default runtime-report HTML (D340), adds offline
+replay/private bundles and review import (D337, D341), and repairs discovery plus
+direct scanner lookups (D338–D339). The shared SDK detail-token telemetry supports
+7/30/60-day windows; daily briefs explicitly show this gap. No release, push,
+agent-run live collection or SDK checkout changes are in scope.
+
+Release-candidate preparation: the unreleased Signal Brief is versioned
+8.1.0-rc.1, targeting stable 8.1.0 after user-run validation. Candidate notes are in
+docs/RELEASE-NOTES/8.1.0-rc.1.md; build and verification outcomes are tracked in
+docs/SIGNAL_BRIEF_TEST_BUILDS.md and docs/SIGNAL_BRIEF_VALIDATION.md. No release has
+been published by this implementation task.

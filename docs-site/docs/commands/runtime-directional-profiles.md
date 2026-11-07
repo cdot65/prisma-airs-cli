@@ -106,8 +106,7 @@ for legacy profiles.
 - A `--config` file is checked before the tenant is read: `dlp_tenant_id` must be a string,
   `content-type-mode` a string, each direction an object and
   `enable-full-conversation-inspection` a boolean, never `null` (exit 2).
-- `airs runtime report` adds a **Protection configurations** column: one entry per AI entry
-  and direction, with the protection sections it holds.
+- `airs runtime report` compares current protections by detector and direction, retaining their AI-entry locations and active/unknown state.
 - `airs runtime profiles backup` and `restore` carry every direction: DLP mappings, the Basic
   fallback and topic remapping work per direction, and `--on-conflict verify` compares
   directions strictly. A backup keeps each record as the service sent it; a restore does not
@@ -119,8 +118,7 @@ Directional profiles are **supported, for single-entry profiles**: a live run (2
 accepted every direction for creates, edits, topics, backup and restore.
 
 - **Not verified live:** profiles with several AI entries (`--ai-profile-index`), DLP blocks
-  inside a direction (`--dlp-action`, `--dlp-profiles`), and the runtime report's
-  `Protection configurations` column. The offline tests cover them.
+  inside a direction (`--dlp-action`, `--dlp-profiles`), and the Signal Brief's current protection comparison. The offline tests cover them.
 - **Service rules are not checked before sending, except one.** Every directional entry needs
   all four direction keys (`prompt`, `response`, `tool-call`, `tool-response`; a flag create
   writes the ones it does not fill as `{}`, and a `--config` body must list all four); the

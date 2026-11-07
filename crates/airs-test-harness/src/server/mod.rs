@@ -674,6 +674,15 @@ async fn handle(
             basic_encoding,
         };
         let planned = state.plan(&request);
+        let planned = if planned
+            .required_headers
+            .iter()
+            .any(|(name, value)| request.header(name) != Some(value.as_str()))
+        {
+            Planned::empty_json(403)
+        } else {
+            planned
+        };
         state.log.push(request);
         let ticket = planned.hold.then(|| {
             state.holds_started += 1;

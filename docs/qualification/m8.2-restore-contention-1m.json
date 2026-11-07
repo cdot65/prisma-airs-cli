@@ -1,0 +1,14 @@
+{
+  "archive_bytes": 1924849664,
+  "backup_bytes": 1680433152,
+  "backup_vacuum_into_s": 2.586998449,
+  "contention_s": 18.601994301,
+  "contention_writes": 50000,
+  "io_read_bytes": 2199552,
+  "io_write_bytes": 8192,
+  "peak_rss_kb": 219840,
+  "restore_verify_s": 14.316574843,
+  "scans": 1000000,
+  "seed_s": 105.787312612,
+  "slowest_30d_read_under_writer_s": 5.337482784
+}

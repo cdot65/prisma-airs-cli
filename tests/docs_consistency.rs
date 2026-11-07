@@ -361,14 +361,13 @@ fn the_readme_version_example_matches_its_status_line() {
     let status = readme_status_version(&readme).expect("README.md has a `Version X covers` line");
     let example = readme_version_example(&readme)
         .expect("README.md has an `airs --version     # prints the version, e.g. X` example");
-    let semver = |v: &str| {
-        let parts: Vec<_> = v.split('.').collect();
-        parts.len() == 3
-            && parts
-                .iter()
-                .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
-    };
-    assert!(semver(status), "status version {status:?}");
+    // Cargo validates SemVer, including release candidates. Match the actual
+    // package version so a source build's install example cannot lag the manifest.
+    assert_eq!(
+        status,
+        env!("CARGO_PKG_VERSION"),
+        "README status must match Cargo.toml"
+    );
     assert_eq!(
         example, status,
         "README.md: the `airs --version` example gives {example}, the status line says {status}"

@@ -14,17 +14,18 @@ Manage tenants (the only configuration source)
 Usage: airs tenant [OPTIONS] [COMMAND]
 
 Commands:
-  list    List registrations without reading credentials [aliases: ls]
-  path    Print the config file path of a tenant; defaults to the selected tenant
-  read    Read a tenant config with all credential values redacted; defaults to the selected tenant
-  get     Print one effective tenant setting; credential values are redacted
-  create  Create a tenant with guided prompts; does not select it
-  set     Update one tenant setting; prompt when omitted, hide secrets
-  unset   Remove one tenant setting so the default applies; credentials cannot be cleared
-  switch  Select the tenant for subsequent commands
-  delete  Delete a tenant and its config file; clears the selection if it was selected [aliases: rm]
-  import  Copy tenants from the TypeScript airs-cli; its files are not changed
-  help    Print this message or the help of the given subcommand(s)
+  scanners  Manage application-bound scanner credentials locally
+  list      List registrations without reading credentials [aliases: ls]
+  path      Print the config file path of a tenant; defaults to the selected tenant
+  read      Read a tenant config with all credential values redacted; defaults to the selected tenant
+  get       Print one effective tenant setting; credential values are redacted
+  create    Create a tenant with guided prompts; does not select it
+  set       Update one tenant setting; prompt when omitted, hide secrets
+  unset     Remove one tenant setting so the default applies; credentials cannot be cleared
+  switch    Select the tenant for subsequent commands
+  delete    Delete a tenant and its config file; clears the selection if it was selected [aliases: rm]
+  import    Copy tenants from the TypeScript airs-cli; its files are not changed
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
       --output <format>  Output format: pretty, table, json
@@ -51,6 +52,172 @@ Examples:
 
 Tenants live in ~/.config/airs-cli/ (config.toml and tenants/<name>.toml);
 AIRS_CLI_CONFIG_DIR or XDG_CONFIG_HOME moves them.
+```
+
+## airs tenant scanners
+
+```text
+Manage application-bound scanner credentials locally
+
+Usage: airs tenant scanners [OPTIONS] [COMMAND]
+
+Commands:
+  list             List public scanner metadata; credentials are never displayed
+  set              Save credentials from private TOML; first write snapshots old format (older binaries cannot read named tables)
+  bind-default     Copy flat credentials into an explicit app binding; older binaries need the rollback snapshot
+  remove           Remove one named binding
+  snapshots        List private format rollback snapshot metadata
+  restore          Restore a private snapshot for the same registered TSG
+  delete-snapshot  Delete one explicitly selected rollback snapshot
+  help             Print this message or the help of the given subcommand(s)
+
+Options:
+      --output <format>  Output format: pretty, table, json
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners list
+
+```text
+List public scanner metadata; credentials are never displayed
+
+Usage: airs tenant scanners list [OPTIONS] <TENANT>
+
+Arguments:
+  <TENANT>  
+
+Options:
+      --output <format>  Output format: pretty, table, json
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners set
+
+```text
+Save credentials from private TOML; first write snapshots old format (older binaries cannot read named tables)
+
+Usage: airs tenant scanners set [OPTIONS] <--file <PATH>|--stdin> <TENANT> <NAME>
+
+Arguments:
+  <TENANT>  
+  <NAME>    
+
+Options:
+      --file <PATH>      Private TOML input with applicationId, endpoint and exactly apiKey or apiToken
+      --output <format>  Ignored by this command (it prints no data); must still be one of pretty, table, json
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --stdin            Read bounded credential TOML from piped stdin
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --replace          
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners bind-default
+
+```text
+Copy flat credentials into an explicit app binding; older binaries need the rollback snapshot
+
+Usage: airs tenant scanners bind-default [OPTIONS] --app-id <ID> <TENANT> <NAME>
+
+Arguments:
+  <TENANT>  
+  <NAME>    
+
+Options:
+      --app-id <ID>      Exact dashboard application ID; this is an explicit operator association
+      --output <format>  Ignored by this command (it prints no data); must still be one of pretty, table, json
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --use <KIND>       Required when both flat key and token are set; legacy SDK sends both headers [possible values: key, token]
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --replace          
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners remove
+
+```text
+Remove one named binding
+
+Usage: airs tenant scanners remove [OPTIONS] --force <TENANT> <NAME>
+
+Arguments:
+  <TENANT>  
+  <NAME>    
+
+Options:
+      --force            
+      --output <format>  Ignored by this command (it prints no data); must still be one of pretty, table, json
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners snapshots
+
+```text
+List private format rollback snapshot metadata
+
+Usage: airs tenant scanners snapshots [OPTIONS] <TENANT>
+
+Arguments:
+  <TENANT>  
+
+Options:
+      --output <format>  Output format: pretty, table, json
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners restore
+
+```text
+Restore a private snapshot for the same registered TSG
+
+Usage: airs tenant scanners restore [OPTIONS] --file <PATH> --expect-tsg <ID> --force <TENANT>
+
+Arguments:
+  <TENANT>  
+
+Options:
+      --file <PATH>      
+      --output <format>  Ignored by this command (it prints no data); must still be one of pretty, table, json
+      --expect-tsg <ID>  
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --force            
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
+```
+
+### airs tenant scanners delete-snapshot
+
+```text
+Delete one explicitly selected rollback snapshot
+
+Usage: airs tenant scanners delete-snapshot [OPTIONS] --file <PATH> --force <TENANT>
+
+Arguments:
+  <TENANT>  
+
+Options:
+      --file <PATH>      
+      --output <format>  Ignored by this command (it prints no data); must still be one of pretty, table, json
+      --force            
+      --quiet            Suppress status and decorative output (data and errors still print)
+      --debug            Write redacted API diagnostics to a private JSONL file
+      --tenant <name>    Use this registered tenant for one invocation without changing the selection
+  -h, --help             Print help
 ```
 
 ## airs tenant list

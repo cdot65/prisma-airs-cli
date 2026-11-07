@@ -1,3 +1,4 @@
+//! Historical schema-2 runtime collector retained for frozen-reference unit tests.
 //! The runtime environment report (TS `src/reports/runtime.ts`, DESIGN §18.14): seven
 //! read-only sources collected one after the other (choice 17) through TypeScript's
 //! `collect` loop, the analysis and its eight finding rules, and the schema-2 model the
@@ -8,8 +9,7 @@
 //! response defaults off an absent profile list is no record array (D214, G27).
 
 use super::{
-    Finding, Health, Interrupted, LabelRule, Priority, ReadError, Source, Status, iso, parse_iso,
-    source,
+    Finding, Health, Interrupted, LabelRule, Priority, ReadError, Source, Status, iso, source,
 };
 use crate::json::OValue;
 use std::collections::HashMap;
@@ -152,16 +152,6 @@ pub struct Report {
     pub top_applications: Vec<TopApplication>,
     pub violation_trend: Vec<TrendBucket>,
     pub limitations: Vec<String>,
-}
-
-impl Report {
-    /// Sources that are not complete.
-    pub fn incomplete(&self) -> usize {
-        self.sources
-            .iter()
-            .filter(|source| source.status != Status::Complete)
-            .count()
-    }
 }
 
 /// The runtime report's label rule (TS `label` of `runtime.ts`): `\p{Cc}\p{Cf}` →
@@ -322,14 +312,7 @@ pub(crate) fn parse_date(value: Option<&OValue>) -> Option<i64> {
 
 /// [`parse_date`] of a string: a zoned ISO-8601 date-time, or `YYYY-MM-DD` as UTC
 /// midnight (also the supplychain report's rule, D322).
-pub(crate) fn parse_date_text(text: &str) -> Option<i64> {
-    parse_iso(text).or_else(|| {
-        let bytes = text.as_bytes();
-        (bytes.len() == 10 && bytes[4] == b'-' && bytes[7] == b'-')
-            .then(|| parse_iso(&format!("{text}T00:00:00Z")))
-            .flatten()
-    })
-}
+pub(crate) use super::parse_date_text;
 
 /// One page of a source (TS `Page`): `items` is `None` when the answer has no record
 /// array; `next` the offset of the next page (`None` ends the source).
