@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source-side review 6: 8.7/10, revise; round 7 corrections submitted for review 7** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
+Status: **source-side review 7: 8.8/10, revise; round 8 corrections submitted for review 8 (reviews 1–6 scored 6.5, 6.5, 7.5, 8.0, 8.5 and 8.7)** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
 integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
 accepted). The plan's exit gate needs an
 independent source and receipts review at or above the owner-set 9.0 threshold **plus**
@@ -5582,7 +5582,76 @@ Material findings:
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
 
-### M8 round 7 corrections (submitted for source-side review 7)
+### M8 round 8 corrections (submitted for source-side review 8)
+
+1. **The wrapper's bound is the lesser of `REQ` and the time left, never the whole
+   phase.** `kc` runs `timeout -k "$KGRACE" "$t" kubectl … --request-timeout="${t}s"`
+   with `t = min(REQ, d − now)`. No invocation, hung or not, lasts longer than
+   `REQ + KGRACE` = 35 s, so that is also the longest the shell can defer the TERM trap
+   while a foreground `kubectl` runs; the termination arithmetic's first term (35 s) now
+   describes the code. An invocation cut at its phase deadline still overruns it by at
+   most `KGRACE`, and polling or releasing continues after a hung invocation instead of
+   losing the phase to it.
+   - **Loop sleeps are bounded by the phase deadline.** `nap DEADLINE` sleeps the lesser
+     of 5 s and the time left (nothing once the deadline has passed) and replaces every
+     `sleep 5` in the four loops, so a phase overruns by at most `KGRACE`, from one cut
+     invocation, never from a sleep after it (review 7 minor 1). Budgets are unchanged
+     (full path 3570 < 3900; termination (30+5) + (1260+5) + (360+5) + 300 = 1965 ≤ 1980)
+     and their assumptions now hold; README and runbook §9a state the new guarantee.
+   - Static checks: the `kc` string requires the `"$t"` bound; `nap` must be defined as
+     above, no bare `sleep 5` may remain, and each loop must end with `nap "$dX"`.
+   - Harness: `bounded()` additionally asserts every invocation's bound ≤ `REQ`, and that
+     whatever follows a phase starts no later than max(deadline, the phase's last
+     invocation end) + 1 s (a sleep never outran the phase). Scenario (i) now asserts
+     every five-request release invocation is cut at `REQ` (TERM answered at the bound);
+     (j) a hung first poll is KILLed 35 s in and polling continues to the budget; (k) a
+     hung first release query is KILLed 35 s in, the next query sees the terminal pod and
+     the service is restored within two bounded invocations of SIGTERM (exit 143,
+     `service_restored`, no completion). **New (l)** (review 7's counterexample): SIGTERM
+     at the start of a TERM-ignoring hung Job poll, then five-request failing 29 s
+     release queries: the trap starts within `REQ + KGRACE` of SIGTERM, the scale-up
+     within (30+5) + 1260 + 5, the trap ends within grace − margin, exit 1 and no
+     `service_restored` (the release wait failed honestly).
+   - Mutations (each alone, against the committed file the scenario test reads; the
+     static check was relaxed where noted so the scenario had to catch it): bound back to
+     `$r` → the static `kc` check fails; with that relaxed, (i) fails (release invocations
+     not cut at REQ); with (i)'s cut assertions relaxed too, (j) fails ("the hung poll is
+     bounded by REQ"); bare `sleep 5` → the static `nap` check fails; `nap` made an
+     unbounded 5 s with the static check relaxed → the phase-sleep assertion fails
+     ("job-name=: the next phase started at …1270, after the deadline …1265 and the last
+     invocation's end …1265: a sleep outran the phase").
+2. `scripts/m8/build-hashes.sh` header: the x86_64 host build is recorded for the CLI
+   release and never compared with the image's binary (review 7 minor 2), matching
+   `docs/RUNTIME_MCP_RELEASE.md` step 2.
+
+### M8 source-side review 7 (preserved; 2026-11-07, Codex, frozen tree a6e93205, receipts m8/run8)
+
+**8.8/10, revise.** Verified: round-6 finding 2 (derive validator matrix: unset, missing,
+non-executable, rejecting, accepting; the round-6 code made the regression fail) and the
+R2 summary minor are fixed; the whole-invocation `timeout` works and its regressions
+discriminate (no wrapper: 1,355 > 1,295; no `-k`: 1,280 vs 1,265; grace 1,960 fails the
+static check); a real GNU `timeout` ended a TERM-ignoring child and its descendant in
+0.401 s; the `timeout` preflight exits 1 before any trap or call; static constants
+3,570 < 3,900 and 1,965 ≤ 1,980. Receipts: 4,243 passed, 0 failed, 9 ignored, no
+parity skips; the reviewer's own run was socket/storage-blocked for the service tests.
+
+Material finding (must fix): **SIGTERM during a hung poll can exceed the grace before
+scale-up.** `kc` gave `timeout` the whole remaining phase budget `$r`, so a first Job
+poll could run 1,260 s, while the termination arithmetic charges the in-flight
+invocation only REQ + KGRACE = 35 s. The shell defers the TERM trap while a foreground
+child runs, so SIGTERM at the start of a TERM-ignoring poll followed by five-request
+failing release queries reached scale-up at 2,530 virtual seconds, past the 1,980 s
+grace (reproduced with the real shell and GNU `timeout`). Fix: bound each whole
+invocation at min(REQ, remaining phase time) (the existing `$t`), keep `-k KGRACE`, add
+the combined scenario, account for loop sleeps, update the static arithmetic, README
+and runbook together.
+
+Minor: the runbook's "a phase overruns by at most five seconds" ignores the `sleep 5`
+after a cut invocation (hung-poll scenario: 1,270 s against POLL=1260); bound the sleep
+by the remaining time or document it. `build-hashes.sh:17` still says the host binary is
+compared with the container binary; align it with the release procedure.
+
+### M8 round 7 corrections (reviewed by source-side review 7: 8.8, revise)
 
 1. **Every `kubectl` invocation is bounded by elapsed time, not only each request.** `kc`
    is now `timeout -k "$KGRACE" "$r" kubectl -n "$NS" --request-timeout="${t}s" …`, with

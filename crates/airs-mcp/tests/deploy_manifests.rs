@@ -969,20 +969,35 @@ fn check_backup(dir: &Path) -> Result<(), String> {
         "the orchestrator verifies `timeout` exists before it sets a trap or makes a call",
     )?;
     // Every kubectl call goes through `kc DEADLINE …`, the one call site. The whole
-    // invocation is bounded by elapsed time, `timeout -k KGRACE r`, where r is the time
-    // left until the phase deadline (a kubectl invocation can issue several server
-    // requests, so `--request-timeout` alone is not a bound on the invocation; M8 review
-    // 6 finding 1). The request timeout stays as an additional bound, the lesser of REQ
-    // and r, and no call is made once no time is left (M8 review 5 finding 1).
+    // invocation is bounded by elapsed time, `timeout -k KGRACE t`, where t is the lesser
+    // of REQ and the time left until the phase deadline (a kubectl invocation can issue
+    // several server requests, so `--request-timeout` alone is not a bound on the
+    // invocation; M8 review 6 finding 1). The bound is t, not the whole remaining phase:
+    // the shell defers the TERM trap while a foreground kubectl runs, so the longest
+    // invocation, REQ + KGRACE, is also the longest SIGTERM can wait for the trap (M8
+    // review 7 finding 1). No call is made once no time is left (M8 review 5 finding 1).
     ensure(
         script.matches("kubectl").count() == 1
             && script.contains(
                 "kc() { d=$1; shift; r=$(( d - $(now) )); [ \"$r\" -gt 0 ] || return 124; \
-                 t=$r; [ \"$t\" -gt \"$REQ\" ] && t=$REQ; timeout -k \"$KGRACE\" \"$r\" kubectl -n \"$NS\" \
+                 t=$r; [ \"$t\" -gt \"$REQ\" ] && t=$REQ; timeout -k \"$KGRACE\" \"$t\" kubectl -n \"$NS\" \
                  --request-timeout=\"${t}s\" \"$@\"; }",
             ),
         "one kubectl call site: the whole invocation under `timeout -k KGRACE` for the \
-         phase's remaining time, each request capped at the lesser of REQ and that time",
+         lesser of REQ and the phase's remaining time, which also caps each request",
+    )?;
+    // Loop sleeps never pass their phase deadline either (`nap DEADLINE`: the lesser of
+    // 5 s and the time left), so a phase overruns by at most KGRACE, from one cut
+    // invocation, never by a sleep after it (M8 review 7 minor).
+    ensure(
+        script.contains(
+            "nap() { s=$(( $1 - $(now) )); if [ \"$s\" -gt 5 ]; then s=5; fi; \
+             if [ \"$s\" -gt 0 ]; then sleep \"$s\"; fi; }",
+        ) && !script.contains("sleep 5")
+            && ["d1", "d2", "dr", "ds"]
+                .iter()
+                .all(|d| script.contains(&format!("nap \"${d}\"; done"))),
+        "every loop sleep is bounded by its phase deadline (nap), no bare `sleep 5`",
     )?;
     // Elapsed-time deadlines, never iteration counts: each phase computes a fresh
     // deadline from the clock and every loop is guarded by it.
@@ -1015,16 +1030,18 @@ fn check_backup(dir: &Path) -> Result<(), String> {
         "the restoration budget starts fresh after the release wait, so an exhausted \
          release wait never consumes it",
     )?;
-    // Budgets (M8 review 4 finding 1, review 5 finding 1), from the script's own constants
-    // and the manifests' numbers. Every phase bound is elapsed time with its requests
-    // included, and an invocation cut at a phase's deadline may overrun it by KGRACE (the
-    // TERM-to-KILL grace), so each phase costs its budget + KGRACE: full path =
-    // (REQ + K) + (STOP + K) + (REQ + K) + (POLL + K) + (RELEASE + K) + (RESTORE + K) +
-    // MARGIN < the orchestrator's deadline; the termination path (the in-flight
-    // invocation cut, then the trap alone) = (REQ + K) + (RELEASE + K) + (RESTORE + K) +
-    // MARGIN <= the pod's grace period; the set Job's own deadline ends it before the poll
-    // and the release wait give up; and RESTORE leaves real time for the ready wait after
-    // its two bounded requests.
+    // Budgets (M8 review 4 finding 1, review 5 finding 1, review 7 finding 1), from the
+    // script's own constants and the manifests' numbers. Every phase bound is elapsed
+    // time with its requests included; an invocation cut at a phase's deadline may
+    // overrun it by KGRACE (the TERM-to-KILL grace) and a sleep never does, so each
+    // phase costs its budget + KGRACE: full path = (REQ + K) + (STOP + K) + (REQ + K) +
+    // (POLL + K) + (RELEASE + K) + (RESTORE + K) + MARGIN < the orchestrator's deadline.
+    // The termination path: SIGTERM is deferred while a foreground invocation runs, and
+    // no invocation lasts longer than REQ + K (the wrapper's bound is min(REQ, time
+    // left)), so the trap starts within REQ + K and then runs alone: (REQ + K) +
+    // (RELEASE + K) + (RESTORE + K) + MARGIN <= the pod's grace period. The set Job's own
+    // deadline ends it before the poll and the release wait give up; and RESTORE leaves
+    // real time for the ready wait after its two bounded requests.
     let constant = |name: &str| -> Result<u64, String> {
         let needle = format!("{name}=");
         let i = script.find(&needle).ok_or(format!("constant {name}"))? + needle.len();
@@ -2036,21 +2053,25 @@ fn the_m8_scripts_parse_and_the_backup_check_is_read_only() {
 ///     then the trap restores the service within the grace period;
 /// (i) (M8 review 6 finding 1) every release invocation issues five server requests of
 ///     29 s each and fails: `--request-timeout` bounds each request, but only the
-///     elapsed-time wrapper (`timeout -k KGRACE r`) bounds the invocation, so the last
-///     one is cut at the phase deadline and the trap still finishes within the grace
-///     period;
+///     elapsed-time wrapper (`timeout -k KGRACE t`) bounds the invocation at REQ, so each
+///     one is cut there and the trap still finishes within the grace period;
 /// (j) the first Job poll hangs and ignores TERM and its request timeout: the wrapper
-///     KILLs it KGRACE after its bound (the whole poll budget), the poll gives up, and
-///     the trap restores the service inside the orchestrator's deadline;
-/// (k) the first release query in the trap hangs the same way: KILLed KGRACE after the
-///     release budget, the release wait fails honestly (no `service_restored`), the
-///     service is still scaled back up, and the trap ends within the grace period.
+///     KILLs it KGRACE after its bound (REQ), polling continues until the budget gives
+///     up, and the trap restores the service inside the orchestrator's deadline;
+/// (k) the first release query in the trap hangs the same way: KILLed KGRACE after REQ,
+///     the next query sees the terminal pod and the service is restored within two
+///     bounded invocations of SIGTERM;
+/// (l) (M8 review 7 finding 1) SIGTERM at the start of a hung, TERM-ignoring Job poll,
+///     then five-request failing release queries: the shell defers the trap while the
+///     poll runs, so the trap starts within REQ + KGRACE of SIGTERM (never the whole poll
+///     budget), the release wait fails honestly, and the scale-up and the trap's end stay
+///     within the grace period.
 /// The stubs include a `timeout` on the same virtual clock (TERM at the bound, KILL after
 /// `-k`, exit 124/137; a child still alive long after that is reported as a runaway). In
 /// every case each request's `--request-timeout` is at most REQ and at most the
-/// invocation's bound, each invocation's bound is at most the time left in its phase, a
-/// finished invocation took no longer than its bound, and a cut one ended within KGRACE
-/// of it.
+/// invocation's bound, each invocation's bound is at most REQ and at most the time left
+/// in its phase, a finished invocation took no longer than its bound, a cut one ended
+/// within KGRACE of it, and no phase's sleeps carried it past its deadline.
 #[test]
 fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     use std::os::unix::fs::PermissionsExt;
@@ -2083,9 +2104,10 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
             .parse()
             .unwrap()
     };
-    let (req, kgrace, poll, release, margin) = (
+    let (req, kgrace, stop, poll, release, margin) = (
         constant("REQ"),
         constant("KGRACE"),
+        constant("STOP"),
         constant("POLL"),
         constant("RELEASE"),
         constant("MARGIN"),
@@ -2329,8 +2351,8 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         assert!(!r.runaway, "a child outlived its KILL point");
         for (i, c) in r.calls.iter().enumerate() {
             assert!(
-                (1..=req).contains(&c.timeout) && c.timeout <= c.bound,
-                "timeout {} bound {} in {}",
+                (1..=req).contains(&c.timeout) && c.timeout <= c.bound && c.bound <= req,
+                "timeout {} bound {} (REQ {req}) in {}",
                 c.timeout,
                 c.bound,
                 c.args
@@ -2373,6 +2395,34 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
                         "{needle}: an invocation ended at {ended}, past the deadline {deadline} + grace"
                     );
                 }
+            }
+        }
+        // Nor does a loop's sleep outrun its phase: once the deadline has passed the loop
+        // sleeps no more, so whatever follows a phase (the stop wait's `create job`, the
+        // poll's first release query, the release wait's scale-up) starts as soon as the
+        // phase's last invocation ended, or at the deadline itself (M8 review 7 minor).
+        for (needle, budget) in [
+            ("app.kubernetes.io/name=airs-mcp", stop),
+            ("get job", poll),
+            ("job-name=", release),
+        ] {
+            let Some(first) = r.calls.iter().position(|c| c.args.contains(needle)) else {
+                continue;
+            };
+            let last = r
+                .calls
+                .iter()
+                .rposition(|c| c.args.contains(needle))
+                .unwrap();
+            let deadline = r.calls[first].at + budget;
+            let last_ended = r.calls[last].end.or(r.calls[last].cut).unwrap_or(r.end);
+            if let Some(next) = r.calls.get(last + 1) {
+                assert!(
+                    next.at <= deadline.max(last_ended) + 1,
+                    "{needle}: the next phase started at {}, after the deadline {deadline} and \
+                     the last invocation's end {last_ended}: a sleep outran the phase",
+                    next.at
+                );
             }
         }
     };
@@ -2552,9 +2602,10 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     bounded(&r);
     // (i) M8 review 6 finding 1: every release invocation issues five requests of 29 s
     // each and fails. Each request respects `--request-timeout`, so only the elapsed-time
-    // wrapper keeps the invocation inside the phase: the last one is cut at the release
-    // deadline, the scale-up still follows within REQ + RELEASE + KGRACE of SIGTERM, and
-    // the trap ends within the grace period.
+    // wrapper keeps the invocation inside REQ: every one is cut at its bound (a
+    // TERM-answering child ends at the bound, not after the kill grace), the scale-up
+    // still follows within REQ + RELEASE + KGRACE of SIGTERM, and the trap ends within
+    // the grace period.
     let r = run(&Case {
         job: "",
         pod: "Running\n",
@@ -2587,18 +2638,21 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         .iter()
         .filter(|c| c.args.contains("job-name=") && c.cut.is_some())
         .collect();
-    assert_eq!(
-        cuts.len(),
-        1,
-        "the wrapper cut exactly the last release invocation"
-    );
-    let cut = cuts[0];
     assert!(
-        cut.cut.unwrap() - cut.at <= cut.bound + 1,
-        "a TERM-answering child ends at the bound, not after the kill grace: {} s, bound {}",
-        cut.cut.unwrap() - cut.at,
-        cut.bound
+        cuts.len() >= 2 && cuts.len() == count(&r.calls, "job-name="),
+        "every multi-request release invocation was cut at REQ: {} cut of {}",
+        cuts.len(),
+        count(&r.calls, "job-name=")
     );
+    for cut in &cuts {
+        assert_eq!(cut.bound, req);
+        assert!(
+            cut.cut.unwrap() - cut.at <= cut.bound + 1,
+            "a TERM-answering child ends at the bound, not after the kill grace: {} s, bound {}",
+            cut.cut.unwrap() - cut.at,
+            cut.bound
+        );
+    }
     bounded(&r);
     // A hung invocation was cut, not finished, and lasted its bound plus KGRACE (the
     // TERM at the bound was ignored; the KILL ended it), within the stubs' granularity.
@@ -2617,8 +2671,9 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     };
     // (j) The first Job poll hangs and ignores TERM: `--request-timeout` does nothing for
     // it, the wrapper's TERM is ignored, and the KILL ends it KGRACE after its bound,
-    // which is the whole poll budget. The poll then gives up (exit 1) and the trap
-    // restores the service, all inside the orchestrator's deadline less the margin.
+    // which is REQ (never the whole poll budget: M8 review 7 finding 1). Polling then
+    // continues until the poll budget gives up (exit 1) and the trap restores the
+    // service, all inside the orchestrator's deadline less the margin.
     let r = run(&Case {
         job: "",
         pod: "Succeeded\n",
@@ -2636,12 +2691,12 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     assert!(r.out.contains("service_restored"), "{}", r.out);
     assert!(!r.out.contains("backup_set_verified"), "{}", r.out);
     assert!(!r.out.contains("daily_complete"), "{}", r.out);
-    assert_eq!(count(&r.calls, "get job"), 1, "no poll after the cut one");
-    let hung = &r.calls[index(&r.calls, "get job")];
-    assert_eq!(
-        hung.bound, poll,
-        "the first poll gets the whole poll budget"
+    assert!(
+        count(&r.calls, "get job") > 1,
+        "polling continues after the cut one"
     );
+    let hung = &r.calls[index(&r.calls, "get job")];
+    assert_eq!(hung.bound, req, "the hung poll is bounded by REQ");
     killed_after_grace(hung);
     assert!(
         r.end - T0 <= orch_deadline - margin,
@@ -2650,9 +2705,8 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     );
     bounded(&r);
     // (k) The first release query in the trap hangs the same way. It is KILLed KGRACE
-    // after the release budget, so the release wait fails honestly (no `service_restored`,
-    // exit 1); the service is still scaled back up, and the trap ends inside the grace
-    // period less the margin.
+    // after REQ, the release wait goes on with the next query, which sees the terminal
+    // pod, and the service is restored within two bounded invocations of SIGTERM.
     let r = run(&Case {
         job: "",
         pod: "Succeeded\n",
@@ -2666,25 +2720,67 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         hang_job_first: false,
     });
     let term_at = r.term_at.expect("SIGTERM was sent");
-    assert_eq!(r.code, 1, "{}", r.out);
-    assert!(!r.out.contains("service_restored"), "{}", r.out);
+    assert_eq!(r.code, 143, "{}", r.out);
+    assert!(r.out.contains("service_restored"), "{}", r.out);
+    assert!(!r.out.contains("daily_complete"), "{}", r.out);
     assert_eq!(
         count(&r.calls, "job-name="),
-        1,
-        "no release query after the cut one"
+        2,
+        "the query after the cut one sees the terminal pod"
     );
     let hung = &r.calls[index(&r.calls, "job-name=")];
-    assert_eq!(
-        hung.bound, release,
-        "the first release query gets the whole budget"
-    );
+    assert_eq!(hung.bound, req, "the hung release query is bounded by REQ");
     killed_after_grace(hung);
     let up = &r.calls[index(&r.calls, "--replicas=1")];
     assert!(
-        up.at - term_at <= req + release + kgrace,
+        up.at - term_at <= 2 * (req + kgrace) + 5 + 1,
+        "scale-up requested {} s after SIGTERM: one cut query, one nap, one query",
+        up.at - term_at
+    );
+    assert!(
+        r.end - term_at <= grace - margin,
+        "the trap took {} s after SIGTERM; grace {grace} minus margin {margin}",
+        r.end - term_at
+    );
+    bounded(&r);
+    // (l) M8 review 7 finding 1: SIGTERM arrives at the start of a Job poll that hangs
+    // and ignores TERM, and every release query then issues five failing 29 s requests.
+    // The shell defers the TERM trap while the poll runs, so the trap can start only
+    // when the wrapper KILLs the poll: REQ + KGRACE after SIGTERM, never the whole poll
+    // budget. The release wait then runs its full budget and fails honestly, and the
+    // scale-up still follows within (REQ + KGRACE) + RELEASE + KGRACE of SIGTERM, the
+    // whole trap within the grace period less the margin.
+    let r = run(&Case {
+        job: "",
+        pod: "Running\n",
+        available: "1",
+        term: Term::StartOfJobRequest,
+        cost_job: 0,
+        cost_release: 29,
+        fail_release: true,
+        reqs_release: 5,
+        hang_release_first: false,
+        hang_job_first: true,
+    });
+    let term_at = r.term_at.expect("SIGTERM was sent");
+    assert_eq!(r.code, 1, "{}", r.out);
+    assert!(!r.out.contains("service_restored"), "{}", r.out);
+    let hung = &r.calls[index(&r.calls, "get job")];
+    assert_eq!(hung.bound, req);
+    killed_after_grace(hung);
+    assert_eq!(count(&r.calls, "get job"), 1, "SIGTERM ends polling");
+    let first_release = &r.calls[index(&r.calls, "job-name=")];
+    assert!(
+        first_release.at - term_at <= req + kgrace + 1,
+        "the trap started {} s after SIGTERM; the hung poll bounds it to REQ + KGRACE",
+        first_release.at - term_at
+    );
+    let up = &r.calls[index(&r.calls, "--replicas=1")];
+    assert!(
+        up.at - term_at <= (req + kgrace) + release + kgrace,
         "scale-up requested {} s after SIGTERM, bound {}",
         up.at - term_at,
-        req + release + kgrace
+        (req + kgrace) + release + kgrace
     );
     assert!(
         r.end - term_at <= grace - margin,

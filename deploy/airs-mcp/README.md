@@ -86,15 +86,19 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
     virtual clock). No phase counts iterations: each is a wall-clock deadline that
     includes the time its API requests take, and every `kubectl` call goes through one
     function, `kc DEADLINE …`, which bounds the **whole invocation** by elapsed time:
-    `timeout -k "$KGRACE" "$r" kubectl --request-timeout="${t}s" …`, where `r` is the time
-    left until the phase's deadline and `t` is the lesser of `REQ` (30 s) and `r`. A
-    `kubectl` invocation can issue several server requests (discovery, retries), so
+    `timeout -k "$KGRACE" "$t" kubectl --request-timeout="${t}s" …`, where `t` is the
+    lesser of `REQ` (30 s) and the time left until the phase's deadline. A `kubectl`
+    invocation can issue several server requests (discovery, retries), so
     `--request-timeout` alone bounds only each request; coreutils `timeout` (an Essential
     package in the image's Debian base) sends TERM at the elapsed bound and KILL `KGRACE`
-    (5 s) later, so one invocation can overrun its phase by at most `KGRACE`. No call is
-    made once no time is left. A slow or erroring API server therefore shortens the number
-    of requests, never the deadline. The constants are `REQ=30`, `KGRACE=5`, `STOP=300`,
-    `POLL=1260`, `RELEASE=1260`, `RESTORE=360` and `MARGIN=300`:
+    (5 s) later. So no invocation lasts longer than `REQ + KGRACE` (35 s), an invocation
+    cut at its phase's deadline overruns it by at most `KGRACE`, and every loop sleep is
+    bounded by the time left in its phase (`nap DEADLINE`), so a phase overruns by at
+    most `KGRACE`. The 35 s also bounds how long a SIGTERM waits: the shell runs the TERM
+    trap only after the foreground `kubectl` ends. No call is made once no time is left.
+    A slow or erroring API server therefore shortens the number of requests, never the
+    deadline. The constants are `REQ=30`, `KGRACE=5`, `STOP=300`, `POLL=1260`,
+    `RELEASE=1260`, `RESTORE=360` and `MARGIN=300`:
     - the set Job's own `activeDeadlineSeconds: 1200` ends it before the poll phase gives
       up (1260 s) and before the trap's release wait gives up (1260 s);
     - the **restoration budget** `RESTORE` (360 s = ready wait 300 + two bounded
@@ -104,9 +108,10 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
       (30 + 5) + poll (1260 + 5) + release (1260 + 5) + restore (360 + 5) + margin 300 =
       3570 s, each phase allowing one forced termination of `KGRACE`, strictly below the
       orchestrator's `activeDeadlineSeconds: 3900`;
-    - the **termination path** (a SIGTERM or the deadline at the worst moment: the
-      in-flight invocation is cut, then the trap runs alone) is bounded by (30 + 5) +
-      release (1260 + 5) + restore (360 + 5) + margin 300 = 1965 s, within the pod's
+    - the **termination path** (a SIGTERM or the deadline at the worst moment: the trap
+      waits for the in-flight invocation, at most 30 + 5 s even if that invocation hangs,
+      then runs alone) is bounded by (30 + 5) + release (1260 + 5) + restore (360 + 5) +
+      margin 300 = 1965 s, within the pod's
       `terminationGracePeriodSeconds: 1980`, so the kubelet lets the trap finish. A further
       TERM does not end the trap while it runs (it is handled as a no-op, `trap ':'`, not
       ignored: an ignored signal would be inherited by every `kubectl` the trap launches

@@ -276,10 +276,12 @@ normally a few minutes and dominated by `VACUUM INTO` of the archive. Measure it
 first runs (step 12, measured capacity). The worst case is the orchestrator's budget:
 scale-down 35 + stop 305 + create 35 + poll 1265 + release 1265 + restore 365 + margin
 300 = 3570 s of elapsed time (every phase's API requests included; each `kubectl`
-invocation is cut at the time left in its phase, with 5 s to force-terminate it, so a
-phase overruns by at most those 5 s), inside its 3900 s deadline; and if the deadline ends
-it, the trap needs at most 35 + release 1265 + restore 365 + margin 300 = 1965 s, inside
-its 1980 s of grace, to restore the service. On such a day the 03:15 Longhorn backup runs before the set is
+invocation is cut at the lesser of 30 s and the time left in its phase, with 5 s to
+force-terminate it, and loop sleeps never pass the phase deadline, so a phase overruns by
+at most those 5 s), inside its 3900 s deadline; and if the deadline or a SIGTERM ends it,
+the trap starts within 35 s (the longest any invocation, even a hung one, can keep the
+shell from running it) and needs at most 35 + release 1265 + restore 365 + margin 300 =
+1965 s, inside its 1980 s of grace, to restore the service. On such a day the 03:15 Longhorn backup runs before the set is
 verified, so the success gate below records no coordinated backup for it. While it is stopped, agents and the CLI get
 connection errors, and no collection runs. The quarter-hour schedule coalesces the
 missed tick (contract §6.1).

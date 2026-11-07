@@ -14,7 +14,8 @@
 # It never signs, tags, pushes, uploads or builds container images.
 #
 # The release matrix (docs/RUNTIME_MCP_RELEASE.md, npm/):
-#   x86_64-unknown-linux-gnu   host build, compared with the container image's binary
+#   x86_64-unknown-linux-gnu   host build, recorded for the CLI release; never compared
+#                              with the image's binary (docs/RUNTIME_MCP_RELEASE.md step 2)
 #   x86_64-unknown-linux-musl  npm package
 #   aarch64-unknown-linux-musl npm package
 #   aarch64-apple-darwin       user-run on the release Mac (sign, notarise)
