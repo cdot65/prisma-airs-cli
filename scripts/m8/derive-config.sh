@@ -480,25 +480,36 @@ then
 fi
 # Python 3.11+ (tomllib) or the tomli module gives the round-trip check above; without
 # either, the service parser below is required rather than optional.
-if python3 -I -c 'import tomllib' 2>/dev/null || python3 -I -c 'import tomli' 2>/dev/null; then
+# AIRS_DERIVE_ASSUME_NO_TOML=1 makes the helper behave as if python3 had no TOML module
+# (tests exercise that path on machines that have one). It can only make validation
+# stricter: the service parser becomes mandatory.
+if [ "${AIRS_DERIVE_ASSUME_NO_TOML:-0}" != 1 ] \
+  && { python3 -I -c 'import tomllib' 2>/dev/null || python3 -I -c 'import tomli' 2>/dev/null; }; then
   HAVE_TOML=1; ok "it parses as TOML and has the expected structure"
 else
   HAVE_TOML=0; dim "  (no TOML module in this python3: the service parser must validate it)"
 fi
-AIRS_MCP_BIN="${AIRS_MCP_BIN:-}"
-for c in "$AIRS_MCP_BIN" "$REPO/target/release/airs-mcp" "$REPO/target/debug/airs-mcp"; do
-  if [ -n "$c" ] && [ -x "$c" ]; then AIRS_MCP_BIN=$c; break; fi
-done
-if [ -z "$AIRS_MCP_BIN" ] && [ "$HAVE_TOML" = 0 ]; then
-  warn "nothing can validate the output here: build airs-mcp or set AIRS_MCP_BIN; nothing was written"
+# The validator is the first EXECUTABLE candidate. An AIRS_MCP_BIN that is set but is not
+# an executable file is an error, never silently replaced by a discovered binary and never
+# counted as a validator (M8 review 6 finding 2).
+VALIDATOR=""
+if [ -n "${AIRS_MCP_BIN:-}" ] && ! { [ -f "${AIRS_MCP_BIN}" ] && [ -x "${AIRS_MCP_BIN}" ]; }; then
+  warn "AIRS_MCP_BIN is set but is not an executable file; fix it or unset it. Nothing was written"
   exit 1
 fi
-if [ -n "$AIRS_MCP_BIN" ] && [ -x "$AIRS_MCP_BIN" ]; then
-  if "$AIRS_MCP_BIN" check-config --config "$TMP" >/dev/null 2>&1; then
+for c in "${AIRS_MCP_BIN:-}" "$REPO/target/release/airs-mcp" "$REPO/target/debug/airs-mcp"; do
+  if [ -n "$c" ] && [ -f "$c" ] && [ -x "$c" ]; then VALIDATOR=$c; break; fi
+done
+if [ -z "$VALIDATOR" ] && [ "$HAVE_TOML" = 0 ]; then
+  warn "nothing can validate the output here: build airs-mcp or set AIRS_MCP_BIN to an executable; nothing was written"
+  exit 1
+fi
+if [ -n "$VALIDATOR" ]; then
+  if "$VALIDATOR" check-config --config "$TMP" >/dev/null 2>&1; then
     ok "airs-mcp check-config accepts it"
   else
     warn "airs-mcp check-config refused it; nothing was written:"
-    "$AIRS_MCP_BIN" check-config --config "$TMP" 2>&1 | sed 's/^/    /' | head -5
+    "$VALIDATOR" check-config --config "$TMP" 2>&1 | sed 's/^/    /' | head -5
     exit 1
   fi
 else

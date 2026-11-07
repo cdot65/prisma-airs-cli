@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source-side review 5: 8.5/10, revise; round 6 corrections submitted for review 6** (reviews 1–4 scored 6.5, 6.5, 7.5 and 8.0);
+Status: **source-side review 6: 8.7/10, revise; round 7 corrections in progress** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
 integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
 accepted). The plan's exit gate needs an
 independent source and receipts review at or above the owner-set 9.0 threshold **plus**
@@ -4973,9 +4973,12 @@ Nothing here is published, applied or deployed by an agent.
     - Loopback test `the_private_health_listener_serves_bounded_metrics`: real service
       storage, no tenant name or path, and maintenance turning `ready` off.
   - **Backup-policy checks (§9.4), user-run.**
-    - `scripts/m8/check-r2-delete-rights.sh` lists credential names, never values. It
-      inspects pasted tokens' permission groups through two read-only API reads and
-      flags any R2 write or remove right.
+    - `scripts/m8/check-r2-delete-rights.sh` is an offline validator of an owner-made,
+      sanitized `INVENTORY.json` (credential names, kinds, permissions and scopes; never
+      values). It makes no network call and reads no token; unknown entries block, and a
+      modify permission whose scope covers the backup bucket is a violation. (As first
+      implemented it inspected pasted tokens through two read-only API reads; source
+      review 1 found that boundary wrong, and round 2 replaced it.)
     - The nas1 retention record is checklist step 4.
     - A repo test asserts that the R2 script stays read-only (no write methods, object
       operations or cluster commands) and that every M8 script parses.
@@ -5557,3 +5560,55 @@ absent, the grant tools fall back to the built-in proof-ready lists, the Python
 round-trip is skipped, and `airs-mcp check-config` becomes mandatory (no binary and no
 parser refuses to write). Exercised in the CI image: the script completes with a
 `check-config` stub, and refuses with neither validator.
+
+### M8 source-side review 6 — 8.7/10, revise (preserved, 2026-11-07T13:52Z)
+
+Source: `.local/dev/runtime-mcp/m8/review-6/result.md`. All 712 frozen files verified.
+The round-5 probes pass: under virtual time the SIGTERM path ends after 1,270 s (round 5:
+8,568 s) and the slow-poll path after 2,530 s (round 5: 16,922 s). The credential
+handoff and the BusyBox recipe are correct.
+
+Material findings:
+1. `kubectl --request-timeout` bounds one server request, not the invocation; discovery
+   can issue several (five were observed in one credential-free attempt). Modelling five
+   requests per invocation, the termination path reached 2,005 s against the 1,980 s
+   grace period. The regression caps the whole simulated invocation at one request
+   timeout, so it cannot see this.
+2. `derive-config.sh` keeps a non-empty `AIRS_MCP_BIN` even when the path is missing or
+   not executable; the mandatory-validator guard only tests emptiness. With no Python
+   TOML parser, a missing or non-executable validator path led to an unvalidated file
+   being written (exit 0).
+
+Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
+tokens through API calls.
+
+### M8 round 7 corrections (in progress; submitted for source-side review 7 when complete)
+
+2. **The derive helper publishes only after a validator ran.** The validator is resolved
+   into its own variable as the first candidate that is a regular, executable file. An
+   `AIRS_MCP_BIN` that is set but not such a file is a hard error ("not an executable
+   file; fix it or unset it"), never silently replaced by a discovered binary. Without a
+   Python TOML parser and without a validator the helper refuses to write (exit 1).
+   `AIRS_DERIVE_ASSUME_NO_TOML=1` forces the no-parser path for tests; it can only make
+   validation stricter.
+   - Test: `derive_config_requires_a_working_validator_without_a_toml_parser`: unset
+     (the helper may discover the built binary; a file exists only if `check-config`
+     accepted it), missing path and non-executable file (exit 1, no file, the error
+     named), a rejecting validator (exit 1, no file) and an accepting one (exit 0, file).
+   - Mutation: the review-6 discovery loop fails the missing-path case.
+
+Minor finding: the M8 implementation summary now describes the R2 helper as the offline
+inventory validator it became in round 2, with the original token-inspection design
+noted as replaced.
+
+CI correctness (not a reviewer finding): PR #10's `linux` job failed on
+`the_backup_orchestrator_restores_the_service_and_reports_honestly`. CI's `/bin/sh` is
+dash, and the test's `kubectl` stub logged each call with `echo`, which expanded the
+literal `\n` in the orchestrator's jsonpath argument into a newline and split the log
+line. The stub logs with `printf` now. Reproduced and verified in the CI image
+(`catthehacker/ubuntu:act-22.04`, unprivileged user, `RUST_TEST_THREADS=4`): the ten
+`deploy_manifests` tests pass under dash. The orchestrator script itself already used
+`printf` for data that can carry backslashes.
+
+(Finding 1, the elapsed-time bound around each whole `kubectl` invocation, is fork O2's
+and is recorded below when it lands.)

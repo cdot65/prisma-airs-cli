@@ -488,8 +488,19 @@ fn service_stubs(dir: &Path) -> PathBuf {
 
 /// Run derive-config.sh with `answers` on stdin; returns (exit code, combined output).
 fn derive(dir: &Path, args: &[&str], answers: &[&str], stubs: &Path) -> (i32, String) {
-    let mut child = Command::new("bash")
-        .arg(script("derive-config.sh"))
+    derive_with(dir, args, answers, stubs, &[])
+}
+
+/// [`derive`] with environment overrides: `Some` sets a variable, `None` removes it.
+fn derive_with(
+    dir: &Path,
+    args: &[&str],
+    answers: &[&str],
+    stubs: &Path,
+    envs: &[(&str, Option<&str>)],
+) -> (i32, String) {
+    let mut cmd = Command::new("bash");
+    cmd.arg(script("derive-config.sh"))
         .args(args)
         .arg("--talos-cluster")
         .arg(talos_fixture(dir))
@@ -505,9 +516,14 @@ fn derive(dir: &Path, args: &[&str], answers: &[&str], stubs: &Path) -> (i32, St
         .env("HOME", dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
+        .stderr(Stdio::piped());
+    for (k, v) in envs {
+        match v {
+            Some(v) => cmd.env(k, v),
+            None => cmd.env_remove(k),
+        };
+    }
+    let mut child = cmd.spawn().unwrap();
     let input: String = answers.iter().map(|a| format!("{a}\n")).collect();
     child
         .stdin
@@ -740,6 +756,94 @@ fn derive_config_writes_nothing_when_the_service_parser_refuses_it() {
     let (code, text) = derive(&dir, &[], &refs, &stubs);
     assert_eq!(code, 1, "{text}");
     assert!(!dir.join("out/airs-mcp.local.toml").exists());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// M8 review 6 finding 2: when python3 has no TOML module, `airs-mcp check-config` is the
+/// only validator, so it must actually run before anything is published. A validator
+/// path that is unset, missing or not executable must refuse (exit 1, no file); a real
+/// validator must reject invalid input and accept valid input. `AIRS_DERIVE_ASSUME_NO_TOML`
+/// forces the no-parser path on machines whose python3 has `tomllib`.
+#[test]
+fn derive_config_requires_a_working_validator_without_a_toml_parser() {
+    let dir = temp("derive-validator");
+    let stubs = service_stubs(&dir);
+    let not_exec = dir.join("not-executable");
+    std::fs::write(&not_exec, b"#!/bin/sh\nexit 0\n").unwrap();
+    std::fs::set_permissions(&not_exec, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let missing = dir.join("does-not-exist");
+    let valid = answers("prod-1");
+    let mut invalid = answers("prod-1");
+    invalid[11] = "11111111-2222-1333-8444-555555555556".into();
+    let out = dir.join("out/airs-mcp.local.toml");
+    // `want` is Some((exit code, file written)) where the outcome is fixed. With
+    // AIRS_MCP_BIN unset the helper may still find a built `target/*/airs-mcp` (it does
+    // under `cargo test`), so that case only checks the invariant below.
+    /// (name, AIRS_MCP_BIN, answers, fixed outcome).
+    type ValidatorCase<'a> = (&'a str, Option<&'a str>, &'a [String], Option<(i32, bool)>);
+    let cases: [ValidatorCase; 5] = [
+        ("unset", None, &valid, None),
+        (
+            "missing",
+            Some(missing.to_str().unwrap()),
+            &valid,
+            Some((1, false)),
+        ),
+        (
+            "not executable",
+            Some(not_exec.to_str().unwrap()),
+            &valid,
+            Some((1, false)),
+        ),
+        (
+            "rejecting",
+            Some(env!("CARGO_BIN_EXE_airs-mcp")),
+            &invalid,
+            Some((1, false)),
+        ),
+        (
+            "accepting",
+            Some(env!("CARGO_BIN_EXE_airs-mcp")),
+            &valid,
+            Some((0, true)),
+        ),
+    ];
+    for (name, bin, answers, want) in cases {
+        let _ = std::fs::remove_file(&out);
+        let refs: Vec<&str> = answers.iter().map(String::as_str).collect();
+        let (code, text) = derive_with(
+            &dir,
+            &[],
+            &refs,
+            &stubs,
+            &[
+                ("AIRS_DERIVE_ASSUME_NO_TOML", Some("1")),
+                ("AIRS_MCP_BIN", bin),
+            ],
+        );
+        assert!(
+            text.contains("no TOML module"),
+            "{name}: the no-parser path was taken: {text}"
+        );
+        // The invariant: without a TOML parser, a file exists only if the service parser
+        // ran and accepted it; otherwise the helper refused with exit 1.
+        if out.exists() {
+            assert!(text.contains("check-config accepts it"), "{name}: {text}");
+            assert_eq!(code, 0, "{name}: {text}");
+        } else {
+            assert_eq!(code, 1, "{name}: {text}");
+        }
+        if let Some((want_code, want_file)) = want {
+            assert_eq!(code, want_code, "{name}: {text}");
+            assert_eq!(out.exists(), want_file, "{name}: output presence");
+        }
+        if matches!(name, "missing" | "not executable") {
+            // An explicit validator that cannot run is an error, never replaced by a
+            // discovered binary.
+            assert!(text.contains("not an executable file"), "{name}: {text}");
+            assert!(!text.contains("check-config accepts it"), "{name}: {text}");
+        }
+    }
     let _ = std::fs::remove_dir_all(&dir);
 }
 

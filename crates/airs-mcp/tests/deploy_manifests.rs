@@ -2090,6 +2090,8 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         let sent = d.join("sent");
         let pidfile = d.join("pid");
         // Shared stub helpers: read/advance the clock; signal the orchestrator once.
+        // The stubs log with printf, not echo: the orchestrator's jsonpath arguments carry
+        // a literal `\n`, and dash's echo (CI's /bin/sh) would expand it into a newline.
         let common = format!(
             "now() {{ cat '{clock}'; }}\n\
              advance() {{ echo $(( $(now) + $1 )) > '{clock}'; }}\n\
@@ -2108,7 +2110,7 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         let kubectl = format!(
             "#!/bin/sh\n{common}\
              t=''; for a in \"$@\"; do case \"$a\" in --request-timeout=*) t=\"${{a#--request-timeout=}}\"; t=\"${{t%s}}\" ;; esac; done\n\
-             echo \"$(now) $t $*\" >> '{log}'\n\
+             printf '%s %s %s\\n' \"$(now)\" \"$t\" \"$*\" >> '{log}'\n\
              case \"$*\" in\n\
                *'get job'*) touch '{polled}'; {term_on_job}; spend {cost_job}; printf '%s' '{job}' ;;\n\
                *'get deployment'*) printf '%s' '{available}' ;;\n\
