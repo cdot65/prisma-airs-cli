@@ -497,7 +497,19 @@ is covered by the service's own tests (`the_disk_reserve_pauses_publication_then
 in crates/airs-mcp/tests/collection.rs, and the reserve tests in crates/airs-mcp/src/tools.rs
 and space.rs); the recovery procedure is for production.
 
-**Measured capacity.** Account for each consumer separately; they grow differently.
+**Capacity evidence (owner decision 2026-11-08).** The acceptance evidence is the
+planning-size measurement, not a 30-day series: 5,000,000 synthetic scans gave an archive
+of 9.17 GB (`D`), each verified set 8.0 GB, three retained sets 24.0 GB and a fourth-set
+creation peak of 32.0 GB, so data plus sets is about 33 GB steady and 41 GB at peak on the
+100 GiB volume (M8 evidence `backup-at-planning-size.txt`). The formula below sizes the
+volume from it (about 7 × `D` + one year of artifacts + 20%, so 100 GiB holds while a
+year of artifacts stays under about 25 GB). In production, the 70% and 85% volume alerts
+(step 6) and the low-space pause are the safety net; expand the PVC online when an alert
+fires. The weekly records below are optional operator practice for re-deriving the size
+from real growth.
+
+**Measured capacity (optional operator practice).** Account for each consumer separately;
+they grow differently.
 - For the first 30 days, record weekly:
   - `airs_mcp_archive_bytes` and `airs_mcp_control_bytes` (the live databases, `D`);
   - `airs_mcp_data_volume_size_bytes` and the used bytes (size minus free);

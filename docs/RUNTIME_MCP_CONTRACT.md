@@ -1685,7 +1685,8 @@ size from measured growth.
 - **M8.2 local qualification.** `qualify_restore_and_contention_at_scale` (opt-in) seeds
   the qualified dataset, runs report readers against a live writer, and restores and
   verifies a `VACUUM INTO` backup copy. It records peak RSS and I/O. Production storage
-  and measured capacity are user-run. (The node-loss test and the low-space exercise on
+  are user-run; capacity is evidenced by the planning-size measurement (owner decision
+  2026-11-08). (The node-loss test and the low-space exercise on
   the actual storage class were withdrawn by the owner on 2026-11-08 and are not run.)
 - **M8.3 and M8.4.**
   - `docs/RUNTIME_MCP_DEPLOYMENT_RUNBOOK.md` and `scripts/m8/user-checklist.sh` cover
