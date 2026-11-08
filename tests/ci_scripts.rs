@@ -263,6 +263,12 @@ fn the_release_trusts_ci_only_when_every_required_job_passed() {
         all("push", "success").replacen(r#""state":"success""#, r#""state":"pending""#, 1);
     assert!(!status_ok(&aggregate), "aggregate not success");
     assert!(!status_ok(""), "empty input");
+    assert!(!status_ok(" \n"), "blank input");
+    assert!(!status_ok("null"), "null");
+    assert!(
+        !status_ok(r#"{"state":"success","statuses":[1]}"#),
+        "malformed entries"
+    );
     assert!(!status_ok("not json"), "malformed");
     assert!(!status_ok(r#"{"state":"success"}"#), "no statuses array");
     assert!(!status_ok(r#"[]"#), "wrong shape");

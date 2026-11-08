@@ -8,8 +8,10 @@
 set -u
 command -v jq >/dev/null || { echo "ci-status-ok: jq is required" >&2; exit 1; }
 input="$(cat)"
-jq -e 'type == "object" and (.statuses | type == "array")' >/dev/null 2>&1 <<<"$input" \
-  || { echo "ci-status-ok: not a combined status object" >&2; exit 1; }
+# Every verdict is an explicit word from jq: on empty input jq 1.6 prints nothing and exits 0
+# even with -e, so neither no output nor a zero exit may ever count as a pass.
+shape="$(jq -r 'if type == "object" and (.statuses | type == "array") then "combined" else "other" end' <<<"$input" 2>/dev/null)"
+[ "$shape" = combined ] || { echo "ci-status-ok: not a combined status object" >&2; exit 1; }
 problem="$(jq -r '
   def job_ok($job):
     [.statuses[] | select(.context == "CI / \($job) (push)" or .context == "CI / \($job) (pull_request)")]
@@ -20,9 +22,9 @@ problem="$(jq -r '
       end;
   [ (if .state == "success" then empty else "aggregate state is \(.state // "missing")" end),
     job_ok("linux"), job_ok("musl"), job_ok("docs-site") ]
-  | join("; ")' <<<"$input" 2>/dev/null)" || { echo "ci-status-ok: unreadable status" >&2; exit 1; }
-if [ -n "$problem" ]; then
-  echo "ci-status-ok: $problem" >&2
-  exit 1
+  | if length == 0 then "all-passed" else join("; ") end' <<<"$input" 2>/dev/null)"
+if [ "$problem" = all-passed ]; then
+  exit 0
 fi
-exit 0
+echo "ci-status-ok: ${problem:-unreadable status}" >&2
+exit 1

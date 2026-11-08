@@ -5626,12 +5626,13 @@ Minor: the published npm install was not yet receipted.
   file the removal changed found no other Rust assertion removed: the other sandbox and
   release-packaging deletions were TypeScript-only, the parity suites were dual-CLI
   comparisons, and the live tier needed a real tenant.
-- **Minor — partly done.** Linux receipts are in the evidence: a fresh install of 8.2.0 and an
-  upgrade from 8.0.0 on x64, and a fresh install on arm64 (emulated), each with `airs` and
-  `airs-cli` printing 8.2.0. **The macOS platform package is not public:** npm acknowledged its
-  publish, but `8.2.0-darwin-arm64` returns 404, a retry is refused as "previously staged", and
-  the release token sees no staged version. Approving it needs the owner's npm 2FA (owner-only,
-  not performed); until then npm on macOS gets the launcher without its binary.
+- **Minor — done.** Install receipts for all three platforms are in the evidence: fresh install
+  and upgrade from 8.0.0 on Linux x64 and macOS arm64, fresh install on Linux arm64 (emulated),
+  each with `airs` and `airs-cli` printing 8.2.0. `8.2.0-darwin-arm64` was held in npm's validation
+  until 2026-11-08T14:58Z; no owner action was needed.
+- **CI run 361 caught a defect in the first version of finding 2's fix.** On CI's jq 1.6, empty
+  input printed nothing and exited 0 even with `-e`, so `ci-status-ok.sh` accepted it; jq 1.8 exits
+  4, which hid this locally. The script now passes only on an explicit `all-passed` word from jq.
 
 ### Owner decisions: TypeScript parity removed; releases trust CI; docs-only CI (2026-11-08)
 
