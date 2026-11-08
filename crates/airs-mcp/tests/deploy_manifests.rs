@@ -976,15 +976,19 @@ fn check_backup(dir: &Path) -> Result<(), String> {
     // the shell defers the TERM trap while a foreground kubectl runs, so the longest
     // invocation, REQ + KGRACE, is also the longest SIGTERM can wait for the trap (M8
     // review 7 finding 1). No call is made once no time is left (M8 review 5 finding 1).
+    // No `--request-timeout`: in kubectl 1.37 that flag makes clientcmd skip the in-cluster
+    // configuration provider, so every call fell back to localhost:8080 in the live
+    // orchestrator (M8 live evidence, 2026-11-08). The elapsed-time wrapper is the bound.
     ensure(
         script.matches("kubectl").count() == 1
+            && !script.contains("--request-timeout")
             && script.contains(
                 "kc() { d=$1; shift; r=$(( d - $(now) )); [ \"$r\" -gt 0 ] || return 124; \
-                 t=$r; [ \"$t\" -gt \"$REQ\" ] && t=$REQ; timeout -k \"$KGRACE\" \"$t\" kubectl -n \"$NS\" \
-                 --request-timeout=\"${t}s\" \"$@\"; }",
+                 t=$r; [ \"$t\" -gt \"$REQ\" ] && t=$REQ; timeout -k \"$KGRACE\" \"$t\" kubectl -n \"$NS\" \"$@\"; }",
             ),
         "one kubectl call site: the whole invocation under `timeout -k KGRACE` for the \
-         lesser of REQ and the phase's remaining time, which also caps each request",
+         lesser of REQ and the phase's remaining time; no --request-timeout (it disables \
+         kubectl's in-cluster configuration)",
     )?;
     // Loop sleeps never pass their phase deadline either (`nap DEADLINE`: the lesser of
     // 5 s and the time left), so a phase overruns by at most KGRACE, from one cut
@@ -1178,26 +1182,81 @@ fn check_backup(dir: &Path) -> Result<(), String> {
             .all(|m| m["readOnly"] == true),
         "verification mounts the data read-only",
     )?;
-    // Only the orchestrator reaches the API server; the backup pod has no network.
+    // Only the orchestrator reaches the API server; the backup pod has no network. The
+    // endpoints are the operator's (an overlay value): the committed base carries the
+    // TEST-NET-1 placeholder, and the deployable check refuses it (M8 live evidence: the
+    // public base must not carry one cluster's addresses, and a CNI that gives node IPs a
+    // node identity does not match ipBlock rules for the Service's translated backends,
+    // so the operator points the orchestrator at a VIP that is not a node address).
     let np = get("NetworkPolicy", "airs-mcp-backup-to-apiserver");
     ensure(
-        np["spec"]
-            == json!({
-                "podSelector": {"matchLabels": {"app.kubernetes.io/name": "airs-mcp-backup-orchestrator"}},
-                "policyTypes": ["Egress"],
-                "egress": [{
-                    "to": [
-                        {"ipBlock": {"cidr": "192.168.255.10/32"}},
-                        {"ipBlock": {"cidr": "192.168.255.11/32"}},
-                        {"ipBlock": {"cidr": "192.168.255.12/32"}},
-                        {"ipBlock": {"cidr": "192.168.255.13/32"}}
-                    ],
-                    "ports": [{"protocol": "TCP", "port": 6443}]
-                }]
-            }),
-        "the orchestrator reaches only the API server on 6443",
+        np["spec"]["podSelector"]
+            == json!({"matchLabels": {"app.kubernetes.io/name": "airs-mcp-backup-orchestrator"}})
+            && np["spec"]["policyTypes"] == json!(["Egress"])
+            && np["spec"]["egress"].as_array().map(Vec::len) == Some(1),
+        "the orchestrator's egress policy selects only it and has exactly one rule",
+    )?;
+    let rule = &np["spec"]["egress"][0];
+    let targets: Vec<&str> = rule["to"]
+        .as_array()
+        .ok_or("egress to")?
+        .iter()
+        .map(|t| t["ipBlock"]["cidr"].as_str().ok_or("ipBlock cidr"))
+        .collect::<Result<_, _>>()?;
+    let ports: Vec<u64> = rule["ports"]
+        .as_array()
+        .ok_or("egress ports")?
+        .iter()
+        .map(|p| {
+            (p["protocol"] == "TCP")
+                .then(|| p["port"].as_u64())
+                .flatten()
+                .ok_or("TCP port")
+        })
+        .collect::<Result<_, _>>()?;
+    ensure(
+        !targets.is_empty()
+            && targets.iter().all(|c| {
+                c.split_once('/').is_some_and(|(ip, bits)| {
+                    ip.parse::<std::net::Ipv4Addr>().is_ok()
+                        && bits.parse::<u8>().is_ok_and(|b| (24..=32).contains(&b))
+                })
+            })
+            && !ports.is_empty()
+            && ports.iter().all(|p| [443, 6443].contains(p)),
+        "the orchestrator reaches only API-server endpoints (host-sized IPv4 blocks) on \
+         443/6443",
     )?;
     Ok(())
+}
+
+/// The deployable rule for the orchestrator's API-server endpoints: the committed base
+/// carries the TEST-NET-1 placeholder (`192.0.2.1/32`); the owner's overlay must have
+/// replaced it with their control-plane endpoints.
+fn apiserver_targets_are_set(dir: &Path) -> Result<(), String> {
+    let list = load_in(dir, "backup-cronjob.json");
+    let np = list["items"]
+        .as_array()
+        .ok_or("items")?
+        .iter()
+        .find(|i| {
+            i["kind"] == "NetworkPolicy" && i["metadata"]["name"] == "airs-mcp-backup-to-apiserver"
+        })
+        .ok_or("airs-mcp-backup-to-apiserver")?
+        .clone();
+    let placeholder = np["spec"]["egress"][0]["to"]
+        .as_array()
+        .ok_or("egress to")?
+        .iter()
+        .any(|t| {
+            t["ipBlock"]["cidr"]
+                .as_str()
+                .is_some_and(|c| c.starts_with("192.0.2."))
+        });
+    ensure(
+        !placeholder,
+        "API-server endpoints are the TEST-NET-1 placeholder: set them in your overlay",
+    )
 }
 
 /// Every check over a manifest directory.
@@ -1266,6 +1325,7 @@ fn check_proof_grants(cfg: &airs_mcp::config::Config) -> Result<(), String> {
 /// A complete, deployable set: every check, and a valid pinned image digest.
 fn validate_deployable(dir: &Path) -> Result<String, String> {
     validate(dir)?;
+    apiserver_targets_are_set(dir)?;
     deployable_digest_in(dir)
 }
 
@@ -1296,6 +1356,20 @@ impl Drop for Copy {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.0);
     }
+}
+
+/// The overlay's API-server endpoints for the orchestrator's egress policy (a non-placeholder
+/// host-sized block; the real value is the operator's control-plane endpoint).
+fn set_apiserver_targets(list: &mut Value) {
+    let np = list["items"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|i| {
+            i["kind"] == "NetworkPolicy" && i["metadata"]["name"] == "airs-mcp-backup-to-apiserver"
+        })
+        .unwrap();
+    np["spec"]["egress"][0]["to"] = json!([{"ipBlock": {"cidr": "10.0.0.1/32"}}]);
 }
 
 /// Pin every image in a kustomization with a valid (synthetic) digest.
@@ -1357,8 +1431,17 @@ fn the_deployment_validator_requires_and_accepts_a_valid_pin() {
             .unwrap_err()
             .contains("placeholder")
     );
+    // Pinned images alone are not deployable: the orchestrator's API-server endpoints are
+    // an overlay value and the base carries the TEST-NET-1 placeholder.
     let pinned = Copy::new();
     pinned.edit("kustomization.yaml", pin_all);
+    assert!(
+        validate_deployable(&pinned.0)
+            .unwrap_err()
+            .contains("TEST-NET-1 placeholder"),
+        "the API-server endpoints must be supplied"
+    );
+    pinned.edit("backup-cronjob.json", set_apiserver_targets);
     assert!(validate_deployable(&pinned.0).is_ok());
     // The service pinned but the backup orchestrator's kubectl still a placeholder.
     let partial = Copy::new();
@@ -2052,8 +2135,9 @@ fn the_m8_scripts_parse_and_the_backup_check_is_read_only() {
 /// (h) SIGTERM at the start of a 29 s request: the in-flight request completes first,
 ///     then the trap restores the service within the grace period;
 /// (i) (M8 review 6 finding 1) every release invocation issues five server requests of
-///     29 s each and fails: `--request-timeout` bounds each request, but only the
-///     elapsed-time wrapper (`timeout -k KGRACE t`) bounds the invocation at REQ, so each
+///     29 s each and fails: only the elapsed-time wrapper (`timeout -k KGRACE t`) bounds
+///     the invocation at REQ (kubectl's `--request-timeout` is not used: it disables the
+///     in-cluster configuration), so each
 ///     one is cut there and the trap still finishes within the grace period;
 /// (j) the first Job poll hangs and ignores TERM and its request timeout: the wrapper
 ///     KILLs it KGRACE after its bound (REQ), polling continues until the budget gives
@@ -2068,8 +2152,7 @@ fn the_m8_scripts_parse_and_the_backup_check_is_read_only() {
 ///     within the grace period.
 /// The stubs include a `timeout` on the same virtual clock (TERM at the bound, KILL after
 /// `-k`, exit 124/137; a child still alive long after that is reported as a runaway). In
-/// every case each request's `--request-timeout` is at most REQ and at most the
-/// invocation's bound, each invocation's bound is at most REQ and at most the time left
+/// every case each invocation's bound is at most REQ and at most the time left
 /// in its phase, a finished invocation took no longer than its bound, a cut one ended
 /// within KGRACE of it, and no phase's sleeps carried it past its deadline.
 #[test]
@@ -2207,7 +2290,7 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
         let (hang_job, hang_release) = (hang(c.hang_job_first), hang(c.hang_release_first));
         let kubectl = format!(
             "#!/bin/sh\n{common}\
-             t=''; for a in \"$@\"; do case \"$a\" in --request-timeout=*) t=\"${{a#--request-timeout=}}\"; t=\"${{t%s}}\" ;; esac; done\n\
+             t=\"${{BOUND:-}}\"\n\
              printf 'S %s %s %s %s\\n' \"$(now)\" \"$t\" \"${{BOUND:-0}}\" \"$*\" >> '{log}'\n\
              done_() {{ printf 'E %s %s\\n' \"$(now)\" \"$*\" >> '{log}'; }}\n\
              case \"$*\" in\n\
@@ -2601,8 +2684,8 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
     assert!(r.end - term_at <= grace - margin);
     bounded(&r);
     // (i) M8 review 6 finding 1: every release invocation issues five requests of 29 s
-    // each and fails. Each request respects `--request-timeout`, so only the elapsed-time
-    // wrapper keeps the invocation inside REQ: every one is cut at its bound (a
+    // each and fails. Only the elapsed-time wrapper keeps the invocation inside REQ: every
+    // one is cut at its bound (a
     // TERM-answering child ends at the bound, not after the kill grace), the scale-up
     // still follows within REQ + RELEASE + KGRACE of SIGTERM, and the trap ends within
     // the grace period.
@@ -2669,8 +2752,8 @@ fn the_backup_orchestrator_restores_the_service_and_reports_honestly() {
             c.bound
         );
     };
-    // (j) The first Job poll hangs and ignores TERM: `--request-timeout` does nothing for
-    // it, the wrapper's TERM is ignored, and the KILL ends it KGRACE after its bound,
+    // (j) The first Job poll hangs and ignores TERM: the wrapper's TERM is ignored, and
+    // the KILL ends it KGRACE after its bound,
     // which is REQ (never the whole poll budget: M8 review 7 finding 1). Polling then
     // continues until the poll budget gives up (exit 1) and the trap restores the
     // service, all inside the orchestrator's deadline less the margin.

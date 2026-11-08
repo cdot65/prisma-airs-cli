@@ -166,7 +166,7 @@
                     "command": [
                       "/bin/sh",
                       "-c",
-                      "set -eu; command -v timeout >/dev/null 2>&1 || { echo '{\"event\":\"orchestrator_preflight_failed\",\"missing\":\"timeout\"}'; exit 1; }; NS=airs-mcp; REQ=30; KGRACE=5; STOP=300; POLL=1260; RELEASE=1260; RESTORE=360; MARGIN=300; RUN=\"airs-mcp-backup-set-$(date -u +%Y%m%d%H%M%S)\"; OK=0; now() { date +%s; }; nap() { s=$(( $1 - $(now) )); if [ \"$s\" -gt 5 ]; then s=5; fi; if [ \"$s\" -gt 0 ]; then sleep \"$s\"; fi; }; kc() { d=$1; shift; r=$(( d - $(now) )); [ \"$r\" -gt 0 ] || return 124; t=$r; [ \"$t\" -gt \"$REQ\" ] && t=$REQ; timeout -k \"$KGRACE\" \"$t\" kubectl -n \"$NS\" --request-timeout=\"${t}s\" \"$@\"; }; phases() { kc \"$1\" get pod -l job-name=\"$RUN\" -o jsonpath='{range .items[*]}{.status.phase}{\"\\n\"}{end}'; }; released() { p=\"$(phases \"$1\")\" || return 1; [ -z \"$p\" ] && return 0; printf '%s\\n' \"$p\" | grep -qvE '^(Succeeded|Failed)$' && return 1; return 0; }; restore() { rc=$?; set +e; trap ':' TERM INT; svc=0; rel=0; dr=$(( $(now) + RELEASE )); while [ \"$(now)\" -lt \"$dr\" ]; do if released \"$dr\"; then rel=1; break; fi; nap \"$dr\"; done; [ \"$rel\" = 1 ] || svc=1; ds=$(( $(now) + RESTORE )); kc \"$ds\" scale deployment/airs-mcp --replicas=1 || svc=1; ready=0; while [ \"$(now)\" -lt \"$ds\" ]; do a=\"$(kc \"$ds\" get deployment airs-mcp -o jsonpath='{.status.availableReplicas}')\" || a=\"\"; if [ \"$a\" = 1 ]; then ready=1; break; fi; nap \"$ds\"; done; [ \"$ready\" = 1 ] || svc=1; if [ \"$svc\" = 0 ]; then echo '{\"event\":\"service_restored\"}'; fi; if [ \"$OK\" = 1 ] && [ \"$svc\" = 0 ] && [ \"$rc\" = 0 ]; then echo \"{\\\"event\\\":\\\"backup_set_daily_complete\\\",\\\"job\\\":\\\"$RUN\\\"}\"; fi; if [ \"$svc\" != 0 ]; then rc=1; fi; exit \"$rc\"; }; trap restore EXIT; trap 'exit 143' TERM INT; kc $(( $(now) + REQ )) scale deployment/airs-mcp --replicas=0; gone=0; d1=$(( $(now) + STOP )); while [ \"$(now)\" -lt \"$d1\" ]; do if p=\"$(kc \"$d1\" get pod -l app.kubernetes.io/name=airs-mcp -o name)\" && [ -z \"$p\" ]; then gone=1; break; fi; nap \"$d1\"; done; [ \"$gone\" = 1 ] || exit 1; kc $(( $(now) + REQ )) create job \"$RUN\" --from=cronjob/airs-mcp-backup-set; d2=$(( $(now) + POLL )); while [ \"$(now)\" -lt \"$d2\" ]; do c=\"$(kc \"$d2\" get job \"$RUN\" -o jsonpath='{range .status.conditions[*]}{.type}={.status}{\"\\n\"}{end}')\" || c=\"\"; case \"$c\" in *Complete=True*) OK=1; break ;; *Failed=True*) exit 1 ;; esac; nap \"$d2\"; done; [ \"$OK\" = 1 ] || exit 1; echo \"{\\\"event\\\":\\\"backup_set_verified\\\",\\\"job\\\":\\\"$RUN\\\"}\""
+                      "set -eu; command -v timeout >/dev/null 2>&1 || { echo '{\"event\":\"orchestrator_preflight_failed\",\"missing\":\"timeout\"}'; exit 1; }; NS=airs-mcp; REQ=30; KGRACE=5; STOP=300; POLL=1260; RELEASE=1260; RESTORE=360; MARGIN=300; RUN=\"airs-mcp-backup-set-$(date -u +%Y%m%d%H%M%S)\"; OK=0; now() { date +%s; }; nap() { s=$(( $1 - $(now) )); if [ \"$s\" -gt 5 ]; then s=5; fi; if [ \"$s\" -gt 0 ]; then sleep \"$s\"; fi; }; kc() { d=$1; shift; r=$(( d - $(now) )); [ \"$r\" -gt 0 ] || return 124; t=$r; [ \"$t\" -gt \"$REQ\" ] && t=$REQ; timeout -k \"$KGRACE\" \"$t\" kubectl -n \"$NS\" \"$@\"; }; phases() { kc \"$1\" get pod -l job-name=\"$RUN\" -o jsonpath='{range .items[*]}{.status.phase}{\"\\n\"}{end}'; }; released() { p=\"$(phases \"$1\")\" || return 1; [ -z \"$p\" ] && return 0; printf '%s\\n' \"$p\" | grep -qvE '^(Succeeded|Failed)$' && return 1; return 0; }; restore() { rc=$?; set +e; trap ':' TERM INT; svc=0; rel=0; dr=$(( $(now) + RELEASE )); while [ \"$(now)\" -lt \"$dr\" ]; do if released \"$dr\"; then rel=1; break; fi; nap \"$dr\"; done; [ \"$rel\" = 1 ] || svc=1; ds=$(( $(now) + RESTORE )); kc \"$ds\" scale deployment/airs-mcp --replicas=1 || svc=1; ready=0; while [ \"$(now)\" -lt \"$ds\" ]; do a=\"$(kc \"$ds\" get deployment airs-mcp -o jsonpath='{.status.availableReplicas}')\" || a=\"\"; if [ \"$a\" = 1 ]; then ready=1; break; fi; nap \"$ds\"; done; [ \"$ready\" = 1 ] || svc=1; if [ \"$svc\" = 0 ]; then echo '{\"event\":\"service_restored\"}'; fi; if [ \"$OK\" = 1 ] && [ \"$svc\" = 0 ] && [ \"$rc\" = 0 ]; then echo \"{\\\"event\\\":\\\"backup_set_daily_complete\\\",\\\"job\\\":\\\"$RUN\\\"}\"; fi; if [ \"$svc\" != 0 ]; then rc=1; fi; exit \"$rc\"; }; trap restore EXIT; trap 'exit 143' TERM INT; kc $(( $(now) + REQ )) scale deployment/airs-mcp --replicas=0; gone=0; d1=$(( $(now) + STOP )); while [ \"$(now)\" -lt \"$d1\" ]; do if p=\"$(kc \"$d1\" get pod -l app.kubernetes.io/name=airs-mcp -o name)\" && [ -z \"$p\" ]; then gone=1; break; fi; nap \"$d1\"; done; [ \"$gone\" = 1 ] || exit 1; kc $(( $(now) + REQ )) create job \"$RUN\" --from=cronjob/airs-mcp-backup-set; d2=$(( $(now) + POLL )); while [ \"$(now)\" -lt \"$d2\" ]; do c=\"$(kc \"$d2\" get job \"$RUN\" -o jsonpath='{range .status.conditions[*]}{.type}={.status}{\"\\n\"}{end}')\" || c=\"\"; case \"$c\" in *Complete=True*) OK=1; break ;; *Failed=True*) exit 1 ;; esac; nap \"$d2\"; done; [ \"$OK\" = 1 ] || exit 1; echo \"{\\\"event\\\":\\\"backup_set_verified\\\",\\\"job\\\":\\\"$RUN\\\"}\""
                     ],
                     "env": [
                       {
@@ -392,7 +392,10 @@
       "apiVersion": "networking.k8s.io/v1",
       "kind": "NetworkPolicy",
       "metadata": {
-        "name": "airs-mcp-backup-to-apiserver"
+        "name": "airs-mcp-backup-to-apiserver",
+        "annotations": {
+          "airs-mcp.cdot.io/overlay-value": "egress[0].to: your control-plane API endpoints (a VIP that is not a node address, and/or the control-plane nodes) on the port they serve; 192.0.2.1/32 is a placeholder (TEST-NET-1) the deployable check refuses"
+        }
       },
       "spec": {
         "podSelector": {
@@ -408,22 +411,7 @@
             "to": [
               {
                 "ipBlock": {
-                  "cidr": "192.168.255.10/32"
-                }
-              },
-              {
-                "ipBlock": {
-                  "cidr": "192.168.255.11/32"
-                }
-              },
-              {
-                "ipBlock": {
-                  "cidr": "192.168.255.12/32"
-                }
-              },
-              {
-                "ipBlock": {
-                  "cidr": "192.168.255.13/32"
+                  "cidr": "192.0.2.1/32"
                 }
               }
             ],

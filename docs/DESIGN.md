@@ -18177,7 +18177,14 @@ Grammar: `runtime sync [--since UTC --until UTC --backfill] [--app-id ID...]`
 (1000), `--max-pages 1..100` (100), `--max-events 1..10000` (10000). Times are paired
 half-open UTC instants ending in Z, since<until, describing past time. Backfill
 requires both. The supported rolling selector must cover since within 87600 hours,
-including ceiling to whole hours. Validation and repeated-scalar checks precede
+including ceiling to whole hours, and is then rounded **up** to a shape the SCM
+dashboard API accepts — 24 hours, or 7, 30 or 60 days (`sync::dashboard_window`; past
+60 days the exact hour count is kept so the API's refusal stays visible). The API refuses
+every other shape with HTTP 400 (25 hours, 2 days, 1 hour for sessions), which the
+collector records as the applications and sessions sources being unavailable; the M8
+live deployment hit this on every collection until 2026-11-07. Over-covering is safe:
+coverage is traversed-as-of and facts deduplicate; the archive bounds stay the requested
+range. Validation and repeated-scalar checks precede
 tenant/archive access. No global scanner override; disable debug for these reads.
 Explicit max-reports requires with-examples. Default requested range is 24 hours;
 older than the archive bootstrap requires explicit backfill. An offline gap is

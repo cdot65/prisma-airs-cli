@@ -5589,7 +5589,7 @@ talos-cluster `airs-mcp/deploy` overlay on this repository's `deploy/airs-mcp` a
 commit; Argo-managed; Harbor image `registry.cdot.io/airs-mcp/airs-mcp@sha256:c1c9888c…`).
 The service came up as designed (uid 65532, encrypted RWOP volume attached once, ESO
 secrets, Let's Encrypt TLS, `storage_owned` → `control_recovered` → `listening`, probes and
-metrics clean) and answered the CLI and Claude Code through the gateway. Three findings:
+metrics clean) and answered the CLI and Claude Code through the gateway. Four findings:
 
 1. **Owner decision — environment-specific backup gates withdrawn.** Contract §9.4's
    "open checks" (a second NAS's retention record; no agent-accessible R2 delete right)
@@ -5626,10 +5626,67 @@ metrics clean) and answered the CLI and Claude Code through the gateway. Three f
    (`sha-e3060b7`, sha256:7c81056d…, 2026-11-07T23:06Z): job succeeded, 4 management
    sends, all four sources complete, gap 0, for 22:58–23:06Z. These are source changes
    after review 8 and are part of the final combined review's scope.
+4. **Orchestrator defect (fixed): its `kubectl` could not reach the API server.** The
+   first by-hand daily set run (step 9a) failed before scaling anything: `kubectl` in the
+   orchestrator pod dialled `localhost:8080`. Two causes, each confirmed by a labelled
+   probe pod in the same namespace: (a) with kubectl 1.37 the `--request-timeout` flag
+   made the client ignore the in-cluster configuration, so the `kc` wrapper now bounds
+   each call with `timeout` alone and the static test asserts the flag's absence;
+   (b) under Cilium's kube-proxy replacement without socket-level load balancing, the
+   base policy's egress to the API server's node addresses did not match the
+   Service-translated backends (node addresses carry the remote-node identity), so the
+   API-server endpoints are an overlay value: the public base ships a documentation
+   address (`192.0.2.1/32`) that the deployability check refuses, and the talos overlay
+   sets the control-plane VIP and node addresses on port 6443 and points
+   `KUBERNETES_SERVICE_HOST`/`_PORT` at the VIP (talos-cluster PR #461; runbook §6;
+   PR #18). Argo had also healed the orchestrator's scale-down back to one replica
+   before the set could run; the Application now ignores the Deployment's replica count
+   (talos-cluster PR #460; runbook §6, PR #17).
 
 The marker report (step 9b) was created on real data and its positive control passed
-(`grep -c` of the marker in the downloaded `report.html` = 1). Steps 10–12 and the final
-combined review remain.
+(`grep -c` of the marker in the downloaded `report.html` = 1).
+
+**Step 9a receipt** (2026-11-08T00:12Z, base 1397935 with the overlay of talos-cluster
+PR #461): the by-hand daily job completed in 50 s — `backup_set_verified` for set
+`airs-mcp-backup-set-20261108001225` (the set job logged
+`{"artifacts":3,"epoch":"62d2f6ef","event":"backup_set_verified","stores":2}`),
+`service_restored`, `backup_set_daily_complete`; the service was gone for about 40 s and
+came back with a new owner id (`storage_owned` → `control_recovered` → `listening`).
+
+**Steps 9b.5–9b.6 and 11 receipts** (2026-11-08T00:13–00:30Z): a Longhorn backup of the
+encrypted volume taken after that set (`airs-mcp-drill-20261108001348`, lz4, 2.43 GB)
+was restored twice into the isolated `airs-mcp-drill` namespace (default-deny network,
+placeholder credential files, a throwaway TLS Secret, Deployment at 0; talos-cluster
+PR #459). Through a class whose passphrase Secret holds a wrong value, the device
+attached but never mounted: nine `MountDevice` failures, `cryptsetup luksOpen … exit
+status 2`, pod never Running. Through the correct class: the carried set verified
+read-only (the same `backup_set_verified` line); `control-backup` (188 416 B, epoch
+62d2f6ef) → store moved aside → `control-restore` (`control_restored`, pending epoch
+bbc00ba5) → `control-activate-epoch` (`control_epoch_activated`); `control-reconcile`
+not run. Started at one replica, the copy logged `storage_owned`, `control_recovered`
+(0 requeued, 0 uncertain) and `listening`; `/readyz` ready, `airs_mcp_control_ok 1`,
+`airs_mcp_archive_bytes 1077248`, `airs_mcp_control_bytes 188516` and the job-state
+series (4 succeeded, 3 partial) identical to production's at the time of the backup.
+Scaled back to 0, the marker title was found in the restored control store, the
+preserved store and the bundle's `report.html`; a negative-control string was not.
+`history_status` against the drill copy was not made (no route). The namespace, both
+drill classes, the wrong-key Secret and the drill snapshot were deleted; the backup
+stays on the target, unmodified.
+
+**Step 9b.4 receipt** (2026-11-08T00:44Z): the volume is `encrypted: true` on a class
+that references the passphrase Secret; a read-only pod on the backup target decompressed
+every block the backup lists (1,159 blocks, 2,430,599,168 bytes, lz4): marker title 0
+occurrences (it occurs twice in the plaintext control store and in `report.html`), no
+`SQLite format 3` header, none of the volume's file names, the LUKS magic exactly once
+and at the volume start, median block entropy 7.9999 bits/byte. 142 blocks fall below
+7.9 bits/byte (the LUKS header area and 2 MiB blocks only partly written — dm-crypt
+leaves never-written sectors as zeros), which puts the overall figure at 7.76; nothing
+structured besides the LUKS header was found.
+
+Not performed in this run: step 7a's gateway-console item 4; step 10 (needs disposable
+worker nodes and hypervisor power control); step 12 (needs its own Entra registrations
+with an owner-only secret handoff and a gateway integration). The checklist marks them.
+The final combined review remains.
 
 ### M8 source-side review 8 (preserved; 2026-11-07T16:03Z, Codex, frozen tree a02899d7, receipts m8/run9)
 

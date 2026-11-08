@@ -86,12 +86,14 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
     virtual clock). No phase counts iterations: each is a wall-clock deadline that
     includes the time its API requests take, and every `kubectl` call goes through one
     function, `kc DEADLINE …`, which bounds the **whole invocation** by elapsed time:
-    `timeout -k "$KGRACE" "$t" kubectl --request-timeout="${t}s" …`, where `t` is the
-    lesser of `REQ` (30 s) and the time left until the phase's deadline. A `kubectl`
-    invocation can issue several server requests (discovery, retries), so
-    `--request-timeout` alone bounds only each request; coreutils `timeout` (an Essential
-    package in the image's Debian base) sends TERM at the elapsed bound and KILL `KGRACE`
-    (5 s) later. So no invocation lasts longer than `REQ + KGRACE` (35 s), an invocation
+    `timeout -k "$KGRACE" "$t" kubectl …`, where `t` is the lesser of `REQ` (30 s) and the
+    time left until the phase's deadline. A `kubectl` invocation can issue several server
+    requests (discovery, retries), so only an elapsed bound is a bound; coreutils `timeout`
+    (an Essential package in the image's Debian base) sends TERM at it and KILL `KGRACE`
+    (5 s) later. `kubectl --request-timeout` is **not** used: in kubectl 1.37 that flag
+    makes clientcmd skip the in-cluster configuration, so every call fell back to
+    `localhost:8080` in the first live run. So no invocation lasts longer than
+    `REQ + KGRACE` (35 s), an invocation
     cut at its phase's deadline overruns it by at most `KGRACE`, and every loop sleep is
     bounded by the time left in its phase (`nap DEADLINE`), so a phase overruns by at
     most `KGRACE`. The 35 s also bounds how long a SIGTERM waits: the shell runs the TERM
@@ -139,7 +141,14 @@ backup pod cannot stop the service first. The set is therefore taken by two reso
   `cronjob/airs-mcp-backup-set`, create and watch Jobs, and read pods. Nothing else.
   Only the orchestrator pod mounts the ServiceAccount token.
 - **Network:** `airs-mcp-backup-to-apiserver` lets only the orchestrator reach the API
-  server (the control-plane VIP and nodes, 192.168.255.10–13:6443).
+  server. Its endpoints are **your overlay's value**: the committed base carries the
+  TEST-NET-1 placeholder `192.0.2.1/32:6443`, which the deployable check refuses. Supply
+  your control-plane endpoints, and note how your CNI treats them: Cilium gives node IPs
+  the `remote-node` identity, which `ipBlock` rules do not match, so the kubernetes
+  Service's translated backends are unreachable through such a rule — point the
+  orchestrator at a control-plane VIP that is not a node address instead
+  (`KUBERNETES_SERVICE_HOST`/`PORT` env on the `orchestrate` container; kubectl's
+  in-cluster configuration honours them).
 
 Pin the `kubectl` image digest in `kustomization.yaml` (runbook step 2), as for the
 service image, and confirm the pinned image has coreutils `timeout` (runbook step 2 shows
