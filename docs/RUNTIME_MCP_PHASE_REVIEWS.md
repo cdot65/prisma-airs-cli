@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1–6 scored 8.5, 8.7, 8.8, 8.9, 8.9 and 8.9, revise (2026-11-08); review 6's finding is fixed below.** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 ACCEPTED, 9.0/10 (final combined review 7, 2026-11-08T18:47Z) under the owner-set 9.0 gate; see that entry for the review's stated verification limits.** Final combined reviews 1–6 scored 8.5, 8.7, 8.8, 8.9, 8.9 and 8.9. Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5581,6 +5581,27 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 final combined review 7 (Codex, 2026-11-08T18:47Z, frozen tree main a4cfd58, receipts m8/review-final-7)
+
+**9.0/10, accept.** "M8 meets the 9.0 acceptance threshold under the binding owner amendments. The
+final-review-6 parser defect is resolved; I found no remaining material defect." **M8 is accepted
+under the owner-set 9.0 gate.**
+
+The review ran 332 malformed-response checks with no unexpected result, directly and through the
+unchanged `ci_passed_for_head`, and assessed the amended evidence gates as satisfied.
+
+Limits, stated by the review: two Cargo builds exhausted the sandbox's disk quota, so its selected
+Rust suites did not complete, and its final SHA-256 recheck could not run. It recounted the
+supplied workspace receipt (3,174 passed, 0 failed, 8 ignored); Clippy, MSRV, the dependency
+graph, the pre-M7 test and CI run 368 were supplied evidence, not rerun. The quota was filled by
+scratch directories left by earlier reviews. The implementing agent afterwards ran the recheck the
+review could not: both manifests verify and a regenerated snapshot manifest is identical (656
+files). That recheck is not independent.
+
+Minor finding, fixed here: `docs/RELEASING.md` prerequisites omitted the newly required `python3`.
+
+Production still runs the earlier image; acceptance does not imply a redeployment.
 
 ### M8 final combined review 6 (Codex, 2026-11-08T17:59Z, frozen tree main a9c9206, receipts m8/review-final-6)
 

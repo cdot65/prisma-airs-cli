@@ -40,6 +40,7 @@ One-time setup on the release Mac:
 | Rust and the targets | `rustup target list --installed` lists `aarch64-apple-darwin`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl` | `rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl` |
 | zig and cargo-zigbuild | `zig version`, `cargo-zigbuild --version` | `brew install zig`, `cargo install --locked cargo-zigbuild` |
 | `jq` | `jq --version` | `brew install jq` (macOS 15 and later ship `/usr/bin/jq`) |
+| `python3` | `python3 --version` | `brew install python` (the release's CI check runs `scripts/ci/ci-status-ok.py`) |
 | bsdtar | `tar --version` starts `bsdtar` | the macOS `/usr/bin/tar`; the packaging stores the `airs-cli` and `airs-cli-rs` links and drops macOS metadata with them |
 | Developer ID certificate | `security find-identity -v -p codesigning` lists `Developer ID Application: Calvin Remsburg (G5QLZ5A8TA)` | Install the certificate and its private key in the login keychain. `AIRS_SIGN_IDENTITY` overrides the identity. |
 | Notary credentials | `xcrun notarytool history --keychain-profile airs-cli-notary` | `xcrun notarytool store-credentials airs-cli-notary --apple-id <id> --team-id G5QLZ5A8TA` (it prompts for an app-specific password). `AIRS_NOTARY_PROFILE` overrides the profile name. |
