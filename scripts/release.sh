@@ -229,8 +229,8 @@ ci_passed_for_head() {
     git rev-parse --quiet --verify "$candidate^{commit}" >/dev/null || continue
     [ "$(git rev-parse "$candidate^{tree}")" = "$tree" ] || continue
     # Every required job (linux, musl, docs-site) must have reported success; an aggregate
-    # "success" alone is not enough (scripts/ci/ci-status-ok.sh).
-    if forgejo "$API/commits/$(git rev-parse "$candidate")/status" | scripts/ci/ci-status-ok.sh; then
+    # "success" alone is not enough (scripts/ci/ci-status-ok.py).
+    if forgejo "$API/commits/$(git rev-parse "$candidate")/status" | python3 -I scripts/ci/ci-status-ok.py; then
       CI_COMMIT="$(git rev-parse --short "$candidate")"
       return 0
     fi
@@ -249,7 +249,7 @@ fi
 step "Tools"
 [ "$(uname -s)" = Darwin ] || die "releases are cut on macOS (signing and notarisation need it)"
 [ "$(uname -m)" = arm64 ] || die "the macOS build is native $MAC_TARGET; run this on Apple Silicon"
-for tool in git cargo rustup jq curl shasum tar security codesign xcrun ditto spctl file; do
+for tool in git cargo rustup jq python3 curl shasum tar security codesign xcrun ditto spctl file; do
   need "$tool"
 done
 need cargo-zigbuild "cargo install --locked cargo-zigbuild"

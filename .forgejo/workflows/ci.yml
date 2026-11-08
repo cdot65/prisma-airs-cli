@@ -100,6 +100,14 @@ jobs:
             $sudo apt-get install -y -qq --no-install-recommends jq
           fi
           jq --version
+          # tests/ci_scripts.rs runs scripts/ci/ci-status-ok.py.
+          if ! command -v python3 >/dev/null 2>&1; then
+            sudo=""
+            [ "$(id -u)" -eq 0 ] || sudo="sudo"
+            $sudo apt-get update -qq
+            $sudo apt-get install -y -qq --no-install-recommends python3
+          fi
+          python3 --version
 
       - name: cargo test
         if: steps.changes.outputs.rust == 'true'

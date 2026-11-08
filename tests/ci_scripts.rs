@@ -3,7 +3,7 @@
 //! `scripts/ci/classify-change.sh` decides whether CI may skip the Rust steps; it must print
 //! `rust=false` only for a change that touches documentation alone, and `rust=true` for
 //! renames out of Rust paths, long path lists, a missing or unrelated base and empty diffs.
-//! `scripts/ci/ci-status-ok.sh` decides whether `release.sh` trusts CI; it must accept only a
+//! `scripts/ci/ci-status-ok.py` decides whether `release.sh` trusts CI; it must accept only a
 //! combined status in which linux, musl and docs-site all reported success.
 
 use std::fs;
@@ -178,19 +178,36 @@ fn an_empty_diff_runs_the_rust_steps() {
     assert_eq!(classify(&dir, &base), "rust=true");
 }
 
+/// Fields whose values `jq` tolerates but RFC 8259 forbids.
+const NON_STANDARD_FIELDS: [&str; 5] = [
+    "\"total_count\":NaN",
+    "\"total_count\":Infinity",
+    "\"total_count\":01",
+    "\"total_count\":+1",
+    "\"total_count\":1.",
+];
+
+/// `valid` with an extra string field holding a byte that is not UTF-8.
+fn invalid_utf8(valid: &str) -> Vec<u8> {
+    let mut bytes = b"{\"note\":\"\xff\",".to_vec();
+    bytes.extend_from_slice(&valid.as_bytes()[1..]);
+    bytes
+}
+
 fn status_ok(json: &str) -> bool {
-    let mut child = Command::new(script("ci-status-ok.sh"))
+    status_ok_bytes(json.as_bytes())
+}
+
+fn status_ok_bytes(json: &[u8]) -> bool {
+    let mut child = Command::new("python3")
+        .arg("-I")
+        .arg(script("ci-status-ok.py"))
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(json.as_bytes())
-        .unwrap();
+    child.stdin.take().unwrap().write_all(json).unwrap();
     child.wait().unwrap().success()
 }
 
@@ -283,6 +300,27 @@ fn the_release_trusts_ci_only_when_every_required_job_passed() {
     );
     assert!(!status_ok(&format!("{valid}\n{valid}")), "two documents");
     assert!(!status_ok(&format!("{valid}\0")), "a trailing NUL");
+    for field in NON_STANDARD_FIELDS {
+        let bad = valid.replacen('{', &format!("{{{field},"), 1);
+        assert!(!status_ok(&bad), "non-standard field: {field}");
+    }
+    assert!(
+        status_ok(&valid.replacen('{', "{\"total_count\":3,", 1)),
+        "an ordinary extra field is fine"
+    );
+    assert!(!status_ok_bytes(&invalid_utf8(&valid)), "invalid UTF-8");
+    assert!(
+        !status_ok(&format!("\u{feff}{valid}")),
+        "a byte order mark is not JSON"
+    );
+    assert!(
+        !status_ok(&valid.replacen('{', "{\"state\":\"failure\",", 1)),
+        "a duplicate key"
+    );
+    assert!(
+        !status_ok(&valid.replacen('{', "{\"note\":\"\\ud800\",", 1)),
+        "an unpaired surrogate"
+    );
     assert!(
         !status_ok(&valid.replacen(r#""state":"success""#, "\"state\":\"suc\0cess\"", 1)),
         "a NUL inside the aggregate state"
@@ -300,7 +338,7 @@ fn release_sh_uses_the_strict_status_check() {
     let release =
         fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("scripts/release.sh"))
             .unwrap();
-    assert!(release.contains("scripts/ci/ci-status-ok.sh"));
+    assert!(release.contains("python3 -I scripts/ci/ci-status-ok.py"));
     assert!(
         !release.contains("jq -r '.state // empty'"),
         "the aggregate-only check must be gone"
@@ -319,12 +357,16 @@ fn release_sh_uses_the_strict_status_check() {
 
 /// Runs the unchanged `ci_passed_for_head` from `release.sh` in `dir` with Forgejo stubbed:
 /// the status of HEAD^2 is `second`, of any other commit `head`.
-fn release_function_accepts_each(dir: &Path, head: &str, second: &str) -> bool {
+fn release_function_accepts_each(
+    dir: &Path,
+    head: impl AsRef<[u8]>,
+    second: impl AsRef<[u8]>,
+) -> bool {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     fs::create_dir_all(dir.join("scripts/ci")).unwrap();
     fs::copy(
-        script("ci-status-ok.sh"),
-        dir.join("scripts/ci/ci-status-ok.sh"),
+        script("ci-status-ok.py"),
+        dir.join("scripts/ci/ci-status-ok.py"),
     )
     .unwrap();
     let head_file = dir.join(".git/status-head");
@@ -349,8 +391,8 @@ ci_passed_for_head"#;
         .success()
 }
 
-fn release_function_accepts(dir: &Path, response: &str) -> bool {
-    release_function_accepts_each(dir, response, response)
+fn release_function_accepts(dir: &Path, response: impl AsRef<[u8]>) -> bool {
+    release_function_accepts_each(dir, response.as_ref(), response.as_ref())
 }
 
 #[test]
@@ -364,7 +406,10 @@ fn the_release_function_refuses_malformed_responses_and_other_trees() {
         ],
     );
     let dir = repo("release-fn");
-    assert!(release_function_accepts(&dir, &valid), "HEAD passed CI");
+    assert!(
+        release_function_accepts(&dir, valid.as_bytes()),
+        "HEAD passed CI"
+    );
     for (name, bad) in [
         ("empty", String::new()),
         ("trailing NUL", format!("{valid}\0")),
@@ -374,8 +419,16 @@ fn the_release_function_refuses_malformed_responses_and_other_trees() {
         ),
         ("trailing garbage", format!("{valid}not-json")),
     ] {
-        assert!(!release_function_accepts(&dir, &bad), "{name}");
+        assert!(!release_function_accepts(&dir, bad.as_bytes()), "{name}");
     }
+    for field in NON_STANDARD_FIELDS {
+        let bad = valid.replacen('{', &format!("{{{field},"), 1);
+        assert!(!release_function_accepts(&dir, bad.as_bytes()), "{field}");
+    }
+    assert!(
+        !release_function_accepts(&dir, invalid_utf8(&valid)),
+        "invalid UTF-8"
+    );
 
     // A merge is eligible through HEAD^2 only while HEAD^2 has HEAD's tree.
     let merged = repo("release-merge");
@@ -386,16 +439,26 @@ fn the_release_function_refuses_malformed_responses_and_other_trees() {
     git(&merged, &["merge", "-q", "--no-ff", "-m", "merge", "topic"]);
     let failing = valid.replacen("success", "failure", 1);
     assert!(
-        release_function_accepts_each(&merged, &failing, &valid),
+        release_function_accepts_each(&merged, failing.as_bytes(), valid.as_bytes()),
         "HEAD has no passing CI, the identical-tree HEAD^2 has"
     );
     assert!(
-        !release_function_accepts(&merged, &failing),
+        !release_function_accepts(&merged, failing.as_bytes()),
         "neither passed"
     );
     assert!(
-        !release_function_accepts_each(&merged, &failing, &format!("{valid}\0")),
+        !release_function_accepts_each(&merged, failing.as_bytes(), format!("{valid}\0")),
         "the only candidate's response holds a NUL"
+    );
+
+    let nan = valid.replacen('{', "{\"total_count\":NaN,", 1);
+    assert!(
+        !release_function_accepts_each(&merged, failing.as_bytes(), nan.as_bytes()),
+        "the identical-tree HEAD^2's response is not JSON"
+    );
+    assert!(
+        !release_function_accepts_each(&merged, failing.as_bytes(), invalid_utf8(&valid)),
+        "the identical-tree HEAD^2's response is not UTF-8"
     );
 
     fs::write(merged.join("README.md"), "# amended\n").unwrap();
@@ -409,7 +472,7 @@ fn the_release_function_refuses_malformed_responses_and_other_trees() {
         git(&merged, &["rev-parse", "HEAD^2^{tree}"])
     );
     assert!(
-        !release_function_accepts_each(&merged, &failing, &valid),
+        !release_function_accepts_each(&merged, failing.as_bytes(), valid.as_bytes()),
         "a passing HEAD^2 with another tree does not count"
     );
 }
