@@ -488,8 +488,8 @@ else
   fi
   echo "release $TAG finished"
   if [ "$prerelease" = true ]; then
-    echo "next: cargo publish -p airs-cli (a pre-release gets no Homebrew formula; docs/RELEASING.md §2)"
+    echo "next: cargo publish the two library crates, then airs-cli, in the order docs/RELEASING.md §2 gives (a pre-release gets no Homebrew formula)"
   else
-    echo "next: cargo publish -p airs-cli, then scripts/homebrew-formula.sh $version (docs/RELEASING.md §6) and scripts/npm-package.sh $version (§7)"
+    echo "next: cargo publish the two library crates, then airs-cli (docs/RELEASING.md §2 order); then scripts/homebrew-formula.sh $version (§6) and scripts/npm-package.sh $version (§7)"
   fi
 fi

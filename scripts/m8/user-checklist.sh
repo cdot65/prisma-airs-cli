@@ -120,9 +120,13 @@ This coordinated set is the content backup. It is NOT the input of control-resto
 Then the report-title marker test: proven present in the stored data, not found on the backup
 target, with positive encryption evidence, a wrong-key restore refused and a correct-key restore
 showing the marker. Record the commands and results."
-step 10 "Node-loss test on a DEDICATED, DISPOSABLE node only (contract §9.3)" \
-"Never a shared talos node. Follow the runbook's node-loss procedure on a node you can lose, and
-record whether the volume moved without force-detach and the service recovered."
+# Step 10 (the node-loss test) was withdrawn by the owner on 2026-11-08, permanently (plan
+# revision 7 amendment 3). It is recorded, not asked; steps 11 and 12 keep their numbers.
+echo; echo "== Step 10: Node-loss test (withdrawn)"
+echo "Withdrawn by the owner on 2026-11-08; nothing to do. Runbook §10 is operator recovery only."
+rec ""; rec "## Step 10: Node-loss test (withdrawn)"
+rec "- status: withdrawn"
+rec "- result: not an acceptance step (owner decision 2026-11-08, permanent; plan revision 7 amendment 3)"
 step 11 "Restore drill (contract §9.4)" \
 "Follow runbook §11 in the isolated drill namespace (default-deny egress, no production
 credentials). Restore the volume with the drill Deployment at 0, then in a maintenance pod, in order:
@@ -136,58 +140,14 @@ credentials). Restore the volume with the drill Deployment at 0, then in a maint
 Do not run control-reconcile in the drill. Optionally re-verify the restored content with
 airs-mcp control-backup-verify --set /data/airs/backups/<id>. Then the controlled startup and the
 marker check. Record each event line and the content verification."
-step 12 "Low-space qualification and measured capacity (runbook §12, contract §9.5)" \
-"Use the SEPARATE qualification deployment, never the restore-drill namespace (its copy stays
-quarantined and has no route). Follow runbook §12 'Qualification on the actual storage class':
- 1. namespace airs-mcp-qual: default-deny NetworkPolicy (ingress only gateway pods -> TLS port;
-    egress only DNS, the Entra JWKS/metadata and the gateway assertion JWKS; NO AIRS endpoint);
-    its own backend hostname mcp-backend-airs-qual.goshawks.io and Certificate; placeholder AIRS
-    secret files; a small encrypted PVC. The qual overlay's data-subtree init container also
-    creates /data/qual-filler (0700, 65532:65532) beside /data/airs; /data stays root 0755.
-    The config differs from production ONLY as the §12 step-1 table says: allowed_hosts/resource/
-    scopes_supported -> the qual hostname; [upstream].audiences -> the qual API app ID;
-    allowed_client_ids -> the qual gateway client. Everything else unchanged.
- 2. its OWN identities (§12 step 2; the production gateway client serves one integration only):
-    2.1 a qualification API registration (az ad app create ... --identifier-uris
-        https://mcp-backend-airs-qual.goshawks.io/mcp; copy the production scopes with new IDs);
-    2.2 a confidential-only qualification gateway client with those scopes admin-consented.
-        Its secret is an OWNER-ONLY handoff: in your own terminal with history off,
-        'az ad app credential reset ... --query password -o tsv' (the reset returns appId,
-        password, tenant; it has no keyId), paste the value straight into the gateway
-        console's secret for the integration, clear the terminal; then record ONLY
-        'az ad app credential list ... --query \"[].{keyId:keyId,end:endDateTime}\"' here;
-    2.3 'airs gateway mcp integrations create --file prototypes/runtime-mcp/deploy/m0.6/gateway/
-        integration.template.json --name airs-qual --slug airs-qual --transport http --url
-        https://mcp-backend-airs-qual.goshawks.io/mcp --auth-type oauth_auto ...' (record the UUID);
-    2.4 the CoreDNS rewrite to airs-mcp.airs-mcp-qual.svc.cluster.local and the trusted-host
-        entry; no public DNS record;
-    2.5 REPEAT §7a items 1-4 for the qual client, the qual API SP, its keyId and the qual URL;
-        refuse and stay blocked if any item fails;
-    2.6 then 'airs mcp connections set qual ...' and 'airs mcp login qual'.
- 3. seed: fresh ('airs runtime receipts upload --mcp qual --from-bulk-state <synthetic checkpoint>'),
-    or restore per runbook 11.2-11.3.4 and reconcile DELIBERATELY with the Deployment at 0:
-    'airs-mcp control-reconcile --config /etc/airs-mcp/config/airs-mcp.toml'. Schedules stay disabled.
- 4. start at 1 replica; 'airs runtime history status --mcp qual' and /readyz = ready.
- 5. Deployment at 0 (RWOP: one pod at a time); from a UID 65532 busybox debug pod mounting the PVC,
-    read free space with 'df -Pk /data/qual-filler | awk NR==2{print \$4}' (BusyBox: no GNU
-    --output), refuse an empty/non-numeric/zero figure, then fill /data/qual-filler/fill
-    (fallocate, else dd bs=1024) until about 1% is free; stat shows
-    65532:65532 700 for the directory; delete the debug pod before step 6. Never fill inside
-    /data/airs (the reserve would count it as database bytes).
- 6. start; record storage_owned/control_recovered (or the refusal), /readyz, the volume metrics,
-    airs_mcp_storage_reserve_bytes and both airs_mcp_storage_low_space series = 1; a
-    'airs runtime report --mcp qual --interval 1 --unit days --no-wait' job left blocked_policy
-    ('airs runtime jobs get --mcp qual <job>'), and 'receipts upload --mcp qual' storage_unavailable.
- 7. free the space WITHOUT a restart: expand the PVC online, or rm /data/qual-filler/fill from an
-    ephemeral busybox debug container (UID 65532, the data volume mounted) in the running pod;
-    both series back to 0, the blocked report requeued and succeeded, 'airs runtime history
-    download --mcp qual --version-id <v1_...>' verifies, ready and airs_mcp_control_ok 1.
- 8. clean up in order: 'airs mcp connections remove qual'; 'airs gateway mcp integrations delete
-    <uuid>'; az ad app delete for the qual gateway client and the qual API; the CoreDNS rewrite
-    and trusted-host entry; 'kubectl delete namespace airs-mcp-qual'. Then re-check §7a items 2
-    and 4 against production: only the production client consented, nothing targets the qual URL.
-Then record the 30-day capacity measurements (artifacts, retained backup sets and the creation peak
-accounted separately, runbook §12 'Measured capacity') and whether 100 GiB still holds."
+step 12 "Measured capacity (runbook §12 'Measured capacity', contract §9.5)" \
+"The low-space exercise on the actual storage class was withdrawn by the owner on 2026-11-08,
+permanently; only the capacity accounting remains. For the first 30 days, record weekly:
+airs_mcp_archive_bytes and airs_mcp_control_bytes (D), the data volume's size and used bytes,
+and the size and number of sets in DATA/backups/. Then account separately for artifacts
+(used - D - backups), three retained sets (3 x D) and the fourth set's creation peak (4 x D),
+re-derive the PVC size (about 7 x D + one year of artifacts + 20%), and record whether 100 GiB
+still holds."
 
 rec ""; rec "End of evidence."
 echo; echo "Evidence written to $EVIDENCE (mode 0600). Attach it to the M8 review packet."

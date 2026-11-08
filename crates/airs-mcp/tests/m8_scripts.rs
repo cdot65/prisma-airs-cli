@@ -910,8 +910,9 @@ fn derive_config_requires_a_working_validator_without_a_toml_parser() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// Runbook §12 step 5 and checklist step 12 (M8 review 4 finding 4): the low-space
-/// filler is a *sibling* of the data directory (`/data/qual-filler` beside `/data/airs`),
+/// M8 review 4 finding 4 (the low-space exercise it served was withdrawn by the owner on
+/// 2026-11-08; the reserve behavior it pins still holds): a filler is a *sibling* of the
+/// data directory (`/data/qual-filler` beside `/data/airs`),
 /// created 0700 for UID 65532 by the qualification overlay's init container, because the
 /// volume root is root-owned 0755. Two code facts make the sibling the right place, and
 /// this pins both:

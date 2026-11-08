@@ -9,9 +9,10 @@ formula and npm. A release has four parts, in this order:
    three targets, signs and notarises the macOS one, packages each with the `airs-cli`
    and `airs-cli-rs` links and `NOTICE` (`scripts/package-release.sh`), uploads everything
    to a draft Forgejo release, pushes the tag and publishes the draft.
-2. **The crates.io publish** (`cargo publish -p airs-cli`, §2 step 7), from the tagged
-   commit: a published version can only be yanked, so it follows a release that
-   succeeded.
+2. **The crates.io publish** (§2 step 7), from the tagged commit, in dependency order:
+   `airs-runtime-core`, then `airs-mcp-client`, then `airs-cli` (the CLI pins both at
+   its exact version). A published version can only be yanked, so it follows a release
+   that succeeded.
 3. **The Homebrew formula** (§6): rendered from the published crate and committed to
    the tap. It builds from the crates.io crate and needs its checksum.
 4. **The npm packages** (§7): staged from the release tarballs by
@@ -66,8 +67,10 @@ script under `set -x` or `bash -x`.
 5. Run `scripts/release.sh <version>`. Notarisation usually takes a few minutes.
 6. Check the release page and download one tarball to verify it
    (§4).
-7. Publish the crate from the tagged commit, on a clean tree:
-   `cargo publish --dry-run -p airs-cli`, then `cargo publish -p airs-cli`. It needs a
+7. Publish the crates from the tagged commit, on a clean tree, in dependency order:
+   `cargo publish -p airs-runtime-core`, then `cargo publish -p airs-mcp-client`, then
+   `cargo publish --dry-run -p airs-cli` and `cargo publish -p airs-cli`. Each must be
+   visible on crates.io before the next resolves it. It needs a
    crates.io login (`cargo login`). A published version can only be yanked, never
    replaced, so publish after the Forgejo release succeeded. If publishing fails after
    the tag exists, fix the cause and release the next patch version. The script's last

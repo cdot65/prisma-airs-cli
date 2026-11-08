@@ -1,7 +1,7 @@
 [package]
 name = "airs-mcp-client"
 description = "Optional MCP client for the airs CLI: gateway OAuth (PKCE), private session cache, typed bounded tool calls and durable operation receipts"
-version = "8.2.0-dev.1"
+version = "8.2.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -9,11 +9,12 @@ repository.workspace = true
 homepage.workspace = true
 authors.workspace = true
 readme = false
-publish = false
-include = ["/src/**/*.rs", "/Cargo.toml"]
+# Published in lockstep with airs-cli (exact `=` version), after airs-runtime-core and
+# before airs-cli (RUNTIME_MCP_CONTRACT §1; docs/RELEASING.md §2).
+include = ["/src/**/*.rs", "/Cargo.toml", "/LICENSE", "/NOTICE"]
 
 [dependencies]
-airs-runtime-core = { path = "../airs-runtime-core", version = "=8.2.0-dev.1" }
+airs-runtime-core = { path = "../airs-runtime-core", version = "=8.2.0" }
 rmcp = { version = "=3.8.0", default-features = false, features = ["client", "auth", "reqwest", "transport-streamable-http-client-reqwest"] }
 async-trait = "0.1"
 # The chunk encoding (contract §5); the version already in the lock file through rmcp.

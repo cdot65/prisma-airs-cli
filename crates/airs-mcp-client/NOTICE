@@ -1,0 +1,17 @@
+Prisma AIRS CLI
+Copyright 2026 Calvin Remsburg
+
+Licensed under the Apache License, Version 2.0.
+
+This repository holds the Rust Prisma AIRS CLI (the airs-cli crate and the airs
+command) from 8.0, and in its history the TypeScript Prisma AIRS CLI
+(@cdot65/prisma-airs-cli 7.x and earlier). Both are licensed under the Apache
+License, Version 2.0; this license applies to the project-owned code in this
+source revision. The Rust CLI was developed in cdot/prisma-airs-cli-rs under the
+same license and the same copyright holder before it moved here.
+
+Third-party components retain their own licenses and attribution notices.
+Previously distributed MIT-licensed versions of the TypeScript CLI retain their
+original license; this change does not revoke rights already granted under MIT.
+
+Product names and logos are not licensed by this software license.

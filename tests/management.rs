@@ -10,8 +10,8 @@
 use std::time::Duration;
 
 use airs_test_harness::{
-    AuthIdentity, Cli, FixtureServer, FixtureTenant, Planned, RecordedRequest, Route, Run,
-    RunOptions, Sandbox, fixtures, run, spawn,
+    AuthIdentity, Cli, ClosedPort, FixtureServer, FixtureTenant, Planned, RecordedRequest, Route,
+    Run, RunOptions, Sandbox, fixtures, run, spawn,
 };
 use serde_json::{Value, json};
 
@@ -2118,10 +2118,7 @@ mod errors {
     /// §6 `Transport`: the management API is unreachable after a successful token.
     #[test]
     fn api_endpoint_unreachable_is_network_error() {
-        let port = {
-            let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
-            listener.local_addr().expect("addr").port()
-        };
+        let port = ClosedPort::new().port();
         let f = fx_with(|config| {
             config.set("mgmtEndpoint", format!("http://127.0.0.1:{port}/aisec"));
         });
@@ -2426,11 +2423,8 @@ mod errors {
 
     #[test]
     fn token_endpoint_unreachable_is_network_error() {
-        // A loopback port with nothing listening (bound then released).
-        let port = {
-            let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind");
-            listener.local_addr().expect("addr").port()
-        };
+        // A loopback port with nothing listening that no fixture server can be given.
+        let port = ClosedPort::new().port();
         let f = fx_with(|config| {
             config.set(
                 "mgmtTokenEndpoint",
