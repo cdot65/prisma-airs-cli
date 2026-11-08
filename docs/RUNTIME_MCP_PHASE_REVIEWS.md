@@ -5673,10 +5673,20 @@ preserved store and the bundle's `report.html`; a negative-control string was no
 drill classes, the wrong-key Secret and the drill snapshot were deleted; the backup
 stays on the target, unmodified.
 
-Not performed in this run: step 9b.4's on-target block inspection; step 10 (needs
-disposable worker nodes and hypervisor power control); step 12 (needs its own Entra
-registrations with an owner-only secret handoff and a gateway integration). The
-checklist marks them. The final combined review remains.
+**Step 9b.4 receipt** (2026-11-08T00:44Z): the volume is `encrypted: true` on a class
+that references the passphrase Secret; a read-only pod on the backup target decompressed
+every block the backup lists (1,159 blocks, 2,430,599,168 bytes, lz4): marker title 0
+occurrences (it occurs twice in the plaintext control store and in `report.html`), no
+`SQLite format 3` header, none of the volume's file names, the LUKS magic exactly once
+and at the volume start, median block entropy 7.9999 bits/byte. 142 blocks fall below
+7.9 bits/byte (the LUKS header area and 2 MiB blocks only partly written — dm-crypt
+leaves never-written sectors as zeros), which puts the overall figure at 7.76; nothing
+structured besides the LUKS header was found.
+
+Not performed in this run: step 7a's gateway-console item 4; step 10 (needs disposable
+worker nodes and hypervisor power control); step 12 (needs its own Entra registrations
+with an owner-only secret handoff and a gateway integration). The checklist marks them.
+The final combined review remains.
 
 ### M8 source-side review 8 (preserved; 2026-11-07T16:03Z, Codex, frozen tree a02899d7, receipts m8/run9)
 
