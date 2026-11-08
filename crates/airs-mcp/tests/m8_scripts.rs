@@ -374,11 +374,20 @@ fn build_hashes(mode: &str, installed: &[&str]) -> (i32, PathBuf, String) {
     let target_dir = dir.join("target");
     let bin = shims(&dir, &target_dir, mode, installed);
     let out_dir = dir.join("out");
-    let path = format!(
-        "{}:{}",
-        bin.display(),
-        std::env::var("PATH").unwrap_or_default()
-    );
+    // The mocks must be the only toolchain the script sees: drop any inherited PATH
+    // entry holding a real zig or cargo-zigbuild, or the script takes the zigbuild
+    // branch, which the mock cargo does not serve (a developer machine with zig
+    // installed failed this test while CI passed).
+    let inherited = std::env::var("PATH").unwrap_or_default();
+    let kept: Vec<&str> = inherited
+        .split(':')
+        .filter(|d| {
+            !d.is_empty()
+                && !Path::new(d).join("zig").exists()
+                && !Path::new(d).join("cargo-zigbuild").exists()
+        })
+        .collect();
+    let path = format!("{}:{}", bin.display(), kept.join(":"));
     let out = Command::new("bash")
         .arg(script("build-hashes.sh"))
         .arg(&out_dir)
