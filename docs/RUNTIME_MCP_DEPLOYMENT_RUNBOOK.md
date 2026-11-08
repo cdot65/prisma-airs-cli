@@ -22,7 +22,9 @@ against the service's own configuration parser.
 
 ## Before you start
 
-- **Real data waits.** No real data is stored until steps 4 and 5 pass (contract §9.4).
+- **Real data waits** until steps 1–3 and 6–7 pass. Steps 4–5 are optional operator
+  records of your own backup policy (contract §9.4: backup targets, retention and
+  deletion rules are the operator's, not a gate of this product).
 - **Never a shared node.** Never power off, drain or isolate a shared talos node. The
   node-loss test (step 10) uses a **dedicated, disposable** node only.
 - **Encrypted storage required.** If the encrypted StorageClass, the backup target or key
@@ -220,9 +222,11 @@ record the results, including the service revision.
 
 ### 9a. The daily backup (contract §9.4)
 
-Contract §9.4 requires a daily **coordinated application set**, taken under exclusive
-maintenance, and **then** the daily off-volume copy. A crash-consistent snapshot of the
-running volume does not meet it, and it is not substituted here.
+Contract §9.4 defines the daily **coordinated application set**, taken under exclusive
+maintenance; it is the service's backup content. Any off-volume copy of the volume or the
+sets (and when it runs) is the **operator's** policy: in the reference deployment the
+operator's daily Longhorn backup runs after the set. A crash-consistent snapshot of the
+running volume is not a substitute for the set.
 
 **Schedule (America/Chicago):**
 
@@ -292,8 +296,9 @@ or did not finish before 03:15:
 - *On the volume:* keep the newest **3** verified sets under `/data/airs/backups/`.
   Remove an older on-volume set only after a newer set has verified. Sets are part
   of the §9.5 capacity budget (about 1× the databases each).
-- *Off the volume:* the operator's policy (step 4 record). **No agent deletes a backup
-  or a mirrored copy** (§9.4).
+- *Off the volume:* the operator's policy (optional step 4 record; contract §9.4).
+  The reference environment's own practice is that no agent deletes a backup or a
+  mirrored copy; that is operator policy, not a requirement of this product.
 
 **Before an upgrade,** run the job by hand, as above, and check its verified line
 before changing the image.

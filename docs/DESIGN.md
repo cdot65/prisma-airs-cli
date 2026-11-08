@@ -18179,7 +18179,14 @@ half-open UTC instants ending in Z, since<until, describing past time. Backfill
 requires both. The supported rolling selector must cover since within 87600 hours,
 including ceiling to whole hours, and is then rounded **up** to a shape the SCM
 dashboard API accepts — 24 hours, or 7, 30 or 60 days (`sync::dashboard_window`; past
-60 days the exact hour count is kept so the API's refusal stays visible). The API refuses
+60 days the exact hour count is kept so the API's refusal stays visible). **One
+exception:** a span of 25 whole hours stays the 24-hour window rather than 7 days. A
+24-hour target derived moments before the run ceils to 25 hours, and the polling lower
+bound returns to the first collection's 24 hours while any source lacks a complete
+traversal, so rounding it to 7 days would turn every such tick into a page-capped 7-day
+read. That hour of slack means such a run may not cover up to the first hour of its
+target; coverage records only what a traversal reached, so that hour is never claimed
+as covered (contract §6, "Tick lower bound"). The API refuses
 every other shape with HTTP 400 (25 hours, 2 days, 1 hour for sessions), which the
 collector records as the applications and sessions sources being unavailable; the M8
 live deployment hit this on every collection until 2026-11-07. Over-covering is safe:
