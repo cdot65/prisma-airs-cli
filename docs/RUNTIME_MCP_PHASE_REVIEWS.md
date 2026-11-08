@@ -4942,12 +4942,12 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: ****source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate; overall M8 still pending the owner's live evidence (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8)** (reviews 1–5 scored 6.5, 6.5, 7.5, 8.0 and 8.5);
-integrated on accepted M7 (2026-11-07); awaiting user-run integration evidence (not
-accepted). The plan's exit gate needs an
-independent source and receipts review at or above the owner-set 9.0 threshold **plus**
-actual integration evidence from the owner's live steps (`scripts/m8/user-checklist.sh`).
-Nothing here is published, applied or deployed by an agent.
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined review 1 scored 8.5/10, revise (2026-11-08)** — outstanding gates: the disposable-node test (step 10), production-storage capacity qualification (step 12 and the coordinated-backup memory measurement), and the macOS release qualification; gateway exclusivity and image provenance were since evidenced (see the response entry).
+The plan's exit gate needs an independent review of source, receipts and the live
+integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
+threshold. The live deployment was carried out by the agent through the owner's GitOps
+path (Harbor image by digest, Argo-managed talos-cluster overlay) at the owner's
+direction on 2026-11-07; nothing was published, tagged or signed.
 
 ### M8 implementation
 
@@ -5581,6 +5581,68 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 final combined review 1 (Codex, 2026-11-08T02:03Z, frozen tree f2e8b93 = main 494ff54, receipts m8/run10)
+
+**8.5/10, revise.** "The post-review-8 fixes are sound within the verification limits
+below, and the performed live exercises provide useful evidence. Several unchanged
+acceptance gates remain unfulfilled." 710 files matched the manifest before and after;
+no external calls, no credentials accessed. **M8 is not accepted.**
+
+Material findings (outstanding gates, "not failures of the exercises actually performed"):
+1. **Gateway exclusivity unproven** (runbook §7a item 4): step 7 was labelled pass with
+   the console check missing.
+2. **The disposable-node test (step 10) was not performed** (plan M8.2): fencing,
+   refusal during uncertain ownership and safe reacquisition remain unproven.
+3. **Production-storage capacity qualification incomplete** (step 12; release §2): the
+   isolated low-space/recovery exercise, the coordinated-backup memory measurement at a
+   representative size under the 2 GiB limit, and the capacity accounting.
+4. **Release matrix and image provenance unfinished** (release §3): the macOS
+   qualification, and the build base digest, in-image toolchain and binary hash tied to
+   the release source.
+
+Minor: the runbook still made steps 4–5 a precondition for real data and attributed
+the off-volume copy and the no-agent-deletion rule to §9.4; DESIGN omitted the 25-hour
+exception that the contract and code have.
+
+Judged sound: the collector window and coverage-category fixes (both regressions fail
+under mutation), the strict-report test fix ("does not mask a demonstrated service
+defect"), the PATH fix, the orchestrator's bounds after dropping `--request-timeout`, the
+manifests' hardening, the metrics, the offline helpers, and the evidence for steps 1–3,
+6–8, 9a, 9b (all four parts) and 11. Receipt independently summed: 4,246 passed, 0
+failed, 9 ignored, no parity skip.
+
+**Post-review-8 test changes** (landed after the live-evidence entry): the build-hashes
+test hides a locally installed zig/cargo-zigbuild (it inherited the developer's PATH);
+the strict-report receipt test leaves a two-second uncovered tail (since
+application-telemetry left inventory coverage it was partial only when the sync and the
+report straddled a second: 5/10 failures on main fbc3660, 0/10 before #15).
+
+### M8 response to final review 1 (2026-11-08)
+
+- **Finding 1 — resolved with evidence.** The gateway's admin plane (read-only
+  `airs gateway mcp integrations list` and `get` for all 15 integrations) shows exactly
+  one integration, `airs`, whose upstream is `https://mcp-backend-airs.goshawks.io/mcp`;
+  no other integration's detail mentions the backend URL, the dedicated gateway client
+  ID or the API app ID. With 7a items 1–3 (az: confidential-only client, sole consent,
+  one credential), step 7 is now complete.
+- **Finding 4 — provenance recorded; macOS remains owner-run.** The deployed image
+  (`registry.cdot.io/airs-mcp/airs-mcp@sha256:7c81056d…`, built from e3060b7) was built
+  on `rust:1.89-bookworm` = `sha256:948f9b08…` (platform manifest `sha256:c9ac3fa8…`)
+  with cargo 1.89.0 (c24e10642 2025-06-23), rustc 1.89.0 (29483883e 2025-08-04), glibc
+  2.36-9+deb12u13, gcc 12.2.0; its `/usr/local/share/airs-mcp.sha256` records
+  `d968da30…`, and the binary extracted from the pulled image hashes to the same value.
+  No binary input changed between e3060b7 and the release source 494ff54 (`git diff`
+  over every crate's sources, the manifests, `Cargo.lock` and the Dockerfile is empty),
+  so the image is a build of the release source. The aarch64-apple-darwin build needs
+  the release Mac.
+- **Minor findings — fixed** in the runbook (steps 4–5 optional; the set is §9.4's
+  content, the off-volume copy and the no-agent-deletion practice are operator policy)
+  and DESIGN (the 25-hour exception, with the uncovered first hour never claimed).
+- **Findings 2 and 3 — need the owner:** step 10 needs disposable worker nodes and
+  power control at the hypervisor; step 12 needs its own Entra registrations with an
+  owner-only secret handoff and a gateway integration. The coordinated-backup memory
+  measurement (part of finding 3) is agent-runnable and follows.
 
 ### M8 live evidence (owner-run with the agent, 2026-11-07): findings and fixes
 
