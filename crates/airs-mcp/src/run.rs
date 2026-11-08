@@ -1273,14 +1273,15 @@ mod tests {
         let admitted = storage::admit(&base).unwrap();
         let config_dir = storage::private_child(&admitted, "config").unwrap();
         let fifo = base.join("assertion.pem");
-        rustix::fs::mknodat(
-            rustix::fs::CWD,
-            &fifo,
-            rustix::fs::FileType::Fifo,
-            rustix::fs::Mode::from_raw_mode(0o600),
-            0,
-        )
-        .unwrap();
+        // POSIX mkfifo(1): rustix has no mknodat/mkfifoat on macOS.
+        use std::os::unix::fs::FileTypeExt;
+        let made = std::process::Command::new("mkfifo")
+            .args(["-m", "600"])
+            .arg(&fifo)
+            .status()
+            .unwrap();
+        assert!(made.success(), "mkfifo failed");
+        assert!(std::fs::metadata(&fifo).unwrap().file_type().is_fifo());
         let key = include_bytes!("../tests/fixtures/gateway-public.pem");
         let writer = {
             let fifo = fifo.clone();

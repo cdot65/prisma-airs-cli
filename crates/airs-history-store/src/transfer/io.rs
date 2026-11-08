@@ -228,6 +228,26 @@ mod tests {
         io::Write,
         os::unix::fs::{PermissionsExt, symlink},
     };
+    /// The staging identity check binds a name to the descriptor that was opened: a name
+    /// replaced by another file (a different inode) is refused, the original is accepted.
+    /// Both sides come from one `stat` type, so this holds on Linux and macOS alike.
+    #[test]
+    fn a_replaced_staging_name_is_refused_by_its_identity() {
+        let dir = crate::test_support::TestDir::new("transfer-identity");
+        let parent = File::open(dir.path()).unwrap();
+        let name = std::ffi::OsStr::new("staged");
+        std::fs::write(dir.path().join("staged"), b"one").unwrap();
+        let opened = File::open(dir.path().join("staged")).unwrap();
+        assert!(check_named(&parent, name, &opened).is_ok());
+        assert_eq!(
+            identity(&opened).unwrap(),
+            named_identity(&parent, name).unwrap()
+        );
+        std::fs::write(dir.path().join("other"), b"two").unwrap();
+        std::fs::rename(dir.path().join("other"), dir.path().join("staged")).unwrap();
+        assert!(check_named(&parent, name, &opened).is_err());
+        assert!(named_identity(&parent, std::ffi::OsStr::new("missing")).is_err());
+    }
     #[test]
     fn logical_transfer_publication_is_private_atomic_and_refuses_replacement() {
         let dir = crate::test_support::TestDir::new("transfer-output");
