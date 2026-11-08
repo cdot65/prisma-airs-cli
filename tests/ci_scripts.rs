@@ -270,6 +270,18 @@ fn the_release_trusts_ci_only_when_every_required_job_passed() {
         "malformed entries"
     );
     assert!(!status_ok("not json"), "malformed");
+    let valid = all("push", "success");
+    assert!(status_ok(&valid), "the valid object on its own passes");
+    assert!(!status_ok(&format!("{valid}not-json")), "trailing garbage");
+    assert!(
+        !status_ok(&format!("{valid}\nnot-json")),
+        "a trailing garbage line"
+    );
+    assert!(
+        !status_ok(&format!("{valid}{{\"state\":")),
+        "truncated second object"
+    );
+    assert!(!status_ok(&format!("{valid}\n{valid}")), "two documents");
     assert!(!status_ok(r#"{"state":"success"}"#), "no statuses array");
     assert!(!status_ok(r#"[]"#), "wrong shape");
 }
