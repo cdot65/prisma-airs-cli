@@ -120,9 +120,13 @@ This coordinated set is the content backup. It is NOT the input of control-resto
 Then the report-title marker test: proven present in the stored data, not found on the backup
 target, with positive encryption evidence, a wrong-key restore refused and a correct-key restore
 showing the marker. Record the commands and results."
-step 10 "Node-loss test on a DEDICATED, DISPOSABLE node only (contract §9.3)" \
-"Never a shared talos node. Follow the runbook's node-loss procedure on a node you can lose, and
-record whether the volume moved without force-detach and the service recovered."
+# Step 10 (the node-loss test) was withdrawn by the owner on 2026-11-08, permanently (plan
+# revision 7 amendment 3). It is recorded, not asked; steps 11 and 12 keep their numbers.
+echo; echo "== Step 10: Node-loss test (withdrawn)"
+echo "Withdrawn by the owner on 2026-11-08; nothing to do. Runbook §10 is operator recovery only."
+rec ""; rec "## Step 10: Node-loss test (withdrawn)"
+rec "- status: withdrawn"
+rec "- result: not an acceptance step (owner decision 2026-11-08, permanent; plan revision 7 amendment 3)"
 step 11 "Restore drill (contract §9.4)" \
 "Follow runbook §11 in the isolated drill namespace (default-deny egress, no production
 credentials). Restore the volume with the drill Deployment at 0, then in a maintenance pod, in order:

@@ -25,8 +25,8 @@ against the service's own configuration parser.
 - **Real data waits** until steps 1–3 and 6–7 pass. Steps 4–5 are optional operator
   records of your own backup policy (contract §9.4: backup targets, retention and
   deletion rules are the operator's, not a gate of this product).
-- **Never a shared node.** Never power off, drain or isolate a shared talos node. The
-  node-loss test (step 10) uses a **dedicated, disposable** node only.
+- **Never a shared node.** Never power off, drain or isolate a shared talos node for any
+  test. (The node-loss test was withdrawn by the owner on 2026-11-08; §10 is recovery only.)
 - **Encrypted storage required.** If the encrypted StorageClass, the backup target or key
   custody cannot be established, deployment stays blocked. A retained PVC is not a
   backup.
@@ -370,54 +370,24 @@ nothing. Use a report title instead. It is stored as given in the control store'
 Record every command and its result. Steps 2, 4, 5 and 6 together make the evidence;
 any one alone does not.
 
-## 10. Node-loss test: dedicated, disposable node only
+## 10. Lost node: operator recovery (not a test)
 
-Plan revision 7 amendment 3; contract §9.3. **Never use a shared talos node.** Every
-node named here is a temporary worker created for this test and removed after it.
+The node-loss **test** was withdrawn by the owner on 2026-11-08, permanently (plan revision
+7 amendment 3; contract §9.3). Nothing here is an acceptance step. This is what to do if
+the node running `airs-mcp` is lost for real.
 
-1. **Prepare.** Add two disposable worker nodes, A and B. Label both
-   `airs-mcp-nodeloss=true`, and taint both so only the test schedules there. Cordon
-   B. Deploy a test copy in its own namespace with:
-   - its own encrypted RWOP PVC;
-   - a required nodeAffinity on `airs-mcp-nodeloss=true` and the taint's toleration;
-   - the production manifests otherwise, and egress denied (no AIRS credentials
-     needed).
-
-   It schedules on A. Record:
-   - `kubectl get pod -o wide`;
-   - `kubectl get volumeattachments`;
-   - the Longhorn volume's attached node and state (`kubectl -n longhorn-system get
-     volumes.longhorn.io <vol> -o wide`);
-   - the pod's `storage_owned` log line (owner UUID, node).
-2. **Lose A.** Power A off at its hypervisor, as a real loss would. Do not drain it
-   first. Then `kubectl uncordon B`.
-3. **Observe while A's state is uncertain.** Every 30 s for at least 10 minutes,
-   record:
-   - the pod phases (the old pod goes `Terminating` or `Unknown`);
-   - whether a replacement pod exists and its phase;
-   - `kubectl get volumeattachments`;
-   - the Longhorn volume's state and attached node.
-
-   The expected safe result: no second `airs-mcp` pod ever becomes Running, and the
-   volume stays attached to A or detaching, never attached to two nodes. **No
-   force-detach and no force pod deletion** while A's power state is unproven.
-4. **Fence the old writer, then reacquire.** Only after the hypervisor or BMC shows A
-   **powered off**:
-   - record that evidence: a screenshot or CLI output with a timestamp;
-   - run `kubectl delete node A`. That removes A's pods and VolumeAttachments, so the
-     Recreate Deployment's replacement can schedule on B.
-
-   Record:
-   - when the replacement became Running on B;
-   - the VolumeAttachment now naming B;
-   - the new `storage_owned` line, which must show a **new** owner UUID and node B;
-   - that `/readyz` returns `ready` and `airs_mcp_control_ok 1`.
-5. **Confirm integrity.** After reacquisition, record the `control_recovered` line and
-   the archive and control byte metrics against the values from step 1.
-6. **Clean up.** Delete the test namespace and remove both disposable nodes.
-
-A dual mount, a second Running pod, or reacquisition without fencing evidence reopens
-the storage design (§9.3).
+1. **Expect the service to stay down.** The old pod goes `Terminating` or `Unknown`, and the
+   `Recreate` Deployment's replacement stays Pending: the RWOP volume is still attached to
+   the lost node. That is the safe outcome. Two writers on one SQLite store would corrupt it.
+2. **Do not force-detach and do not force-delete the pod** while the lost node's power state
+   is unknown. Nothing in this repository automates either (contract §9.3).
+3. **Fence, then reacquire.** Once the node is confirmed powered off (hypervisor, BMC or the
+   physical machine), run `kubectl delete node <node>`. That removes its pods and
+   VolumeAttachments, and the replacement schedules elsewhere.
+4. **Check the new owner.** The replacement logs `storage_owned` with a **new** owner UUID and
+   node, then `control_recovered`; `/readyz` returns `ready` and `airs_mcp_control_ok 1`.
+   If the node comes back instead, it rejoins and the original pod resumes; nothing else is
+   needed.
 
 ## 11. Restore drill
 

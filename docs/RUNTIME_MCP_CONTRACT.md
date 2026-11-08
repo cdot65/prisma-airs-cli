@@ -1588,9 +1588,10 @@ through the frozen §10 edge table (`jobs.rs`).
   (RWOP is already used by `incident-response` on `longhorn-replicated`). RWOP
   prevents a second pod from mounting the volume; RWO alone does not (same-node
   pods can share it). M0.6 demonstrated a second pod Pending, `Recreate` without
-  overlap and a fresh owner ID per pod. Node-loss behavior without automated
-  force-detach is demonstrated at M8.2 on a dedicated disposable node (plan revision
-  7, amendment 3), never on a shared node. A negative result reopens the design.
+  overlap and a fresh owner ID per pod. Node-loss behavior is **not tested and not an
+  acceptance gate** (owner decision, 2026-11-08, permanent; plan revision 7 amendment
+  3). The design rule stands: nothing automates force-detach while the old writer's
+  state is uncertain; recovering a lost node is an operator action (runbook §10).
 - Inside the pod, an exclusive non-blocking `flock` on `DATA/owner.lock` plus a
   published `owner.json` (owner UUID, pod, node, PID, time) refuses a second process.
   **This is not distributed fencing**, and no part of the design claims it is.
@@ -1683,13 +1684,12 @@ size from measured growth.
   It is not an acceptance gate (owner decision, 2026-11-07).
 - **M8.2 local qualification.** `qualify_restore_and_contention_at_scale` (opt-in) seeds
   the qualified dataset, runs report readers against a live writer, and restores and
-  verifies a `VACUUM INTO` backup copy. It records peak RSS and I/O. Production storage,
-  low-space recovery on the actual storage class, and the node-loss test on a dedicated
-  disposable node are user-run.
+  verifies a `VACUUM INTO` backup copy. It records peak RSS and I/O. Production storage
+  and low-space recovery on the actual storage class are user-run. (The node-loss test
+  was withdrawn by the owner on 2026-11-08 and is not run.)
 - **M8.3 and M8.4.**
   - `docs/RUNTIME_MCP_DEPLOYMENT_RUNBOOK.md` and `scripts/m8/user-checklist.sh` cover
-    the owner's proof: gateway sign-in, Claude Code, backup marker, node loss and restore
-    drill.
+    the owner's proof: gateway sign-in, Claude Code, backup marker and restore drill.
   - `docs/RUNTIME_MCP_RELEASE.md` and `scripts/m8/build-hashes.sh` produce local,
     non-publishing builds and SHA-256 manifests. macOS signing and the container image
     are owner steps.

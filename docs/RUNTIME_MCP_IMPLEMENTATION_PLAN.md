@@ -65,6 +65,12 @@ Evidence: `.local/dev/runtime-mcp/m0.6/receipts.md`; contract §2.2, §2.3 and �
      uncertain, and safe reacquisition. A dual mount or unsafe reacquisition reopens
      the design. Shared production nodes are never powered off, isolated or drained
      for this test.
+   **Withdrawn 2026-11-08 (owner), permanently:** the node-loss test is not a gate of M8 or of any
+   phase, and no later revision reinstates it. The owner accepts the residual risk of an
+   unannounced node loss on the basis M0.6 established (RWOP refuses a second pod,
+   `Recreate` never overlaps, each owner records a fresh owner ID) and contract §9.3's
+   unchanged design rule: no automated force-detach while the old writer's state is
+   uncertain. Recovery from a lost node is an operator action (runbook §10).
 4. **Two backup-policy checks move to M8 (review 9).** Contract §9.4 now holds the
    accepted backup policy. Two parts of it are facts not yet verified, and they become
    M8.1 deployment prerequisites:
@@ -469,8 +475,8 @@ memory limits. A 256 MiB SQLite allocator limit is not a total process RSS claim
 
 Use one active pod and a filesystem backed by block storage, not RWX/NFS. Prefer
 ReadWriteOncePod if the installed CSI driver supports it; RWO alone does not
-enforce a single pod. M0/M8 must prove exclusive ownership, no overlapping rollout,
-and attachment/fencing after node loss. If RWOP is unavailable, qualify an
+enforce a single pod. M0/M8 must prove exclusive ownership and no overlapping rollout
+(node-loss fencing is not a gate: revision 7 amendment 3, withdrawn). If RWOP is unavailable, qualify an
 equivalent fenced single-owner deployment before enabling collection; do not
 pretend an advisory local lock is distributed fencing. Preserve PVCs on teardown.
 
@@ -818,7 +824,7 @@ another review, preserving previous findings/scores. No phase inherits B3's scor
 | **M5 Transfer and lifecycle completion** | M5.1 complete B4 codec/type/integrity gaps; M5.2 staged MCP uploads/export and old-archive migration; M5.3 preview/execute prune, artifact deletion and tombstones; M5.4 compact/restore/recover through service tools. *Scope reconciliation (M5 review 2): restore and epoch activation are offline maintenance (`airs-mcp control-*`), artifact deletion moves to M6 with the report artifacts it deletes, and M5.4 online is compact and recover; see contract §5.1.* | Adversarial valid-checksum inputs, orphan/duplicate/projection forgery, erased identity, unowned report, array-valued work scan ID, wrong cloud, boundary records, interrupted imports and all-copy pruning pass; run crates/airs-history-store/tests/support/history_transfer_adversarial.rs against the new service adapters; no client SQLite. |
 | **M6 Historical daily reports and retrieval** | M6.1 full-cohort queries/HTML filters/profile matrix; M6.2 midnight/DST windows and immutable 24-hour revisions; M6.3 private crash-safe bundles, hashes/latest pointer and chunked retrieval; M6.4 assessment attribution and completion events. | Golden report/coverage tests plus DST/missed ticks/late data/publication crashes, cardinality thresholds and unauthorized retrieval. Render/revision/retrieval makes zero Reports calls. |
 | **M7 Optional CLI client** | M7.1 named TOML connection management and interactive OAuth/cache; M7.2 explicit service history/sync/report/jobs/schedules/lifecycle adapters; M7.3 bounded receipt opt-in and resumable artifact transfer; M7.4 diagnostics/help/docs/parity and packaged CLI installs. | No-MCP CLI remains independent; no silent fallback, auth prompts on noninteractive calls, secret leaks, scan resubmission or SQLite dependency. End-to-end loopback CLI→gateway fixture→server flows pass. |
-| **M8 Deployment, scale and release qualification** | M8.1 container/singleton block PVC/Secrets/TLS/NetworkPolicy/health/metrics and GitOps artifacts, plus the backup-policy checks of revision 7 amendment 4 (nas1 retention; no agent-accessible R2 delete right); M8.2 million-scan and contention benchmarks plus restore/volume qualification, including the node-loss test on a dedicated disposable node (revision 7); M8.3 real gateway/Claude/CLI deployment runbook and user-run proof; M8.4 all platform builds, source/package hashes, docs and release procedures. | Independent >=9.1 source/receipts review plus actual integration evidence before deployment is called accepted. No automatic publishing merely because tests pass. |
+| **M8 Deployment, scale and release qualification** | M8.1 container/singleton block PVC/Secrets/TLS/NetworkPolicy/health/metrics and GitOps artifacts, plus the backup-policy checks of revision 7 amendment 4 (nas1 retention; no agent-accessible R2 delete right); M8.2 million-scan and contention benchmarks plus restore/volume qualification (the node-loss test was withdrawn by the owner, revision 7 amendment 3); M8.3 real gateway/Claude/CLI deployment runbook and user-run proof; M8.4 all platform builds, source/package hashes, docs and release procedures. | Independent >=9.1 source/receipts review plus actual integration evidence before deployment is called accepted. No automatic publishing merely because tests pass. |
 
 M0 establishes contract-level dependencies before parallel implementation. M2 and
 the domain portions of M3 may proceed independently after M1, in non-overlapping
@@ -843,18 +849,17 @@ UTF-8/binary tool responses. Test a mismatched caller/agent/backend denial, not 
 one successful call. Verify fixed-UID/private-subtree admission, single-owner CSI
 access (RWOP or an independently demonstrated equivalent), and a small encrypted
 backup/restore on disposable storage.
-Also demonstrate concurrent-owner refusal. Conservative ownership behavior when
-the workload loses its node is demonstrated in M8.2 on a dedicated disposable node
-(revision 7 amendment 3). Do not automate force-detach while
-old-writer ownership is uncertain. The final node-loss/storage tests in M8 remain
-a design gate: failure reopens the design, not merely an operational warning.
+Also demonstrate concurrent-owner refusal. Node-loss behavior is not tested at any
+phase (revision 7 amendment 3, withdrawn by the owner). Do not automate force-detach
+while old-writer ownership is uncertain. The final storage tests in M8 remain a design
+gate: failure reopens the design, not merely an operational warning.
 
 Capture the exact versions/configuration references and a narrowly scoped result
 receipt. If a required signed binding, OAuth flow, response bound or storage
 guarantee is unavailable, resolve the design and re-review it before M1. Do not
-weaken authentication or defer these feasibility questions to M8, except the
-node-loss item moved by revision 7 amendment 3 and the two backup-policy checks (nas1
-retention, no agent-accessible R2 delete right) moved by amendment 4. M8 repeats
+weaken authentication or defer these feasibility questions to M8 (revision 7
+amendment 3's node-loss item and amendment 4's backup-policy checks were later
+withdrawn by the owner). M8 repeats
 integration/restore proof on the final implementation and full qualified dataset.
 Preparing the spike is authorized planning/implementation work; its real resource
 changes and user sign-in are separate concrete execution steps, not a claimed pass.
