@@ -1946,6 +1946,15 @@ async fn a_receipt_outlives_an_undelivered_result_and_strict_exits_keep_the_resu
         1,
         "a delivered result removes only its own receipt"
     );
+    // The report must be partial for `--strict` to fail. Its one-day period ends at
+    // submission, and the archive's coverage ends at the last collection (the sync
+    // above), so the tail between them is uncovered — but only when it spans a second:
+    // within the same second the period is fully covered and the report is complete.
+    // Before application-telemetry left inventory coverage (contract §4.3) that source
+    // was unavailable for a one-day window and made the report partial regardless;
+    // since then this test passed only when the sync and the report straddled a
+    // second boundary (about half the runs). Leave a two-second uncovered tail.
+    std::thread::sleep(std::time::Duration::from_secs(2));
     let strict = w.airs(&[
         "runtime",
         "report",
