@@ -8,13 +8,16 @@ use std::{
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
 };
-fn identity(file: &File) -> Result<(u64, u64), CliError> {
-    let m = file
-        .metadata()
+/// A file's (device, inode) identity. Both sides of every comparison come from the same
+/// `stat` structure, so the field types are the platform's own (`dev_t` is `u64` on Linux
+/// but `i32` on macOS, where mixing std's `u64` with rustix's native field did not compile).
+type Identity = (rustix::fs::Dev, u64);
+fn identity(file: &File) -> Result<Identity, CliError> {
+    let s = rustix::fs::fstat(file)
         .map_err(|_| failure("cannot inspect transfer staging descriptor"))?;
-    Ok((m.dev(), m.ino()))
+    Ok((s.st_dev, s.st_ino))
 }
-fn named_identity(parent: &File, name: &std::ffi::OsStr) -> Result<(u64, u64), CliError> {
+fn named_identity(parent: &File, name: &std::ffi::OsStr) -> Result<Identity, CliError> {
     let s = rustix::fs::statat(parent, name, AtFlags::SYMLINK_NOFOLLOW)
         .map_err(|_| failure("transfer staging entry is unavailable"))?;
     Ok((s.st_dev, s.st_ino))
@@ -225,6 +228,26 @@ mod tests {
         io::Write,
         os::unix::fs::{PermissionsExt, symlink},
     };
+    /// The staging identity check binds a name to the descriptor that was opened: a name
+    /// replaced by another file (a different inode) is refused, the original is accepted.
+    /// Both sides come from one `stat` type, so this holds on Linux and macOS alike.
+    #[test]
+    fn a_replaced_staging_name_is_refused_by_its_identity() {
+        let dir = crate::test_support::TestDir::new("transfer-identity");
+        let parent = File::open(dir.path()).unwrap();
+        let name = std::ffi::OsStr::new("staged");
+        std::fs::write(dir.path().join("staged"), b"one").unwrap();
+        let opened = File::open(dir.path().join("staged")).unwrap();
+        assert!(check_named(&parent, name, &opened).is_ok());
+        assert_eq!(
+            identity(&opened).unwrap(),
+            named_identity(&parent, name).unwrap()
+        );
+        std::fs::write(dir.path().join("other"), b"two").unwrap();
+        std::fs::rename(dir.path().join("other"), dir.path().join("staged")).unwrap();
+        assert!(check_named(&parent, name, &opened).is_err());
+        assert!(named_identity(&parent, std::ffi::OsStr::new("missing")).is_err());
+    }
     #[test]
     fn logical_transfer_publication_is_private_atomic_and_refuses_replacement() {
         let dir = crate::test_support::TestDir::new("transfer-output");

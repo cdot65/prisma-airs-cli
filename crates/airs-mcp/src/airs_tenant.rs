@@ -123,14 +123,15 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("airs-tenant-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir(&dir).unwrap();
         let fifo = dir.join("secret");
-        rustix::fs::mknodat(
-            rustix::fs::CWD,
-            &fifo,
-            rustix::fs::FileType::Fifo,
-            rustix::fs::Mode::from_raw_mode(0o600),
-            0,
-        )
-        .unwrap();
+        // POSIX mkfifo(1): rustix has no mknodat/mkfifoat on macOS.
+        use std::os::unix::fs::FileTypeExt;
+        let made = std::process::Command::new("mkfifo")
+            .args(["-m", "600"])
+            .arg(&fifo)
+            .status()
+            .unwrap();
+        assert!(made.success(), "mkfifo failed");
+        assert!(std::fs::metadata(&fifo).unwrap().file_type().is_fifo());
         let started = std::time::Instant::now();
         assert!(read_secret(&fifo, "secret file").is_err());
         assert!(
