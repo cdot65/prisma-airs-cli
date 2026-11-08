@@ -266,9 +266,12 @@ step "Required checks (fmt, clippy, tests with the TypeScript reference)"
 check "TypeScript reference build is current (scripts/build-reference-cli.sh --verify)" reference_is_current
 run cargo fmt --all --check
 run cargo clippy --workspace --all-targets --locked -- -D warnings
-# The live tier never runs as part of a release.
+# The live tier never runs as part of a release. The airs-mcp service crate is excluded: it
+# runs only in its Linux container (ext4-only storage admission, GNU operator tooling), so
+# its tests cannot pass on the release Mac. Linux CI runs them on the same commit, and a
+# release is cut only after that CI passed (docs/RELEASING.md §2 step 3).
 run env -u AIRS_RS_LIVE -u AIRS_E2E_TENANT -u AIRS_E2E_PROFILE -u AIRS_ALLOW_PARITY_SKIP \
-  AIRS_REQUIRE_PARITY=1 cargo test --workspace --locked --no-fail-fast
+  AIRS_REQUIRE_PARITY=1 cargo test --workspace --exclude airs-mcp --locked --no-fail-fast
 
 step "Build $MAC_TARGET"
 # --bin: only airs is built for a release; the other names are links in the tarball,

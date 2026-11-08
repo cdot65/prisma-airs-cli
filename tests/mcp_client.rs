@@ -4,6 +4,12 @@
 //! token, then presents an Entra-shaped upstream token and a signed identity assertion
 //! (minted from the synthetic fixture keys) to the server. Loopback only: the live
 //! gateway proof is M8.
+//!
+//! Linux only: every end-to-end test starts the real `airs-mcp` server, whose storage
+//! admission accepts only ext4 (contract §9.3; the service runs in its Linux container).
+//! On macOS the release Mac would refuse it (`UnknownFilesystem`); Linux CI runs these on
+//! the same commit as the required check.
+#![cfg(target_os = "linux")]
 
 use std::collections::HashMap;
 use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
@@ -1830,10 +1836,22 @@ fn packages_carry_the_client_in_airs_and_never_the_server() {
         "scripts/homebrew-formula.sh",
     ] {
         let text = std::fs::read_to_string(root.join(script)).unwrap();
-        assert!(
-            !text.contains("airs-mcp"),
-            "{script} must not package the server"
-        );
+        // Anything that would build, copy or package the server binary or its image. Naming
+        // the crate to *exclude* it (release.sh's test scope) or naming its client library
+        // packages nothing.
+        for forbidden in [
+            "--bin airs-mcp",
+            "-p airs-mcp ",
+            "--package airs-mcp ",
+            "release/airs-mcp",
+            "airs-mcp/Dockerfile",
+            "registry.cdot.io/airs-mcp",
+        ] {
+            assert!(
+                !text.contains(forbidden),
+                "{script} must not package the server ({forbidden})"
+            );
+        }
     }
     let release = std::fs::read_to_string(root.join("scripts/release.sh")).unwrap();
     assert!(
