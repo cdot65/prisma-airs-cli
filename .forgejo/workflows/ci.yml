@@ -41,17 +41,8 @@ jobs:
         run: |
           set -euo pipefail
           base="${{ github.event.pull_request.base.sha || github.event.before }}"
-          rust=true
-          if [ -n "$base" ] && [ "$base" != 0000000000000000000000000000000000000000 ] \
-             && git cat-file -e "$base^{commit}" 2>/dev/null; then
-            changed=$(git diff --name-only "$base"...HEAD)
-            # Only docs (docs/, docs-site/, any *.md): the Rust build and suite cannot change.
-            if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qvE '^(docs/|docs-site/)|\.md$'; then
-              rust=false
-            fi
-          fi
-          echo "rust=$rust" >> "$GITHUB_OUTPUT"
-          echo "rust steps: $rust"
+          # scripts/ci/classify-change.sh fails safe: any doubt means rust=true.
+          scripts/ci/classify-change.sh "$base" | tee -a "$GITHUB_OUTPUT"
       - name: Install Rust (stable with rustfmt and clippy, plus the MSRV)
         id: rust
         run: |
@@ -159,17 +150,8 @@ jobs:
         run: |
           set -euo pipefail
           base="${{ github.event.pull_request.base.sha || github.event.before }}"
-          rust=true
-          if [ -n "$base" ] && [ "$base" != 0000000000000000000000000000000000000000 ] \
-             && git cat-file -e "$base^{commit}" 2>/dev/null; then
-            changed=$(git diff --name-only "$base"...HEAD)
-            # Only docs (docs/, docs-site/, any *.md): the Rust build and suite cannot change.
-            if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qvE '^(docs/|docs-site/)|\.md$'; then
-              rust=false
-            fi
-          fi
-          echo "rust=$rust" >> "$GITHUB_OUTPUT"
-          echo "rust steps: $rust"
+          # scripts/ci/classify-change.sh fails safe: any doubt means rust=true.
+          scripts/ci/classify-change.sh "$base" | tee -a "$GITHUB_OUTPUT"
       - name: Install Rust (stable with the musl targets)
         id: rust
         run: |

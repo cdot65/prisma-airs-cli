@@ -1387,6 +1387,44 @@ fn red_team_runs_check_the_fixture_markers_and_path_flags() {
         other.stdout.contains(&marker),
         "markers are not secrets for other commands"
     );
+    // The Rust runner's path guards for the red team flags (restored after the parity
+    // removal, M8 final review 3): outside paths are refused, inside ones accepted.
+    let root = sandbox.root().to_path_buf();
+    let env: std::collections::BTreeMap<String, String> = [
+        ("HOME", root.join("home")),
+        ("AIRS_CLI_CONFIG_DIR", root.join("store")),
+    ]
+    .into_iter()
+    .map(|(name, path)| (name.to_owned(), path.display().to_string()))
+    .collect();
+    for flag in [
+        "--output-dir",
+        "--input-dir",
+        "--goals",
+        "--script-file",
+        "--variables-file",
+    ] {
+        assert!(
+            airs_test_harness::escape_violation(
+                &root,
+                &sandbox.cwd(),
+                &env,
+                &["redteam", "x", flag, "../../../../../../etc/passwd"]
+            )
+            .is_some(),
+            "{flag}"
+        );
+        assert!(
+            airs_test_harness::escape_violation(
+                &root,
+                &sandbox.cwd(),
+                &env,
+                &["redteam", "x", flag, "inside"]
+            )
+            .is_none(),
+            "{flag}"
+        );
+    }
 }
 
 /// The `redteam prompt-sets upload <uuid> <file>` positional is guarded like a path
@@ -1838,4 +1876,57 @@ fn automatic_history_cannot_use_real_home_or_escape_through_explicit_controls() 
         s.tmp().join("data").display().to_string(),
     );
     assert!(violation(&env, &["runtime", "sync"]).is_none());
+}
+
+/// Restored after the parity removal (M8 final review 3): the Rust-side halves of two deleted
+/// TypeScript tests. Rust runs never receive the endpoint trap variables and are not refused
+/// for a non-loopback endpoint variable (they prove zero requests themselves); loopback or empty
+/// values and NO_PROXY pass the environment guard; and the runtime command shape is recognised
+/// after global flags but not under another command.
+#[test]
+fn rust_runs_ignore_endpoint_traps_and_the_runtime_shape_is_recognised() {
+    let server = FixtureServer::start();
+    let sandbox = Sandbox::new();
+    sandbox.single_tenant(&server, "prod", "100");
+    let script = sandbox.tmp().join("env.sh");
+    std::fs::write(&script, "env | grep '^PANW_' | sort\n").unwrap();
+    let rust = run(
+        &Cli::rust("/bin/sh"),
+        &sandbox,
+        &[script.to_str().unwrap(), "runtime"],
+        &RunOptions::new(),
+    );
+    assert_eq!(rust.stdout, "", "airs-cli-rs runs never get the variables");
+    run(
+        &sh(),
+        &sandbox,
+        &["-c", "true"],
+        &RunOptions::new().env("PANW_MGMT_ENDPOINT", "http://example.test"),
+    )
+    .assert_success();
+    let mut env = std::collections::BTreeMap::new();
+    env.insert("PANW_MGMT_ENDPOINT".to_owned(), server.url("/env-mgmt"));
+    env.insert("HTTP_PROXY".to_owned(), String::new());
+    env.insert("NO_PROXY".to_owned(), "example.test".to_owned());
+    assert_eq!(airs_test_harness::env_guard_violation(&env), None);
+    assert!(airs_test_harness::is_runtime_command(&[
+        "--output", "json", "runtime", "scan"
+    ]));
+    assert!(!airs_test_harness::is_runtime_command(&[
+        "--tenant", "runtime", "doctor"
+    ]));
+}
+
+/// Restored after the parity removal (M8 final review 3): the Rust half of the deleted
+/// `opted_out_sandbox_refuses_the_typescript_cli`. A config written with an explicit external
+/// endpoint opt-out is recorded, and Rust-side runs still start.
+#[test]
+fn an_opted_out_sandbox_records_its_config_and_still_runs_rust() {
+    let server = FixtureServer::start();
+    let sandbox = Sandbox::new();
+    let config =
+        Sandbox::fixture_config(&server, "100").with("mgmtEndpoint", "http://example.test");
+    let path = sandbox.write_config_allowing_external_endpoints("prod", &config);
+    assert_eq!(sandbox.external_endpoint_configs(), vec![path]);
+    run(&sh(), &sandbox, &["-c", "true"], &RunOptions::new()).assert_success();
 }

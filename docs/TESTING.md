@@ -1009,8 +1009,9 @@ Notes:
   only `docs/`, `docs-site/` or `*.md` files changed, the `linux` job runs just
   `docs_consistency` and `cli_reference` (the two tests that read the docs) and the `musl`
   job builds nothing; both still report, so branch protection is satisfied.
-- **Pull requests from forks** need no secret for the reference either: the pinned
-  commit is in the history they are based on.
+  `scripts/ci/classify-change.sh` decides, and any doubt runs the Rust steps: renames count
+  their old path, every path is examined, and a missing or unrelated base, a git error or
+  an empty diff all choose `rust=true` (`tests/ci_scripts.rs`).
 - **Self-hosted macOS runner (`jadzia`).** A macOS runner has no container: every job
   runs directly on the host as the runner's user, and a pull request's `build.rs`,
   proc macros and tests run during `cargo build` and `cargo test`. Its workflow never runs

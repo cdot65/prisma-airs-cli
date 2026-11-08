@@ -223,13 +223,14 @@ sign_identity_present() {
 # up to date with main, so that head has the same tree). The release trusts that run
 # instead of re-running the suite on the Mac. Sets CI_COMMIT.
 ci_passed_for_head() {
-  local tree candidate state
+  local tree candidate
   tree="$(git rev-parse 'HEAD^{tree}')"
   for candidate in HEAD HEAD^2; do
     git rev-parse --quiet --verify "$candidate^{commit}" >/dev/null || continue
     [ "$(git rev-parse "$candidate^{tree}")" = "$tree" ] || continue
-    state="$(forgejo "$API/commits/$(git rev-parse "$candidate")/status" | jq -r '.state // empty')"
-    if [ "$state" = success ]; then
+    # Every required job (linux, musl, docs-site) must have reported success; an aggregate
+    # "success" alone is not enough (scripts/ci/ci-status-ok.sh).
+    if forgejo "$API/commits/$(git rev-parse "$candidate")/status" | scripts/ci/ci-status-ok.sh; then
       CI_COMMIT="$(git rev-parse --short "$candidate")"
       return 0
     fi

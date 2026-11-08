@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1 and 2 scored 8.5 and 8.7, revise (2026-11-08).** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1, 2 and 3 scored 8.5, 8.7 and 8.8, revise (2026-11-08); review 3's three findings are fixed below.** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5581,6 +5581,58 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 final combined review 3 (Codex, 2026-11-08T14:12Z, frozen tree main 483c588, receipts m8/run12)
+
+**8.8/10, revise.** "M8 needs revision: three source findings prevent acceptance at 9.0. The
+owner amendments and new receipts resolve final review 2's four material gates; I have not
+reinstated the withdrawn exercises." Both manifests verified before and after (653 files); no
+external services contacted. The review accepted gateway exclusivity (owner attestation),
+CLI/Claude access, hardening and health, coordinated backup, encryption and wrong-key refusal,
+isolated restore, the planning-size capacity evidence, and the 8.2.0 signing, notarisation,
+publishing and image provenance. **M8 is not accepted.**
+
+Material findings, all in that day's CI and parity-removal changes:
+1. **The docs-only classifier could skip Rust for code changes.** Rename detection showed only
+   the destination (`src/lib.rs` moved to `docs/lib.rs` gave `rust=false`); with thousands of
+   docs paths, `grep -q` under `pipefail` let a `build.rs` slip through; a base with no common
+   ancestor exited 128 instead of choosing the full suite.
+2. **The release check trusted the aggregate status alone**, so a success holding only an
+   unrelated context or only `docs-site` passed.
+3. **Parity removal deleted Rust assertions** from the sandbox runner tests (the red team
+   path-flag guards and the runtime command shape).
+
+Minor: the published npm install was not yet receipted.
+
+### M8 response to final review 3 (2026-11-08)
+
+- **Finding 1 — fixed.** `scripts/ci/classify-change.sh` replaces the inline step in both CI
+  jobs. It diffs with `--no-renames` (a moved file contributes its old path), writes the
+  NUL-separated list to a file with git's exit status checked, examines every entry in a
+  shell loop, and prints `rust=true` for an empty, all-zero or unknown base, no merge base,
+  any git error or an empty diff. `tests/ci_scripts.rs` covers docs-only, code, the rename,
+  5,000 docs paths plus a build script, a newline in a path name, each bad base and the
+  empty diff.
+- **Finding 2 — fixed.** `scripts/ci/ci-status-ok.sh` reads the combined status and passes
+  only when `linux`, `musl` and `docs-site` each reported under `CI / <job> (push)` or
+  `(pull_request)`, every reported one is `success`, and the aggregate is `success`; missing,
+  pending, failed, look-alike, empty or malformed input fails. `release.sh` uses it for HEAD
+  and the identical-tree HEAD^2; the tests run it on those cases.
+- **Finding 3 — fixed and audited.** The red team path-flag loop is back in
+  `red_team_runs_check_the_fixture_markers_and_path_flags`; new tests restore the Rust
+  halves of the deleted TypeScript tests
+  (`rust_runs_ignore_endpoint_traps_and_the_runtime_shape_is_recognised`,
+  `an_opted_out_sandbox_records_its_config_and_still_runs_rust`). An audit of every test
+  file the removal changed found no other Rust assertion removed: the other sandbox and
+  release-packaging deletions were TypeScript-only, the parity suites were dual-CLI
+  comparisons, and the live tier needed a real tenant.
+- **Minor — done.** Install receipts for all three platforms are in the evidence: fresh install
+  and upgrade from 8.0.0 on Linux x64 and macOS arm64, fresh install on Linux arm64 (emulated),
+  each with `airs` and `airs-cli` printing 8.2.0. `8.2.0-darwin-arm64` was held in npm's validation
+  until 2026-11-08T14:58Z; no owner action was needed.
+- **CI run 361 caught a defect in the first version of finding 2's fix.** On CI's jq 1.6, empty
+  input printed nothing and exited 0 even with `-e`, so `ci-status-ok.sh` accepted it; jq 1.8 exits
+  4, which hid this locally. The script now passes only on an explicit `all-passed` word from jq.
 
 ### Owner decisions: TypeScript parity removed; releases trust CI; docs-only CI (2026-11-08)
 
