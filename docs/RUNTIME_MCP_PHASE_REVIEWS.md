@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1 and 2 scored 8.5 and 8.7, revise (2026-11-08).** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding: the disposable-node test (step 10), production-storage low-space and capacity qualification (step 12), owner-verified gateway credential exclusivity, and the release image built and recorded from the release commit (plus macOS signing).
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1 and 2 scored 8.5 and 8.7, revise (2026-11-08).** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding: production-storage low-space and capacity qualification (step 12), owner-verified gateway credential exclusivity, and the release image built and recorded from the release commit (plus macOS signing). The node-loss gate (step 10) was withdrawn by the owner on 2026-11-08, permanently.
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5581,6 +5581,18 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 owner decision: the node-loss gate is withdrawn permanently (2026-11-08)
+
+After final review 2 named the disposable-node test as one of the gates blocking M8, the
+owner withdrew it — "WITHDRAW THE GATE, FOREVER AND EVER" — so it is not a gate of M8 or of
+any phase, and no later revision reinstates it (plan revision 7 amendment 3; contract §9.3).
+The residual risk of an unannounced node loss is the owner's, accepted on M0.6's evidence
+(RWOP refuses a second pod, `Recreate` never overlaps, each owner records a fresh owner ID)
+and on §9.3's design rule, which is unchanged: nothing automates force-detach while the old
+writer's state is uncertain. Runbook §10 is now operator recovery from a real lost node;
+checklist step 10 is recorded as withdrawn. Final review 2's finding 2 no longer applies to
+any later review.
 
 ### M8 final combined review 2 (Codex, 2026-11-08T03:54Z, frozen tree main fc3a409, receipts m8/run11)
 
