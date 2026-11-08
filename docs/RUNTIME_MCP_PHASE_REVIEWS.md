@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1, 2, 3 and 4 scored 8.5, 8.7, 8.8 and 8.9, revise (2026-11-08); review 4's findings are fixed below.** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1–5 scored 8.5, 8.7, 8.8, 8.9 and 8.9, revise (2026-11-08); review 5's finding is fixed below.** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5581,6 +5581,25 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 final combined review 5 (Codex, 2026-11-08T17:05Z, frozen tree main 60fb2cf, receipts m8/review-final-5)
+
+**8.9/10, revise.** "The review-4 fixes resolve the reported cases, but another malformed-response
+case can authorize release. The amended evidence gates remain satisfied." Both manifests verified
+before and after (656 files); no external services contacted. **M8 is not accepted.**
+
+Material finding: **raw NUL bytes were removed before JSON validation.** `input="$(cat)"` in
+`scripts/ci/ci-status-ok.sh` strips them with only a warning, so a valid object followed by a NUL,
+`suc<NUL>cess` and `lin<NUL>ux` all passed. No minor findings.
+
+### M8 response to final review 5 (2026-11-08)
+
+- **Material — fixed.** The response is written to a private temporary file with the write checked,
+  `jq` reads that file, and the script refuses any NUL itself (jq 1.6 ignores a trailing one).
+  `tests/ci_scripts.rs` adds the
+  three NUL cases directly and runs the unchanged `ci_passed_for_head` from `release.sh` with a
+  stubbed Forgejo: a valid response and an identical-tree HEAD^2 pass; NUL, malformed and
+  different-tree cases fail. Checked on jq 1.6 and 1.8.
 
 ### M8 final combined review 4 (Codex, 2026-11-08T16:14Z, frozen tree main 98b6a3f, receipts m8/review-final-4)
 

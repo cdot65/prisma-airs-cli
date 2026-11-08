@@ -282,6 +282,15 @@ fn the_release_trusts_ci_only_when_every_required_job_passed() {
         "truncated second object"
     );
     assert!(!status_ok(&format!("{valid}\n{valid}")), "two documents");
+    assert!(!status_ok(&format!("{valid}\0")), "a trailing NUL");
+    assert!(
+        !status_ok(&valid.replacen(r#""state":"success""#, "\"state\":\"suc\0cess\"", 1)),
+        "a NUL inside the aggregate state"
+    );
+    assert!(
+        !status_ok(&valid.replacen("CI / linux", "CI / lin\0ux", 1)),
+        "a NUL inside a required context"
+    );
     assert!(!status_ok(r#"{"state":"success"}"#), "no statuses array");
     assert!(!status_ok(r#"[]"#), "wrong shape");
 }
@@ -305,5 +314,102 @@ fn release_sh_uses_the_strict_status_check() {
             .count(),
         2,
         "both jobs classify with the script"
+    );
+}
+
+/// Runs the unchanged `ci_passed_for_head` from `release.sh` in `dir` with Forgejo stubbed:
+/// the status of HEAD^2 is `second`, of any other commit `head`.
+fn release_function_accepts_each(dir: &Path, head: &str, second: &str) -> bool {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    fs::create_dir_all(dir.join("scripts/ci")).unwrap();
+    fs::copy(
+        script("ci-status-ok.sh"),
+        dir.join("scripts/ci/ci-status-ok.sh"),
+    )
+    .unwrap();
+    let head_file = dir.join(".git/status-head");
+    let second_file = dir.join(".git/status-second");
+    fs::write(&head_file, head).unwrap();
+    fs::write(&second_file, second).unwrap();
+    let body = r#"eval "$(awk '/^ci_passed_for_head\(\) \{/,/^\}/' "$RELEASE")"
+API=stub
+second="$(git rev-parse --quiet --verify 'HEAD^2^{commit}' || echo none)"
+forgejo() { case "$1" in *"/commits/$second/"*) cat "$SECOND" ;; *) cat "$HEAD_STATUS" ;; esac; }
+ci_passed_for_head"#;
+    Command::new("bash")
+        .args(["-c", body])
+        .current_dir(dir)
+        .env("RELEASE", root.join("scripts/release.sh"))
+        .env("HEAD_STATUS", &head_file)
+        .env("SECOND", &second_file)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .unwrap()
+        .success()
+}
+
+fn release_function_accepts(dir: &Path, response: &str) -> bool {
+    release_function_accepts_each(dir, response, response)
+}
+
+#[test]
+fn the_release_function_refuses_malformed_responses_and_other_trees() {
+    let valid = combined(
+        "success",
+        &[
+            ("CI / linux (pull_request)", "success"),
+            ("CI / musl (pull_request)", "success"),
+            ("CI / docs-site (pull_request)", "success"),
+        ],
+    );
+    let dir = repo("release-fn");
+    assert!(release_function_accepts(&dir, &valid), "HEAD passed CI");
+    for (name, bad) in [
+        ("empty", String::new()),
+        ("trailing NUL", format!("{valid}\0")),
+        (
+            "NUL in a context",
+            valid.replacen("CI / linux", "CI / lin\0ux", 1),
+        ),
+        ("trailing garbage", format!("{valid}not-json")),
+    ] {
+        assert!(!release_function_accepts(&dir, &bad), "{name}");
+    }
+
+    // A merge is eligible through HEAD^2 only while HEAD^2 has HEAD's tree.
+    let merged = repo("release-merge");
+    git(&merged, &["checkout", "-q", "-b", "topic"]);
+    fs::write(merged.join("src/lib.rs"), "pub fn topic() {}\n").unwrap();
+    commit(&merged, "topic");
+    git(&merged, &["checkout", "-q", "main"]);
+    git(&merged, &["merge", "-q", "--no-ff", "-m", "merge", "topic"]);
+    let failing = valid.replacen("success", "failure", 1);
+    assert!(
+        release_function_accepts_each(&merged, &failing, &valid),
+        "HEAD has no passing CI, the identical-tree HEAD^2 has"
+    );
+    assert!(
+        !release_function_accepts(&merged, &failing),
+        "neither passed"
+    );
+    assert!(
+        !release_function_accepts_each(&merged, &failing, &format!("{valid}\0")),
+        "the only candidate's response holds a NUL"
+    );
+
+    fs::write(merged.join("README.md"), "# amended\n").unwrap();
+    git(&merged, &["add", "README.md"]);
+    git(
+        &merged,
+        &["commit", "-q", "--amend", "-m", "merge with another tree"],
+    );
+    assert_ne!(
+        git(&merged, &["rev-parse", "HEAD^{tree}"]),
+        git(&merged, &["rev-parse", "HEAD^2^{tree}"])
+    );
+    assert!(
+        !release_function_accepts_each(&merged, &failing, &valid),
+        "a passing HEAD^2 with another tree does not count"
     );
 }
