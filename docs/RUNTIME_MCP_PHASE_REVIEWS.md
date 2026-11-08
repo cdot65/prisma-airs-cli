@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1 and 2 scored 8.5 and 8.7, revise (2026-11-08).** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding: production-storage low-space and capacity qualification (step 12), owner-verified gateway credential exclusivity, and the release image built and recorded from the release commit (plus macOS signing). The node-loss gate (step 10) was withdrawn by the owner on 2026-11-08, permanently.
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1 and 2 scored 8.5 and 8.7, revise (2026-11-08).** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding: measured capacity (step 12's 30-day accounting) and the release image built and recorded from the release commit (plus macOS signing). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5581,6 +5581,21 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 owner decisions and attestation (2026-11-08, after the node-loss withdrawal)
+
+- **The low-space exercise is withdrawn permanently.** The owner: "the low-space exercise
+  requirement is also stupid, remove it NOW". The isolated low-space qualification on the
+  actual storage class (runbook §12's separate filled deployment) is not a gate of M8 or any
+  phase. The low-space *behavior* is unchanged and covered by the service's tests
+  (`the_disk_reserve_pauses_publication_then_collection_and_resumes`, the reserve tests in
+  `tools.rs` and `space.rs`); the production recovery procedure stays. **Measured capacity**
+  (runbook §12, the 30-day accounting) was not withdrawn and remains.
+- **Gateway credential exclusivity — owner attestation.** Final review 2's finding 1 asked for
+  an owner-verified check, since the admin plane hides upstream OAuth credentials. The owner
+  confirmed in the gateway console: "confirmed on the airs-mcp-gateway client cred is only used
+  by the airs integration." With the read-only evidence that only `airs` targets the backend
+  URL, runbook §7a item 4 is complete; checklist step 7 passes on that basis.
 
 ### M8 owner decision: the node-loss gate is withdrawn permanently (2026-11-08)
 
