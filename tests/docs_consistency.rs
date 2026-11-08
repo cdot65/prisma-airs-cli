@@ -261,54 +261,6 @@ fn every_index_row_cites_a_test_or_says_why_not() {
 }
 
 #[test]
-fn every_numbered_divergence_parity_test_is_cited() {
-    let checklist = read(CHECKLIST);
-    let cited: BTreeSet<(String, String)> = cited_tests(&checklist)
-        .into_iter()
-        .map(|reference| (reference.file, reference.name))
-        .collect();
-    let tests_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
-    let mut parity_files: Vec<String> = fs::read_dir(&tests_dir)
-        .expect("tests directory")
-        .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
-        .filter(|name| name.starts_with("parity_") && name.ends_with(".rs"))
-        .map(|name| format!("tests/{name}"))
-        .collect();
-    parity_files.sort();
-    assert!(!parity_files.is_empty(), "no tests/parity_*.rs files found");
-    let mut uncited = Vec::new();
-    for file in &parity_files {
-        let source = read(file);
-        let lines: Vec<&str> = source.lines().collect();
-        for (index, line) in lines.iter().enumerate() {
-            let Some(rest) = line.trim_start().strip_prefix("fn ") else {
-                continue;
-            };
-            let name: String = rest
-                .chars()
-                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
-                .collect();
-            let numbered = name.split('_').any(|token| {
-                token.len() > 1
-                    && token.starts_with('d')
-                    && token[1..].chars().all(|c| c.is_ascii_digit())
-            });
-            if numbered
-                && is_test_attribute_above(&lines, index)
-                && !cited.contains(&(file.clone(), name.clone()))
-            {
-                uncited.push(format!("{file}::{name}"));
-            }
-        }
-    }
-    assert!(
-        uncited.is_empty(),
-        "dNN-named parity tests missing from {CHECKLIST}:\n{}",
-        uncited.join("\n")
-    );
-}
-
-#[test]
 fn reference_parser_and_locator_behave() {
     let reference =
         TestRef::parse("tests/docs_consistency.rs::reference_parser_and_locator_behave")

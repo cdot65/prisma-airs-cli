@@ -14,7 +14,7 @@ Nothing here publishes automatically, and no step is taken merely because tests 
    ```sh
    cargo fmt --all --check
    cargo clippy --workspace --all-targets -- -D warnings
-   AIRS_REQUIRE_PARITY=1 cargo test --workspace
+   cargo test --workspace
    ```
 2. Run the opt-in qualifications in release mode, and keep their output:
    - `qualify_30_and_90_day_reports_on_a_million_scans`;

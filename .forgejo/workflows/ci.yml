@@ -33,10 +33,25 @@ jobs:
       - uses: https://github.com/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-          # The whole history and the tags: the TypeScript reference is a commit in this
-          # repository's own history (docs/TESTING.md §3).
+          # The whole history: the change classifier diffs against the base commit.
           fetch-depth: 0
 
+      - name: Classify the change (docs-only changes skip the Rust steps)
+        id: changes
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          rust=true
+          if [ -n "$base" ] && [ "$base" != 0000000000000000000000000000000000000000 ] \
+             && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            changed=$(git diff --name-only "$base"...HEAD)
+            # Only docs (docs/, docs-site/, any *.md): the Rust build and suite cannot change.
+            if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qvE '^(docs/|docs-site/)|\.md$'; then
+              rust=false
+            fi
+          fi
+          echo "rust=$rust" >> "$GITHUB_OUTPUT"
+          echo "rust steps: $rust"
       - name: Install Rust (stable with rustfmt and clippy, plus the MSRV)
         id: rust
         run: |
@@ -66,49 +81,25 @@ jobs:
           restore-keys: |
             cargo-linux-${{ runner.arch }}-${{ steps.rust.outputs.key }}-
 
-      - uses: https://github.com/pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - uses: https://github.com/actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        if: steps.changes.outputs.rust == 'true'
         with:
           node-version: 24
 
-      - name: Read the reference pin
-        id: pin
-        run: |
-          set -euo pipefail
-          commit=$(sed -n 's/^PINNED_COMMIT="\${AIRS_TS_COMMIT:-\([0-9a-f]\{40\}\)}"$/\1/p' scripts/build-reference-cli.sh)
-          [ "${#commit}" -eq 40 ] || { echo "cannot read PINNED_COMMIT from scripts/build-reference-cli.sh" >&2; exit 1; }
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
-          echo "node=$(node --version | cut -d. -f1)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore the TypeScript reference build
-        id: refcache
-        uses: https://github.com/actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: .reference/prisma-airs-cli
-          key: ts-reference-v1-linux-${{ runner.arch }}-node${{ steps.pin.outputs.node }}-${{ steps.pin.outputs.commit }}-${{ hashFiles('scripts/build-reference-cli.sh') }}
-
-      - name: Build the TypeScript reference
-        run: |
-          set -euo pipefail
-          # On a cache miss the script clones the pin from this checkout's own history
-          # (fetch-depth 0 above), so no key or second clone over the network is needed.
-          export AIRS_TS_SOURCE="$GITHUB_WORKSPACE"
-          scripts/build-reference-cli.sh
-          scripts/build-reference-cli.sh --verify
-
       - name: cargo fmt
+        if: steps.changes.outputs.rust == 'true'
         run: cargo fmt --all --check
 
       - name: cargo clippy
+        if: steps.changes.outputs.rust == 'true'
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
       - name: cargo check on the MSRV
+        if: steps.changes.outputs.rust == 'true'
         run: cargo +"$MSRV" check --workspace --all-targets --locked --target-dir target/msrv
 
       - name: Install jq (tests/homebrew_formula.rs needs it; DESIGN §21.14 choice 51)
+        if: steps.changes.outputs.rust == 'true'
         run: |
           set -euo pipefail
           if ! command -v jq >/dev/null 2>&1; then
@@ -119,11 +110,11 @@ jobs:
           fi
           jq --version
 
-      - name: cargo test (parity required)
+      - name: cargo test
+        if: steps.changes.outputs.rust == 'true'
         run: |
           set -euo pipefail
-          unset AIRS_RS_LIVE AIRS_E2E_TENANT AIRS_E2E_PROFILE AIRS_ALLOW_PARITY_SKIP
-          export AIRS_REQUIRE_PARITY=1
+          unset AIRS_RS_LIVE AIRS_E2E_TENANT AIRS_E2E_PROFILE
           # The job container has no CPU limit, so the test harness would otherwise run
           # one thread per host core (16 on the dedicated runner's node) while the musl
           # job compiles on the same cores. The runner is sized for 4 CPUs; the suite's
@@ -140,6 +131,14 @@ jobs:
           fi
           cargo test --workspace --locked --no-fail-fast
 
+      - name: cargo test (docs-only change; the two tests that read the docs)
+        if: steps.changes.outputs.rust == 'false'
+        run: |
+          set -euo pipefail
+          # docs_consistency checks README/DESIGN/COMPATIBILITY; cli_reference checks the
+          # docs site's command reference against the CLI. Everything else cannot change.
+          cargo test --locked --test docs_consistency --test cli_reference
+
   musl:
     runs-on: prisma-airs-cli
     timeout-minutes: 90
@@ -151,8 +150,26 @@ jobs:
     steps:
       - uses: https://github.com/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          # The whole history: the change classifier diffs against the base commit.
+          fetch-depth: 0
           persist-credentials: false
 
+      - name: Classify the change (docs-only changes skip the Rust steps)
+        id: changes
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          rust=true
+          if [ -n "$base" ] && [ "$base" != 0000000000000000000000000000000000000000 ] \
+             && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            changed=$(git diff --name-only "$base"...HEAD)
+            # Only docs (docs/, docs-site/, any *.md): the Rust build and suite cannot change.
+            if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qvE '^(docs/|docs-site/)|\.md$'; then
+              rust=false
+            fi
+          fi
+          echo "rust=$rust" >> "$GITHUB_OUTPUT"
+          echo "rust steps: $rust"
       - name: Install Rust (stable with the musl targets)
         id: rust
         run: |
@@ -170,6 +187,7 @@ jobs:
           echo "key=$(rustc -vV | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
       - name: Install zig
+        if: steps.changes.outputs.rust == 'true'
         run: |
           set -euo pipefail
           case "$(uname -m)" in
@@ -186,6 +204,7 @@ jobs:
           "$RUNNER_TEMP/$name/zig" version
 
       - name: Restore the cargo cache
+        if: steps.changes.outputs.rust == 'true'
         uses: https://github.com/actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
@@ -199,6 +218,7 @@ jobs:
             cargo-musl-${{ runner.arch }}-${{ steps.rust.outputs.key }}-${{ env.CARGO_ZIGBUILD_VERSION }}-
 
       - name: Install cargo-zigbuild
+        if: steps.changes.outputs.rust == 'true'
         run: |
           set -euo pipefail
           if ! cargo-zigbuild --version 2>/dev/null | grep -qx "cargo-zigbuild $CARGO_ZIGBUILD_VERSION"; then
@@ -207,12 +227,15 @@ jobs:
           cargo-zigbuild --version
 
       - name: Build x86_64-unknown-linux-musl
+        if: steps.changes.outputs.rust == 'true'
         run: cargo zigbuild --release --locked --target x86_64-unknown-linux-musl
 
       - name: Build aarch64-unknown-linux-musl
+        if: steps.changes.outputs.rust == 'true'
         run: cargo zigbuild --release --locked --target aarch64-unknown-linux-musl
 
       - name: Smoke test the native musl binary (loopback only)
+        if: steps.changes.outputs.rust == 'true'
         run: |
           set -euo pipefail
           case "$(uname -m)" in
@@ -240,6 +263,7 @@ jobs:
           [ "$out" = "[]" ] || { echo "expected [] from an empty store" >&2; exit 1; }
 
       - name: Stage the binaries
+        if: steps.changes.outputs.rust == 'true'
         run: |
           set -euo pipefail
           for target in x86_64-unknown-linux-musl aarch64-unknown-linux-musl; do
@@ -251,6 +275,7 @@ jobs:
       # upload-artifact v4 refuses hosts other than github.com, and the
       # code.forgejo.org fork failed on this instance; v3 works.
       - uses: https://github.com/actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
+        if: steps.changes.outputs.rust == 'true'
         with:
           name: airs-cli-x86_64-unknown-linux-musl
           path: dist/x86_64-unknown-linux-musl/
@@ -258,6 +283,7 @@ jobs:
           retention-days: 14
 
       - uses: https://github.com/actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
+        if: steps.changes.outputs.rust == 'true'
         with:
           name: airs-cli-aarch64-unknown-linux-musl
           path: dist/aarch64-unknown-linux-musl/

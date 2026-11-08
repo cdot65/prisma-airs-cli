@@ -140,14 +140,12 @@ credentials). Restore the volume with the drill Deployment at 0, then in a maint
 Do not run control-reconcile in the drill. Optionally re-verify the restored content with
 airs-mcp control-backup-verify --set /data/airs/backups/<id>. Then the controlled startup and the
 marker check. Record each event line and the content verification."
-step 12 "Measured capacity (runbook §12 'Measured capacity', contract §9.5)" \
-"The low-space exercise on the actual storage class was withdrawn by the owner on 2026-11-08,
-permanently; only the capacity accounting remains. For the first 30 days, record weekly:
-airs_mcp_archive_bytes and airs_mcp_control_bytes (D), the data volume's size and used bytes,
-and the size and number of sets in DATA/backups/. Then account separately for artifacts
-(used - D - backups), three retained sets (3 x D) and the fourth set's creation peak (4 x D),
-re-derive the PVC size (about 7 x D + one year of artifacts + 20%), and record whether 100 GiB
-still holds."
+step 12 "Capacity evidence (runbook §12, contract §9.5)" \
+"By owner decision (2026-11-08) the capacity evidence is the planning-size measurement, not a
+30-day series: 5,000,000 synthetic scans, archive D, verified set size, three retained sets and
+the fourth set's creation peak, all under the 2 GiB limit, and the runbook formula (about 7 x D +
+one year of artifacts + 20%). Record the measurement file and whether 100 GiB holds. The low-space
+exercise was withdrawn by the owner on 2026-11-08."
 
 rec ""; rec "End of evidence."
 echo; echo "Evidence written to $EVIDENCE (mode 0600). Attach it to the M8 review packet."

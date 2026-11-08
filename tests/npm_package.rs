@@ -28,10 +28,10 @@ fn sandbox(tag: &str) -> PathBuf {
     dir
 }
 
-/// Node: `AIRS_TS_NODE`, else the first `node` on `PATH` (as the parity harness finds
+/// Node: `AIRS_TEST_NODE`, else the first `node` on `PATH` (as other test helpers find
 /// it). The npm channel's tests need it and fail without it.
 fn node() -> PathBuf {
-    if let Some(node) = std::env::var_os("AIRS_TS_NODE") {
+    if let Some(node) = std::env::var_os("AIRS_TEST_NODE") {
         return PathBuf::from(node);
     }
     std::env::var_os("PATH")
@@ -40,7 +40,7 @@ fn node() -> PathBuf {
                 .map(|dir| dir.join("node"))
                 .find(|candidate| candidate.is_file())
         })
-        .expect("node is required for the npm launcher tests (AIRS_TS_NODE or PATH)")
+        .expect("node is required for the npm launcher tests (AIRS_TEST_NODE or PATH)")
 }
 
 /// `PATH` for the scripts: node's directory (npm lives beside it), then the system.

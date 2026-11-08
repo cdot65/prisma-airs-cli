@@ -88,10 +88,5 @@ run the CLI many times, and to the CPU and memory a host spends on each run.
 The benchmark, its method, the environment, the per-run spread, the caveats and the live
 results are in
 [docs/BENCHMARKS.md](https://github.com/cdot65/prisma-airs-cli/blob/main/docs/BENCHMARKS.md).
-To reproduce it from a checkout:
-
-```sh
-scripts/build-reference-cli.sh --verify
-cargo build --release
-cargo run --release -p airs-test-harness --example bench -- --ts-compile-cache --name loopback
-```
+The benchmark harness that compared both CLIs was removed with the TypeScript parity
+tests on 2026-11-08; the figures above are the last measurement (2026-10-23).

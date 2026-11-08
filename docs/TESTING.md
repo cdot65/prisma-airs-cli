@@ -1,7 +1,8 @@
 # Testing airs-cli-rs
 
-This guide explains how to run the tests, how to build the TypeScript reference the
-parity tests compare against, what the harness guarantees, and how to add tests.
+This guide explains how to run the tests, what the harness guarantees, and how to add
+tests. (The TypeScript parity tests, the live comparison tier and the TypeScript
+reference build were removed on 2026-11-08.)
 [DESIGN.md](DESIGN.md) §10 is the contract for the test architecture; when this guide
 and DESIGN disagree, DESIGN wins. [COMPATIBILITY.md](COMPATIBILITY.md) maps each
 behaviour and each §12 row to the tests that pin it.
@@ -14,19 +15,13 @@ Prefix shell commands with `export PATH="$HOME/.cargo/bin:$PATH";` when cargo is
 | Tier | Where | What it runs | Network |
 |---|---|---|---|
 | 1. Unit | `#[cfg(test)]` modules in `src/` and `crates/airs-test-harness/src/` | Pure logic: registry and config validation, JS number coercion, the environment report, output resolution, error mapping, scan normalisation, signal decisions, pagination bounds. | none |
-| 2. Loopback executable | `tests/*.rs` other than the `parity_*` files | Spawns the real `airs` binary (`CARGO_BIN_EXE_airs`; the compatibility binary `CARGO_BIN_EXE_airs-cli-rs` only in its own tests, §5.21) against the in-process `FixtureServer` from `crates/airs-test-harness`. | `127.0.0.1` only |
-| 3. Dual-CLI parity | `tests/parity_*.rs` | Runs both the Rust `airs` and the pinned TypeScript reference against the same fixture and compares exit codes, stdout, stderr and the recorded requests. | `127.0.0.1` only |
-| Live (gated) | `tests/live.rs::live_tenant_comparison`, `live_write_flow`, `live_cleanup`, `live_eval`, `live_bulk`; logic in `crates/airs-test-harness/src/live.rs` and `live/` | Both CLIs against one real tenant you name. Runs only with `AIRS_RS_LIVE=1` and `AIRS_E2E_TENANT=<name>`; the M4 write flow, the sweeper, the eval and the M5 bulk flow each need their own variable as well (§6.7, §6.8). | the tenant's endpoints |
-
-DESIGN §10 counts tiers 2 and 3 as one tier ("loopback executable tests"); they are
-split here because tier 3 needs the TypeScript reference.
+| 2. Loopback executable | `tests/*.rs` | Spawns the real `airs` binary (`CARGO_BIN_EXE_airs`; the compatibility binary `CARGO_BIN_EXE_airs-cli-rs` only in its own tests, §5.21) against the in-process `FixtureServer` from `crates/airs-test-harness`. | `127.0.0.1` only |
 
 Other suites in the workspace:
 
 - `crates/airs-test-harness/tests/`: self-tests of the harness. `sandbox_runner.rs`
   checks the runner invariants with `/bin/sh` as the child, `server.rs` checks the
-  fixture server, and `ts_reference.rs` holds the `reference_cli_is_usable_and_pinned`
-  sentinel.
+  fixture server.
 - `tests/docs_consistency.rs`: reads `docs/COMPATIBILITY.md`, `docs/DESIGN.md`,
   `README.md` and `tests/parity_*.rs` and checks that they agree (§7.4): the cited
   tests, the divergence rows, the README's version-neutral `airs --version` example
@@ -35,12 +30,7 @@ Other suites in the workspace:
 - `tests/common/mod.rs`: helpers shared by test files (`mod common;`), not a test
   target: `design_section_21`, the one rule for where DESIGN §21 starts and ends, used by
   `tests/docs_consistency.rs` and `tests/program_name.rs`.
-- `tests/live.rs`: besides the gated real comparison, it holds self-tests that run the
-  whole live flow against the fixture server. They need no opt-in and run in the normal
-  suite.
-
-`cargo test --workspace` runs everything above except the real live runs, which print a
-`LIVE SKIPPED` line each and pass. Nothing in that run contacts a host other
+`cargo test --workspace` runs everything above. Nothing in that run contacts a host other
 than `127.0.0.1`.
 
 ## 2. Running the tests
@@ -48,7 +38,7 @@ than `127.0.0.1`.
 ```sh
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
-AIRS_REQUIRE_PARITY=1 cargo test --workspace --no-fail-fast    # the required check
+cargo test --workspace --no-fail-fast    # the required check
 ```
 
 Narrower runs:
@@ -57,20 +47,16 @@ Narrower runs:
 cargo test --lib                                   # unit tests of the CLI crate
 cargo test -p airs-test-harness                    # harness unit and self-tests
 cargo test --test scan                             # one executable suite
-cargo test --test parity_scan divergence::         # one module of a parity suite
 cargo test --test docs_consistency                 # the documentation cross-checks
 ```
 
-Prerequisites besides Rust and the TypeScript reference (§3): `bash`, and `jq` on `PATH`
+Prerequisites besides Rust: `bash`, node on `PATH` for the npm launcher tests (or
+`AIRS_TEST_NODE`), and `jq` on `PATH`
 (`tests/homebrew_formula.rs` fails, naming it, without it: `brew install jq` or
 `apt-get install jq`; macOS 15 and later ship `/usr/bin/jq`). `ruby`, when present, also
 syntax-checks the rendered Homebrew formula. The packaging tests of
 `tests/release_packaging.rs` need macOS (bsdtar); elsewhere only its portable tests run
 (§5.22).
-
-A green run with `AIRS_REQUIRE_PARITY=1` means the TypeScript side of every parity test
-ran. Without it, a missing reference still fails the parity tests unless you opt out
-with `AIRS_ALLOW_PARITY_SKIP=1` (§3.3).
 
 `tests/mcp_client.rs::a_frozen_pre_m7_binary_refuses_the_mcp_table` needs a frozen
 pre-M7 `airs` named by `AIRS_PRE_M7_BIN` (built by `scripts/build-pre-m7-cli.sh` from the
@@ -78,121 +64,10 @@ pre-M7 `airs` named by `AIRS_PRE_M7_BIN` (built by `scripts/build-pre-m7-cli.sh`
 `AIRS_REQUIRE_PRE_M7=1` is set, which makes it fail. A run that executed it prints
 `PRE-M7 RAN`.
 
-## 3. The TypeScript reference
+## 3. The TypeScript reference (removed)
 
-### 3.1 Building it
-
-The TypeScript reference lives in this repository's own history. The TypeScript CLI
-was developed in `cdot/prisma-airs-cli` until the Rust CLI replaced it (8.0); its
-sources, tests and lockfiles were deleted from the tree but stay in the history and in
-every `v7.*` tag, so the pinned commit is a commit of this repository.
-`scripts/build-reference-cli.sh` clones this repository from its Forgejo URL
-(`ssh://git@git-ssh.cdot.io/cdot/prisma-airs-cli.git`, the default `AIRS_TS_SOURCE`) into
-`.reference/prisma-airs-cli` (gitignored), checks out the pinned commit and builds it with
-pnpm. `AIRS_TS_SOURCE=.` clones this checkout's own history instead (offline, as CI
-does, §10); a local source is only read (`git clone --no-hardlinks`). The working tree
-is never checked out to the pin: the reference is always a separate clone.
-
-| Invocation | Effect |
-|---|---|
-| `scripts/build-reference-cli.sh` | Clone if needed, check out the pin, `pnpm install --frozen-lockfile`, `pnpm run build`. Does nothing when the build is already current. |
-| `scripts/build-reference-cli.sh --verify` | Check an existing build: clone present, HEAD at the pin, tracked files unmodified, `dist/cli/index.js` and `node_modules/` present. Changes nothing. |
-| `scripts/build-reference-cli.sh --dry-run` | Print the steps it would take. Changes nothing. |
-| `scripts/build-reference-cli.sh --force` | Rebuild even when the build is current. |
-| `scripts/build-reference-cli.sh --clone-only` | Clone or check out and verify HEAD; no pnpm. |
-
-The build needs `git`, `node` and `pnpm` on `PATH`. `pnpm install` downloads npm
-packages; `--verify`, `--dry-run` and a current build skip it.
-
-Script environment:
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `AIRS_TS_SOURCE` | `ssh://git@git-ssh.cdot.io/cdot/prisma-airs-cli.git` (this repository) | Git source to clone: a URL or a local repository path (`.` for this checkout). |
-| `AIRS_TS_COMMIT` | the `PINNED_COMMIT` in the script | Commit to check out. |
-
-### 3.2 Pin and Node version
-
-The pin is `7a54e46eee4f7914d610bc78d2f98dd7de09fbfe`, tag `v7.3.0` (package `7.3.0`,
-TS SDK `@cdot65/prisma-airs-sdk` 0.35.0), the final TypeScript release (8.0; before it,
-`5711012246d325f20dbe93b710dcc697a7f18a8a`, package `7.2.1-forgejo.0`, SDK 0.34.0). It
-is written once, as the default of `PINNED_COMMIT` in `scripts/build-reference-cli.sh`;
-the harness reads it from there. The parity expectations are recorded against this
-commit and Node 24, so the harness requires node major 24
-(`SUPPORTED_NODE_MAJOR` in `crates/airs-test-harness/src/runner.rs`), even though the
-TypeScript package itself accepts older versions.
-
-### 3.3 How the harness finds and checks it
-
-Once per test process the harness:
-
-1. Takes the entry from `AIRS_TS_CLI_ENTRY`, else
-   `.reference/prisma-airs-cli/dist/cli/index.js`.
-2. Takes node from `AIRS_TS_NODE`, else the first `node` on `PATH`, and requires
-   major 24.
-3. For the default entry, requires the clone to be at `AIRS_TS_COMMIT` (else the
-   script's pin) with no modified tracked files. An `AIRS_TS_CLI_ENTRY` override is used
-   as given, with a `PARITY:` notice, because its commit cannot be checked.
-
-When any step fails, every parity test fails, and so does the
-`reference_cli_is_usable_and_pinned` sentinel. With `AIRS_ALLOW_PARITY_SKIP=1` they are
-skipped instead, and each prints `PARITY SKIPPED (<test>): <reason>` to the real stderr,
-visible even for passing tests. A skipped run is not a finished check.
-`AIRS_REQUIRE_PARITY=1` overrides `AIRS_ALLOW_PARITY_SKIP=1`.
-
-### 3.4 Moving the reference
-
-The reference is a tagged TypeScript release in this repository's own history. **The move
-to 7.3.0 (8.0) is the final one**: the TypeScript CLI is end-of-life, so no later
-TypeScript commit will become the reference, and the reference history (the commits up to
-every `v7.*` tag) must never be rewritten or its tags deleted. The procedure, as followed
-for 7.3.0:
-
-1. **Choose the commit.** A tag of a published TypeScript release (`git rev-parse
-   v7.3.0^{commit}`), never a branch tip. Record what the new commit changes in
-   `src/` against the old pin (`git diff --stat <old> <new> -- src tests package.json`);
-   for 7.3.0 the 21 commits on `main` that the tag lacks touch no `src/` (CI, docs and
-   package metadata only).
-2. **Move the pin.** Set `PINNED_COMMIT` in `scripts/build-reference-cli.sh` to the full
-   SHA. Nothing else holds it: the harness reads it from the script (§3.3), and the CI
-   cache key (`.forgejo/workflows/ci.yml`, `ci-macos.yml`) is
-   `ts-reference-v1-<os>-<arch>-node<major>-<commit>-<hash of the script>`, so it changes
-   with the pin; check that both workflows still read it with their `sed` expression.
-3. **Build it.** `scripts/build-reference-cli.sh` (it fetches and checks out the new pin
-   in the existing clone; `--verify` afterwards). 7.3.0 installs the deprecated but
-   installable `@cdot65/prisma-airs-sdk@0.35.0` from npm through its frozen lockfile.
-4. **Run the whole suite against it** (`AIRS_REQUIRE_PARITY=1 cargo test --workspace
-   --no-fail-fast`) before changing any Rust code, and list every failure: each is a
-   behaviour the new reference changed (for 7.3.0: 22 failures, the version, the profile
-   and topic writes, and the profile detail).
-5. **Classify each failure.** Port the new behaviour (DESIGN gets the section that
-   specifies it), or keep the Rust behaviour with a §12 row and a `dNN_` test asserting
-   both sides, or retire or reword the §12 rows the new reference now matches (the row
-   stays, marked `retired in <version>`, with its number never reused, and its test
-   becomes a parity test).
-6. **Refresh the records.** `--version` expectations (`tests/parity_shell.rs`, D26);
-   the source basis and every TypeScript `file:line` citation in `docs/COMPATIBILITY.md`
-   and DESIGN (only files the new commit changed can move: map each cited range through
-   `git diff -U0 <old> <new> -- <file>`, and re-read any range a hunk touches); the header
-   of `docs/research/ts-baseline-observed.md`.
-7. **Re-run the observed baseline** (§3.5) and diff it with the old reference's output
-   (build the old pin in a scratch directory and point `AIRS_TS_CLI_ENTRY` at its
-   `dist/cli/index.js`); normalise ports, durations, sandbox paths and ids. For 7.3.0 the
-   only differences were `--version` and the SDK user agent.
-8. **Finish with the definition of done** (`docs/MILESTONES.md`): fmt, clippy with
-   `-D warnings`, and `AIRS_REQUIRE_PARITY=1 cargo test --workspace` with no
-   `PARITY SKIPPED` line.
-
-### 3.5 Observed TypeScript behaviour
-
-`docs/research/ts-baseline-observed.md` records what the reference does against the
-fixture server. Refresh it with:
-
-```sh
-cargo run -p airs-test-harness --example ts_baseline [filter]
-```
-
-The example runs on loopback with synthetic credentials.
+Removed on 2026-11-08 with the parity tests: nothing is compared against the TypeScript
+CLI any more. Its releases remain in the repository's history and `v7.*` tags.
 
 ## 4. Environment variables
 
@@ -202,27 +77,9 @@ the code.
 | Variable | Read by | Meaning |
 |---|---|---|
 | `RUST_TEST_THREADS` | the test harness | CI sets `4` in the `linux` job. The job container has no CPU limit, so the default would be one thread per host core (16 on the dedicated runner) while the `musl` job compiles alongside; the runner is sized for 4 CPUs, and the suite's wall-clock tests need that headroom to be real. Locally the default is fine. |
-| `AIRS_REQUIRE_PARITY` | `runner.rs`, `ts_reference.rs` | `1`: an unusable reference fails the parity tests even when `AIRS_ALLOW_PARITY_SKIP=1`. |
-| `AIRS_ALLOW_PARITY_SKIP` | `runner.rs`, `ts_reference.rs` | `1`: skip parity tests with a `PARITY SKIPPED` notice when the reference is unusable. |
-| `AIRS_TS_CLI_ENTRY` | `runner.rs` | Path to the reference `dist/cli/index.js`. Used without the commit check. |
-| `AIRS_TS_NODE` | `runner.rs` | Path to the node executable for the reference. Must be major 24. |
-| `AIRS_TS_COMMIT` | `runner.rs`, build script | Overrides the pinned commit for the clone check and the build. |
-| `AIRS_TS_SOURCE` | build script only | Git source the build script clones. |
-| `AIRS_RS_LIVE` | `live.rs`, `tests/live.rs`, `examples/bench.rs` | `1` opts in to the live tier. Any other value skips it (the benchmark's `--live` mode refuses instead). |
-| `AIRS_E2E_TENANT` | `live.rs` | The registered tenant to compare. Required; the live tier never defaults to the active tenant. Must be a valid tenant name. |
-| `AIRS_E2E_PROFILE` | `live.rs` | Security profile for the live scans. Unset: no scans run, and the summary says so. |
-| `AIRS_RS_LIVE_MAX_SCANS` | `live.rs` | Scan invocation budget across both CLIs, an integer from 0 to 20, default 8. |
-| `AIRS_RS_LIVE_WRITES` | `live/writes.rs` | `1` (with `AIRS_RS_LIVE=1`) runs the M4 write flow; otherwise `writes skipped`. |
-| `AIRS_RS_LIVE_CLEANUP` | `live/cleanup.rs` | `1` (with `AIRS_RS_LIVE=1`) runs the sweeper. |
-| `AIRS_RS_LIVE_EVAL` | `live/eval.rs` | `1` (with `AIRS_RS_LIVE=1` and `AIRS_E2E_PROFILE="Prisma AIRS Harness"`) runs the eval flow. |
-| `AIRS_RS_LIVE_EVAL_MAX_SCANS` | `live/eval.rs` | The eval's scan budget, 4 to 8, default 4. |
-| `AIRS_RS_LIVE_BULK` | `live/bulk.rs` | `1` (with `AIRS_RS_LIVE=1` and `AIRS_E2E_PROFILE="Prisma AIRS Harness"`) runs the M5 bulk flow; otherwise `bulk skipped`. |
-| `AIRS_RS_LIVE_BULK_PROMPTS` | `live/bulk.rs` | Prompts per CLI, 2 to 8, default 4; with the TypeScript step the total (2N) must be at most 8. |
-| `AIRS_RS_LIVE_DUMP` | `live/redteam.rs` | A directory (diagnosis only). The red team reads write every row's stdout and stderr of both CLIs into it, one file per row, CLI and stream (`<check>.rs.stdout`, `<check>.ts.stderr`, …; the directory is created 0700, the files 0600). The files can hold tenant data and are never printed; nothing is removed afterwards, so delete the directory yourself. Unset or empty: nothing is written. |
-| `PRISMA_AIRS_TENANTS_PATH`, `XDG_STATE_HOME`, `HOME` | `live.rs` | Locate the real registry for the live tier, resolved as in DESIGN §3.1. |
-| `PATH` | `runner.rs`, `live.rs` | Passed to every child; also where node is found. |
+| `PATH` | `runner.rs` | Passed to every child; also where node is found for the npm launcher tests. |
+| `AIRS_TEST_NODE` | `tests/npm_package.rs` | Path to the node executable for the npm launcher tests (default: `node` on `PATH`). |
 | `AIRS_UPDATE_CLI_REFERENCE` | `tests/cli_reference.rs` | `1`: rewrite the docs site's command reference (`docs-site/docs/reference/commands/`) instead of checking it (§5.23); `scripts/cli-reference.sh` sets it. Any other value checks. |
-| `AIRS_BENCH_PYTHON` | `examples/bench.rs` only | The Python interpreter of the benchmark's timing helper (default: what `python3` on `PATH` resolves to). See [BENCHMARKS.md](BENCHMARKS.md). |
 
 `NO_COLOR=1` is always set for children. `CLICOLOR_FORCE` is never passed to them,
 because clap would honour it (DESIGN §2.2).
@@ -321,46 +178,9 @@ mid-run opts out with `RunOptions::allow_tenant_writes`. A narrower opt-out,
 it for the default log directory (`home/.local/state/airs-cli`) and for TypeScript runs,
 which write their log into `cwd`.
 
-### 5.4 Both CLIs from the same fixture data
+### 5.4 Both CLIs from the same fixture data (removed)
 
-`Sandbox` keeps `store/` (the Rust store) in step with the TypeScript files: every write
-of the registry or a config re-derives it (`airs_test_harness::store::plan`, the
-`tenant import` conversion of DESIGN §3.12, canonical bytes, files 0600, directories
-0700). TypeScript files import would not convert are mapped to the same failure on both
-sides: a registry TypeScript rejects becomes a TOML syntax error in `config.toml`, a
-missing config gets no tenant file, an otherwise invalid config gets the tenant file
-`invalid = [`, and a pin mismatch keeps both TSG values. So existing scenarios compare
-like with like without change.
-
-To build a state only one CLI has, a test stops the mirroring: `ts_only()` (an empty
-store), `rust_only(&tenants, active)`, `detach_store()`, or any direct store write
-(`write_store_raw`, `write_store_index`, `write_tenant_file_raw`, `write_rust_tenant`,
-`append_tenant_line`, `set_tenant_line`). Each `FixtureTenant` carries its
-`store_path`. A tenant file that parses as TOML must name every Rust endpoint key with
-a loopback URL or a value the reader rejects, or the write panics; before every Rust
-run the runner re-checks the tenant files of the store the run resolves.
-
-`tests/tenant_import.rs::store::provision_matches_import` runs the real
-`airs tenant import` over a corpus of fixture registries and requires the same
-store bytes as the provisioner, so the two cannot drift apart. The only intended
-difference is a pin mismatch, which the provisioner keeps (both CLIs then report the
-pin) and the importer skips.
-
-A Rust `tenant import` run is also refused before it starts when the registry or config
-it would read lies outside the sandbox (`import_source_violation`): the `--from` or
-`--from-config` path, or the registry the environment resolves, and every `configPath`
-in that registry, symlinks resolved. Import tests write the TypeScript side, call
-`ts_only()` so the store is empty, and grant only `store/` with
-`allow_writes_under("store")`; the unchanged-sandbox rule then proves the TypeScript
-files kept their bytes, mode and mtime.
-
-Parity tests compare output after `normalise_tenant_output`: each side's registry or
-`config.toml` path becomes `<REGISTRY>`, each tenant's config or tenant-file path
-`<CONFIG:name>`, and the Rust program name `airs` before a command word `airs-cli`
-(`normalise_program`, D73, DESIGN §21.6; every other parity test that compares text naming
-the program calls `normalise_program` too). Table padding follows the
-real paths, so tables with paths are compared cell by cell; `ts_rows_as_rust` maps
-TypeScript `tenant read`/`get` rows through the import conversion (D71, D72).
+Removed on 2026-11-08 with the parity tests.
 
 ### 5.5 Prompts and the store lock
 
@@ -1064,470 +884,10 @@ from node's directory) and never contacts a host other than loopback.
   `airs --version` and `airs-cli --version` print the version, and doctor's `Executable`
   check passes through the npm links.
 
-## 6. The live tier
+## 6. The live tier (removed)
 
-The live tier compares both CLIs against one real tenant. Only the user runs it.
-Agents and CI do not set `AIRS_RS_LIVE=1`.
-
-### 6.1 Running it
-
-```sh
-scripts/build-reference-cli.sh --verify
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> [AIRS_E2E_PROFILE=<profile>] [AIRS_RS_LIVE_MAX_SCANS=<0..20>] \
-  cargo test --test live -- --nocapture --test-threads=1
-```
-
-- Without both `AIRS_RS_LIVE=1` and a non-empty `AIRS_E2E_TENANT`, the test prints
-  `LIVE SKIPPED: <reason> (...)` to the real stderr and passes.
-- An invalid tenant name, an unregistered tenant, or a scan budget that is not an
-  integer from 0 to 20 fails the run.
-- Without `AIRS_E2E_PROFILE` no scans run, and the summary says so.
-- With `AIRS_E2E_PROFILE` set, the plan has 8 scan invocations. A budget below 8 fails
-  the run before anything starts, and a counter is checked again before each scan.
-  Without a profile no scans run and the budget is only range-checked.
-- The TypeScript reference must be usable (§3.3); the live tier has no skip for it.
-
-### 6.2 Isolation and integrity
-
-- The registry is located as both CLIs locate it (§4) and read only to extract the
-  selected entry. A temporary registry holding only that entry, marked active, is
-  written into a temp sandbox.
-- Both CLIs run with a cleared environment: `PATH`, `HOME` and `TMPDIR` inside the
-  sandbox, `PRISMA_AIRS_TENANTS_PATH` pointing at the temporary registry, and
-  `NO_COLOR=1`. No credential, `PANW_*`, proxy or `NODE_OPTIONS` variable reaches them.
-  The TypeScript CLI reads the tenant config in place.
-- **The Rust store.** airs-cli-rs reads tenants only from its TOML store, so the flow
-  gives it a private one:
-  The store root is `target/live/` for the real tenant; a loopback self-test uses
-  `<sandbox>/tmp/live-stores/` and refuses a root outside its sandbox.
-  1. It first removes every `<store root>/store-*` directory at least 1 hour old (a
-     run killed before it could clean up; younger ones may belong to a run in
-     progress) and records how many in the summary.
-  2. It creates `<store root>/store-<run id>/` with mode 0700. Creation is exclusive,
-     so an existing directory is an error.
-  3. Its first run is
-     `airs tenant import --from <temporary registry> --name <tenant> --output json`
-     with `AIRS_CLI_CONFIG_DIR` set to that directory. The temporary registry's one
-     entry names the real config, so this copies the real tenant. The real registry
-     and config are only read, as the fingerprints below confirm. The import must exit
-     0 with one `import` row and select the tenant, or the run stops.
-  4. Every later Rust run gets `AIRS_CLI_CONFIG_DIR=<that directory>`. The TypeScript
-     runs do not.
-  5. The directory holds a copy of the tenant's secrets. It is removed when the flow
-     ends: on success, on a failed check, on a stop (leak, integrity, setup) and on a
-     panic. The summary's `storeRemoved` must be `true`, or the test fails and tells
-     you to remove the directory by hand.
-- The test reads the config bytes in memory only, to hash them and to build the leak
-  check (each secret-named value raw, trimmed, URL-encoded and base64, plus the Basic
-  pair). Output is also searched for JWT-shaped text. No value is printed, logged or
-  written.
-- The real registry, the real config and the temporary registry are fingerprinted
-  (sha256, mode, mtime, symlink and target, and sibling files such as
-  `tenants.json.lock`) before the first run and re-checked after every run.
-- A changed file, a leak or a budget overrun stops the run at once. Mismatches are
-  collected and fail the test after every check ran.
-
-### 6.3 What it compares
-
-Each check runs on both CLIs with a 90 s timeout; a timeout counts as a mismatch.
-
-- `tenant read <name> --output json` and `tenant get <name> <key> --output json` for
-  six keys.
-- `doctor --output json` and `--output pretty`: the seven shared checks have equal
-  statuses, and each CLI's exit code matches its own failed checks.
-- `runtime profiles list --all --max 500` and `runtime topics list --limit 20`, each
-  in `--output json` and `--output table` (colour off), then `get` of the first listed
-  name, and `runtime profiles get` of a missing name.
-- With a profile: a benign prompt, a prompt injection, and a prompt with a response,
-  plus a scan against a missing profile. Each of the first three must print a verdict
-  on both CLIs. The benign prompt must be allowed by both; whether the injection was
-  blocked is reported, not asserted.
-- The scan series stops at the first of the first three scans that does not complete
-  on both CLIs (a timeout, a non-zero exit, no verdict, a Rust `failed`, or a TS
-  `error` category). That row is a mismatch, and a notice names the scans that were
-  not run. This keeps a failing tenant from receiving every planned scan, each
-  possibly re-sent by the TypeScript CLI (§6.11).
-
-DESIGN §10 lists the exact comparison rules and the §12 rows each check tolerates.
-
-### 6.4 Output
-
-The summary table goes to the real stderr, and the same data to
-`target/live/summary.json`. It holds check names, exit codes, agreement, verdict tokens
-(`action/category/triggered`), notes made of field names, counts and §12 row numbers,
-and the number of scan invocations and of runs of each CLI (the import run is not
-counted), whether the private store was removed (`storeRemoved`) and how many leftover
-stores were swept (`staleStoresRemoved`). It never holds IDs, tokens, paths, config
-values, prompt text, or profile and topic content.
-
-### 6.5 Self-tests
-
-`LiveTarget::real` refuses unless the test process has `AIRS_RS_LIVE=1`, before it
-touches any file. `LiveTarget::loopback` needs no opt-in because it takes a harness
-`Sandbox`: the flow refuses a registry or tenant config that does not resolve inside
-that sandbox before reading it, so a normal run never reads a real tenant file. It also
-refuses a config that is not all-loopback. The self-tests in `tests/live.rs` use it to
-run the whole flow against the fixture server: gating, isolation, integrity, the
-budget, comparison, and a summary checked free of fixture secrets, IDs and
-descriptions. The import into the private store runs in every self-test, against the
-fixture registry and config of the test's own sandbox. Further self-tests prove the
-store's life cycle with a store root inside the test sandbox:
-`live_flow_imports_into_a_private_store_and_removes_it` (the Rust runs use the import,
-and nothing is left), `live_flow_removes_the_store_when_the_import_fails` (a pin
-mismatch makes the import skip the tenant: the flow stops and the store is gone),
-`live_flow_sweeps_only_stale_stores` (an aged `store-*` directory is removed, a fresh one
-and other names are kept) and `live_store_is_private_exclusive_and_removed_on_panic`
-(mode 0700, one directory per flow, removal while a panic unwinds). Other self-tests plan a divergent answer for one CLI (the Rust run of
-each check comes first, so a one-shot fixture response reaches it) to show that each
-comparison rule reports a mismatch, that a scan without verdicts or a failed scan stops
-the scan series, and, through the run counts and the SDK user agents the fixture
-records, that both CLIs ran every check. Unit tests in
-`crates/airs-test-harness/src/live.rs` cover each comparison rule on its own. The live flow does not
-use the harness `spawn`, so the guards of §5 are unchanged by it.
-
-### 6.6 M4 self-tests
-
-`live_write_flow_self_test_against_fixture` runs the whole write flow against the fixture
-server with pre-existing look-alike resources (an older run's names, a malformed prefix)
-and proves that the profiles and topics afterwards equal those before (everything the
-run made was deleted, nothing else was touched), that every write named a run-created
-resource, that TypeScript never sent a topic write (D93: the loopback target skips its
-`topics create`, `apply` and `revert`), and that the ledger holds a `pending` and a
-result line per write and nothing tenant-specific.
-`live_write_flow_tears_down_after_an_unknown_outcome` fails one profile update with an
-unknown outcome and shows the mismatch, the `unknown` ledger line and a full teardown;
-`live_write_flow_deletes_every_revision_when_puts_create_new_ids` runs it against a
-server whose PUTs create new ids and shows that every revision is deleted.
-`live_cleanup_deletes_only_old_prefixed_resources_and_is_idempotent` seeds old, young,
-malformed, foreign and wrong-kind names and a referenced old topic (its 409 is kept), and
-re-runs the sweeper; `live_cleanup_deletes_at_most_twenty_per_run` shows the cap over
-three runs. `live_eval_self_test_against_fixture`, `live_eval_accepts_the_d111_stop` and
-`live_eval_refuses_a_bad_budget_or_profile_before_any_request` cover the eval flow.
-The M5 bulk flow has four (§6.8).
-Unit tests in `crates/airs-test-harness/src/live/` cover the resource budget, the
-gates, the name parser, the sweep selection, the ledger file rules and the guardrail
-comparison.
-
-### 6.7 The M4 flows (orchestrator only)
-
-```sh
-# Writes (creates at most 10 airs-rs-e2e-<run id>-… resources, tears them down):
-AIRS_RS_LIVE=1 AIRS_RS_LIVE_WRITES=1 AIRS_E2E_TENANT=<name> \
-  cargo test --test live live_write_flow -- --nocapture --test-threads=1
-# Sweeper (deletes only airs-rs-e2e-… resources at least an hour old; safe to re-run):
-AIRS_RS_LIVE=1 AIRS_RS_LIVE_CLEANUP=1 AIRS_E2E_TENANT=<name> \
-  cargo test --test live live_cleanup -- --nocapture --test-threads=1
-# Eval (sends 4 scans to "Prisma AIRS Harness"; budget 4–8):
-AIRS_RS_LIVE=1 AIRS_RS_LIVE_EVAL=1 AIRS_E2E_TENANT=<name> AIRS_E2E_PROFILE="Prisma AIRS Harness" \
-  [AIRS_RS_LIVE_EVAL_MAX_SCANS=4] cargo test --test live live_eval -- --nocapture --test-threads=1
-```
-
-Every create, update, apply, revert and delete is journalled to
-`target/live/ledger.jsonl` (0600, append-only; ids, run-created names, outcomes and
-exit codes only). A write flow that left something behind fails with
-`resourcesLeft > 0`; run the sweeper after an hour. `profiles cleanup` never runs live
-(it is tenant-wide). For a tenant whose `mgmtEndpoint` is not the default, the
-TypeScript `topics create`, `apply` and `revert` steps are skipped (D93).
-
-### 6.8 The M5 bulk flow
-
-Bulk scans are billed, so the flow (`tests/live.rs::live_bulk`, logic in
-`crates/airs-test-harness/src/live/bulk.rs`, DESIGN §10) needs `AIRS_RS_LIVE_BULK=1` and
-the profile "Prisma AIRS Harness", and sends at most 8 prompts in all (N per CLI, default
-4). The TypeScript decision and the budget are checked from the tenant config held in
-memory, before the private store or any run exists.
-
-```sh
-# Bulk (sends 4 prompts with airs-cli-rs and 4 with TypeScript to "Prisma AIRS Harness"):
-AIRS_RS_LIVE=1 AIRS_RS_LIVE_BULK=1 AIRS_E2E_TENANT=<name> AIRS_E2E_PROFILE="Prisma AIRS Harness" \
-  [AIRS_RS_LIVE_BULK_PROMPTS=4] cargo test --test live live_bulk -- --nocapture --test-threads=1
-```
-
-The airs-cli-rs runs keep everything under the session sandbox's `tmp/`
-(`XDG_STATE_HOME=tmp/state`, cwd and CSV in `tmp/rs`, `--debug` logs under `tmp/state`):
-R1 `bulk-scan` is interrupted at its first `Scan IDs saved:` line; the state must be
-branch (a), no ambiguous item, or (b), batch 2's chunk ambiguous; R2 `resume-poll` must
-finish (a) with one `airs.scan.async` record per pending chunk and N complete rows in input
-order, or refuse (b) with none; R3 (a only) must send nothing and leave the CSV
-byte-identical, and the journal must then show each prompt submitted exactly once.
-TypeScript runs one uninterrupted `bulk-scan` (cwd `tmp/ts`, never `--debug`) only when its
-state directory resolves inside the session sandbox from `HOME=<sandbox>/home` (no
-`dataDir`, or one that starts with `~` and stays inside); exactly one TypeScript state
-must be there afterwards. Otherwise its step is skipped with
-`LIVE NOTICE: TypeScript bulk-scan skipped: its state directory cannot be redirected into the sandbox`.
-The verdict tokens of both CSVs are compared by input index. The summary goes to
-`target/live/summary-bulk.json` (counts, branch, records per run, agreement; never
-prompts, ids, paths or values), and the session sandbox is removed with the store.
-
-Self-tests on loopback: `live_bulk_self_test_branch_a_against_fixture` (the real trigger,
-a `pending` first poll; each prompt in exactly one airs-cli-rs POST; the target sandbox
-unchanged), `live_bulk_self_test_branch_b_against_fixture` (a fixture event: batch 2's
-POST held until the signal), `live_bulk_skips_typescript_when_its_state_cannot_be_sandboxed`
-and `live_bulk_refuses_a_bad_budget_or_profile_before_any_request` (no request, no store).
-
-### 6.9 The M6a red team flows
-
-Three flows, each its own run (DESIGN §10, logic in `crates/airs-test-harness/src/live/redteam*.rs`).
-The reads need nothing beyond the live tier's opt-in; the writes create two
-`airs-rs-e2e-<run id>-adapter-rs|ts` draft adapters (no script runs, no channel) and delete
-them; the scan is billed (one STATIC scan of one sub-category against a target you name,
-`AIRS_RS_LIVE_REDTEAM_SCAN_MINUTES` default 20) and is never run without asking first.
-
-```sh
-# Red team reads (read-only on both CLIs; a tenant without red team access is noted, not failed):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> cargo test --test live live_redteam_reads -- --nocapture --test-threads=1
-# Red team writes (two draft adapters, journalled and deleted):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> AIRS_RS_LIVE_REDTEAM_WRITES=1 \
-  cargo test --test live live_redteam_writes -- --nocapture --test-threads=1
-# Red team scan (billed: one scan; aborted at the deadline if still running):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> AIRS_RS_LIVE_REDTEAM_SCAN=1 AIRS_E2E_REDTEAM_TARGET=<target uuid> \
-  [AIRS_RS_LIVE_REDTEAM_SCAN_MINUTES=20] cargo test --test live live_redteam_scan -- --nocapture --test-threads=1
-```
-
-Summaries: `target/live/summary-redteam.json`, `summary-redteam-writes.json`,
-`summary-redteam-scan.json` (check names, exits, agreement and fixed notes; never names, ids
-other than the run's own, prompts, scripts, credentials or report contents). The sweeper
-(`live_cleanup`) also deletes prefixed adapters older than an hour.
-
-The read comparisons treat the TypeScript `  No <things> found` line of an empty list
-(exit 0; `scans`, `targets`, `prompt sets`, `channels`, `adapters`), which it prints in
-json and table too, as equal to the airs-cli-rs `[]` and empty table (DESIGN D146). A tenant
-without targets has no backup file (`No targets found`, DESIGN §15.18), which the backup
-check accepts.
-
-Self-tests on loopback: `live_redteam_reads_self_test_against_fixture`,
-`live_redteam_reads_agree_on_a_tenant_with_empty_lists`,
-`live_redteam_reads_note_a_tenant_without_red_team_access`,
-`live_redteam_writes_self_test_against_fixture`, `live_redteam_writes_need_their_own_opt_in`,
-`live_cleanup_sweeps_only_old_prefixed_adapters`, `live_redteam_scan_self_test_against_fixture`,
-`live_redteam_scan_aborts_its_own_scan_at_the_deadline`,
-`live_redteam_scan_resolves_an_unknown_start_by_its_name` and
-`live_redteam_scan_gates_refuse_before_any_request`.
-
-### 6.10 The M6b DLP flows
-
-Two flows, each its own run (DESIGN §10, logic in `crates/airs-test-harness/src/live/dlp*.rs`).
-The reads need nothing beyond the live tier's opt-in and are read-only on both CLIs (each CLI
-writes one backup into the run's own sandbox, compared by counts and names and removed at
-once). The writes create, read, patch, replace and delete one custom pattern and one custom
-dictionary per CLI (`airs-rs-e2e-<run id>-pattern-rs|ts`, `-dictionary-rs|ts`), restore prefixed
-copies of the Rust pair with the Rust CLI only (`-pattern-rr`, `-dictionary-rr`, a dry run
-first), and delete every record they created: at most six, every create and delete in
-`target/live/ledger.jsonl`. They never write a data profile (the API cannot delete one), a
-filtering profile, or anything predefined or pre-existing.
-
-```sh
-# DLP reads (read-only on both CLIs; a tenant without DLP access is noted, not failed):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> cargo test --test live live_dlp_reads -- --nocapture --test-threads=1
-# DLP writes (run-created patterns and dictionaries only, journalled and deleted):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> AIRS_RS_LIVE_DLP_WRITES=1 [AIRS_E2E_DLP_REGION=<region display name>] \
-  cargo test --test live live_dlp_writes -- --nocapture --test-threads=1
-```
-
-The dictionary region is the `regionName` of the first listed dictionary, else
-`AIRS_E2E_DLP_REGION`; without either the dictionary steps are skipped
-(`LIVE NOTICE: no DLP region known; dictionary writes skipped`). Summaries:
-`target/live/summary-dlp.json` and `summary-dlp-writes.json` (check names, exits, agreement and
-fixed notes; never resource names other than the run's own, ids other than the run's own,
-regexes, keywords, regions, TSGs or paths). The sweeper (`live_cleanup`) also deletes prefixed
-patterns and dictionaries older than an hour whose status is not `deleted`.
-
-Self-tests on loopback: `live_dlp_reads_self_test_against_fixture`,
-`live_dlp_reads_note_a_tenant_without_dlp_access`, `live_dlp_writes_self_test_against_fixture`,
-`live_dlp_writes_tear_down_after_a_failed_patch`, `live_dlp_writes_restore_refuses_another_plan`,
-`live_dlp_writes_need_their_own_opt_in` and `live_cleanup_sweeps_only_old_prefixed_dlp_records`.
-
-### 6.10a The M6c Model Security flows
-
-Three flows, each its own run (DESIGN §10, logic in
-`crates/airs-test-harness/src/live/modelsec*.rs`). The reads are read-only on both CLIs (json
-with the D180/D191/D192 tolerances, the scan sub-reads and label lists pretty, two tables) and
-add the Rust-only `pypi-auth` check: json, pretty and table runs, each with `--debug` and its own
-`--url-file` (each call may mint a new token), then pretty without one; the credential forms read
-from every 0600 file must appear in no run, their debug log or the summary, no output may carry a
-URI userinfo other than `[withheld]@`, each run must print exactly the withheld form of its own
-URL, and the files are removed. The TypeScript `pypi-auth` (it prints the
-credential) and `install` on either CLI never run live: every live run refuses them. The writes
-create, read, update and delete one security group per CLI (`airs-rs-e2e-<run id>-group-rs|ts`)
-and list, read and update the rule instances inside it; every create and delete is in
-`target/live/ledger.jsonl`, and the teardown re-checks a soft delete up to six times. The scan
-flow is billed: one group (`…-group-sc`) and one scan created by the Rust CLI only (budget 1),
-label writes only on that scan, a bounded wait, then its labels removed and its group deleted;
-the scan stays in the tenant (the API has no scan delete).
-
-```sh
-# Reads and the Rust-only pypi-auth check (a tenant without access is noted, not failed):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> cargo test --test live live_modelsec_reads -- --nocapture --test-threads=1
-# Writes (run-created groups only, journalled and deleted):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> AIRS_RS_LIVE_MS_WRITES=1 \
-  cargo test --test live live_modelsec_writes -- --nocapture --test-threads=1
-# The billed scan flow (ask first; one scan that cannot be deleted; it writes a group and
-# labels, so it needs the write opt-in as well as its own):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> AIRS_RS_LIVE_MS_WRITES=1 AIRS_RS_LIVE_MS_SCAN=1 AIRS_E2E_MS_MODEL_URI=<uri> \
-  [AIRS_RS_LIVE_MS_SCAN_MINUTES=<1–60>] cargo test --test live live_modelsec_scan -- --nocapture --test-threads=1
-```
-
-Summaries: `target/live/summary-modelsec.json`, `summary-modelsec-writes.json` and
-`summary-modelsec-scan.json` (never a name other than the run's own, an id other than the run's
-own, a URI, a label value, a config or any part of the PyPI URL). The sweeper (`live_cleanup`)
-also deletes prefixed groups older than an hour (a 404 skipped). Self-tests on loopback:
-`live_modelsec_reads_self_test_against_fixture`, `live_modelsec_reads_note_a_tenant_without_access`,
-`live_runs_refuse_the_credential_printing_commands`, `live_modelsec_writes_self_test_against_fixture`,
-`live_modelsec_writes_confirm_a_soft_delete_by_the_recheck`,
-`live_modelsec_writes_tear_down_after_a_failed_update`,
-`live_modelsec_writes_teardown_continues_after_an_aborted_delete`, `live_modelsec_writes_need_their_own_opt_in`,
-`live_modelsec_scan_self_test_against_fixture`,
-`live_modelsec_scan_resolves_an_unknown_create_by_the_listing`,
-`live_modelsec_scan_gates_refuse_before_any_request` and `live_cleanup_sweeps_only_old_prefixed_groups`.
-
-### 6.10b The M6d runtime-extras flows
-
-Two flows, each its own run (DESIGN §10, logic in `crates/airs-test-harness/src/live/runtime.rs`
-and `profile_transfer.rs`). The reads are read-only on both CLIs, bounded to one page and the first
-listed item: `api-keys list` (the TypeScript side only with `--output table`, which cannot show a
-key; the Rust json must hold no key member), `customer-apps list|get`, `consumption` of the first
-dashboard bucket, `deployment-profiles list`, the `scan-logs` stub, every dashboard and sessions
-read (compared by shape: the rolling windows move between the two runs), `scan-content` only into
-each CLI's own 0600 `--output-file` (never `--show-content`), `runtime report` and `profiles backup`
-of the first profile (files in the run's sandbox, compared in memory, removed at once). A tenant
-without API key or dashboard access is noted (`api-keys unavailable`, `dashboard unavailable`),
-not failed. The transfer flow needs its own opt-in: the Rust CLI creates one topic and one profile
-(`airs-rs-e2e-<run id>-topic-rs`, `-profile-rs`), applies the topic, both CLIs back the profile up,
-the profile and topic are deleted, the Rust restore must plan exactly their creates, restores them,
-verifies them, re-runs with `--on-conflict verify` (no write), refuses the TypeScript file, and the
-teardown deletes everything (at most four resources, every create, restore and delete in
-`target/live/ledger.jsonl`). The TypeScript restore never runs live, nor any API key or
-customer-app write.
-
-```sh
-# Reads (a tenant without access is noted, not failed):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> cargo test --test live live_runtime_reads -- --nocapture --test-threads=1
-# Profile transfer (run-created topic and profile only, journalled and deleted):
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> AIRS_RS_LIVE_PROFILE_TRANSFER=1 \
-  cargo test --test live live_profile_transfer -- --nocapture --test-threads=1
-```
-
-Summaries: `target/live/summary-runtime.json` and `summary-profile-transfer.json` (check names,
-exits, agreement and fixed notes; never key, app, bucket, session, profile or topic names other
-than the run's own, prompts, responses, user ids, auth codes, policies, TSGs or paths). The sweeper
-(`live_cleanup`) already covers the flow's topic and profile names. Self-tests on loopback:
-`live_runtime_reads_self_test_against_fixture`, `live_runtime_reads_note_unavailable_access`,
-`live_profile_transfer_needs_its_own_opt_in`, `live_profile_transfer_self_test_against_fixture`,
-`live_profile_transfer_tears_down_after_an_unknown_restore_create` and
-`live_profile_transfer_tears_down_after_a_panic`.
-
-### 6.10c The M6e gateway reads
-
-One read-only flow, its own run (DESIGN §10 M6e, `crates/airs-test-harness/src/live/gateway.rs`), every run with
-`TZ=UTC`. Three gates first (Rust `gateway workspaces list`, `--plane admin`, `gateway scopes list`): a plane both CLIs
-are refused (HTTP 401, 403 or 404) is noted (`gateway unavailable`, `gateway admin plane unavailable`, `IAM scopes
-unavailable`) and its checks skipped; one side only is a mismatch. Then the workspace and scope json and tables, a
-`telemetry requests` read over the pinned window (the hour before the run, cut to the minute), the inventory lists as
-tables on both CLIs (TypeScript tables omit object columns, so no credential object is printed), the reads that can
-carry a credential on the Rust side only (each json document must withhold every credential, read as the CLI reads
-it: a `{key, value}` pair's `key` is a name and its `value` must be hidden under a credential header name, and every header
-map at any depth must hide every value but a safe header's; the flow runs the shared checker
-`check::withheld` of the CLI's rules module, which the harness compiles from the CLI's own files (DESIGN §19.20
-choices 172, 185), so the classification, the action table and the traversal are the CLI's own; the CLI's tests run the
-same checker on everything the CLI prints for `corpus::PINNED_DOCUMENTS` and `corpus::planted` (§5.19); a string
-holding a JSON document is checked inside, a schema member under the stronger of its own name and the property's,
-and a describing text under a withheld property must show no credential, DESIGN §19.3 rule 3e), the list and detail tables compared cell by cell (a JSON
-cell as JSON, key order ignored, with the `[withheld]` tolerance inside it; a mismatch note names shapes and counts,
-never a TypeScript-only name), `gateway report` on both
-CLIs into the run's sandbox (0600, compared by shape, removed at once) and the doctor's `Gateway API` entry. No gateway
-write and no `inference` command runs on either CLI: the session guard refuses them in every live flow.
-
-```sh
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> cargo test --test live live_gateway_reads -- --nocapture --test-threads=1
-```
-
-Summary: `target/live/summary-gateway.json` (check names, exits, agreement, HTTP statuses and fixed notes; never a
-workspace, scope, key, model, user, URL, TSG or path). Self-tests on loopback:
-`live_gateway_reads_self_test_against_fixture`, `live_gateway_reads_note_an_unavailable_data_plane`,
-`live_gateway_reads_note_an_unavailable_admin_plane`, `live_gateway_reads_keep_a_rust_only_gate_failure` and
-`live_runs_refuse_gateway_writes_and_inference`; their plans forbid the `FAKE-GW-SECRET-*` markers on every stream of
-both CLIs.
-
-**Supplychain reads (M6f, DESIGN §10).** One page of each `supplychain` read on both CLIs (TypeScript `agentguard`):
-the `stats --output json` gate (a 401, 403 or 404 on both is the notice `supplychain unavailable: HTTP <s> on both CLIs
-(no AI Supply Chain access)` and nothing else runs), `stats`, `scans list --limit 10`, `scans vulnerabilities <first
-scan>` without content and `rules list --limit 10` in json (equal as JSON, D35) and table (the multiset of trimmed
-cells, D53), each re-run once when the two documents differ; the Rust-only `scans vulnerabilities <first scan>
---include-content --debug --output json`, checked in memory (the D321 notice, no finding text on stderr or in the
-debug log, which holds status and headers only) and dropped; `report --max-pages 3` on both (0600, compared by
-structure, D322 tolerated, no scan uuid, removed at once). TypeScript never runs with `--include-content` (the session
-guard refuses it in every live flow), no `--all` walk and no `--max 0` runs, and there is no write.
-
-```sh
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> cargo test --test live live_supplychain_reads -- --nocapture --test-threads=1
-```
-
-Summary: `target/live/summary-supplychain.json` (check names, exits, agreement, HTTP statuses, counts and fixed notes; a
-mismatch noted by shape: record and cell counts, printable member names; never an id, name, type, status, time, URL,
-statistic, finding text, TSG or path). Self-tests on loopback: `live_supplychain_reads_self_test_against_fixture`,
-`live_supplychain_reads_note_an_unavailable_service`, `live_supplychain_reads_keep_a_rust_only_gate_failure`,
-`live_supplychain_reads_reread_once_when_the_data_rolls`,
-`live_supplychain_reads_reread_the_content_run_once_when_the_findings_roll`,
-`live_supplychain_reads_reread_the_report_once_when_the_data_rolls`,
-`live_supplychain_reads_stop_on_a_marker_outside_the_content_run`,
-`live_supplychain_reads_accept_a_jwt_shape_in_scanned_code`, `live_supplychain_reads_keep_a_difference_whose_reread_is_unavailable`,
-`live_supplychain_reads_fail_a_refused_content_run`, `live_supplychain_reads_tolerate_d318_only_in_its_shape`,
-`live_supplychain_reads_accept_rows_the_shared_contract_refuses`, `live_supplychain_reads_keep_other_scan_failures_as_mismatches`,
-`live_supplychain_reads_need_rust_rows_for_g71`, `live_supplychain_reads_need_the_refusal_twice_for_g71` and
-`live_runs_refuse_typescript_supplychain_content`; their plans forbid the `PRIVATE-` markers on every stream except
-the Rust `--include-content` stdout (`LivePlan::content_markers`, `RunPlace::content_stdout`). That stdout is checked
-for the plan's secret forms without the JWT-shape heuristic (scanned code may hold one); the flow checks the shape on
-the document outside its finding rows. A difference whose re-read is unavailable on both CLIs, and a content run refused
-after the plain read answered, are mismatches; content findings other than the plain read's re-run the Rust plain read
-and the content run once, and a differing report pair runs once more on both CLIs (the second pair decides); D318 is
-tolerated only in its shape (DESIGN §10 M6f). G71: TypeScript prints its status-less request line for timeouts,
-network errors and bodies that are not JSON too, so a scan read passes with the note `airs-cli-rs reads rows the shared
-contract refuses (G71); TypeScript refuses the answer` only when airs-cli-rs exits 0 with at least one row and
-TypeScript fails with exactly that line on the first read and on the re-read; the vulnerabilities checks then read the
-first scan airs-cli-rs listed, and only when both scan checks passed so and no TypeScript scan run succeeded may the
-report pair differ in its Scans source alone (TypeScript `unavailable`; the table titles equal as a multiset once one
-`Scan outcomes` is taken from the Rust side). Any other failure on either side stays a mismatch.
-`live_supplychain_reads_need_rust_rows_for_g71` (an empty listing) and
-`live_supplychain_reads_need_the_refusal_twice_for_g71` (one transient TypeScript failure, then a refusal on the
-re-read only) plan the answers per run with `push_once` on `Sc::Scans`; each check sends Rust then TypeScript, the
-re-read the same pair again, and the report reads 10 scans per page (two pages of `recent_scans`, one of the null
-rows), so a new scenario counts its pushes the same way and asserts the total of `sc_requests(Sc::Scans)`.
-
-### 6.10d The 8.0 directional run (B7)
-
-Directional profiles (DESIGN §13.17) have no `tests/live.rs` flow. TypeScript 7.3.0's flag
-create sends a body the service refuses (D335), so a two-CLI comparison of the writes cannot
-pass. They were accepted once, by an authorised manual run of the Rust release binary against
-`redtail-prod` (2026-10-22). Its step table, the probes that found D335, the service rules and
-the `dlp_tenant_id` observation are in
-[research/live-directional-profiles.md](research/live-directional-profiles.md). To repeat it,
-follow the steps there: name every resource with a fresh run-id prefix, read each write back
-with `runtime profiles get --output json`, delete every revision of every created profile by
-id, and compare the final listings with the preflight's.
-
-### 6.11 What only a live run can show
-
-These were not verifiable on loopback and need your first live run:
-
-- **Missing-profile scan.** If the real service answers a scan against a missing
-  profile with 200 and allow, that check fails as "expected the same non-zero exit".
-- **Scan count.** The budget counts invocations. The TypeScript CLI may re-send a scan
-  on 5xx or network errors up to the tenant's `airsNumRetries` (D9, default 5), so the
-  service can receive more requests than the budget. Because the series stops at the
-  first scan that does not complete, a failing service gets at most one such retry
-  chain per run (the missing-profile scan can add one more on a network error).
-- **Proxies and TLS.** For https endpoints the Rust CLI may use macOS system proxies
-  (D36). TLS with the cleared environment has not been exercised.
-- **Doctor and profile data.** The TypeScript-only doctor checks (AI Gateway,
-  Typesafe) make real requests. Policy equality on real profiles has only been shown
-  on fixture data.
-- **Red team.** Whether a draft adapter create contacts anything external (choice 16 of
-  DESIGN §15.22; if it does, the write flow is dropped), how long the smallest STATIC scan
-  takes on the tenant, and whether the real service answers `include_target_count` and the
-  quota GET as the frozen schemas say.
-- **Bulk timing.** Whether R1's signal lands while batch 1 is polled (branch a) or during
-  batch 2's POST (branch b) depends on how fast AIRS answers; both are accepted. Real async
-  results may need several 5 s polls, so a slow tenant can reach the 90 s run timeout.
+The live comparison tier (both CLIs against a real tenant) was removed on 2026-11-08
+with the parity tests.
 
 ## 7. Adding tests
 
@@ -1621,15 +981,10 @@ These are listed in DESIGN and in the COMPATIBILITY.md divergence index:
 | D48: a non-loopback `http` endpoint | Tested on the Rust side; the fragment case is parity tested. | The harness never lets the TypeScript CLI reach a non-loopback host, so its sending side cannot run. |
 | Behaviour against the real service | The live tier (§6). | Needs a real tenant; see §6.11 for what has not been checked yet. |
 
-## 9. Benchmarks
+## 9. Benchmarks (removed)
 
-`crates/airs-test-harness/examples/bench.rs` times both CLIs on loopback with the
-harness fixture, sandbox and scrubbed environment. Its `--live` mode times read-only
-commands against one real tenant through `live::run_live_bench`, which uses the live
-tier's isolation (§6.2) with a scan budget of 0. Only the user runs it, with
-`AIRS_RS_LIVE=1` and `AIRS_E2E_TENANT=<name>`. `tests/live.rs::live_bench_self_test_against_fixture`
-runs that flow against the fixture server. Methodology, commands and results are in
-[BENCHMARKS.md](BENCHMARKS.md).
+The benchmark harness (`examples/bench.rs`) compared both CLIs and was removed with the
+parity tests on 2026-11-08. [BENCHMARKS.md](BENCHMARKS.md) keeps the last results.
 
 ## 10. Continuous integration
 
@@ -1640,7 +995,7 @@ live tier (§6) is only run by hand. Releases are cut separately
 
 | Job | Runner | What it runs |
 |---|---|---|
-| `linux` | `prisma-airs-cli` (Ubuntu 22.04 container, as root) | rustup stable with rustfmt and clippy; Node 24 and pnpm 10.6.5; the TypeScript reference (below); `jq` (installed with `apt-get` when the image lacks it, for `tests/homebrew_formula.rs`); `cargo fmt --all --check`; `cargo clippy --workspace --all-targets --locked -- -D warnings`; `cargo +1.89 check --workspace --all-targets --locked` (the MSRV); `AIRS_REQUIRE_PARITY=1 cargo test --workspace --locked --no-fail-fast` |
+| `linux` | `prisma-airs-cli` (Ubuntu 22.04 container, as root) | rustup stable with rustfmt and clippy; Node 24 (the npm launcher tests); `jq` (installed with `apt-get` when the image lacks it, for `tests/homebrew_formula.rs`); `cargo fmt --all --check`; `cargo clippy --workspace --all-targets --locked -- -D warnings`; `cargo +1.89 check --workspace --all-targets --locked` (the MSRV); `AIRS_REQUIRE_PARITY=1 cargo test --workspace --locked --no-fail-fast` |
 | `musl` | `prisma-airs-cli` | `cargo zigbuild --release` for `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl` (zig 0.17.0, checksum-verified; cargo-zigbuild 0.23.4); a smoke test of the native binary (`--version` of `airs` and of the compatibility name, then `tenant list --output json` with `AIRS_CLI_CONFIG_DIR` pointing at an empty directory, which must print `[]`); both `airs` binaries uploaded as artifacts `airs-cli-<target>` with an `airs.sha256` file |
 | `docs-site` | `prisma-airs-cli` | Node 24 and pnpm 10.6.5 (from `docs-site/package.json`'s `packageManager`); `pnpm -C docs-site install --frozen-lockfile`; `pnpm -C docs-site build`, where `onBrokenLinks` and `onBrokenAnchors` are `throw`, so a broken link or anchor fails the job. The Forgejo `docs-release` workflow requires it (with `linux` and `musl`) to pass on `main` before it tags `airs-docs-<sha>`, which the GitHub mirror's `deploy-docs.yml` publishes to <https://cdot65.github.io/prisma-airs-cli/>. |
 | `macos` (`.forgejo/workflows/ci-macos.yml`) | `macos-arm64`, a placeholder for the maintainer's runner `jadzia` | The `linux` checks, `continue-on-error`. Its own workflow, run only on demand (`workflow_dispatch`): Forgejo evaluates a job's `if` only once a runner with its label picks the job up, so a macOS job in `ci.yml` left every push run waiting forever while no runner serves the label. Rename the label and dispatch it once `jadzia` is online and meets the self-hosted runner requirements below. |
@@ -1650,15 +1005,10 @@ Notes:
 - **Tests run unprivileged.** The container runs as root, and root ignores file modes,
   so tests that make a file mode `0000` would fail. The test step creates a user `ci`,
   hands it the workspace and the cargo home, and runs `cargo test` as that user.
-- **The TypeScript reference.** The job reads the pin from `PINNED_COMMIT` in
-  `scripts/build-reference-cli.sh` and restores `.reference/prisma-airs-cli` from the
-  cache keyed on that commit, the Node major and the script's hash. The checkout fetches
-  the whole history and the tags (`fetch-depth: 0`), so on a miss the script clones the
-  pin from the checkout itself (`AIRS_TS_SOURCE="$GITHUB_WORKSPACE"`, §3.1): no deploy
-  key, secret or second network clone is involved. `--verify` then checks the result.
-  (Before the Rust CLI moved into this repository, CI cloned the TypeScript repository
-  with a read-only deploy key in the secret `TS_REFERENCE_SSH_KEY`; that secret is no
-  longer used.)
+- **Docs-only changes skip the Rust steps.** Each job first classifies the change: when
+  only `docs/`, `docs-site/` or `*.md` files changed, the `linux` job runs just
+  `docs_consistency` and `cli_reference` (the two tests that read the docs) and the `musl`
+  job builds nothing; both still report, so branch protection is satisfied.
 - **Pull requests from forks** need no secret for the reference either: the pinned
   commit is in the history they are based on.
 - **Self-hosted macOS runner (`jadzia`).** A macOS runner has no container: every job
@@ -1701,7 +1051,6 @@ loopback services or synthetic local files, never real tenants:
 ```sh
 cargo test --lib report::signal
 cargo test --test signal_sdk --test signal_reads --test signal_offline --test signal_review --test runtime_report
-AIRS_REQUIRE_PARITY=1 cargo test --test parity_signal --test parity_runtime_report --test parity_runtime_extras
 ```
 
 `signal_sdk` proves pinned SDK model/request compatibility, not live semantics.
