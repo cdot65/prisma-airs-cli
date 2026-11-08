@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined review 1 scored 8.5/10, revise (2026-11-08)** — outstanding gates: the disposable-node test (step 10), production-storage capacity qualification (step 12 and the coordinated-backup memory measurement), and the macOS release qualification; gateway exclusivity and image provenance were since evidenced (see the response entry).
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1 and 2 scored 8.5 and 8.7, revise (2026-11-08).** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding: the disposable-node test (step 10), production-storage low-space and capacity qualification (step 12), owner-verified gateway credential exclusivity, and the release image built and recorded from the release commit (plus macOS signing).
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5582,6 +5582,50 @@ Material findings:
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
 
+### M8 final combined review 2 (Codex, 2026-11-08T03:54Z, frozen tree main fc3a409, receipts m8/run11)
+
+**8.7/10, revise.** "M8 cannot be accepted without steps 10 and 12. The response improves the
+evidence and fixes the portability defect, but the plan's deployment exit gate remains unmet."
+Both manifests verified before and after; no external services contacted. **M8 is not accepted.**
+
+Material findings (all outstanding gates; none is a defect in performed work):
+1. **Gateway credential exclusivity unproven.** The admin plane hides upstream OAuth credentials,
+   so the client ID's absence from every integration proves nothing; exclusive *backend-URL*
+   configuration is resolved. The response entry below overstated finding 1 as resolved; it is
+   corrected here. Needs an owner-verified inventory of where the gateway client's credential is
+   configured (no values).
+2. **Disposable-node qualification (step 10) missing** — required by the plan before deployment
+   acceptance.
+3. **Production-storage recovery and capacity qualification (step 12) incomplete** — the
+   low-space pause/recovery exercise on the actual storage class and the 30-day capacity model.
+   The planning-size coordinated-backup measurement closes only the release §2 sub-gate.
+4. **Image provenance covers 494ff54, not the final source:** fc3a409 changes production code in
+   `transfer/io.rs`, so the release image must be built from the release commit and recorded.
+
+Minor: the management tests' bind-and-drop port race (`tests/management.rs`), unchanged since
+M7 and not an M8 blocker — fixed separately with the harness's `ClosedPort` (PR #22).
+
+Judged satisfied: the macOS portability fix ("correct and minimal"; the new identity test fails
+under mutation), the planning-size coordinated backup (release §2: five million scans, four sets,
+verification, enforced 2 GiB limit, zero OOM kills, retention and creation peaks; tmpfs seeding
+"does not invalidate" the measurement), and both earlier documentation minors. Receipt
+independently totalled 4,247 passed, 0 failed, 9 ignored, no parity skip.
+
+**Evidence added for review 2** (packet `evidence/`, recorded here with this result):
+- *macOS qualification* (Apple Silicon VM, rustc 1.99.0, SDK 27.0): at 494ff54 the history store
+  did not compile (`st_dev` is `i32` on macOS) — fixed in PR #21; at the fix both binaries build
+  natively (arm64) and the workspace suite runs 3,162 passed / 1,090 failed, every failure
+  environmental (no Node.js for parity and npm tests, ext4-only service admission, GNU-tool
+  operator scripts). This is native compilation and substantial test execution, **not** a passing
+  workspace suite on macOS. Signing and notarisation were not performed.
+- *Coordinated backup at the planning size*: 5,000,000 synthetic scans, archive 9,165,438,976 B
+  (about 2.5× the contract's 3.6 GiB planning estimate, which came from B0's sparser generator);
+  four `control-backup-set --keep 3` runs and two verifications under MemoryMax=2G with swap off;
+  per-process peak resident memory 11–17 MB (the cgroup's memory.peak reached the 2 GiB limit
+  from reclaimable page cache, so this is not total cgroup consumption); oom_kill 0; each set
+  8.0 GB; three retained 24.0 GB; fourth-set creation peak 32.0 GB. Local btrfs, synthetic data,
+  no report artifacts.
+
 ### M8 final combined review 1 (Codex, 2026-11-08T02:03Z, frozen tree f2e8b93 = main 494ff54, receipts m8/run10)
 
 **8.5/10, revise.** "The post-review-8 fixes are sound within the verification limits
@@ -5620,7 +5664,7 @@ report straddled a second: 5/10 failures on main fbc3660, 0/10 before #15).
 
 ### M8 response to final review 1 (2026-11-08)
 
-- **Finding 1 — resolved with evidence.** The gateway's admin plane (read-only
+- **Finding 1 — backend URL evidenced; credential exclusivity NOT proven (corrected by final review 2).** The gateway's admin plane (read-only
   `airs gateway mcp integrations list` and `get` for all 15 integrations) shows exactly
   one integration, `airs`, whose upstream is `https://mcp-backend-airs.goshawks.io/mcp`;
   no other integration's detail mentions the backend URL, the dedicated gateway client
