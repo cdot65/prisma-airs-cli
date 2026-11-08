@@ -6,18 +6,15 @@ intentional difference from the TypeScript CLI. Issue tracking is on BonBon: see
 `## Issue tracking: BonBon` section of AGENTS.md and `docs/agents/issue-tracker.md`.
 
 This repository, `cdot/prisma-airs-cli`, held the TypeScript CLI through 7.x. From 8.0 it
-holds the Rust CLI (crate `airs-cli`, command `airs`); the TypeScript reference the
-parity tests compare against is a pinned commit of this repository's own history.
+holds the Rust CLI (crate `airs-cli`, command `airs`). Nothing is compared against the
+TypeScript CLI any more (parity tests and the reference build were removed 2026-11-08).
 
 Quick commands (prefix with `export PATH="$HOME/.cargo/bin:$PATH";`):
 
 ```sh
 cargo build --release                                   # target/release/airs (and the airs-cli, airs-cli-rs copies; native arm64 on Apple Silicon)
-cargo test --workspace                                  # unit + loopback executable + parity tests
-AIRS_REQUIRE_PARITY=1 cargo test --workspace            # fail if the TS reference build is missing
-scripts/build-reference-cli.sh                          # build the pinned TS reference (this repository's history) into .reference/
+cargo test --workspace                                  # unit + loopback executable tests
 scripts/cli-reference.sh                                # regenerate the docs site's command reference
-AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name> [AIRS_E2E_PROFILE=<profile>] cargo test --test live -- --nocapture --test-threads=1   # bounded live comparison (DESIGN §10)
 ```
 
 Layout:

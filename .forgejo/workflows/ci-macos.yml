@@ -34,8 +34,6 @@ jobs:
       - uses: https://github.com/actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-          # The whole history and the tags: the TypeScript reference is a commit in this
-          # repository's own history (docs/TESTING.md §3).
           fetch-depth: 0
 
       - name: Install Rust (stable with rustfmt and clippy, plus the MSRV)
@@ -63,38 +61,9 @@ jobs:
           restore-keys: |
             cargo-macos-${{ runner.arch }}-${{ steps.rust.outputs.key }}-
 
-      - uses: https://github.com/pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - uses: https://github.com/actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
-
-      - name: Read the reference pin
-        id: pin
-        run: |
-          set -euo pipefail
-          commit=$(sed -n 's/^PINNED_COMMIT="\${AIRS_TS_COMMIT:-\([0-9a-f]\{40\}\)}"$/\1/p' scripts/build-reference-cli.sh)
-          [ "${#commit}" -eq 40 ] || { echo "cannot read PINNED_COMMIT from scripts/build-reference-cli.sh" >&2; exit 1; }
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
-          echo "node=$(node --version | cut -d. -f1)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore the TypeScript reference build
-        id: refcache
-        uses: https://github.com/actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: .reference/prisma-airs-cli
-          key: ts-reference-v1-macos-${{ runner.arch }}-node${{ steps.pin.outputs.node }}-${{ steps.pin.outputs.commit }}-${{ hashFiles('scripts/build-reference-cli.sh') }}
-
-      - name: Build the TypeScript reference
-        run: |
-          set -euo pipefail
-          # On a cache miss the script clones the pin from this checkout's own history
-          # (fetch-depth 0 above), so no key or second clone over the network is needed.
-          export AIRS_TS_SOURCE="$GITHUB_WORKSPACE"
-          scripts/build-reference-cli.sh
-          scripts/build-reference-cli.sh --verify
 
       - name: cargo fmt
         run: cargo fmt --all --check
@@ -105,8 +74,10 @@ jobs:
       - name: cargo check on the MSRV
         run: cargo +"$MSRV" check --workspace --all-targets --locked --target-dir target/msrv
 
-      - name: cargo test (parity required)
+      - name: cargo test
         run: |
           set -euo pipefail
-          unset AIRS_RS_LIVE AIRS_E2E_TENANT AIRS_E2E_PROFILE AIRS_ALLOW_PARITY_SKIP
-          AIRS_REQUIRE_PARITY=1 cargo test --workspace --locked --no-fail-fast
+          unset AIRS_RS_LIVE AIRS_E2E_TENANT AIRS_E2E_PROFILE
+          # The airs-mcp service runs only in its Linux container (ext4-only storage
+          # admission); its tests run in the linux job.
+          cargo test --workspace --exclude airs-mcp --locked --no-fail-fast

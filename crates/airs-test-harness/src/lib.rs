@@ -37,34 +37,22 @@
 //!   the stdout reader early (broken-pipe tests); [`RunOptions::stall_stdout`] never
 //!   reads it while the child runs; [`RunOptions::stall_stderr`] reads stderr only once
 //!   released, and [`RunOptions::fill_stderr`] also starts the child on an already full
-//!   stderr pipe, so its first stderr write blocks. A TypeScript run first passes
-//!   [`Sandbox::assert_safe_for_ts`]. [`require_ts`] fails a parity test when the
-//!   reference is unusable (missing, wrong node major, off the pinned commit), unless
-//!   `AIRS_ALLOW_PARITY_SKIP=1` (a `PARITY SKIPPED` notice on the real stderr).
+//!   stderr pipe, so its first stderr write blocks.
 //! - [`pty`]: [`spawn_pty`] runs a CLI with stdin and stderr on a pseudo-terminal and
 //!   drives its prompts (expect/send; Ctrl-C as a signal). [`lock_holder`]: a helper
 //!   process holding the airs-cli-rs store lock. [`RunOptions::stdin`] pipes bytes to a
 //!   run instead of `/dev/null`. `tenant` commands never build an API client, so the
 //!   loopback-endpoint guards skip them ([`is_tenant_command`]); the path guards apply.
-//! - [`live`]: the opt-in live comparison tier (DESIGN §10, tier 3): an isolated
-//!   registry holding one existing tenant entry, scrubbed environment, integrity
-//!   fingerprints of the real tenant files, a scan budget and a sanitized
-//!   [`live::LiveReport`]. It does not use [`spawn`], so the sandbox guard above is
-//!   unchanged; [`live::LiveTarget::real`] needs `AIRS_RS_LIVE=1`.
 //! - [`compare`]: [`normalize`]d request logs, [`json_semantic_eq`] with JS number
 //!   normalisation, [`error_line`]/[`http_status`] stderr extraction, and
 //!   [`strip_ts_target_defaults`] (the TypeScript-only target schema defaults, D153).
-//!
-//! Observed TypeScript behaviour against this server is recorded in
-//! `docs/research/ts-baseline-observed.md`; refresh it with
-//! `cargo run -p airs-test-harness --example ts_baseline [filter]`.
 //!
 //! # Example
 //!
 //! ```no_run
 //! use airs_test_harness::{
 //!     Cli, FixtureServer, Planned, Route, RunOptions, Sandbox, fixtures, normalize_all,
-//!     require_ts, run,
+//!     run,
 //! };
 //! use serde_json::json;
 //!
@@ -81,24 +69,13 @@
 //! out.assert_success();
 //! assert_eq!(out.json()[0]["profileName"], "alpha");
 //! assert_eq!(server.routes(), vec![Route::Token, Route::Profiles]);
+//! assert_eq!(normalize_all(&server.requests()).len(), 2);
 //!
-//! // Parity: the same scenario against the TypeScript reference, request by request.
-//! let rust_requests = normalize_all(&server.requests());
-//! server.clear_requests();
-//! if let Some(ts) = require_ts("profiles_list_parity") {
-//!     let ts_out = run(&ts, &sandbox, &args, &RunOptions::new());
-//!     assert_eq!(ts_out.code, out.code);
-//!     assert_eq!(normalize_all(&server.requests()), rust_requests);
-//! }
-//!
-//! // Failure injection. A one-shot response is used by the next matching request from
-//! // either CLI (`clear_requests` does not drop it; `clear_overrides` does), so queue it
-//! // once per CLI run, right before that run.
-//! for cli in [Some(rust.clone()), require_ts("profiles_list_404")].into_iter().flatten() {
-//!     server.push_once(Route::Profiles, Planned::json(404, &json!({"message": "nope"})));
-//!     let failed = run(&cli, &sandbox, &args, &RunOptions::new());
-//!     assert_eq!(failed.code, 1);
-//! }
+//! // Failure injection: a one-shot response is used by the next matching request
+//! // (`clear_requests` does not drop it; `clear_overrides` does).
+//! server.push_once(Route::Profiles, Planned::json(404, &json!({"message": "nope"})));
+//! let failed = run(&rust, &sandbox, &args, &RunOptions::new());
+//! assert_eq!(failed.code, 1);
 //! ```
 
 #![forbid(unsafe_code)]
@@ -109,7 +86,6 @@ pub mod debug_log;
 mod encoding;
 pub mod fake_uv;
 pub mod fixtures;
-pub mod live;
 pub mod lock_holder;
 pub mod pty;
 mod runner;
@@ -129,13 +105,11 @@ pub use encoding::{base64_encode, form_decode, payload_hash, percent_encode};
 pub use pty::{PtyRun, PtySession, spawn_pty, spawn_pty_all, spawn_pty_with};
 pub use runner::{
     Cli, DEFAULT_TIMEOUT, PATH_FLAGS, PATH_VARIABLES, PROGRAM_NAMES, Run, RunOptions, Running,
-    SIGNAL_MARKER_VAR, SUPPORTED_NODE_MAJOR, StdinSource, TS_ENDPOINT_VARIABLES, TS_ENTRY_RELATIVE,
-    bulk_command, check_reference_clone, child_environment, escape_violation,
-    escape_violation_within, import_source_violation, is_dlp_command, is_gateway_command,
-    is_import_command, is_model_security_command, is_redteam_command, is_runtime_command,
-    is_runtime_extras_command, is_supplychain_command, is_tenant_command, parity_available,
-    path_without_programs, pinned_reference_commit, reference, require_ts, restore_file_argument,
-    resume_state_argument, run, spawn, ts_bulk_home_violation, ts_trap_removal_violation,
+    SIGNAL_MARKER_VAR, StdinSource, TS_ENDPOINT_VARIABLES, bulk_command, child_environment,
+    escape_violation, escape_violation_within, import_source_violation, is_dlp_command,
+    is_gateway_command, is_import_command, is_model_security_command, is_redteam_command,
+    is_runtime_command, is_runtime_extras_command, is_supplychain_command, is_tenant_command,
+    path_without_programs, restore_file_argument, resume_state_argument, run, spawn,
     upload_file_argument, uv_hook_violation, workspace_root,
 };
 pub use sandbox::{

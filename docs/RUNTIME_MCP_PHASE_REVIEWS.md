@@ -5582,6 +5582,29 @@ Material findings:
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
 
+### Owner decisions: TypeScript parity removed; releases trust CI; docs-only CI (2026-11-08)
+
+The owner asked to stop re-running suites that cost time without catching defects:
+- **TypeScript parity is removed entirely.** "get rid of any typescript stuff. we are past that
+  phase. that includes source code and tests." The `tests/parity_*.rs` suites, the
+  TypeScript reference self-test, the live comparison tier, the harness's TypeScript runner
+  and reference checks, `scripts/build-reference-cli.sh`, the reference steps in CI and the
+  release script's Node/reference requirement are gone. The required check is now
+  `cargo test --workspace` (no `AIRS_REQUIRE_PARITY`). `docs/COMPATIBILITY.md` keeps the
+  comparisons as history and cites only Rust tests; DESIGN §12 stays as the record of
+  intentional differences. The product's TypeScript-era compatibility code (reading configs
+  the TypeScript CLI wrote) follows in a separate change.
+- **Releases trust CI on the exact tree.** `scripts/release.sh` no longer runs fmt, clippy or
+  the suite on the Mac; it checks that CI passed on HEAD or on the merged pull request head
+  with the identical tree (branch protection keeps them identical).
+- **Docs-only changes skip the Rust steps in CI** (only `docs/`, `docs-site/`, `*.md`): the
+  `linux` job runs just `docs_consistency` and `cli_reference`, the `musl` job builds nothing,
+  and both still report for branch protection.
+
+For M8's next combined review this means the required checks are the Linux CI run and the
+workspace suite without parity; earlier receipts that ran with `AIRS_REQUIRE_PARITY=1` stay
+valid for what they covered.
+
 ### M8 owner decision: capacity evidence is the planning-size measurement (2026-11-08)
 
 Production had no collection schedule, so a 30-day growth series would have measured

@@ -58,8 +58,8 @@ of 30 runs against a loopback fixture; [docs/BENCHMARKS.md](docs/BENCHMARKS.md))
 - **Node's compile cache** (`NODE_COMPILE_CACHE`) makes the TypeScript CLI 10–12 ms faster
   per run; `airs` is still 2.7–11x faster than that.
 
-Reproduce with `cargo run --release -p airs-test-harness --example bench -- --ts-compile-cache`
-after `scripts/build-reference-cli.sh` (BENCHMARKS "Reproduce").
+These figures were measured on 2026-10-23; the benchmark harness that compared both CLIs
+was removed with the TypeScript parity tests (2026-11-08).
 
 ## Status
 
@@ -1326,8 +1326,7 @@ The TypeScript CLI exits 1 on argument-parse errors (D1).
 ```sh
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
-scripts/build-reference-cli.sh                     # once: the pinned TypeScript reference (this repository's history)
-AIRS_REQUIRE_PARITY=1 cargo test --workspace
+cargo test --workspace
 node --test npm/test/launcher.test.js              # the npm launcher (also run by cargo test)
 scripts/cli-reference.sh                           # regenerate the docs site's command reference
 pnpm -C docs-site install --frozen-lockfile && pnpm -C docs-site build   # the docs site

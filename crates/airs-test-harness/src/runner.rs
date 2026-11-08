@@ -7,7 +7,7 @@ use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -16,29 +16,14 @@ use serde_json::Value;
 use crate::compare::{error_line, http_status};
 use crate::sandbox::{Sandbox, SecretForm, Snapshot, secret_forms};
 
-/// The Node major version the parity expectations were recorded with
-/// (`docs/research/ts-baseline-observed.md`); other majors may word `fetch` errors or
-/// time out differently, so they are treated like a missing reference.
-pub const SUPPORTED_NODE_MAJOR: u32 = 24;
-
 /// Default per-run timeout.
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
-
-/// Reference CLI entry relative to the workspace root.
-pub const TS_ENTRY_RELATIVE: &str = ".reference/prisma-airs-cli/dist/cli/index.js";
 
 /// Which executable to run.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Cli {
     /// The native binary (normally `env!("CARGO_BIN_EXE_airs")`).
     Rust(PathBuf),
-    /// `node <entry>` for the TypeScript reference build.
-    Ts {
-        /// Node executable.
-        node: PathBuf,
-        /// `dist/cli/index.js` of the reference build.
-        entry: PathBuf,
-    },
 }
 
 impl Cli {
@@ -47,54 +32,14 @@ impl Cli {
         Self::Rust(path.into())
     }
 
-    /// The TypeScript reference, when it can be used (see [`reference`]): the entry
-    /// (`AIRS_TS_CLI_ENTRY`, else `<workspace>/.reference/prisma-airs-cli/dist/cli/index.js`)
-    /// and node (`AIRS_TS_NODE`, else `node` on `PATH`) exist, node is major
-    /// [`SUPPORTED_NODE_MAJOR`], and the default clone is at the pinned commit with
-    /// unmodified tracked files.
-    pub fn ts() -> Option<Self> {
-        reference().ok()
-    }
-
-    /// Where the reference entry is looked for.
-    pub fn ts_entry_path() -> PathBuf {
-        match std::env::var_os("AIRS_TS_CLI_ENTRY").filter(|value| !value.is_empty()) {
-            Some(entry) => PathBuf::from(entry),
-            None => workspace_root().join(TS_ENTRY_RELATIVE),
-        }
-    }
-
-    fn node_path() -> Option<PathBuf> {
-        if let Some(node) = std::env::var_os("AIRS_TS_NODE").filter(|value| !value.is_empty()) {
-            let node = PathBuf::from(node);
-            return node.is_file().then_some(node);
-        }
-        std::env::split_paths(&std::env::var_os("PATH")?)
-            .map(|dir| dir.join("node"))
-            .find(|candidate| candidate.is_file())
-    }
-
-    /// `airs-cli-rs` or `airs-cli`.
+    /// The label used in failure messages.
     pub fn label(&self) -> &'static str {
-        match self {
-            Self::Rust(_) => "airs-cli-rs",
-            Self::Ts { .. } => "airs-cli",
-        }
-    }
-
-    /// Whether this is the TypeScript reference.
-    pub fn is_ts(&self) -> bool {
-        matches!(self, Self::Ts { .. })
+        "airs-cli-rs"
     }
 
     pub(crate) fn command(&self) -> Command {
         match self {
             Self::Rust(path) => Command::new(path),
-            Self::Ts { node, entry } => {
-                let mut command = Command::new(node);
-                command.arg(entry);
-                command
-            }
         }
     }
 }
@@ -103,148 +48,6 @@ impl Cli {
 pub fn workspace_root() -> PathBuf {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     root.canonicalize().unwrap_or(root)
-}
-
-/// Whether the TypeScript reference CLI can be run.
-pub fn parity_available() -> bool {
-    reference().is_ok()
-}
-
-/// Writes straight to the process stderr, which libtest does not capture (it captures
-/// only the `print!`/`eprint!` macros), so the notice is visible in passing runs.
-fn notice(text: &str) {
-    let mut stderr = std::io::stderr().lock();
-    let _ = writeln!(stderr, "\n========== {text} ==========\n");
-}
-
-/// The verified reference CLI, or why it cannot be used. Checked once per process.
-pub fn reference() -> Result<Cli, String> {
-    static REFERENCE: OnceLock<Result<Cli, String>> = OnceLock::new();
-    REFERENCE.get_or_init(locate_reference).clone()
-}
-
-fn locate_reference() -> Result<Cli, String> {
-    let entry = Cli::ts_entry_path();
-    let node = Cli::node_path().ok_or("node not found (AIRS_TS_NODE or PATH)")?;
-    if !entry.is_file() {
-        return Err(format!("entry {} not found", entry.display()));
-    }
-    let version = command_output(Command::new(&node).arg("--version"))
-        .ok_or_else(|| format!("{} --version failed", node.display()))?;
-    let major = version
-        .trim()
-        .trim_start_matches('v')
-        .split('.')
-        .next()
-        .and_then(|major| major.parse::<u32>().ok());
-    if major != Some(SUPPORTED_NODE_MAJOR) {
-        return Err(format!(
-            "node {} is not major {SUPPORTED_NODE_MAJOR}, the version the parity expectations were recorded with",
-            version.trim()
-        ));
-    }
-    if std::env::var_os("AIRS_TS_CLI_ENTRY").is_some_and(|value| !value.is_empty()) {
-        notice(&format!(
-            "PARITY: AIRS_TS_CLI_ENTRY={} is used as given; its commit cannot be verified",
-            entry.display()
-        ));
-        return Ok(Cli::Ts { node, entry });
-    }
-    let pinned = pinned_reference_commit()
-        .ok_or("the pinned commit is not readable from scripts/build-reference-cli.sh")?;
-    check_reference_clone(
-        &workspace_root().join(".reference/prisma-airs-cli"),
-        &pinned,
-    )?;
-    Ok(Cli::Ts { node, entry })
-}
-
-/// `Ok` when the git clone at `clone` is at `pinned` with no modified tracked files
-/// (`dist/` and `node_modules/` are ignored by the clone's own `.gitignore`).
-pub fn check_reference_clone(clone: &Path, pinned: &str) -> Result<(), String> {
-    let head = command_output(
-        Command::new("git")
-            .arg("-C")
-            .arg(clone)
-            .args(["rev-parse", "HEAD"]),
-    )
-    .ok_or_else(|| format!("cannot read the commit of {}", clone.display()))?;
-    if head.trim() != pinned {
-        return Err(format!(
-            "reference clone is at {}, expected the pinned {pinned}",
-            head.trim()
-        ));
-    }
-    let status = command_output(Command::new("git").arg("-C").arg(clone).args([
-        "status",
-        "--porcelain",
-        "--untracked-files=no",
-    ]))
-    .ok_or_else(|| format!("cannot read the status of {}", clone.display()))?;
-    if !status.trim().is_empty() {
-        return Err("reference clone has modified tracked files".into());
-    }
-    Ok(())
-}
-
-/// `AIRS_TS_COMMIT`, else the default `PINNED_COMMIT` of `scripts/build-reference-cli.sh`
-/// (the one place the pin is written).
-pub fn pinned_reference_commit() -> Option<String> {
-    if let Some(commit) = std::env::var("AIRS_TS_COMMIT")
-        .ok()
-        .filter(|v| !v.is_empty())
-    {
-        return Some(commit);
-    }
-    let script =
-        std::fs::read_to_string(workspace_root().join("scripts/build-reference-cli.sh")).ok()?;
-    let line = script
-        .lines()
-        .find(|line| line.trim_start().starts_with("PINNED_COMMIT="))?;
-    let start = line.find(":-")? + 2;
-    let rest = &line[start..];
-    let commit = &rest[..rest.find('}')?];
-    (commit.len() == 40 && commit.bytes().all(|b| b.is_ascii_hexdigit())).then(|| commit.to_owned())
-}
-
-fn command_output(command: &mut Command) -> Option<String> {
-    let output = command
-        .stdin(Stdio::null())
-        .stderr(Stdio::null())
-        .output()
-        .ok()?;
-    output
-        .status
-        .success()
-        .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
-}
-
-/// The reference CLI for a parity test.
-///
-/// When the reference cannot be used (missing build, no node, an unsupported node
-/// major, a clone off the pinned commit or with modified tracked files) the test
-/// panics, so a green run always means the TypeScript side ran. `AIRS_ALLOW_PARITY_SKIP=1`
-/// turns that into `None` after a `PARITY SKIPPED` notice written to the real stderr
-/// (visible even for passing tests); `AIRS_REQUIRE_PARITY=1` forbids the opt-out.
-///
-/// ```no_run
-/// let Some(ts) = airs_test_harness::require_ts("profiles_list_parity") else { return };
-/// ```
-pub fn require_ts(test: &str) -> Option<Cli> {
-    let reason = match reference() {
-        Ok(cli) => return Some(cli),
-        Err(reason) => reason,
-    };
-    let message = format!(
-        "PARITY SKIPPED ({test}): TypeScript reference CLI unusable: {reason}; run \
-         scripts/build-reference-cli.sh"
-    );
-    let flag = |name: &str| std::env::var(name).as_deref() == Ok("1");
-    if flag("AIRS_REQUIRE_PARITY") || !flag("AIRS_ALLOW_PARITY_SKIP") {
-        panic!("{message} (set AIRS_ALLOW_PARITY_SKIP=1 to skip parity tests)");
-    }
-    notice(&message);
-    None
 }
 
 /// Per-run options.
@@ -747,18 +550,6 @@ pub fn is_runtime_command(args: &[&str]) -> bool {
     false
 }
 
-/// For a TypeScript `runtime` run: a test that removes one of [`TS_ENDPOINT_VARIABLES`]
-/// would leave it unset (a removal wins over a value, [`child_environment`]), and the
-/// SDK would fall back to its production default (`opts.x ?? process.env.X ??
-/// DEFAULT`), so the run is refused. Only an explicit value, which
-/// `env_guard_violation` checks is loopback (or empty), replaces the trap.
-pub fn ts_trap_removal_violation(options: &RunOptions) -> Option<String> {
-    TS_ENDPOINT_VARIABLES
-        .iter()
-        .find(|name| options.remove_env.iter().any(|removed| removed == *name))
-        .map(|name| format!("removing {name} would fall back to production"))
-}
-
 pub(crate) fn spawn_with(
     cli: &Cli,
     sandbox: &Sandbox,
@@ -782,22 +573,6 @@ pub(crate) fn spawn_with(
                 .into_owned(),
         );
     }
-    if cli.is_ts() && is_runtime_command(args) {
-        if let Some(problem) = ts_trap_removal_violation(options) {
-            panic!("refusing to run the TypeScript CLI {args:?}: {problem}");
-        }
-        let trap = sandbox.ts_env_trap_url();
-        for name in TS_ENDPOINT_VARIABLES {
-            if !options.env.iter().any(|(set, _)| set == name) {
-                env.insert(name.to_owned(), trap.clone());
-            }
-        }
-    }
-    // TypeScript formats telemetry windows in the process's zone (G41): its gateway runs
-    // get UTC unless the test chose a zone.
-    if cli.is_ts() && is_gateway_command(args) && !options.env.iter().any(|(set, _)| set == "TZ") {
-        env.insert("TZ".to_owned(), "UTC".to_owned());
-    }
     if let Some(problem) = escape_violation(sandbox.root(), &sandbox.cwd(), &env, args) {
         panic!("refusing to run {} {args:?}: {problem}", cli.label());
     }
@@ -814,20 +589,11 @@ pub(crate) fn spawn_with(
             cli.label()
         );
     }
-    if cli.is_ts()
-        && let Some(problem) = ts_bulk_home_violation(&env, args)
-    {
+    if let Some(problem) = import_source_violation(sandbox.root(), &sandbox.cwd(), &env, args) {
         panic!("refusing to run {} {args:?}: {problem}", cli.label());
     }
-    if !cli.is_ts()
-        && let Some(problem) = import_source_violation(sandbox.root(), &sandbox.cwd(), &env, args)
-    {
-        panic!("refusing to run {} {args:?}: {problem}", cli.label());
-    }
-    let guarded = !is_tenant_command(args) && (cli.is_ts() || !is_history_command(args));
-    if cli.is_ts() {
-        sandbox.assert_safe_for_ts_with(&env, guarded);
-    } else if let Some(store) = rust_store_dir(&env, &sandbox.cwd()) {
+    let guarded = !is_tenant_command(args) && !is_history_command(args);
+    if let Some(store) = rust_store_dir(&env, &sandbox.cwd()) {
         sandbox.assert_store_safe_for_rust_with(&store, guarded);
     }
     let mut full_stderr = None;
@@ -927,7 +693,7 @@ pub(crate) fn spawn_with(
         }
         // airs-cli-rs redacts every red team credential (D140); the TypeScript CLI prints
         // them, so the markers are checked for airs-cli-rs runs only.
-        if !cli.is_ts() && is_redteam_command(args) {
+        if is_redteam_command(args) {
             for marker in crate::fixtures::redteam::markers() {
                 secrets.extend(secret_forms("red team fixture credential", &marker));
             }
@@ -936,7 +702,7 @@ pub(crate) fn spawn_with(
     // DLP detection content may reach stdout where a read prints the record (DESIGN
     // §16.9; the tests assert where), never stderr or the debug log of an airs-cli-rs run.
     let mut stderr_secrets = Vec::new();
-    if options.check_secrets && !cli.is_ts() && is_dlp_command(args) {
+    if options.check_secrets && is_dlp_command(args) {
         for marker in crate::fixtures::dlp::markers() {
             stderr_secrets.extend(secret_forms("DLP fixture content", &marker));
         }
@@ -944,7 +710,7 @@ pub(crate) fn spawn_with(
     // Model-security sensitive values (label values, field values, URI userinfo and
     // queries) may reach stdout only where §17.15 prints them (the tests assert where),
     // never stderr or the debug log of an airs-cli-rs run (DESIGN §10 M6c).
-    if options.check_secrets && !cli.is_ts() && is_model_security_command(args) {
+    if options.check_secrets && is_model_security_command(args) {
         for marker in crate::fixtures::modelsec::markers() {
             stderr_secrets.extend(secret_forms("model-security fixture value", &marker));
         }
@@ -958,7 +724,7 @@ pub(crate) fn spawn_with(
     // Runtime extras (DESIGN §10 M6d): an API key value never appears in any output of an
     // airs-cli-rs run; scan content only on `scan-content --show-content`'s stdout; auth
     // codes only on stdout.
-    if options.check_secrets && !cli.is_ts() && is_runtime_extras_command(args) {
+    if options.check_secrets && is_runtime_extras_command(args) {
         let raw = |label: &str, value: &str| SecretForm {
             label: format!("{label} (prefix)"),
             value: value.to_owned(),
@@ -985,7 +751,7 @@ pub(crate) fn spawn_with(
     }
     // Gateway credentials (DESIGN §10 M6e): a `FAKE-GW-SECRET-*` marker never appears in
     // any output or debug log of an airs-cli-rs run (TypeScript prints some, D238).
-    if options.check_secrets && !cli.is_ts() && is_gateway_command(args) {
+    if options.check_secrets && is_gateway_command(args) {
         for marker in crate::fixtures::gateway::markers() {
             secrets.extend(secret_forms("gateway fixture credential", &marker));
         }
@@ -993,7 +759,7 @@ pub(crate) fn spawn_with(
     // Supplychain (DESIGN §10 M6f, §20.11): a `PRIVATE-` marker never appears in any output
     // or debug log of an airs-cli-rs run; with `--include-content` the finding content may
     // reach stdout only (the tests assert where), never stderr or the debug log.
-    if options.check_secrets && !cli.is_ts() && is_supplychain_command(args) {
+    if options.check_secrets && is_supplychain_command(args) {
         let form = SecretForm {
             label: "supplychain fixture marker (prefix)".into(),
             value: crate::fixtures::supplychain::MARKER.into(),
@@ -1305,17 +1071,6 @@ pub fn resume_state_argument<'a>(args: &[&'a str]) -> Option<&'a str> {
         ["runtime", "resume-poll", state, ..] => Some(state),
         _ => None,
     }
-}
-
-/// For a TypeScript `bulk-scan` or `resume-poll` run with `HOME` removed: Node would
-/// expand the default `dataDir` (`~/.prisma-airs/runs`) with `os.homedir()`, the real
-/// home from the password database, so the run is refused.
-pub fn ts_bulk_home_violation(env: &BTreeMap<String, String>, args: &[&str]) -> Option<String> {
-    (bulk_command(args).is_some() && !env.contains_key("HOME")).then(|| {
-        "HOME is removed, so a TypeScript bulk-scan or resume-poll would keep its job \
-         state under the real home directory"
-            .to_owned()
-    })
 }
 
 /// Whether `args` run `tenant import` (the positional arguments start `tenant import`).

@@ -149,7 +149,6 @@ fn every_script_prints_its_whole_usage() {
             &["--checksum"][..],
             "homebrew-formula: --checksum needs a value\n",
         ),
-        ("scripts/build-reference-cli.sh", &["--bogus"][..], ""),
         (
             "scripts/npm-package.sh",
             &["--dist"][..],
@@ -204,12 +203,6 @@ fn every_script_prints_its_whole_usage() {
         assert!(!options.is_empty(), "{script}: no options found");
         for option in options {
             assert!(usage.contains(option), "{script}: usage lacks {option}");
-        }
-        if script == "scripts/build-reference-cli.sh" {
-            // Its unknown argument prints only the message (it predates the usage rule).
-            let (code, _, stderr) = run_script(&dir, path, script, refusal);
-            assert_eq!((code, stderr.as_str()), (2, "unknown argument: --bogus\n"));
-            continue;
         }
         let (code, stdout, stderr) = run_script(&dir, path, script, refusal);
         assert_eq!(
@@ -268,8 +261,7 @@ fn release_sh_builds_airs_and_packages_the_link() {
         "check \"no Forgejo release for $TAG\" release_absent_on_forgejo",
         "check \"no Forgejo draft release for $TAG\" no_draft_for_tag",
         "check \"the Forgejo token's user can push to the repository\" token_can_push",
-        "run cargo fmt --all --check",
-        "run cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "check \"CI passed on a commit with HEAD's tree (HEAD or the merged pull request head)\" ci_passed_for_head",
         "  grep -q 'flags=.*runtime' <<<\"$details\" || die \"signature lacks the hardened runtime\"",
         "    run ditto -c -k --keepParent \"$mac_bin\" \"$notary_zip\"",
         "trap on_error ERR",
@@ -287,6 +279,11 @@ fn release_sh_builds_airs_and_packages_the_link() {
             && !script.contains("run scripts/homebrew-formula.sh")
     );
     assert!(!script.contains("set -x"));
+    // The release trusts CI on the exact tree instead of re-running the suite on the Mac.
+    assert!(
+        !script.contains("cargo test"),
+        "release.sh runs no test suite"
+    );
 }
 
 /// An empty positional argument is refused with the usage before anything is created

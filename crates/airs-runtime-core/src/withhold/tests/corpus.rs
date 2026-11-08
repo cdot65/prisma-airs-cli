@@ -3,12 +3,10 @@
 
 use super::*;
 
-/// Choices 172, 185: the checker reads the CLI's value type and `serde_json::Value` (the live
-/// tier's) alike, in the CLI's build of the rules and in the harness's: the same verdict on
-/// every pinned document and on each schema shape.
+/// Choices 172, 185: the checker reads the CLI's value type and `serde_json::Value` alike:
+/// the same verdict on every pinned document and on each schema shape.
 #[test]
 fn the_checker_reads_both_value_types_alike() {
-    use airs_test_harness::live::gateway as live;
     let schemas = [
         r#"{"type":"string"}"#,
         r#"{"type":["string","null"]}"#,
@@ -20,13 +18,11 @@ fn the_checker_reads_both_value_types_alike() {
     for text in schemas {
         let value: serde_json::Value = serde_json::from_str(text).unwrap();
         let own = check::is_schema(&parse(text).unwrap());
-        assert_eq!(live::is_schema(&value), own, "{text}");
         assert_eq!(check::is_schema(&value), own, "{text}");
     }
     for (received, printed) in PINNED_DOCUMENTS {
         for text in [received, printed] {
             let value: serde_json::Value = serde_json::from_str(text).unwrap();
-            assert_eq!(live::withheld(&value), checked(text), "{text}");
             assert_eq!(check::withheld(&value), checked(text), "{text}");
         }
     }

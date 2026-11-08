@@ -394,135 +394,6 @@ fn loopback_url_rule() {
 }
 
 #[test]
-fn opted_out_sandbox_refuses_the_typescript_cli() {
-    let server = FixtureServer::start();
-    let sandbox = Sandbox::new();
-    let config =
-        Sandbox::fixture_config(&server, "100").with("mgmtEndpoint", "http://example.test");
-    let path = sandbox.write_config_allowing_external_endpoints("prod", &config);
-    assert_eq!(sandbox.external_endpoint_configs(), vec![path]);
-    // The Rust side (here /bin/sh) still runs.
-    run(&sh(), &sandbox, &["-c", "true"], &RunOptions::new()).assert_success();
-    // Any TypeScript invocation is refused before a process starts (node need not exist).
-    let ts = Cli::Ts {
-        node: "/nonexistent/node".into(),
-        entry: "/nonexistent/index.js".into(),
-    };
-    let message = panics(|| {
-        run(&ts, &sandbox, &["--version"], &RunOptions::new());
-    })
-    .expect("TS run must be refused");
-    assert!(
-        message.contains("write_config_allowing_external_endpoints"),
-        "{message}"
-    );
-}
-
-#[test]
-fn typescript_runs_refuse_non_loopback_endpoint_and_proxy_variables() {
-    let server = FixtureServer::start();
-    let sandbox = Sandbox::new();
-    sandbox.single_tenant(&server, "prod", "100");
-    let ts = Cli::Ts {
-        node: "/nonexistent/node".into(),
-        entry: "/nonexistent/index.js".into(),
-    };
-    for (name, value) in [
-        ("PANW_MGMT_ENDPOINT", "http://example.test"),
-        (
-            "PANW_AI_SEC_API_ENDPOINT",
-            "https://service.api.aisecurity.paloaltonetworks.com",
-        ),
-        ("panw_mgmt_token_endpoint", "http://10.0.0.1/token"),
-        ("HTTPS_PROXY", "proxy.example.test:8080"),
-        ("http_proxy", "http://example.test:3128"),
-        ("ALL_PROXY", "socks5://127.0.0.1:1080"),
-        ("NODE_OPTIONS", "--require ./x.js"),
-    ] {
-        let message = panics(|| {
-            run(
-                &ts,
-                &sandbox,
-                &["--version"],
-                &RunOptions::new().env(name, value),
-            );
-        })
-        .unwrap_or_else(|| panic!("TS run with {name}={value} must be refused"));
-        assert!(message.contains(name), "{name}: {message}");
-    }
-    // Loopback or empty values, and NO_PROXY, pass the environment check.
-    let mut env = std::collections::BTreeMap::new();
-    env.insert("PANW_MGMT_ENDPOINT".to_owned(), server.url("/env-mgmt"));
-    env.insert("HTTP_PROXY".to_owned(), String::new());
-    env.insert("NO_PROXY".to_owned(), "example.test".to_owned());
-    assert_eq!(airs_test_harness::env_guard_violation(&env), None);
-    // Rust-side runs are not affected (they prove zero requests themselves).
-    run(
-        &sh(),
-        &sandbox,
-        &["-c", "true"],
-        &RunOptions::new().env("PANW_MGMT_ENDPOINT", "http://example.test"),
-    )
-    .assert_success();
-}
-
-#[test]
-fn typescript_runs_recheck_configs_written_around_the_guard() {
-    let server = FixtureServer::start();
-    let ts = Cli::Ts {
-        node: "/nonexistent/node".into(),
-        entry: "/nonexistent/index.js".into(),
-    };
-    let refused = |sandbox: &Sandbox, options: &RunOptions| {
-        panics(|| {
-            run(&ts, sandbox, &["--version"], options);
-        })
-        .expect("TS run must be refused")
-    };
-
-    // A config file written directly under configs/.
-    let sandbox = Sandbox::new();
-    sandbox.single_tenant(&server, "prod", "100");
-    fs::write(sandbox.configs_dir().join("stray.json"), b"{}").expect("write");
-    assert!(refused(&sandbox, &RunOptions::new()).contains("stray.json"));
-
-    // A registered config elsewhere in the sandbox, through an XDG registry.
-    let sandbox = Sandbox::new();
-    let tenant = sandbox.add_fixture_tenant(&server, "prod", "100");
-    let outside = sandbox.write_file("home/cfg.json", b"{\"mgmtTsgId\":\"100\"}", 0o600);
-    sandbox.write_file(
-        "state/xdg/prisma-airs/tenants.json",
-        airs_test_harness::registry_json(
-            &[airs_test_harness::RegistryEntry::new(
-                "prod", &outside, "100",
-            )],
-            Some("prod"),
-        )
-        .as_bytes(),
-        0o600,
-    );
-    let xdg = RunOptions::new()
-        .without_env("PRISMA_AIRS_TENANTS_PATH")
-        .env(
-            "XDG_STATE_HOME",
-            format!("{}/state/xdg", sandbox.root().display()),
-        );
-    assert!(refused(&sandbox, &xdg).contains("cfg.json"));
-    // The default registry (standard tenant) is fine: the refusal above came from the
-    // registry selected by the environment. A spawn failure (no node) is a different panic.
-    sandbox.register(&[&tenant], Some("prod"));
-    let message = refused(&sandbox, &RunOptions::new());
-    assert!(message.contains("cannot start"), "{message}");
-
-    // A registry that points outside the sandbox is never read.
-    let sandbox = Sandbox::new();
-    let tenant = sandbox.add_fixture_tenant(&server, "prod", "100");
-    sandbox.register(&[&tenant], Some("prod"));
-    let elsewhere = RunOptions::new().env("PRISMA_AIRS_TENANTS_PATH", "/etc/hosts");
-    assert!(refused(&sandbox, &elsewhere).contains("outside the sandbox"));
-}
-
-#[test]
 fn snapshot_with_covers_extra_paths() {
     let sandbox = Sandbox::new();
     let registry = sandbox.write_file("home/.local/state/prisma-airs/tenants.json", b"{}", 0o600);
@@ -1157,49 +1028,6 @@ fn tenant_commands_skip_only_the_loopback_guards() {
     })
     .expect("an absolute argument outside the sandbox is refused");
     assert!(problem.contains("outside the sandbox"), "{problem}");
-    // TypeScript: a CLI-created config without endpoints is fine for tenant commands
-    // (the spawn fails because node does not exist), but a registry naming a config
-    // outside the sandbox is still refused.
-    let ts = Cli::Ts {
-        node: "/nonexistent/node".into(),
-        entry: "/nonexistent/index.js".into(),
-    };
-    fs::write(
-        sandbox.configs_dir().join("bare.json"),
-        b"{\"mgmtTsgId\":\"1\"}",
-    )
-    .expect("write");
-    let message = panics(|| {
-        run(&ts, &sandbox, &["tenant", "list"], &RunOptions::new());
-    })
-    .expect("no node");
-    assert!(message.contains("cannot start"), "{message}");
-    let message = panics(|| {
-        run(&ts, &sandbox, &["doctor"], &RunOptions::new());
-    })
-    .expect("guarded");
-    assert!(message.contains("bare.json"), "{message}");
-    sandbox.write_registry_raw(
-        airs_test_harness::registry_json(
-            &[airs_test_harness::RegistryEntry::new(
-                "prod",
-                "/etc/hosts",
-                "100",
-            )],
-            None,
-        )
-        .as_bytes(),
-    );
-    let message = panics(|| {
-        run(
-            &ts,
-            &sandbox,
-            &["tenant", "read", "prod"],
-            &RunOptions::new(),
-        );
-    })
-    .expect("outside");
-    assert!(message.contains("outside the sandbox"), "{message}");
 }
 
 #[test]
@@ -1416,107 +1244,9 @@ fn an_import_never_reads_a_typescript_file_outside_the_sandbox() {
     assert!(problem.contains("refusing to run"), "{problem}");
 }
 
-/// A TypeScript `runtime` run gets every SDK endpoint variable pointed at the trap unless
-/// the test set it (D93, DESIGN §10 M4); other TypeScript runs and Rust runs do not.
-#[test]
-fn typescript_runtime_runs_get_the_endpoint_trap() {
-    let server = FixtureServer::start();
-    let sandbox = Sandbox::new();
-    sandbox.single_tenant(&server, "prod", "100");
-    let script = sandbox.tmp().join("env.sh");
-    std::fs::write(&script, "env | grep '^PANW_' | sort\n").unwrap();
-    let ts = Cli::Ts {
-        node: "/bin/sh".into(),
-        entry: script.clone(),
-    };
-    let lines = |args: &[&str], options: RunOptions| -> Vec<String> {
-        let out = run(&ts, &sandbox, args, &options);
-        out.stdout.lines().map(str::to_owned).collect()
-    };
-    let trap = server.ts_env_trap_url();
-    let trapped = lines(&["runtime", "topics", "list"], RunOptions::new());
-    let expected: Vec<String> = {
-        let mut names = airs_test_harness::TS_ENDPOINT_VARIABLES.to_vec();
-        names.sort_unstable();
-        names.iter().map(|name| format!("{name}={trap}")).collect()
-    };
-    assert_eq!(trapped, expected);
-    let explicit = lines(
-        &["--quiet", "runtime", "topics", "create"],
-        RunOptions::new().env("PANW_MGMT_ENDPOINT", server.ts_env_mgmt_url()),
-    );
-    assert!(explicit.contains(&format!("PANW_MGMT_ENDPOINT={}", server.ts_env_mgmt_url())));
-    assert_eq!(explicit.len(), expected.len());
-    assert!(lines(&["tenant", "list"], RunOptions::new()).is_empty());
-    assert!(lines(&["doctor"], RunOptions::new()).is_empty());
-    let rust = run(
-        &Cli::rust("/bin/sh"),
-        &sandbox,
-        &[script.to_str().unwrap(), "runtime"],
-        &RunOptions::new(),
-    );
-    assert_eq!(rust.stdout, "", "airs-cli-rs runs never get the variables");
-    // Removing a trapped variable would leave TypeScript on its production default: the
-    // run is refused before it starts, also when the test sets the variable too (a
-    // removal wins). Other runs may remove it.
-    for name in ["PANW_MGMT_ENDPOINT", "PANW_MGMT_TOKEN_ENDPOINT"] {
-        for options in [
-            RunOptions::new().without_env(name),
-            RunOptions::new()
-                .env(name, server.ts_env_mgmt_url())
-                .without_env(name),
-        ] {
-            let problem = panics(|| {
-                run(
-                    &ts,
-                    &sandbox,
-                    &["--quiet", "runtime", "topics", "create"],
-                    &options,
-                );
-            })
-            .expect("refused");
-            assert!(
-                problem.contains(&format!(
-                    "refusing to run the TypeScript CLI [\"--quiet\", \"runtime\", \"topics\", \"create\"]: removing {name} would fall back to production"
-                )),
-                "{problem}"
-            );
-        }
-    }
-    let removed = lines(
-        &["tenant", "list"],
-        RunOptions::new().without_env("PANW_MGMT_ENDPOINT"),
-    );
-    assert!(removed.is_empty(), "not a runtime run: allowed");
-    // Without a fixture tenant the trap is a closed loopback port.
-    let empty = Sandbox::new();
-    let script = empty.tmp().join("env.sh");
-    std::fs::write(&script, "env | grep '^PANW_MGMT_ENDPOINT='\n").unwrap();
-    let ts = Cli::Ts {
-        node: "/bin/sh".into(),
-        entry: script,
-    };
-    let out = run(&ts, &empty, &["runtime", "scan"], &RunOptions::new());
-    let value = out
-        .stdout
-        .trim()
-        .strip_prefix("PANW_MGMT_ENDPOINT=")
-        .unwrap()
-        .to_owned();
-    assert!(airs_test_harness::is_loopback_url(&value), "{value}");
-    assert!(value.ends_with("/ts-env-trap"));
-    assert!(airs_test_harness::is_runtime_command(&[
-        "--output", "json", "runtime", "scan"
-    ]));
-    assert!(!airs_test_harness::is_runtime_command(&[
-        "--tenant", "runtime", "doctor"
-    ]));
-}
-
 /// DESIGN §10 escape prevention for the M5 commands: with `HOME` removed a bulk-scan or
 /// resume-poll run needs `XDG_STATE_HOME` inside the sandbox (its job state would
-/// otherwise go under the password-database home), a TypeScript one is refused, and
-/// the `resume-poll` state argument, relative ones included, must lie inside it.
+/// otherwise go under the password-database home), and the `resume-poll` state argument, relative ones included, must lie inside it.
 #[test]
 fn bulk_runs_never_reach_the_real_state_home() {
     let sandbox = Sandbox::new();
@@ -1552,18 +1282,10 @@ fn bulk_runs_never_reach_the_real_state_home() {
         let problem = airs_test_harness::escape_violation(&root, &cwd, &env, args)
             .unwrap_or_else(|| panic!("{args:?}: no violation without XDG_STATE_HOME"));
         assert!(problem.contains("HOME is removed"), "{problem}");
-        assert!(
-            airs_test_harness::ts_bulk_home_violation(&env, args).is_some(),
-            "{args:?}"
-        );
     }
     // A non-bulk scan does not need the bulk-state path control.
     assert_eq!(
         airs_test_harness::escape_violation(&root, &cwd, &env, &["runtime", "scan", "x"]),
-        None
-    );
-    assert_eq!(
-        airs_test_harness::ts_bulk_home_violation(&env, &["runtime", "scan", "x"]),
         None
     );
     env.insert("XDG_STATE_HOME".to_owned(), inside("tmp/xdg"));
@@ -1576,10 +1298,6 @@ fn bulk_runs_never_reach_the_real_state_home() {
     }
     // The state argument: relative ones resolved against the cwd.
     env.insert("HOME".to_owned(), inside("home"));
-    assert_eq!(
-        airs_test_harness::ts_bulk_home_violation(&env, &resume),
-        None
-    );
     for state in [
         "../../../../../../../../Users/someone/.local/state/prisma-airs/tenants.json",
         "/etc/passwd",
@@ -1669,56 +1387,6 @@ fn red_team_runs_check_the_fixture_markers_and_path_flags() {
         other.stdout.contains(&marker),
         "markers are not secrets for other commands"
     );
-    let ts = Cli::Ts {
-        node: "/bin/sh".into(),
-        entry: script.clone(),
-    };
-    let printed = run(
-        &ts,
-        &sandbox,
-        &["redteam", "targets", "get"],
-        &RunOptions::new(),
-    );
-    assert!(
-        printed.stdout.contains(&marker),
-        "the TypeScript side may print them"
-    );
-    let root = sandbox.root().to_path_buf();
-    let env: std::collections::BTreeMap<String, String> = [
-        ("HOME", root.join("home")),
-        ("AIRS_CLI_CONFIG_DIR", root.join("store")),
-    ]
-    .into_iter()
-    .map(|(name, path)| (name.to_owned(), path.display().to_string()))
-    .collect();
-    for flag in [
-        "--output-dir",
-        "--input-dir",
-        "--goals",
-        "--script-file",
-        "--variables-file",
-    ] {
-        assert!(
-            airs_test_harness::escape_violation(
-                &root,
-                &sandbox.cwd(),
-                &env,
-                &["redteam", "x", flag, "../../../../../../etc/passwd"]
-            )
-            .is_some(),
-            "{flag}"
-        );
-        assert!(
-            airs_test_harness::escape_violation(
-                &root,
-                &sandbox.cwd(),
-                &env,
-                &["redteam", "x", flag, "inside"]
-            )
-            .is_none(),
-            "{flag}"
-        );
-    }
 }
 
 /// The `redteam prompt-sets upload <uuid> <file>` positional is guarded like a path
@@ -1809,20 +1477,6 @@ fn dlp_runs_check_the_content_markers_on_stderr_and_the_debug_log() {
     assert!(
         other.stderr.contains(&marker),
         "other commands are not checked"
-    );
-    let ts = Cli::Ts {
-        node: "/bin/sh".into(),
-        entry: sandbox.tmp().join("err.sh"),
-    };
-    let ts_run = run(
-        &ts,
-        &sandbox,
-        &["runtime", "dlp", "patterns", "get", "p"],
-        &RunOptions::new(),
-    );
-    assert!(
-        ts_run.stderr.contains(&marker),
-        "the TypeScript side is not checked"
     );
     let log_dir = airs_test_harness::debug_log::default_log_dir(&sandbox);
     let to_log = Cli::rust(script(
@@ -1990,15 +1644,6 @@ fn model_security_runs_check_the_markers_on_stderr_and_the_debug_log() {
         other.stderr.contains(&marker),
         "other commands are not checked"
     );
-    let ts = Cli::Ts {
-        node: "/bin/sh".into(),
-        entry: sandbox.tmp().join("ms-err.sh"),
-    };
-    let ts_run = run(&ts, &sandbox, &args, &RunOptions::new());
-    assert!(
-        ts_run.stderr.contains(&marker),
-        "the TypeScript side is not checked"
-    );
 }
 
 /// DESIGN §10 M6d: an airs-cli-rs runtime-extras run fails when an API key marker appears
@@ -2066,15 +1711,6 @@ fn runtime_extras_runs_check_the_markers() {
     assert!(
         other.stdout.contains(&key),
         "other commands are not checked"
-    );
-    let ts = Cli::Ts {
-        node: "/bin/sh".into(),
-        entry: sandbox.tmp().join("rx-key.sh"),
-    };
-    let ts_run = run(&ts, &sandbox, &list, &RunOptions::new());
-    assert!(
-        ts_run.stdout.contains(&key),
-        "the TypeScript side is not checked"
     );
 }
 

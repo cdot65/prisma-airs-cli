@@ -1,27 +1,20 @@
 # airs-cli-rs contributor contract
 
-`airs-cli-rs` is a native Rust port of the TypeScript `airs-cli`, and it replaces it:
-this repository, `cdot/prisma-airs-cli`, held the TypeScript CLI until 7.x, and from 8.0
-it holds the Rust CLI (crate `airs-cli`, command `airs`). The TypeScript reference is
-this repository's own history at the commit pinned in `scripts/build-reference-cli.sh`
-(the TypeScript sources are no longer in the tree; they stay in the history and in every
-`v7.*` tag, which must never be deleted); from 8.0 that is the final TypeScript release,
-tag `v7.3.0` (docs/TESTING.md §3.4). It is built on the `scm-sdk` crate, imported as `scm`,
-at the exact pin `=0.2.4` from crates.io (the TypeScript 0.35.0 overlay, DESIGN §15.25). The goal is full parity without the TypeScript
-CLI: the pinned reference commit is a frozen spec, not a companion. The scope, the drops
-and renames, and the milestone order are recorded in
+`airs-cli-rs` is the Rust CLI (crate `airs-cli`, command `airs`). It replaced the
+TypeScript `airs-cli`, which this repository held until 7.x; from 8.0 the repository holds
+only the Rust CLI, and nothing is compared against the TypeScript CLI any more (the
+TypeScript parity tests and reference build were removed on 2026-11-08). It is built on
+the `scm-sdk` crate, imported as `scm`, at the exact pin `=0.2.4` from crates.io
+(DESIGN §15.25). The scope and the milestone order are recorded in
 [docs/MILESTONES.md](docs/MILESTONES.md).
 
 Read [docs/DESIGN.md](docs/DESIGN.md) before changing behaviour. It is the binding
-contract: exact strings, exit codes, request shapes and the list of intentional
-differences from the TypeScript CLI (§12). If a change alters observable behaviour,
-update DESIGN.md in the same change: the section that specifies it and, when the
-TypeScript CLI behaves differently, the §12 row. Pin the behaviour with an
-executable test, and a §12 difference with a `dNN_`-named test in the matching
-`tests/parity_*.rs` that asserts both sides. Then update
-[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md), the compatibility checklist that maps
-each behaviour and each §12 row to the tests that pin it; `tests/docs_consistency.rs`
-fails when a cited test, a §12 row or a `dNN`-named parity test is missing from it.
+contract: exact strings, exit codes and request shapes; §12 is the historical record of
+where the Rust CLI deliberately differs from the TypeScript CLI it replaced. If a change
+alters observable behaviour, update DESIGN.md in the same change and pin the behaviour
+with an executable test. Then update [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md), the
+checklist that maps each behaviour to the tests that pin it; `tests/docs_consistency.rs`
+fails when a cited test is missing.
 
 ## Invariants
 
@@ -78,13 +71,10 @@ fails when a cited test, a §12 row or a `dNN`-named parity test is missing from
   ```sh
   cargo fmt --all --check
   cargo clippy --workspace --all-targets -- -D warnings
-  AIRS_REQUIRE_PARITY=1 cargo test --workspace
+  cargo test --workspace
   ```
 
-  Parity tests need the TypeScript reference build (`scripts/build-reference-cli.sh`)
-  and node 24 on `PATH` (or `AIRS_TS_NODE`). A missing, off-pin or modified reference
-  fails the parity tests; `AIRS_ALLOW_PARITY_SKIP=1` skips them with a visible
-  `PARITY SKIPPED` notice, which is not a finished check.
+  The npm launcher tests need node on `PATH` (or `AIRS_TEST_NODE`).
 - Tests never contact a non-loopback host. Fixture tenants point every endpoint at the
   in-process server from `crates/airs-test-harness`, and planned redirects must stay on
   loopback. The runner fails any run that changes a sandbox file outside `tmp/` (the
@@ -97,21 +87,8 @@ fails when a cited test, a §12 row or a `dNN`-named parity test is missing from
   skips the loopback endpoint checks for them (a created tenant holds only
   credentials), never the path guards. Prompts are tested on a pty
   (`airs_test_harness::spawn_pty`) and the store lock with `airs_test_harness::lock_holder`.
-- The live tier (`tests/live.rs`, DESIGN §10) runs only with
-  `AIRS_RS_LIVE=1 AIRS_E2E_TENANT=<name>`, and only the user runs it. It must keep
-  using an isolated copy of the one registry entry, imported with
-  `airs tenant import` into a private 0700 store under `target/live/` that is
-  removed when the flow ends (also on failure and panic), a cleared environment, the
-  scan budget, sanitized summaries and the fingerprint check that the real tenant files
-  are unchanged. Never read or print real credential values; its self-tests use
-  `LiveTarget::loopback`, which takes a harness `Sandbox` and refuses, before reading,
-  any registry or config outside it, against the fixture server, with their private
-  stores under the sandbox's `tmp/live-stores/`, never the shared `target/live/`. Keep the scan series
-  stopping at the first scan that does not complete, so a failing tenant is not sent
-  every planned scan.
-- Never check out the TypeScript reference in the working tree, rewrite the history it
-  lives in, or delete a `v7.*` tag: the parity harness builds the reference from that
-  history into `.reference/` (docs/TESTING.md §3). Do not modify the SDK checkout.
+- Do not delete a `v7.*` tag (the TypeScript releases' history) or modify the SDK
+  checkout.
 
 ## Issue tracking: BonBon
 

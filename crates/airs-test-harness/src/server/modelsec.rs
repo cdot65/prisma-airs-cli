@@ -292,7 +292,7 @@ impl ModelSecData {
     /// The timestamp of a record created now ([`ModelSecData::created_at`]).
     pub(super) fn stamp(&self) -> Option<String> {
         match self.created_at.as_deref() {
-            Some("now") => Some(crate::live::ledger::utc(crate::live::ledger::now_unix())),
+            Some("now") => Some(utc_now()),
             other => other.map(str::to_owned),
         }
     }
@@ -564,6 +564,30 @@ fn page(
     body.insert("pagination".to_owned(), pagination);
     body.insert(key.to_owned(), Value::Array(shown));
     Planned::json(200, &Value::Object(body))
+}
+
+/// The current UTC time as `YYYY-MM-DDTHH:MM:SSZ` (Howard Hinnant's civil_from_days).
+fn utc_now() -> String {
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs());
+    let days = i64::try_from(seconds / 86_400).unwrap_or(0);
+    let rest = seconds % 86_400;
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
+        rest / 3600,
+        rest / 60 % 60,
+        rest % 60
+    )
 }
 
 #[cfg(test)]

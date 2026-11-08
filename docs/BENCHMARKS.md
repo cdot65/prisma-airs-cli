@@ -1,5 +1,9 @@
 # Benchmarks: airs 8.0.0 and the TypeScript CLI 7.3.0
 
+> **Historical.** The benchmark harness (`crates/airs-test-harness/examples/bench.rs`) and the
+> TypeScript reference it compared against were removed on 2026-11-08. The results below
+> are the last measurement; the reproduction steps no longer apply.
+
 Performance was the main reason for replacing the TypeScript CLI. Every invocation of the
 TypeScript CLI pays for starting Node.js, loading and compiling about 900 KiB of JavaScript
 and 65 production packages, and running V8, before it reads one argument. `airs` is one

@@ -39,7 +39,6 @@ One-time setup on the release Mac:
 | Apple Silicon macOS | `uname -sm` prints `Darwin arm64` | |
 | Rust and the targets | `rustup target list --installed` lists `aarch64-apple-darwin`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-musl` | `rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl` |
 | zig and cargo-zigbuild | `zig version`, `cargo-zigbuild --version` | `brew install zig`, `cargo install --locked cargo-zigbuild` |
-| Node 24 and the TypeScript reference | `scripts/build-reference-cli.sh --verify` | `scripts/build-reference-cli.sh` ([TESTING.md](TESTING.md) §3) |
 | `jq` | `jq --version` | `brew install jq` (macOS 15 and later ship `/usr/bin/jq`) |
 | bsdtar | `tar --version` starts `bsdtar` | the macOS `/usr/bin/tar`; the packaging stores the `airs-cli` and `airs-cli-rs` links and drops macOS metadata with them |
 | Developer ID certificate | `security find-identity -v -p codesigning` lists `Developer ID Application: Calvin Remsburg (G5QLZ5A8TA)` | Install the certificate and its private key in the login keychain. `AIRS_SIGN_IDENTITY` overrides the identity. |
@@ -61,7 +60,8 @@ script under `set -x` or `bash -x`.
    change to the command surface. Without the file the release gets a short default
    body.
 3. Commit and push to `main`. Wait for the CI `linux` and `musl` jobs to pass
-   ([TESTING.md](TESTING.md) §10).
+   ([TESTING.md](TESTING.md) §10). The release script checks that CI passed on the
+   exact tree it releases and does not re-run the tests on the Mac.
 4. Run `scripts/release.sh <version> --dry-run` and read the output. It must end with
    `dry run finished: every check passed and every build succeeded`.
 5. Run `scripts/release.sh <version>`. Notarisation usually takes a few minutes.
@@ -88,7 +88,7 @@ Each step is printed before it runs. The script stops at the first error.
 |---|---|---|
 | Tools: macOS arm64, the tools above (`tar` must be bsdtar), the three rust targets | runs | runs |
 | Repository state: on `main`, clean tree with no untracked files, `HEAD` equal to `origin/main`, `Cargo.toml` version equal to `<version>`, no `v<version>` tag locally or on `origin`, no Forgejo release or draft release for the tag, the token's user can push to the repository, codesign identity present | stops at the first failure | runs every check, reports each failure, exits 1 at the end |
-| Checks: reference `--verify`, `cargo fmt --all --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `AIRS_REQUIRE_PARITY=1 cargo test --workspace --no-fail-fast` (live variables removed from the environment) | runs | runs |
+| Checks: CI passed on a commit with HEAD's tree (HEAD, or the merged pull request head, which branch protection keeps identical); fmt, clippy and the tests are not re-run on the Mac | runs | runs |
 | Builds: `cargo build --release --bin airs` for `aarch64-apple-darwin`, `cargo zigbuild --release --bin airs` for both musl targets (only `airs` is built: the compatibility name is a link in the tarball); checks the file type of each `target/<target>/release/airs` and the macOS `--version` | runs | runs |
 | Sign `airs`: `codesign --force --options runtime --timestamp --sign <identity>`, then `codesign --verify --strict` and a check for the Developer ID authority, the secure timestamp, the hardened runtime and `Identifier=airs` | runs | printed only |
 | Notarise: `ditto -c -k --keepParent` of `airs` into a zip, `xcrun notarytool submit --keychain-profile airs-cli-notary --wait`; a non-zero exit or anything but `Accepted` prints the submission id and the notary log (when notarytool returned an id) and stops | runs (skipped by `--skip-notarize`) | printed only |

@@ -218,7 +218,24 @@ token_can_push() {
 sign_identity_present() {
   security find-identity -v -p codesigning | grep -F -q "\"$SIGN_IDENTITY\""
 }
-reference_is_current() { scripts/build-reference-cli.sh --verify >/dev/null; }
+# CI passed on a commit with exactly HEAD's tree: HEAD itself (main's push run) or, for a
+# merge commit, the pull request head it merged (branch protection makes a pull request be
+# up to date with main, so that head has the same tree). The release trusts that run
+# instead of re-running the suite on the Mac. Sets CI_COMMIT.
+ci_passed_for_head() {
+  local tree candidate state
+  tree="$(git rev-parse 'HEAD^{tree}')"
+  for candidate in HEAD HEAD^2; do
+    git rev-parse --quiet --verify "$candidate^{commit}" >/dev/null || continue
+    [ "$(git rev-parse "$candidate^{tree}")" = "$tree" ] || continue
+    state="$(forgejo "$API/commits/$(git rev-parse "$candidate")/status" | jq -r '.state // empty')"
+    if [ "$state" = success ]; then
+      CI_COMMIT="$(git rev-parse --short "$candidate")"
+      return 0
+    fi
+  done
+  return 1
+}
 
 # --- start ------------------------------------------------------------------------
 
@@ -231,7 +248,7 @@ fi
 step "Tools"
 [ "$(uname -s)" = Darwin ] || die "releases are cut on macOS (signing and notarisation need it)"
 [ "$(uname -m)" = arm64 ] || die "the macOS build is native $MAC_TARGET; run this on Apple Silicon"
-for tool in git cargo rustup jq curl shasum tar security codesign xcrun ditto spctl file node; do
+for tool in git cargo rustup jq curl shasum tar security codesign xcrun ditto spctl file; do
   need "$tool"
 done
 need cargo-zigbuild "cargo install --locked cargo-zigbuild"
@@ -262,16 +279,11 @@ else
   echo "    notes: docs/RELEASE-NOTES/$version.md is absent; the release gets a default body"
 fi
 
-step "Required checks (fmt, clippy, tests with the TypeScript reference)"
-check "TypeScript reference build is current (scripts/build-reference-cli.sh --verify)" reference_is_current
-run cargo fmt --all --check
-run cargo clippy --workspace --all-targets --locked -- -D warnings
-# The live tier never runs as part of a release. The airs-mcp service crate is excluded: it
-# runs only in its Linux container (ext4-only storage admission, GNU operator tooling), so
-# its tests cannot pass on the release Mac. Linux CI runs them on the same commit, and a
-# release is cut only after that CI passed (docs/RELEASING.md §2 step 3).
-run env -u AIRS_RS_LIVE -u AIRS_E2E_TENANT -u AIRS_E2E_PROFILE -u AIRS_ALLOW_PARITY_SKIP \
-  AIRS_REQUIRE_PARITY=1 cargo test --workspace --exclude airs-mcp --locked --no-fail-fast
+step "Required checks: CI passed on this exact tree"
+# fmt, clippy (stable and MSRV) and the whole test suite run in CI on Linux; the release
+# does not repeat them on the Mac (several suites need the Linux service environment).
+check "CI passed on a commit with HEAD's tree (HEAD or the merged pull request head)" ci_passed_for_head
+echo "    CI: green on ${CI_COMMIT:-none found}"
 
 step "Build $MAC_TARGET"
 # --bin: only airs is built for a release; the other names are links in the tarball,
