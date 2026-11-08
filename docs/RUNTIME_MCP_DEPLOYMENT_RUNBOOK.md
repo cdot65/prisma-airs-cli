@@ -128,7 +128,15 @@ GitOps controller with self-healing manages the Deployment (Argo CD `selfHeal`),
 **ignore replica drift** on `deploy/airs-mcp`: the daily set job (§9a) scales it to 0 and
 back while it writes and verifies the set, and a controller that heals `replicas` would
 bring the service up mid-backup. Argo CD: `ignoreDifferences` on `/spec/replicas` for the
-Deployment plus the `RespectIgnoreDifferences=true` sync option. Then confirm:
+Deployment plus the `RespectIgnoreDifferences=true` sync option.
+
+The backup orchestrator reaches the API server through the `airs-mcp-backup-to-apiserver`
+policy, whose endpoints are **your overlay's value** (the base ships a TEST-NET-1
+placeholder the deployable check refuses). Supply your control-plane endpoints, and if your
+CNI gives node IPs a node identity that `ipBlock` rules do not match (Cilium), point the
+orchestrator at a control-plane VIP that is not a node address with the
+`KUBERNETES_SERVICE_HOST`/`KUBERNETES_SERVICE_PORT` env on its `orchestrate` container.
+Both were found on the first live set run (M8 live evidence, 2026-11-08). Then confirm:
 
 - one pod Running, and the `Recreate` rollout never overlaps two pods;
 - the PVC is Bound, `ReadWriteOncePod`, on the encrypted class;
