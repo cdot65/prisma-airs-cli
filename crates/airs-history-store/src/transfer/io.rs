@@ -8,13 +8,16 @@ use std::{
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
 };
-fn identity(file: &File) -> Result<(u64, u64), CliError> {
-    let m = file
-        .metadata()
+/// A file's (device, inode) identity. Both sides of every comparison come from the same
+/// `stat` structure, so the field types are the platform's own (`dev_t` is `u64` on Linux
+/// but `i32` on macOS, where mixing std's `u64` with rustix's native field did not compile).
+type Identity = (rustix::fs::Dev, u64);
+fn identity(file: &File) -> Result<Identity, CliError> {
+    let s = rustix::fs::fstat(file)
         .map_err(|_| failure("cannot inspect transfer staging descriptor"))?;
-    Ok((m.dev(), m.ino()))
+    Ok((s.st_dev, s.st_ino))
 }
-fn named_identity(parent: &File, name: &std::ffi::OsStr) -> Result<(u64, u64), CliError> {
+fn named_identity(parent: &File, name: &std::ffi::OsStr) -> Result<Identity, CliError> {
     let s = rustix::fs::statat(parent, name, AtFlags::SYMLINK_NOFOLLOW)
         .map_err(|_| failure("transfer staging entry is unavailable"))?;
     Ok((s.st_dev, s.st_ino))
