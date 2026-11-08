@@ -4942,7 +4942,7 @@ gateway proof are M8.
 
 ## M8 — Deployment, scale and release qualification
 
-Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1, 2 and 3 scored 8.5, 8.7 and 8.8, revise (2026-11-08); review 3's three findings are fixed below.** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
+Status: **source side ACCEPTED 9.0/10 (review 8, 2026-11-07T16:03Z)** under the 9.0 gate (reviews 1–7 scored 6.5, 6.5, 7.5, 8.0, 8.5, 8.7 and 8.8). **Overall M8 NOT accepted: final combined reviews 1, 2, 3 and 4 scored 8.5, 8.7, 8.8 and 8.9, revise (2026-11-08); review 4's findings are fixed below.** Review 2: "M8 cannot be accepted without steps 10 and 12." Outstanding before the next combined review: the release image built and recorded from the release commit, macOS signing and notarisation, and passing required checks on the final source. Capacity is evidenced by the planning-size measurement (owner decision 2026-11-08). Withdrawn by the owner on 2026-11-08, permanently: the node-loss gate (step 10) and the low-space exercise; gateway credential exclusivity was attested by the owner the same day.
 The plan's exit gate needs an independent review of source, receipts and the live
 integration evidence (`scripts/m8/user-checklist.sh`) at or above the owner-set 9.0
 threshold. The live deployment was carried out by the agent through the owner's GitOps
@@ -5581,6 +5581,30 @@ Material findings:
 
 Minor finding: an older ledger summary still describes the R2 helper as inspecting pasted
 tokens through API calls.
+
+### M8 final combined review 4 (Codex, 2026-11-08T16:14Z, frozen tree main 98b6a3f, receipts m8/review-final-4)
+
+**8.9/10, revise.** "M8 still needs revision: one release-check defect remains. The amended
+evidence gates are satisfied, and the three earlier findings are substantially resolved." Both
+manifests verified before and after (656 files); no external services contacted. **M8 is not
+accepted.**
+
+Material finding: **malformed status responses could still authorize a release.** Both `jq`
+command substitutions in `scripts/ci/ci-status-ok.sh` ignored their exit status, so a valid
+success object followed by `not-json` or a truncated second object printed the passing verdict
+and then failed, and the script still exited 0.
+
+Minor: the parity audit missed `utc_formats_known_instants`, deleted when the UTC algorithm moved
+from the live ledger into the fixture server's `utc_now`.
+
+### M8 response to final review 4 (2026-11-08)
+
+- **Material — fixed.** Reading the input and both `jq` calls now fail closed on a non-zero
+  status, in addition to the explicit verdict words. `tests/ci_scripts.rs` adds trailing garbage,
+  a trailing garbage line, a truncated second object and two complete documents, each rejected,
+  and confirms the valid object alone passes. Checked on jq 1.6 and 1.8.
+- **Minor — fixed.** `utc_now` is separated into clock acquisition and `utc(seconds)`, and the
+  epoch, leap-day and end-of-day assertions are restored.
 
 ### M8 final combined review 3 (Codex, 2026-11-08T14:12Z, frozen tree main 483c588, receipts m8/run12)
 

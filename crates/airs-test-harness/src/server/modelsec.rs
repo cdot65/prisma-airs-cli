@@ -566,11 +566,15 @@ fn page(
     Planned::json(200, &Value::Object(body))
 }
 
-/// The current UTC time as `YYYY-MM-DDTHH:MM:SSZ` (Howard Hinnant's civil_from_days).
+/// The current UTC time as `YYYY-MM-DDTHH:MM:SSZ`.
 fn utc_now() -> String {
-    let seconds = std::time::SystemTime::now()
+    utc(std::time::SystemTime::now()
         .duration_since(std::time::SystemTime::UNIX_EPOCH)
-        .map_or(0, |elapsed| elapsed.as_secs());
+        .map_or(0, |elapsed| elapsed.as_secs()))
+}
+
+/// `seconds` since the epoch as `YYYY-MM-DDTHH:MM:SSZ` (Howard Hinnant's civil_from_days).
+fn utc(seconds: u64) -> String {
     let days = i64::try_from(seconds / 86_400).unwrap_or(0);
     let rest = seconds % 86_400;
     let z = days + 719_468;
@@ -593,6 +597,13 @@ fn utc_now() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn utc_formats_known_instants() {
+        assert_eq!(utc(0), "1970-01-01T00:00:00Z");
+        assert_eq!(utc(951_782_400), "2000-02-29T00:00:00Z");
+        assert_eq!(utc(1_792_281_599), "2026-10-17T23:59:59Z");
+    }
 
     #[test]
     fn classifies_the_read_and_write_routes() {
