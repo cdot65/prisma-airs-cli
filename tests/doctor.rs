@@ -958,8 +958,6 @@ mod tenant {
     use super::*;
 
     const CREATE_HINT: &str = "Run 'airs tenant create <name>' (prompts for TSG ID, client ID and secret), then 'airs tenant switch <name>'";
-    const IMPORT_HINT: &str =
-        "Run 'airs tenant import' to copy its tenants (the TypeScript files are not changed)";
 
     fn store_error(fx: &Fx, message: String) -> Vec<C> {
         after_registry_error(
@@ -1014,36 +1012,6 @@ mod tenant {
             format!("no tenants registered in {}", fx.registry())
         );
         out.assert_code(1);
-        assert_zero_requests(&fx);
-    }
-
-    /// D89: `config.toml` does not exist but a TypeScript registry does (an upgraded
-    /// user); the hint names `tenant import`, whatever `--tenant` says.
-    #[test]
-    fn a_typescript_registry_without_a_store_gets_the_import_hint() {
-        let (fx, _) = Fx::healthy();
-        fx.sandbox.ts_only();
-        let expected = after_no_tenant(
-            c(
-                "Tenant",
-                "fail",
-                format!(
-                    "no airs tenants in {}; a TypeScript tenant registry exists at {}",
-                    fx.registry(),
-                    fx.sandbox.registry_path().display()
-                ),
-            )
-            .hint(IMPORT_HINT),
-        );
-        for args in [
-            &["doctor", "--output", "json"][..],
-            &["--tenant", "prod", "doctor", "--output", "json"],
-        ] {
-            assert_json_report(&fx.run(args), &expected, 1);
-        }
-        // The registry is only checked for existence: a corrupt one is the same case.
-        fx.sandbox.write_registry_raw(b"{ corrupt");
-        assert_json_report(&fx.json(), &expected, 1);
         assert_zero_requests(&fx);
     }
 
@@ -1691,7 +1659,7 @@ mod config_file {
                         keys.join(", ")
                     ),
                 )
-                .hint("TypeScript names are not accepted: aiGw* keys are now gateway*, agentGuard* keys are now supplychain*, and dataDir, typesafe* and *TokenEndpoint keys were dropped; edit the file or re-import it with 'airs tenant import --replace'"),
+                .hint("Remove them from the file; 'airs tenant set prod <key>' accepts only the supported keys"),
                 "{line}"
             );
             out.assert_code(1);

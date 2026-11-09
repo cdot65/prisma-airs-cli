@@ -7,8 +7,7 @@ is published on crates.io as `airs-cli`. The same program also answers to `airs-
 TypeScript CLI's command name, so 7.x scripts keep working (from 8.0), and to
 `airs-cli-rs`, the Rust 0.x command name; every name prints the same output, and help and
 hints say `airs`. It keeps its own tenant store (TOML files under `~/.config/airs-cli/`)
-and creates, edits, selects and deletes tenants itself; `tenant import` copies tenants
-from the TypeScript CLI's registry once (see
+and creates, edits, selects and deletes tenants itself (see
 [Upgrading from the TypeScript CLI](#upgrading-from-the-typescript-cli-7x)).
 
 [docs/DESIGN.md](docs/DESIGN.md) is the behavioural contract. Its §12 lists every
@@ -94,7 +93,7 @@ or 1.1.0 release.
 | M2 read-only management | `runtime profiles list/get`, `runtime topics list/get` |
 | M3 scanning | `runtime scan` |
 | M3.5 foundations | `pretty`, `table` and `json` output with the TypeScript CLI's layouts and colours for every command; `--debug` (a redacted API log, status and headers only); Linux musl builds |
-| M4t tenant writes | its own TOML tenant store; `tenant create`, `set`, `unset`, `switch`, `delete` and `tenant import` |
+| M4t tenant writes | its own TOML tenant store; `tenant create`, `set`, `unset`, `switch` and `delete` |
 | M4 runtime writes | `runtime topics create/update/delete/apply/revert/eval/sample`, `runtime profiles create/update/delete/cleanup` |
 | M5 bulk scanning | `runtime bulk-scan`, `runtime resume-poll` |
 | M6a Red Team reads | the red team reads: `redteam list/status/categories/languages`, `eula status/content`, `instances get`, `prompt-sets list/get/download`, `prompts list/get`, `properties list/values`, `targets list/get/profile/metadata/templates/error-logs`, `adapter list/get`, `network-broker channels list/get`, `network-broker stats` |
@@ -163,7 +162,7 @@ It installs the `airs` and `airs-cli` commands: a small launcher that runs the p
 binary from the matching platform package (an optional dependency; no install script,
 no download). Intel macOS, Windows and other platforms get an error naming the other
 ways to install. An npm 7.x install (the TypeScript CLI) is replaced by
-`npm install -g @cdot65/prisma-airs-cli@latest`; then run `airs tenant import` once.
+`npm install -g @cdot65/prisma-airs-cli@latest`; then register your tenants with `airs tenant create`.
 
 **From crates.io** (needs Rust 1.89 or newer). The crate is `airs-cli`; it installs
 `airs`, `airs-cli` and `airs-cli-rs` (copies of the same program, so they cannot drift):
@@ -223,8 +222,9 @@ Keep one channel and uninstall the others.
 The TypeScript CLI ends at 7.x. Install the Rust CLI through one channel above (npm users
 can upgrade in place), then:
 
-1. Run `airs tenant import --dry-run`, then `airs tenant import`, once (below, and
-   [docs/MIGRATION.md](docs/MIGRATION.md)). The TypeScript files are only read.
+1. Register each tenant with `airs tenant create <name>`. `tenant import` was removed after
+   8.2; version 8.2 of `airs` can still copy a TypeScript registry
+   ([docs/MIGRATION.md](docs/MIGRATION.md)).
 2. Update scripts: `aigateway` is `gateway` and `agentguard` is `supplychain` (no
    aliases); `completion`, `redteam judge` and `runtime dlp generate` are dropped;
    `--output markdown|csv|yaml` is a usage error (exit 2); argument-parse errors exit 2;
@@ -268,39 +268,6 @@ The upgrade guide on the docs site has the details:
    `audio_curl`, `basic_username`, `basic_password`) print after the declared fields,
    no longer sorted among the unknown keys (D35); requests carry
    `PAN-AIRS/0.2.3-rust-sdk`. No other output changes.
-
-## Upgrading from 0.2
-
-Up to 0.2, the Rust CLI read the TypeScript CLI's tenant registry directly. From 0.3 it
-reads only its own store, so copy your tenants once:
-
-```sh
-airs tenant import --dry-run   # what would be copied; writes nothing
-airs tenant import             # copy every tenant, and the selection
-```
-
-- It reads the registry the TypeScript CLI uses (`PRISMA_AIRS_TENANTS_PATH`, else
-  `$XDG_STATE_HOME/prisma-airs/tenants.json`, else
-  `~/.local/state/prisma-airs/tenants.json`) and the JSON configs it names. Those files
-  are only read: never changed, locked or created.
-- The report (a table; `--output json` for scripts) has one row per tenant with the
-  action `import`, `replace` or `skip` and notes naming renamed, dropped and unknown
-  keys. It never shows a value.
-- Keys are converted: `aiGw*` become `gateway*`, `agentGuard*` become `supplychain*`;
-  `dataDir`, the `typesafe*` keys, empty values, unknown keys and a `defaultOutput` of
-  `markdown`, `csv` or `yaml` are dropped, each with a note.
-- The TypeScript selection is copied when the Rust store has none yet.
-- An existing airs tenant is never overwritten unless you pass `--replace`.
-- A tenant whose config cannot be read, or whose `mgmtTsgId` differs from its
-  registration, is skipped; the command then exits 1 after copying the others.
-- `--from <registry>` reads another registry, `--name <name>` copies one tenant, and
-  `--from-config <file> --name <name>` copies a single JSON config file (it replaces
-  the TypeScript `tenant create --config`).
-- The copy is independent: later changes made with the TypeScript CLI are not seen.
-  Run `airs tenant import --replace` again to refresh.
-
-Until you import, `airs doctor` fails its Tenant check with this hint, and the
-"no tenant selected" messages say the same.
 
 ## Usage
 
@@ -1237,12 +1204,7 @@ turns it off. Tables, JSON and bare values are never coloured.
 ## Behaviour
 
 - **Configuration comes only from tenant files.** Credentials and endpoints are read
-  from the selected tenant's file in the `airs` store (see Tenants). The
-  TypeScript registry (`PRISMA_AIRS_TENANTS_PATH`, else
-  `$XDG_STATE_HOME/prisma-airs/tenants.json`, else
-  `~/.local/state/prisma-airs/tenants.json`) is never used to select a tenant; when the
-  store is empty but that registry exists, messages say to run `airs tenant
-  import`. Credential and endpoint environment variables
+  from the selected tenant's file in the `airs` store (see Tenants). Credential and endpoint environment variables
   (`PANW_*`, `PRISMA_AIRS_CONFIG_PATH` and the other retired names) are ignored; the
   doctor's Environment check lists the ones that are set.
 - **Two credential planes.** Management commands authenticate with the tenant's
@@ -1253,8 +1215,7 @@ turns it off. Tables, JSON and bare values are never coloured.
   pinned in `config.toml` is refused; `tenant set <name> mgmtTsgId <tsg>` changes both.
 - **Store safety.** Store files must be regular files (not symlinks) owned by you with
   no group or other permissions; directories must not be writable by others. Only the
-  tenant write commands and `tenant import` change the store, and they never touch the
-  TypeScript CLI's files.
+  tenant write commands change the store.
 - **Streams.** stdout carries data only. stderr carries status lines (suppressed by
   `--quiet`) and errors. A failing command leaves stdout empty, with two exceptions:
   `doctor` prints its report and exits 1 when a check fails, a scan whose verdict

@@ -1,5 +1,8 @@
 # Migration: replacing the TypeScript `airs-cli`
 
+> **`tenant import` was removed after 8.2.** Where this page describes it, use version 8.2 of
+> `airs` to run the import, or register tenants with `airs tenant create`.
+
 `airs-cli-rs` replaces the TypeScript CLI outright. No TypeScript is installed
 alongside it, and there is no dispatcher. From 8.0 it lives in the repository that held
 the TypeScript CLI, `cdot/prisma-airs-cli`, ships on npm as `@cdot65/prisma-airs-cli`

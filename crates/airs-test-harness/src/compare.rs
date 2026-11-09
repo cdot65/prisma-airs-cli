@@ -326,82 +326,6 @@ pub fn split_outcome_lines(stdout: &str) -> (String, String) {
     (outcome, rest)
 }
 
-/// TypeScript `tenant read` / `tenant get` JSON rows (`[{key, value}]`) mapped through
-/// the import conversion (DESIGN §3.12, D71, D72): renamed keys renamed, `dataDir` and
-/// `typesafe*` rows dropped, and rows whose value is `""` dropped unless `keep_empty`
-/// (`tenant get` of an unset key prints `""` on both CLIs). Anything else is returned
-/// unchanged.
-pub fn ts_rows_as_rust(value: &Value, keep_empty: bool) -> Value {
-    let Some(rows) = value.as_array() else {
-        return value.clone();
-    };
-    Value::Array(
-        rows.iter()
-            .filter_map(|row| {
-                let key = row.get("key")?.as_str()?;
-                if crate::store::DROPPED.contains(&key) {
-                    return None;
-                }
-                if !keep_empty && row.get("value").and_then(Value::as_str) == Some("") {
-                    return None;
-                }
-                let mut row = row.clone();
-                row["key"] = Value::String(crate::store::rust_key(key).to_owned());
-                Some(row)
-            })
-            .collect(),
-    )
-}
-
-/// The schema defaults the TypeScript SDK inserts into every target document it parses
-/// (D153), as `(settings, camelCase settings, key, JSON value)`: a `connection_params`
-/// gains `ws_response_timeout: 110`, an `auth_config` without `auth_header` gains
-/// `basic_auth_location: "HEADER"`. airs-cli-rs (scm-sdk 0.1.1,
-/// `without_response_defaults`) prints only the fields the server sent.
-const TS_TARGET_DEFAULTS: &[(&str, &str, &str, &str)] = &[
-    (
-        "connection_params",
-        "connectionParams",
-        "ws_response_timeout",
-        "110",
-    ),
-    (
-        "auth_config",
-        "authConfig",
-        "basic_auth_location",
-        "\"HEADER\"",
-    ),
-];
-
-/// D153: removes from the TypeScript target document `ts` each TypeScript schema
-/// default (`ws_response_timeout: 110` in the connection settings,
-/// `basic_auth_location: "HEADER"` in the auth settings; the settings named in
-/// snake_case, as in `probe` answers and backups, or in camelCase, as in the `targets
-/// get` detail) where the airs-cli-rs document `rust` has no such key, and returns the
-/// removed paths (`connectionParams.ws_response_timeout`, …). Nothing else is touched: a
-/// different value, or a key the Rust side also prints, stays and is compared.
-pub fn strip_ts_target_defaults(ts: &mut Value, rust: &Value) -> Vec<String> {
-    let mut removed = Vec::new();
-    for (snake, camel, key, default) in TS_TARGET_DEFAULTS {
-        let default: Value = serde_json::from_str(default).unwrap_or_default();
-        for settings in [*snake, *camel] {
-            let on_rust = rust.get(settings).and_then(|value| value.get(key));
-            let Some(Value::Object(map)) = ts.get_mut(settings) else {
-                continue;
-            };
-            if on_rust.is_none()
-                && map
-                    .get(*key)
-                    .is_some_and(|value| json_semantic_eq(value, &default))
-            {
-                map.remove(*key);
-                removed.push(format!("{settings}.{key}"));
-            }
-        }
-    }
-    removed
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -445,52 +369,6 @@ mod tests {
             usage_line("\n  ✗ --limit must be a positive integer\n\n").as_deref(),
             Some("--limit must be a positive integer")
         );
-    }
-
-    /// D153: exactly the two TypeScript defaults are removed, and only where the Rust
-    /// document lacks them.
-    #[test]
-    fn ts_target_defaults_are_stripped_only_where_rust_has_none() {
-        let rust = json!({
-            "connectionParams": {"api_endpoint": "https://x.invalid"},
-            "authConfig": {"oauth2_token_url": "https://a.invalid/t"}
-        });
-        let mut ts = json!({
-            "connectionParams": {"api_endpoint": "https://x.invalid", "ws_response_timeout": 110},
-            "authConfig": {"oauth2_token_url": "https://a.invalid/t", "basic_auth_location": "HEADER"}
-        });
-        assert_eq!(
-            strip_ts_target_defaults(&mut ts, &rust),
-            [
-                "connectionParams.ws_response_timeout",
-                "authConfig.basic_auth_location"
-            ]
-        );
-        assert_eq!(ts, rust);
-        // snake_case settings (probe answers, backups).
-        let rust = json!({"connection_params": {"a": 1}});
-        let mut ts = json!({"connection_params": {"a": 1, "ws_response_timeout": 110}});
-        assert_eq!(
-            strip_ts_target_defaults(&mut ts, &rust),
-            ["connection_params.ws_response_timeout"]
-        );
-        assert_eq!(ts, rust);
-        // A server-sent key on the Rust side, another value, another key: all kept.
-        let rust = json!({
-            "connectionParams": {"ws_response_timeout": 110},
-            "authConfig": {}
-        });
-        let mut ts = json!({
-            "connectionParams": {"ws_response_timeout": 110, "oauth2_expiry_minutes": 60},
-            "authConfig": {"basic_auth_location": "QUERY"}
-        });
-        let before = ts.clone();
-        assert!(strip_ts_target_defaults(&mut ts, &rust).is_empty());
-        assert_eq!(ts, before);
-        let mut ts = json!({"connectionParams": {"ws_response_timeout": 30}});
-        assert!(strip_ts_target_defaults(&mut ts, &json!({"connectionParams": {}})).is_empty());
-        let mut ts = json!({"name": "x", "ws_response_timeout": 110});
-        assert!(strip_ts_target_defaults(&mut ts, &json!({"name": "x"})).is_empty());
     }
 
     /// DESIGN §21.6: `airs` before a command word becomes `airs-cli`; nothing else.

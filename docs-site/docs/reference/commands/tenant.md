@@ -24,7 +24,6 @@ Commands:
   unset     Remove one tenant setting so the default applies; credentials cannot be cleared
   switch    Select the tenant for subsequent commands
   delete    Delete a tenant and its config file; clears the selection if it was selected [aliases: rm]
-  import    Copy tenants from the TypeScript airs-cli; its files are not changed
   help      Print this message or the help of the given subcommand(s)
 
 Options:
@@ -35,8 +34,6 @@ Options:
   -h, --help             Print help
 
 Examples:
-  $ airs tenant import --dry-run
-  $ airs tenant import
   $ airs tenant create development
   $ printf '%s\n' "$SECRET" | airs tenant create ci --tsg-id 1234567890 --client-id ci-client --client-secret-stdin
   $ airs tenant switch development
@@ -386,24 +383,4 @@ Options:
       --debug            Write redacted API diagnostics to a private JSONL file
       --tenant <name>    Use this registered tenant for one invocation without changing the selection
   -h, --help             Print help
-```
-
-## airs tenant import
-
-```text
-Copy tenants from the TypeScript airs-cli; its files are not changed
-
-Usage: airs tenant import [OPTIONS]
-
-Options:
-      --from <path>         TypeScript tenant registry to read (default: the one the TypeScript CLI uses)
-      --output <format>     Output format: pretty, table, json
-      --from-config <path>  Import one TypeScript JSON config file as the tenant named by --name
-      --quiet               Suppress status and decorative output (data and errors still print)
-      --debug               Write redacted API diagnostics to a private JSONL file
-      --name <name>         Import only this tenant; with --from-config, the new tenant's name
-      --replace             Overwrite existing tenants of the same name
-      --tenant <name>       Use this registered tenant for one invocation without changing the selection
-      --dry-run             Report what would be imported; write nothing
-  -h, --help                Print help
 ```

@@ -203,22 +203,11 @@ impl FixtureServer {
         self.shared.lock().put_appends = enabled;
     }
 
-    /// `<base>/ts-env/aisec`: the second management base, which shares this server's
-    /// state (the TypeScript `PANW_MGMT_ENDPOINT` of the D93 parity tests).
-    pub fn ts_env_mgmt_url(&self) -> String {
-        format!(
-            "{}{}{}",
-            self.base_url(),
-            paths::TS_ENV_BASE,
-            paths::MGMT_PREFIX
-        )
-    }
-
-    /// `<base>/ts-env-trap`: the trap the runner points every TypeScript `runtime` run's
+    /// `<base>/env-trap`: the trap the runner points every TypeScript `runtime` run's
     /// endpoint variables at (`404 {}` to everything, recorded as
-    /// [`Route::TsEnvTrap`]).
-    pub fn ts_env_trap_url(&self) -> String {
-        format!("{}{}", self.base_url(), paths::TS_ENV_TRAP)
+    /// [`Route::EnvTrap`]).
+    pub fn env_trap_url(&self) -> String {
+        format!("{}{}", self.base_url(), paths::ENV_TRAP)
     }
 
     /// Issue a different token on every token request: `mock-token-<tsg>.r<n>` (`n`

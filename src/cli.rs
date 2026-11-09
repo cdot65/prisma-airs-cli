@@ -11,7 +11,7 @@ use std::ffi::OsString;
 
 /// How each leaf command uses `--output` (DESIGN §2.4). [`command`] writes it into each
 /// leaf's help, and planning (`commands::plan`) reads the same table.
-pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 277] = [
+pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 276] = [
     (&["tenant", "list"], RENDERS),
     (&["tenant", "path"], FormatPolicy::Ignored),
     (&["tenant", "read"], RENDERS),
@@ -21,7 +21,6 @@ pub const LEAF_OUTPUT: [(&[&str], FormatPolicy); 277] = [
     (&["tenant", "unset"], FormatPolicy::NoData),
     (&["tenant", "switch"], FormatPolicy::NoData),
     (&["tenant", "delete"], FormatPolicy::NoData),
-    (&["tenant", "import"], RENDERS),
     (&["tenant", "scanners", "list"], RENDERS),
     (&["tenant", "scanners", "snapshots"], RENDERS),
     (&["tenant", "scanners", "set"], FormatPolicy::NoData),
@@ -518,8 +517,6 @@ const TOPICS_EVAL_EXAMPLES: &str = "Examples:
   $ airs runtime topics eval --profile prod-guard --prompts eval.csv --rate 5 --concurrency 3";
 
 const TENANT_EXAMPLES: &str = "Examples:
-  $ airs tenant import --dry-run
-  $ airs tenant import
   $ airs tenant create development
   $ printf '%s\\n' \"$SECRET\" | airs tenant create ci --tsg-id 1234567890 --client-id ci-client --client-secret-stdin
   $ airs tenant switch development
@@ -786,31 +783,6 @@ pub enum TenantCommand {
         #[arg(long)]
         force: bool,
     },
-    /// Copy tenants from the TypeScript airs-cli; its files are not changed
-    Import(ImportArgs),
-}
-
-#[derive(Args, Clone)]
-pub struct ImportArgs {
-    /// TypeScript tenant registry to read (default: the one the TypeScript CLI uses)
-    #[arg(long, value_name = "path", value_parser = clap::value_parser!(std::ffi::OsString))]
-    pub from: Option<std::ffi::OsString>,
-    /// Import one TypeScript JSON config file as the tenant named by --name
-    #[arg(
-        long = "from-config",
-        value_name = "path",
-        value_parser = clap::value_parser!(std::ffi::OsString)
-    )]
-    pub from_config: Option<std::ffi::OsString>,
-    /// Import only this tenant; with --from-config, the new tenant's name
-    #[arg(long, value_name = "name", allow_hyphen_values = true)]
-    pub name: Option<String>,
-    /// Overwrite existing tenants of the same name
-    #[arg(long)]
-    pub replace: bool,
-    /// Report what would be imported; write nothing
-    #[arg(long = "dry-run")]
-    pub dry_run: bool,
 }
 
 #[derive(Args, Clone)]

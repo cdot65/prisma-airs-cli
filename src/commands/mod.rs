@@ -56,7 +56,6 @@ pub mod scan;
 pub mod supplychain;
 pub mod supplychain_report;
 pub mod tenant;
-pub mod tenant_import;
 pub mod tenant_scanners;
 pub mod tenant_write;
 pub mod topic_assign;
@@ -397,8 +396,6 @@ pub enum Plan {
     /// `tenant create|set|unset|switch|delete` (§3.11).
     TenantWrite(tenant_write::WritePlan),
     TenantScanners(tenant_scanners::ScannerPlan),
-    /// `tenant import` (§3.12).
-    TenantImport(tenant_import::ImportPlan),
     /// `runtime topics create` (§13.5).
     TopicsCreate(topic_write::CreatePlan),
     /// `runtime topics update` (§13.6).
@@ -450,7 +447,7 @@ impl Plan {
             Self::Recorded(inner, _) => inner.interrupt_context(),
             Self::Mcp(plan) => plan.interrupt_context(),
             // `the change was saved` once the commit point passed (lib::execute).
-            Self::TenantWrite(_) | Self::TenantImport(_) | Self::TenantScanners(_) => {
+            Self::TenantWrite(_) | Self::TenantScanners(_) => {
                 InterruptContext::NoConfigurationChanged
             }
             // `the change was saved` once a write completed (lib::execute, §13.2).
@@ -527,8 +524,7 @@ impl Plan {
             | Self::TenantPath(_)
             | Self::TenantRead(..)
             | Self::TenantGet { .. }
-            | Self::TenantWrite(_)
-            | Self::TenantImport(_) => DebugPolicy::None,
+            | Self::TenantWrite(_) => DebugPolicy::None,
             Self::TenantScanners(_) => DebugPolicy::None,
             // MCP calls are not SDK traffic; the API log covers AIRS calls only.
             Self::Mcp(_) => DebugPolicy::None,
@@ -552,20 +548,6 @@ pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
             ));
         }
         return tenant_scanners::plan(group, format);
-    }
-    // `tenant import` renders its report: `--output` is resolved first, then any
-    // `--tenant` is refused, then its own checks run (§3.11, §3.12).
-    if let Some(TopCommand::Tenant(crate::cli::TenantGroup {
-        command: Some(TenantCommand::Import(args)),
-    })) = &cli.command
-    {
-        let format = output::resolve(explicit)?;
-        if cli.global.tenant.is_some() {
-            return Err(CliError::usage(
-                "--tenant cannot be used with 'tenant import'; name the tenant as an argument",
-            ));
-        }
-        return Ok(Plan::TenantImport(tenant_import::plan(args, format)?));
     }
     // The write commands name their tenant positionally: `--output` is validated first,
     // then any `--tenant` is refused, then the command's own checks run (§3.11).
@@ -630,8 +612,7 @@ pub fn plan(cli: &Cli) -> Result<Plan, CliError> {
                 | TenantCommand::Set(_)
                 | TenantCommand::Unset { .. }
                 | TenantCommand::Switch { .. }
-                | TenantCommand::Delete { .. }
-                | TenantCommand::Import(_),
+                | TenantCommand::Delete { .. },
             ) => unreachable!("write commands are planned above"),
             Some(TenantCommand::Scanners(_)) => unreachable!("scanner commands are planned above"),
             Some(TenantCommand::List) => Plan::TenantList(output::resolve(explicit)?),
@@ -857,7 +838,6 @@ pub async fn dispatch(invocation: &mut Invocation, plan: Plan) -> Result<(), Cli
         Plan::TenantWrite(write) => tenant_write::run(invocation, write),
         Plan::TenantScanners(plan) => tenant_scanners::run(invocation, plan),
         Plan::Mcp(plan) => mcp_client::run(invocation, *plan).await,
-        Plan::TenantImport(import) => tenant_import::run(invocation, import),
         Plan::TopicsCreate(plan) => topic_write::create(invocation, &plan).await,
         Plan::TopicsUpdate(plan) => topic_write::update(invocation, &plan).await,
         Plan::TopicsDelete(plan) => topic_write::delete(invocation, &plan).await,

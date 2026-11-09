@@ -243,20 +243,6 @@ pub fn check_tenant(
     };
     let index_path = view.store.index_path();
     let index_path = index_path.display();
-    // D89: the store was never created, but a TypeScript registry exists.
-    if let Some(registry) = &view.ts_registry {
-        return Check::new(
-            TENANT,
-            Status::Fail,
-            format!(
-                "no {PROGRAM} tenants in {index_path}; a TypeScript tenant registry exists at {}",
-                registry.display()
-            ),
-        )
-        .hint(format!(
-            "Run '{PROGRAM} tenant import' to copy its tenants (the TypeScript files are not changed)"
-        ));
-    }
     match selection {
         Some(Ok(Some(selected))) => Check::new(
             TENANT,
@@ -315,15 +301,9 @@ pub fn check_config(view: &StoreView, selected: &Selected) -> (Check, Option<Ten
                     fail(format!("{path} is not valid TOML")).hint("Fix the file, then re-run doctor")
                 }
                 ConfigLoadError::Content(ContentError::UnknownKeys(keys)) => {
-                    let hint = if keys.iter().any(|key| config::is_typescript_name(key)) {
-                        format!(
-                            "TypeScript names are not accepted: aiGw* keys are now gateway*, agentGuard* keys are now supplychain*, and dataDir, typesafe* and *TokenEndpoint keys were dropped; edit the file or re-import it with '{PROGRAM} tenant import --replace'"
-                        )
-                    } else {
-                        format!(
-                            "Remove them from the file; '{PROGRAM} tenant set {tenant} <key>' accepts only the supported keys"
-                        )
-                    };
+                    let hint = format!(
+                        "Remove them from the file; '{PROGRAM} tenant set {tenant} <key>' accepts only the supported keys"
+                    );
                     fail(format!("{path} has unknown keys: {}", keys.join(", "))).hint(hint)
                 }
                 ConfigLoadError::Content(ContentError::InvalidValues(keys)) => {
@@ -769,9 +749,7 @@ pub async fn checks(invocation: &mut Invocation) -> Result<Vec<Check>, CliError>
         .ok()
         .map(|_| StoreView::open(&invocation.env));
     let selection = match &view {
-        Some(Ok(view)) if view.ts_registry.is_none() => {
-            Some(view.select(invocation.tenant_flag.as_deref()))
-        }
+        Some(Ok(view)) => Some(view.select(invocation.tenant_flag.as_deref())),
         _ => None,
     };
     let index_path = store.as_ref().ok().map(crate::store::Store::index_path);
@@ -1340,13 +1318,6 @@ mod tests {
                 "Remove them from the file; 'airs tenant set dev <key>' accepts only the supported keys"
             )
         );
-        write(b"mgmtTsgId = \"100\"\naiGwDataEndpoint = \"x\"\n", 0o600);
-        let (c, _) = check_config(&view, &dev());
-        assert!(
-            c.hint
-                .unwrap()
-                .starts_with("TypeScript names are not accepted")
-        );
         write(
             b"scanConcurrency = 99\nmgmtClientSecret = \"SUPER-SECRET\"\nmgmtTsgId = \"100\"\ndefaultOutput = \"csv\"\n",
             0o600,
@@ -1449,24 +1420,6 @@ mod tests {
         assert_eq!(
             c.detail,
             format!("dev (TSG 100) selected by --tenant in {}", index.display())
-        );
-        let mut imported = view.clone();
-        use std::path::PathBuf;
-        imported.ts_registry = Some(PathBuf::from("/ts/tenants.json"));
-        let c = check_tenant(StoreState::Read(&imported), Some(Ok(Some(&selected))));
-        assert_eq!(
-            c.detail,
-            format!(
-                "no airs tenants in {}; a TypeScript tenant registry exists at /ts/tenants.json",
-                index.display()
-            ),
-            "the import case wins over --tenant"
-        );
-        assert_eq!(
-            c.hint.as_deref(),
-            Some(
-                "Run 'airs tenant import' to copy its tenants (the TypeScript files are not changed)"
-            )
         );
     }
 

@@ -1218,17 +1218,15 @@ fn write_routes_change_the_served_state() {
     assert_eq!(updated.json()["topic_id"], fixtures::uuid(12));
     assert_eq!(updated.json()["revision"], 2);
     assert_eq!(updated.json()["description"], "changed");
-    // The second base shares the state.
     let conflict = request(
         &server,
         "DELETE",
-        &format!("/ts-env/aisec/v1/mgmt/topic/{}", fixtures::uuid(11)),
+        &format!("/aisec/v1/mgmt/topic/{}", fixtures::uuid(11)),
         &auth,
         b"",
     );
     assert_eq!(conflict.status, 409);
     assert_eq!(conflict.json()["payload"][0]["profile_name"], "alpha");
-    assert_eq!(server.requests().last().unwrap().base, "/ts-env");
     let no_audit = format!(
         "/aisec/v1/mgmt/topic/{}/force?updated_by=%20",
         fixtures::uuid(11)
@@ -1291,22 +1289,21 @@ fn write_routes_change_the_served_state() {
 
 /// The trap answers `404 {}` to everything and records it (D93).
 #[test]
-fn the_ts_env_trap_answers_404() {
+fn the_env_trap_answers_404() {
     let server = server_with_tenants();
     let token = bearer("mock-token-100");
     let response = request(
         &server,
         "GET",
-        "/ts-env-trap/v1/mgmt/topics/tsg/100?offset=0&limit=100",
+        "/env-trap/v1/mgmt/topics/tsg/100?offset=0&limit=100",
         &[("authorization", &token)],
         b"",
     );
     assert_eq!(response.status, 404);
     assert_eq!(response.json(), json!({}));
     let last = server.requests().pop().unwrap();
-    assert_eq!((last.route, last.base), (Route::TsEnvTrap, "/ts-env-trap"));
-    assert!(server.ts_env_trap_url().ends_with("/ts-env-trap"));
-    assert!(server.ts_env_mgmt_url().ends_with("/ts-env/aisec"));
+    assert_eq!((last.route, last.base), (Route::EnvTrap, "/env-trap"));
+    assert!(server.env_trap_url().ends_with("/env-trap"));
 }
 
 /// The supplychain routes (DESIGN §10 M6f, §20.13): `GET` only, the bearer and the

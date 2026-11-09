@@ -433,8 +433,6 @@ fn decimal(text: &str) -> bool {
 pub enum LoadError {
     /// Not JSON, or JSON the parser refuses (the D44 classes).
     Malformed,
-    /// A TypeScript v2 or legacy state (no `format`, a `version` or `scanIds` key).
-    TypeScript,
     /// `format` is ours and `version` is newer.
     Newer,
     /// Anything else: the fixed reason.
@@ -447,9 +445,6 @@ pub fn parse(bytes: &[u8]) -> Result<JobState, LoadError> {
         serde_json::from_slice(bytes).map_err(|_| LoadError::Malformed)?;
     if let serde_json::Value::Object(object) = &value {
         match object.get("format") {
-            None if object.contains_key("version") || object.contains_key("scanIds") => {
-                return Err(LoadError::TypeScript);
-            }
             Some(serde_json::Value::String(format))
                 if format == FORMAT
                     && object
@@ -661,19 +656,19 @@ pub mod tests {
         assert!(state.validate().is_err());
     }
 
-    /// state-spec #6: malformed, TypeScript (v2 and legacy) and newer states.
+    /// state-spec #6: malformed, foreign and newer states.
     #[test]
     fn foreign_states_are_classified() {
         assert_eq!(parse(b"{"), Err(LoadError::Malformed));
         assert_eq!(parse(b"{\"a\": \"\\ud800\"}"), Err(LoadError::Malformed));
-        assert_eq!(
+        assert!(matches!(
             parse(br#"{"version":2,"profile":"p","outputFile":"/o","batchSize":25,"items":[]}"#),
-            Err(LoadError::TypeScript)
-        );
-        assert_eq!(
+            Err(LoadError::Invalid(_))
+        ));
+        assert!(matches!(
             parse(br#"{"scanIds":["a"],"profile":"p","promptCount":1}"#),
-            Err(LoadError::TypeScript)
-        );
+            Err(LoadError::Invalid(_))
+        ));
         assert_eq!(
             parse(br#"{"format":"airs-cli-rs.bulk-scan","version":3}"#),
             Err(LoadError::Newer)

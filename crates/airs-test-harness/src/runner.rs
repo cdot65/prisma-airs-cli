@@ -389,29 +389,6 @@ pub(crate) struct Terminal {
     pub stdout: Option<Stdio>,
 }
 
-/// The TypeScript SDK endpoint variables (every `process.env.PANW_*ENDPOINT*` name in
-/// the pinned SDK bundle). For a TypeScript `runtime` run the runner points each one the
-/// test did not set at the trap ([`Sandbox::ts_env_trap_url`]): `topics create`,
-/// `apply` and `revert` ignore the tenant's `mgmtEndpoint` and would otherwise fall back
-/// to production (D93, DESIGN §10 M4).
-pub const TS_ENDPOINT_VARIABLES: [&str; 15] = [
-    "PANW_AGENT_GUARD_DATA_ENDPOINT",
-    "PANW_AGENT_GUARD_MGMT_ENDPOINT",
-    "PANW_AI_GW_ADMIN_ENDPOINT",
-    "PANW_AI_GW_DATA_ENDPOINT",
-    "PANW_AI_GW_INFERENCE_ENDPOINT",
-    "PANW_AI_SEC_API_ENDPOINT",
-    "PANW_IAM_ENDPOINT",
-    "PANW_MGMT_ENDPOINT",
-    "PANW_MGMT_TOKEN_ENDPOINT",
-    "PANW_MODEL_SEC_DATA_ENDPOINT",
-    "PANW_MODEL_SEC_MGMT_ENDPOINT",
-    "PANW_MODEL_SEC_TOKEN_ENDPOINT",
-    "PANW_RED_TEAM_DATA_ENDPOINT",
-    "PANW_RED_TEAM_MGMT_ENDPOINT",
-    "PANW_RED_TEAM_NETWORK_BROKER_ENDPOINT",
-];
-
 /// Whether `args` run a `redteam` subcommand (the first positional argument).
 pub fn is_redteam_command(args: &[&str]) -> bool {
     let mut args = args.iter();
@@ -588,9 +565,6 @@ pub(crate) fn spawn_with(
             "refusing to run {} {args:?}: --fetch-uv needs AIRS_CLI_TEST_UV_ARCHIVE_URL (the fixture's archive)",
             cli.label()
         );
-    }
-    if let Some(problem) = import_source_violation(sandbox.root(), &sandbox.cwd(), &env, args) {
-        panic!("refusing to run {} {args:?}: {problem}", cli.label());
     }
     let guarded = !is_tenant_command(args) && !is_history_command(args);
     if let Some(store) = rust_store_dir(&env, &sandbox.cwd()) {
@@ -1073,70 +1047,6 @@ pub fn resume_state_argument<'a>(args: &[&'a str]) -> Option<&'a str> {
     }
 }
 
-/// Whether `args` run `tenant import` (the positional arguments start `tenant import`).
-pub fn is_import_command(args: &[&str]) -> bool {
-    let mut positionals = Vec::new();
-    let mut args = args.iter();
-    while let Some(arg) = args.next() {
-        match *arg {
-            "--output" | "--tenant" | "--from" | "--from-config" | "--name" => {
-                args.next();
-            }
-            "--" => break,
-            flag if flag.starts_with('-') => {}
-            positional => positionals.push(positional),
-        }
-        if positionals.len() == 2 {
-            break;
-        }
-    }
-    positionals == ["tenant", "import"]
-}
-
-/// Why an airs-cli-rs `tenant import` run could read a TypeScript file outside the
-/// sandbox, or `None` (DESIGN §10 "Escape prevention"). The source it would read
-/// (`--from <path>`, `--from-config <path>`, else the registry `env` resolves) must lie
-/// inside `root`, symlinks resolved, and so must every `configPath` of that registry
-/// (a missing one lexically). A registry the TypeScript schema rejects is never read
-/// further by airs-cli-rs, so its contents are not checked.
-pub fn import_source_violation(
-    root: &Path,
-    cwd: &Path,
-    env: &BTreeMap<String, String>,
-    args: &[&str],
-) -> Option<String> {
-    if !is_import_command(args) {
-        return None;
-    }
-    // Every occurrence counts: clap keeps the last one (`args_override_self`), and a
-    // run that names two sources must have both inside the sandbox.
-    let values = |flag: &str| path_flag_values(args, flag);
-    let inside = |path: &Path| {
-        let path = lexical(&cwd.join(path));
-        match std::fs::canonicalize(&path) {
-            Ok(resolved) => resolved.starts_with(root),
-            Err(_) => path.starts_with(root),
-        }
-    };
-    let configs = values("--from-config");
-    if configs.iter().any(|config| !inside(Path::new(config))) {
-        return Some("--from-config names a file outside the sandbox".to_owned());
-    }
-    let mut registries: Vec<PathBuf> = values("--from")
-        .into_iter()
-        .map(|from| cwd.join(from))
-        .collect();
-    if registries.is_empty() && configs.is_empty() {
-        registries.push(crate::sandbox::ts_registry_path(env, cwd)?);
-    }
-    registries.iter().find_map(|registry| {
-        if !inside(registry) {
-            return Some("the TypeScript registry it would import lies outside the sandbox".into());
-        }
-        registry_config_violation(registry, &inside)
-    })
-}
-
 /// The non-empty values of every occurrence of `flag` in `args`, in both the
 /// `--flag value` and the `--flag=value` form (before a literal `--`).
 fn path_flag_values<'a>(args: &[&'a str], flag: &str) -> Vec<&'a str> {
@@ -1157,24 +1067,6 @@ fn path_flag_values<'a>(args: &[&'a str], flag: &str) -> Vec<&'a str> {
         }
     }
     values
-}
-
-/// The first entry of the registry at `registry` whose config is not `inside`.
-fn registry_config_violation(registry: &Path, inside: &dyn Fn(&Path) -> bool) -> Option<String> {
-    let entries = std::fs::read(registry)
-        .ok()
-        .and_then(|bytes| crate::store::ts_registry(&bytes))
-        .map(|(entries, _)| entries)
-        .unwrap_or_default();
-    entries
-        .iter()
-        .find(|entry| !inside(Path::new(&entry.config_path)))
-        .map(|entry| {
-            format!(
-                "the registry entry '{}' names a config outside the sandbox",
-                entry.name
-            )
-        })
 }
 
 /// The store directory airs-cli-rs resolves under `env` (DESIGN §3.1), when it is

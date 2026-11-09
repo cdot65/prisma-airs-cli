@@ -23,10 +23,7 @@ fails when a cited test is missing.
   `$XDG_CONFIG_HOME/airs-cli`, else `~/.config/airs-cli`) with the §3.8 safety checks.
   Readers never write, create, lock, rename or chmod anything. Writes go only through
   `store::atomic::Transaction` (the `flock` on `D/config.lock`, temp + fsync + rename +
-  directory fsync, 0600/0700). The TypeScript registry and configs are read only by
-  `tenant import` (`src/tenant/ts.rs`, `src/tenant/import.rs`), which never modifies them or opens their
-  `*.lock` files; other code only checks whether the registry path exists (the import
-  hint). Hints that ask users to change tenants name `airs` (`store::PROGRAM`,
+  directory fsync, 0600/0700). Hints that ask users to change tenants name `airs` (`store::PROGRAM`,
   D73).
 - **Tenant files are the only configuration source.** Never read credentials or
   endpoints from the environment. Never call `EnvironmentSnapshot::capture`,
@@ -80,8 +77,7 @@ fails when a cited test is missing.
   loopback. The runner fails any run that changes a sandbox file outside `tmp/` (the
   Rust store under `store/` included), and refuses to start a run whose path variables,
   absolute-path arguments or path-flag values (every occurrence) point outside the
-  sandbox, and an airs-cli-rs `tenant import` run whose registry or configs lie outside
-  it. Every sandbox provisions each
+  sandbox. Every sandbox provisions each
   TypeScript tenant into the Rust store too (DESIGN §10), so tests never touch the
   real `~/.config/airs-cli`. `tenant` commands build no API client, so the runner
   skips the loopback endpoint checks for them (a created tenant holds only

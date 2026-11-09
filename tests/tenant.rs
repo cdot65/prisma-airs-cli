@@ -2100,29 +2100,6 @@ mod review_fixes {
         );
         let out = fx.run_with(&["tenant", "path"], options());
         assert_eq!(out.stdout, format!("{}\n", tenant.store_path.display()));
-        // An empty store: the cwd-relative TypeScript registry is named in the hint.
-        fx.sandbox.ts_only();
-        fx.sandbox.write_file(
-            "cwd/.local/state/prisma-airs/tenants.json",
-            b"{oops SUPER-SECRET",
-            0o600,
-        );
-        let registry = fx
-            .sandbox
-            .cwd()
-            .join(".local/state/prisma-airs/tenants.json");
-        let out = fx.run_with(&["tenant", "list"], options().secret("SUPER-SECRET"));
-        assert_eq!(
-            (out.code, out.stdout.as_str(), out.stderr.clone()),
-            (
-                0,
-                "  No tenants found\n",
-                format!(
-                    "  Run 'airs tenant create <name>' to register one; a TypeScript tenant registry exists at {}: run 'airs tenant import' to copy it.\n",
-                    registry.display()
-                )
-            )
-        );
         fx.assert_no_requests();
     }
 

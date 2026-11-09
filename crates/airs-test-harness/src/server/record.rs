@@ -45,9 +45,9 @@ pub enum Route {
     ProfileDelete,
     /// `DELETE /aisec/v1/mgmt/profile/{id}/force?updated_by=…`.
     ProfileForceDelete,
-    /// Anything under `/ts-env-trap` (the TypeScript endpoint-variable trap, DESIGN §10
+    /// Anything under `/env-trap` (the TypeScript endpoint-variable trap, DESIGN §10
     /// M4); answered with `404 {}`.
-    TsEnvTrap,
+    EnvTrap,
     /// A red team route under `/redteam/data`, `/redteam/mgmt` or `/redteam/broker`
     /// (DESIGN §10 M6a).
     RedTeam(Rt),
@@ -92,7 +92,7 @@ impl Route {
         Route::ProfileUpdate,
         Route::ProfileDelete,
         Route::ProfileForceDelete,
-        Route::TsEnvTrap,
+        Route::EnvTrap,
         Route::UvRelease,
         Route::Unknown,
     ];
@@ -115,7 +115,7 @@ impl Route {
             Route::ProfileUpdate => "profile-update",
             Route::ProfileDelete => "profile-delete",
             Route::ProfileForceDelete => "profile-force-delete",
-            Route::TsEnvTrap => "ts-env-trap",
+            Route::EnvTrap => "env-trap",
             Route::RedTeam(rt) => rt.label(),
             Route::Dlp(dl) => dl.label(),
             Route::ModelSecurity(ms) => ms.label(),
@@ -128,12 +128,11 @@ impl Route {
     }
 
     /// Classifies a request; returns the route and the `{tsg}` path segment when the
-    /// route carries one. A management path under the second base `/ts-env` (DESIGN
-    /// §10 M4) is classified like the same path without it ([`Route::base_of`] tells
-    /// them apart); anything under `/ts-env-trap` is [`Route::TsEnvTrap`].
+    /// route carries one. Anything under `/env-trap` is
+    /// [`Route::EnvTrap`].
     pub fn classify(method: &str, path: &str) -> (Route, Option<String>) {
-        if path == paths::TS_ENV_TRAP || path.starts_with(&format!("{}/", paths::TS_ENV_TRAP)) {
-            return (Route::TsEnvTrap, None);
+        if path == paths::ENV_TRAP || path.starts_with(&format!("{}/", paths::ENV_TRAP)) {
+            return (Route::EnvTrap, None);
         }
         if let Some(rt) = Rt::classify(method, path) {
             return (Route::RedTeam(rt), None);
@@ -160,10 +159,6 @@ impl Route {
         {
             return (Route::UvRelease, None);
         }
-        let path = match path.strip_prefix(paths::TS_ENV_BASE) {
-            Some(rest) if rest.starts_with(paths::MGMT_PREFIX) => rest,
-            _ => path,
-        };
         let tsg_route = |prefix: &str| {
             path.strip_prefix(prefix)
                 .filter(|tsg| !tsg.is_empty() && !tsg.contains('/'))
@@ -201,16 +196,10 @@ impl Route {
         (route, None)
     }
 
-    /// The base a request path was served under: `""` (the tenant base), `/ts-env` (the
-    /// second base sharing the state) or `/ts-env-trap` (the trap).
+    /// The base a request path was served under: `""` (the tenant base) or `/env-trap` (the trap).
     pub fn base_of(path: &str) -> &'static str {
-        if path == paths::TS_ENV_TRAP || path.starts_with(&format!("{}/", paths::TS_ENV_TRAP)) {
-            paths::TS_ENV_TRAP
-        } else if path
-            .strip_prefix(paths::TS_ENV_BASE)
-            .is_some_and(|rest| rest.starts_with(paths::MGMT_PREFIX))
-        {
-            paths::TS_ENV_BASE
+        if path == paths::ENV_TRAP || path.starts_with(&format!("{}/", paths::ENV_TRAP)) {
+            paths::ENV_TRAP
         } else {
             ""
         }
@@ -290,11 +279,8 @@ pub mod paths {
     pub const PROFILE_PREFIX: &str = "/aisec/v1/mgmt/profile/";
     /// Profile update prefix (`PUT <prefix><id>`).
     pub const PROFILE_UUID_PREFIX: &str = "/aisec/v1/mgmt/profile/uuid/";
-    /// The second management base (`<base>/ts-env/aisec`), sharing the state: the
-    /// TypeScript CLI's `PANW_MGMT_ENDPOINT` in the D93 parity tests.
-    pub const TS_ENV_BASE: &str = "/ts-env";
-    /// The trap every TypeScript `runtime` run's endpoint variables point at.
-    pub const TS_ENV_TRAP: &str = "/ts-env-trap";
+    /// A trap that records anything sent to it: tests point ignored variables here.
+    pub const ENV_TRAP: &str = "/env-trap";
     /// The fake uv release (`GET /uv-release/uv-<target>.tar.gz`).
     pub const UV_RELEASE_PREFIX: &str = "/uv-release/";
 }
@@ -389,8 +375,7 @@ pub struct RecordedRequest {
     pub body: Vec<u8>,
     /// Classified route.
     pub route: Route,
-    /// The base it was served under ([`Route::base_of`]): `""`, `/ts-env` or
-    /// `/ts-env-trap`.
+    /// The base it was served under ([`Route::base_of`]): `""` or `/env-trap`.
     pub base: &'static str,
     /// `{tsg}` path segment for management routes.
     pub path_tsg: Option<String>,
@@ -583,26 +568,11 @@ mod tests {
                 "{method} {path}"
             );
             assert_eq!(Route::base_of(&path), "");
-            let shifted = format!("/ts-env{path}");
-            assert_eq!(
-                Route::classify(method, &shifted),
-                (route, None),
-                "{shifted}"
-            );
-            assert_eq!(Route::base_of(&shifted), "/ts-env");
         }
         assert_eq!(
-            Route::classify("GET", "/ts-env/aisec/v1/mgmt/topics/tsg/7"),
-            (Route::Topics, Some("7".into()))
+            Route::classify("GET", "/env-trap/v1/mgmt/topics/tsg/7"),
+            (Route::EnvTrap, None)
         );
-        assert_eq!(
-            Route::classify("GET", "/ts-env-trap/v1/mgmt/topics/tsg/7"),
-            (Route::TsEnvTrap, None)
-        );
-        assert_eq!(Route::base_of("/ts-env-trap/v1/x"), "/ts-env-trap");
-        assert_eq!(
-            Route::classify("GET", "/ts-env/other"),
-            (Route::Unknown, None)
-        );
+        assert_eq!(Route::base_of("/env-trap/v1/x"), "/env-trap");
     }
 }

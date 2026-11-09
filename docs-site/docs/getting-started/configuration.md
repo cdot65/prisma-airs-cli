@@ -21,7 +21,7 @@ It holds `config.toml` (the selection and each tenant's pinned TSG) and
 `tenants/<name>.toml` (that tenant's settings, secrets included). Files are mode 0600 and
 directories 0700; a file that is a symlink, owned by someone else or readable by group or
 others is refused, and so is a directory that others can write. Only the tenant write
-commands and `tenant import` change the store. Every change takes one lock
+commands change the store. Every change takes one lock
 (`config.lock`; a second change waits up to 5 s and then names the process holding it) and
 replaces files atomically, so a reader never sees a half-written file.
 
@@ -35,8 +35,7 @@ airs tenant list                         # every tenant, no credentials read (al
 airs --tenant ci doctor                  # use another tenant for one invocation
 ```
 
-Coming from the TypeScript CLI? Copy its tenants with `airs tenant import`
-([Upgrading from 7.x](./upgrading-from-typescript.md)).
+Coming from the TypeScript CLI? See [Upgrading from 7.x](./upgrading-from-typescript.md).
 
 ## Editing settings
 
@@ -108,7 +107,6 @@ lists the ones that are still set. The variables that do matter:
 | `XDG_DATA_HOME` | where `model-security install --fetch-uv` keeps uv |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY`, `NO_PROXY` (and lower case) | proxies for https endpoints; macOS system proxies are honoured too |
 | `NO_COLOR`, `CLICOLOR`, `CLICOLOR_FORCE` | colour |
-| `PRISMA_AIRS_TENANTS_PATH` | only where `tenant import` finds the TypeScript registry |
 
 ## Checking a tenant
 

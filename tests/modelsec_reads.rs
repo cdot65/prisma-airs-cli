@@ -1581,7 +1581,7 @@ mod tenants {
             config.set("mgmtEndpoint", server.url("/not-model-security"));
         });
         sandbox.register(&[&prod, &dev], Some("prod"));
-        let trap = server.url("/ts-env-trap");
+        let trap = server.url("/env-trap");
         for (args, path) in [
             (vec!["groups", "list"], GROUPS),
             (vec!["rules", "list"], RULES),
