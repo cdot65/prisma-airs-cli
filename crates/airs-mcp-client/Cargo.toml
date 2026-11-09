@@ -8,10 +8,10 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 authors.workspace = true
-readme = false
+readme = "README.md"
 # Published in lockstep with airs-cli (exact `=` version), after airs-runtime-core and
 # before airs-cli (RUNTIME_MCP_CONTRACT §1; docs/RELEASING.md §2).
-include = ["/src/**/*.rs", "/Cargo.toml", "/LICENSE", "/NOTICE"]
+include = ["/src/**/*.rs", "/Cargo.toml", "/LICENSE", "/NOTICE", "/README.md"]
 
 [dependencies]
 airs-runtime-core = { path = "../airs-runtime-core", version = "=9.0.0" }
