@@ -8,10 +8,10 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 authors.workspace = true
-readme = false
+readme = "README.md"
 # Published in lockstep with airs-cli (exact `=` version); publication is a separate
 # release action (RUNTIME_MCP_CONTRACT §1).
-include = ["/src/**/*.rs", "/schemas/*.json", "/Cargo.toml", "/LICENSE", "/NOTICE"]
+include = ["/src/**/*.rs", "/schemas/*.json", "/Cargo.toml", "/LICENSE", "/NOTICE", "/README.md"]
 
 [dependencies]
 # Exactly the CLI's SDK pin and features (contract §1): the unified graph is unchanged.
