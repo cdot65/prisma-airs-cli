@@ -25,39 +25,17 @@ same program. Behaviour that differs from the TypeScript CLI is listed, row by r
    version first (`npm uninstall -g @cdot65/prisma-airs-cli`, and `pnpm remove -g` where
    pnpm installed it), or its `airs-cli` keeps answering.
 
-2. **Import your tenants once.** The Rust CLI keeps its own tenant store and never reads
-   the TypeScript registry to select a tenant:
+2. **Register your tenants.** The Rust CLI keeps its own tenant store and never reads the
+   TypeScript registry:
 
    ```sh
-   airs tenant import --dry-run   # what would be copied; writes nothing
-   airs tenant import             # copy every tenant, and the selection
+   airs tenant create <name>   # prompts for the TSG ID, client ID and secret
+   airs tenant switch <name>
    airs doctor
    ```
 
-   - It reads the registry the TypeScript CLI uses (`PRISMA_AIRS_TENANTS_PATH`, else
-     `$XDG_STATE_HOME/prisma-airs/tenants.json`, else
-     `~/.local/state/prisma-airs/tenants.json`) and the JSON configs it names. Those files
-     are only read: never changed, locked or created.
-   - It writes `config.toml` and `tenants/<name>.toml` into `~/.config/airs-cli/`
-     (`$XDG_CONFIG_HOME/airs-cli/`, or `$AIRS_CLI_CONFIG_DIR`), files 0600 and
-     directories 0700.
-   - The report has one row per tenant with the action `import`, `replace` or `skip`, and
-     notes naming renamed, dropped and unknown keys. It never shows a value.
-     `--output json` gives scripts the rows `{name, tsgId, action, notes}`.
-   - The TypeScript selection is copied when the Rust store has none yet.
-   - An existing tenant is never overwritten unless you pass `--replace`, and a name that
-     differs only in case from an existing one is skipped.
-   - A tenant whose config cannot be read, or whose `mgmtTsgId` differs from its
-     registration, is skipped; the command then exits 1 after copying the others
-     (`--dry-run` exits 1 in the same case, so it doubles as a check).
-   - `--from <registry>` reads another registry, `--name <name>` copies one tenant, and
-     `--from-config <file> --name <name>` copies a single JSON config file. It replaces
-     the TypeScript `tenant create --config`.
-   - The copy is independent: later changes made with the TypeScript CLI are not seen.
-     Run `airs tenant import --replace` again to refresh.
-
-   Until you import, `airs doctor` fails its Tenant check with a hint to run the import,
-   and the "no tenant selected" messages say the same.
+   `airs tenant import`, which copied a TypeScript registry, was removed after 8.2. With
+   many tenants, install 8.2 once to run its `tenant import`, then upgrade.
 
 3. **Finish or abandon TypeScript bulk-scan jobs.** Their checkpoints are not imported.
 
@@ -68,15 +46,15 @@ same program. Behaviour that differs from the TypeScript CLI is listed, row by r
 
 ## Tenant keys
 
-`tenant import` converts every key; a hand-written tenant file must use the new names:
+A tenant file must use the new names:
 
 | TypeScript | Rust |
 |---|---|
 | `aiGw*` (for example `aiGwDataEndpoint`) | `gateway*` (`gatewayDataEndpoint`) |
 | `agentGuard*` | `supplychain*` |
 | `dataDir`, the `typesafe*` keys, the retired per-product `*TokenEndpoint` keys (`mgmtTokenEndpoint` stays) | dropped |
-| `defaultOutput` of `markdown`, `csv` or `yaml` | dropped on import; invalid in a tenant file |
-| empty values, unknown keys | dropped on import; an unknown key makes a tenant file invalid |
+| `defaultOutput` of `markdown`, `csv` or `yaml` | invalid in a tenant file |
+| empty values, unknown keys | an unknown key makes a tenant file invalid |
 | numbers as strings or JSON numbers | plain decimal integers |
 
 ## Renamed command groups
@@ -98,7 +76,7 @@ There are no aliases for the old group names. The doctor's `AI Gateway API` chec
 | `runtime dlp generate` | none |
 | `--output markdown`, `csv` and `yaml` | `pretty`, `table` or `json`; anything else is a usage error (exit 2) |
 | the doctor's Node.js and TypeSafe checks | the `Executable` check reports which `airs` runs |
-| `tenant create --config <file>` | `airs tenant import --from-config <file> --name <name>` |
+| `tenant create --config <file>` | `airs tenant create <name>` |
 | credentials and endpoints from environment variables (`PANW_*`, `PRISMA_AIRS_CONFIG_PATH` and the other retired names) | tenant settings; `airs doctor` lists the variables that are still set |
 | reading TypeScript backup files and bulk-scan checkpoints | new backups and jobs made with `airs` |
 

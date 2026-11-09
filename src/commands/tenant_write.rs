@@ -57,8 +57,7 @@ pub fn write_command_name(command: &TenantCommand) -> Option<&'static str> {
         TenantCommand::Unset { .. } => Some("unset"),
         TenantCommand::Switch { .. } => Some("switch"),
         TenantCommand::Delete { .. } => Some("delete"),
-        TenantCommand::Import(_)
-        | TenantCommand::Scanners(_)
+        TenantCommand::Scanners(_)
         | TenantCommand::List
         | TenantCommand::Path { .. }
         | TenantCommand::Read { .. }
@@ -154,8 +153,7 @@ pub fn plan(command: &TenantCommand) -> Result<WritePlan, CliError> {
             name: name.clone(),
             force: *force,
         }),
-        TenantCommand::Import(_)
-        | TenantCommand::Scanners(_)
+        TenantCommand::Scanners(_)
         | TenantCommand::List
         | TenantCommand::Path { .. }
         | TenantCommand::Read { .. }
@@ -239,7 +237,6 @@ fn view(store: &Store) -> Result<StoreView, CliError> {
     Ok(StoreView {
         store: store.clone(),
         index: store.read_index()?,
-        ts_registry: None,
     })
 }
 

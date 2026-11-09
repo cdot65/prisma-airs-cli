@@ -473,45 +473,8 @@ fn job_of(name: &std::ffi::OsStr) -> Option<&str> {
         .filter(|job| bulk::is_job_id(job))
 }
 
-/// Whether the file at `path` is a TypeScript state (read once, bounded, read-only and
-/// not locked; only to choose the message).
-/// Only a regular file is opened: the path is checked first, and the open is
-/// non-blocking (a FIFO swapped in afterwards never blocks it) and re-checked on the
-/// descriptor (§14.13 "Details").
-fn is_typescript_state(path: &Path) -> bool {
-    use std::os::unix::fs::OpenOptionsExt;
-    let regular = |metadata: &std::fs::Metadata| {
-        metadata.is_file() && metadata.len() <= bulk::MAX_STATE_BYTES
-    };
-    if !std::fs::metadata(path).is_ok_and(|metadata| regular(&metadata)) {
-        return false;
-    }
-    let Ok(file) = std::fs::OpenOptions::new()
-        .read(true)
-        .custom_flags(rustix::fs::OFlags::NONBLOCK.bits() as i32)
-        .open(path)
-    else {
-        return false;
-    };
-    if !file.metadata().is_ok_and(|metadata| regular(&metadata)) {
-        return false;
-    }
-    let mut bytes = Vec::new();
-    if std::io::Read::read_to_end(
-        &mut std::io::Read::take(file, bulk::MAX_STATE_BYTES + 1),
-        &mut bytes,
-    )
-    .is_err()
-        || bytes.len() as u64 > bulk::MAX_STATE_BYTES
-    {
-        return false;
-    }
-    bulk::state::parse(&bytes) == Err(bulk::state::LoadError::TypeScript)
-}
-
 /// §14.13 steps 1–2 (D127): the canonical argument must be `<job>.bulk-scan.json` in
-/// the canonical state directory; returns the job id. Anything else is refused, a
-/// TypeScript state with its own message (D118).
+/// the canonical state directory; returns the job id. Anything else is refused.
 fn locate(typed: &Path, cwd: &Path, dir: &Path) -> Result<String, CliError> {
     let shown_typed = crate::store::shown(typed);
     let canonical = std::fs::canonicalize(cwd.join(typed)).map_err(|_| {
@@ -526,12 +489,6 @@ fn locate(typed: &Path, cwd: &Path, dir: &Path) -> Result<String, CliError> {
     };
     if let Some(job) = job {
         return Ok(job.to_owned());
-    }
-    if is_typescript_state(&canonical) {
-        return Err(bulk::checkpoint::load_error(
-            typed,
-            bulk::state::LoadError::TypeScript,
-        ));
     }
     let shown_dir = crate::store::shown(canonical_dir.as_deref().unwrap_or(dir));
     Err(CliError::operational(format!(

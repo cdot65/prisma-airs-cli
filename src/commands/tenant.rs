@@ -42,8 +42,7 @@ pub fn list(invocation: &mut Invocation, format: Format) -> Result<(), CliError>
     if index.tenants.is_empty() && format == Format::Pretty {
         pretty::empty_list(output, "tenants");
         output.status(&format!(
-            "Run '{PROGRAM} tenant create <name>' to register one{}.",
-            view.import_suffix()
+            "Run '{PROGRAM} tenant create <name>' to register one."
         ));
         return Ok(());
     }

@@ -953,14 +953,14 @@ mod checks {
     #[test]
     fn endpoints_come_from_the_tenant_only() {
         let f = fx();
-        let trap = f.server.ts_env_trap_url();
+        let trap = f.server.env_trap_url();
         let options = RunOptions::new()
             .env("PANW_MGMT_ENDPOINT", &trap)
             .env("PANW_MGMT_DASHBOARD_ENDPOINT", &trap);
         f.rt_with(&["api-keys", "list"], &options).assert_success();
         f.rt_with(&["customer-apps", "consumption", "chatbot"], &options)
             .assert_success();
-        assert!(f.server.requests_for(Route::TsEnvTrap).is_empty());
+        assert!(f.server.requests_for(Route::EnvTrap).is_empty());
         // An inadmissible dashboard endpoint is refused by its key, with no request; the
         // other commands do not admit it (their policy does not widen).
         let server = FixtureServer::start();

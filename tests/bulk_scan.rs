@@ -2263,10 +2263,10 @@ mod resume {
         airs_test_harness::lock_holder::run_from_env();
     }
 
-    /// D118: a TypeScript state is refused with its own message, outside the state
-    /// directory and inside it; nothing is sent.
+    /// A state in a foreign format is refused, outside the state directory and inside
+    /// it; nothing is sent and the file is not changed.
     #[test]
-    fn a_typescript_state_is_refused_d118() {
+    fn a_foreign_state_is_refused() {
         let fx = fx();
         let ts_state = json!({
             "version": 2, "profile": PROFILE, "sessionId": SESSION, "batchSize": 25,
@@ -2275,18 +2275,13 @@ mod resume {
         })
         .to_string();
         let outside = fx.input("ts.bulk-scan.json", ts_state.as_bytes());
-        let message = |path: &str| {
-            error_block(
-                &format!(
-                    "{path} is a TypeScript airs-cli bulk-scan state; airs cannot resume it. Resume it with the TypeScript airs-cli, or start a new job with 'airs runtime bulk-scan'."
-                ),
-                None,
-                &[],
-            )
-        };
         let out = fx.resume_at(&outside, &[], &fx.options());
         out.assert_code(1);
-        assert_eq!(out.stderr, message(&outside));
+        assert!(
+            out.stderr.contains("is not an airs bulk-scan job"),
+            "{}",
+            out.stderr
+        );
         std::fs::create_dir_all(fx.state_dir()).unwrap();
         std::fs::set_permissions(fx.state_dir(), std::fs::Permissions::from_mode(0o700)).unwrap();
         let inside = fx
@@ -2297,7 +2292,12 @@ mod resume {
         let canonical = inside.canonicalize().unwrap().display().to_string();
         let out = fx.resume_at(&inside.display().to_string(), &[], &fx.options());
         out.assert_code(1);
-        assert_eq!(out.stderr, message(&canonical));
+        assert!(
+            out.stderr
+                .contains(&format!("Invalid bulk-scan state {canonical}")),
+            "{}",
+            out.stderr
+        );
         assert_eq!(std::fs::read_to_string(&inside).unwrap(), ts_state);
         assert_eq!(fx.server.request_count(), 0);
     }

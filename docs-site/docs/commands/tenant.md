@@ -19,7 +19,6 @@ store; they build no API client and send no request.
 | `tenant unset <name> <key>` | remove one setting so the default applies; credentials cannot be cleared |
 | `tenant switch <name>` | select the tenant for later commands |
 | `tenant delete <name>` (`rm`) | delete the tenant and its file; asks first, `--force` skips the question |
-| `tenant import` | copy tenants from the TypeScript CLI's registry; its files are not changed |
 
 ```sh
 airs tenant create development
@@ -27,7 +26,6 @@ airs tenant switch development
 airs tenant set development defaultOutput json
 printf '%s\n' "$KEY" | airs tenant set development airsApiKey --stdin
 airs tenant read
-airs tenant import --dry-run
 ```
 
 - Outcome lines (`✓ …`, `ℹ …`) go to stderr and `--quiet` hides them; stdout stays empty
@@ -38,8 +36,7 @@ airs tenant import --dry-run
   case are refused.
 
 See [Configuration and tenants](../getting-started/configuration.md) for the store, the
-settings and the credential planes, [Upgrading from 7.x](../getting-started/upgrading-from-typescript.md)
-for `tenant import`, and the [reference](../reference/commands/tenant.md) for every flag.
+settings and the credential planes, and the [reference](../reference/commands/tenant.md) for every flag.
 
 ## Named application scanner credentials (8.1 development)
 

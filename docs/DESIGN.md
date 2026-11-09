@@ -44,7 +44,7 @@ the `--debug` API log (§2.9). The specs it is derived from are
 (cited as **L§n**); this document overrides them where they differ.
 
 0.3 (M4t Tenant writes) moves tenants to the TOML store of §3 and adds `tenant create`,
-`set`, `unset`, `switch`, `delete|rm` and the Rust-only `tenant import` (§3.11, §3.12).
+`set`, `unset`, `switch` and `delete|rm` (§3.11).
 From 0.3 no command reads the TypeScript registry except `tenant import`. The specs it
 is derived from are `docs/research/ts-tenant-config.md` and
 `docs/research/ts-tenant-write.md` (cited as **W§n**).
@@ -1301,6 +1301,9 @@ On any failure `active` is unchanged.
 
 ### 3.12 `tenant import`
 
+> **Removed after 8.2.** `tenant import`, the import suffix and doctor's import and TypeScript-name hints no longer exist. This section is kept as the record of 8.2 behaviour.
+
+
 `tenant import [--from <registry>] [--from-config <file> --name <name>] [--name <name>] [--replace] [--dry-run]`
 (help: `Copy tenants from the TypeScript airs-cli; its files are not changed`). Options:
 `--from <path>` (`TypeScript tenant registry to read (default: the one the TypeScript CLI uses)`),
@@ -1436,6 +1439,9 @@ Otherwise 0, also when rows were skipped because the name exists or differs only
 case.
 
 ### 3.13 The TypeScript registry and configs (read only by `tenant import`)
+
+> **Removed after 8.2.** `tenant import`, the import suffix and doctor's import and TypeScript-name hints no longer exist. This section is kept as the record of 8.2 behaviour.
+
 
 These are the 0.1 read rules, kept verbatim for `tenant import` and for the existence
 check behind the import suffix (§3.4) and doctor's import hint (§9). No other command

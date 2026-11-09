@@ -1,8 +1,7 @@
 //! Environment handling (DESIGN §4, §2.6).
 //!
-//! Credentials and endpoints come only from tenant files. The CLI reads exactly
-//! `PRISMA_AIRS_TENANTS_PATH`, `XDG_STATE_HOME` and `HOME` for the registry, and the
-//! variable *names* for doctor's ignored-variable report. Values are never reported.
+//! Credentials and endpoints come only from tenant files. The CLI reads the variable
+//! *names* for doctor's ignored-variable report. Values are never reported.
 
 use std::ffi::{OsStr, OsString};
 

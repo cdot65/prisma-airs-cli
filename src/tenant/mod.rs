@@ -1,19 +1,15 @@
-//! Tenant selection from the TOML store, `--tenant`, name resolution, the import
-//! suffix and the shared tenant-file loader (DESIGN §3.4, §3.6, §3.7).
+//! Tenant selection from the TOML store, `--tenant`, name resolution and the shared
+//! tenant-file loader (DESIGN §3.4, §3.6, §3.7).
 //!
-//! Readers never write, create, lock, chmod or rename anything. The TypeScript
-//! registry is not read here: only [`ts::registry_exists`] looks at its path, for the
-//! import suffix.
+//! Readers never write, create, lock, chmod or rename anything.
 
 pub use airs_runtime_core::tenant::config;
-pub mod import;
 pub use airs_runtime_core::tenant::scanners;
 pub use airs_runtime_core::tenant::{Selected, TenantContext};
-pub mod ts;
 
 use crate::error::CliError;
 use crate::store::{
-    self, Index, PROGRAM, Store, TenantFileRead, shown, unsafe_dir_error, unsafe_file_error,
+    self, Index, PROGRAM, Store, TenantFileRead, unsafe_dir_error, unsafe_file_error,
 };
 use config::{ContentError, TenantConfig};
 use std::ffi::OsString;
@@ -29,9 +25,7 @@ pub struct Environment {
     pub config_dir: Option<OsString>,
     /// `XDG_CONFIG_HOME` (non-empty).
     pub xdg_config_home: Option<OsString>,
-    /// `PRISMA_AIRS_TENANTS_PATH` (non-empty; the TypeScript registry only).
-    pub tenants_path: Option<OsString>,
-    /// `XDG_STATE_HOME` (non-empty; the debug log and the TypeScript registry).
+    /// `XDG_STATE_HOME` (non-empty; the debug log).
     pub xdg_state_home: Option<OsString>,
     /// `HOME` as set (even empty), else the password database.
     pub home: Option<PathBuf>,
@@ -44,7 +38,6 @@ impl Environment {
         Self {
             config_dir: non_empty("AIRS_CLI_CONFIG_DIR"),
             xdg_config_home: non_empty("XDG_CONFIG_HOME"),
-            tenants_path: non_empty("PRISMA_AIRS_TENANTS_PATH"),
             xdg_state_home: non_empty("XDG_STATE_HOME"),
             // `HOME` exactly as set, even empty; only an unset `HOME` falls back to the
             // password database.
@@ -91,14 +84,11 @@ pub enum ConfigLoadError {
     TsgMismatch,
 }
 
-/// The store as one read command sees it: `D`, `config.toml` and, when `config.toml`
-/// does not exist, the TypeScript registry that the import suffix names.
+/// The store as one read command sees it: `D` and `config.toml`.
 #[derive(Clone, Debug)]
 pub struct StoreView {
     pub store: Store,
     pub index: Index,
-    /// The existing TypeScript registry, only when `config.toml` does not exist.
-    pub ts_registry: Option<PathBuf>,
 }
 
 impl StoreView {
@@ -106,27 +96,7 @@ impl StoreView {
     pub fn open(env: &Environment) -> Result<Self, CliError> {
         let store = env.store()?;
         let index = store.read_index()?;
-        let ts_registry = if index.exists {
-            None
-        } else {
-            ts::registry_exists(env)
-        };
-        Ok(Self {
-            store,
-            index,
-            ts_registry,
-        })
-    }
-
-    /// The import suffix (§3.4, D90), when it applies.
-    pub fn import_suffix(&self) -> String {
-        match &self.ts_registry {
-            Some(path) => format!(
-                "; a TypeScript tenant registry exists at {}: run '{PROGRAM} tenant import' to copy it",
-                shown(path)
-            ),
-            None => String::new(),
-        }
+        Ok(Self { store, index })
     }
 
     fn selected(&self, name: &str, by_flag: bool) -> Option<Selected> {
@@ -164,8 +134,7 @@ impl StoreView {
     pub fn no_tenant_selected(&self) -> CliError {
         if self.index.tenants.is_empty() {
             CliError::operational(format!(
-                "No tenant selected. Run '{PROGRAM} tenant create <name>' and then '{PROGRAM} tenant switch <name>'{}",
-                self.import_suffix()
+                "No tenant selected. Run '{PROGRAM} tenant create <name>' and then '{PROGRAM} tenant switch <name>'"
             ))
         } else {
             CliError::operational(format!(
@@ -194,8 +163,7 @@ impl StoreView {
         }
         if self.index.tenants.is_empty() {
             Err(CliError::operational(format!(
-                "No tenant selected; run '{PROGRAM} tenant create <name>' first{}",
-                self.import_suffix()
+                "No tenant selected; run '{PROGRAM} tenant create <name>' first"
             )))
         } else {
             Err(CliError::operational(format!(
@@ -293,7 +261,6 @@ mod tests {
     fn env(dir: &TestDir) -> Environment {
         Environment {
             config_dir: Some(dir.path().join("D").into_os_string()),
-            tenants_path: Some(dir.path().join("ts/tenants.json").into_os_string()),
             home: Some(PathBuf::from("/nonexistent-home")),
             cwd: Some(dir.path().to_path_buf()),
             ..Environment::default()
@@ -321,7 +288,6 @@ mod tests {
         );
         dir.write("D/tenants/bad.toml", b"mgmtTsgId = \"200\"\n", 0o600);
         let view = StoreView::open(&env(&dir)).unwrap();
-        assert_eq!(view.import_suffix(), "");
         assert_eq!(
             view.no_tenant_selected().message(),
             "No tenant selected. Run 'airs tenant switch <name>' (registered: bad, dev)"
@@ -356,7 +322,7 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_store_and_the_import_suffix() {
+    fn an_empty_store_names_the_create_command() {
         let dir = TestDir::new("tenant-empty");
         let view = StoreView::open(&env(&dir)).unwrap();
         assert!(!view.index.exists);
@@ -368,26 +334,6 @@ mod tests {
             view.select(Some("ghost")).unwrap_err().message(),
             "Tenant not found: ghost (no tenants registered)"
         );
-        let registry = dir.write("ts/tenants.json", b"{}", 0o600);
-        let view = StoreView::open(&env(&dir)).unwrap();
-        let suffix = format!(
-            "; a TypeScript tenant registry exists at {}: run 'airs tenant import' to copy it",
-            registry.display()
-        );
-        assert_eq!(
-            view.no_tenant_selected().message(),
-            format!(
-                "No tenant selected. Run 'airs tenant create <name>' and then 'airs tenant switch <name>'{suffix}"
-            )
-        );
-        assert_eq!(
-            view.resolve(None, None).unwrap_err().message(),
-            format!("No tenant selected; run 'airs tenant create <name>' first{suffix}")
-        );
-        // An existing (even empty) config.toml turns the suffix off.
-        dir.write("D/config.toml", b"version = 1\n", 0o600);
-        let view = StoreView::open(&env(&dir)).unwrap();
-        assert_eq!(view.import_suffix(), "");
     }
 
     #[test]

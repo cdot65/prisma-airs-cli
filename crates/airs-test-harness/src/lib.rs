@@ -98,19 +98,17 @@ pub use closed_port::ClosedPort;
 pub use compare::{
     NormalizedBody, NormalizedRequest, PROGRAM_NEXT, RUNTIME_BANNER, assert_json_semantic_eq,
     error_line, http_status, js_normalize, json_semantic_eq, normalise_program,
-    normalise_tenant_output, normalize, normalize_all, split_outcome_lines,
-    strip_ts_target_defaults, ts_rows_as_rust, usage_line,
+    normalise_tenant_output, normalize, normalize_all, split_outcome_lines, usage_line,
 };
 pub use encoding::{base64_encode, form_decode, payload_hash, percent_encode};
 pub use pty::{PtyRun, PtySession, spawn_pty, spawn_pty_all, spawn_pty_with};
 pub use runner::{
     Cli, DEFAULT_TIMEOUT, PATH_FLAGS, PATH_VARIABLES, PROGRAM_NAMES, Run, RunOptions, Running,
-    SIGNAL_MARKER_VAR, StdinSource, TS_ENDPOINT_VARIABLES, bulk_command, child_environment,
-    escape_violation, escape_violation_within, import_source_violation, is_dlp_command,
-    is_gateway_command, is_import_command, is_model_security_command, is_redteam_command,
-    is_runtime_command, is_runtime_extras_command, is_supplychain_command, is_tenant_command,
-    path_without_programs, restore_file_argument, resume_state_argument, run, spawn,
-    upload_file_argument, uv_hook_violation, workspace_root,
+    SIGNAL_MARKER_VAR, StdinSource, bulk_command, child_environment, escape_violation,
+    escape_violation_within, is_dlp_command, is_gateway_command, is_model_security_command,
+    is_redteam_command, is_runtime_command, is_runtime_extras_command, is_supplychain_command,
+    is_tenant_command, path_without_programs, restore_file_argument, resume_state_argument, run,
+    spawn, upload_file_argument, uv_hook_violation, workspace_root,
 };
 pub use sandbox::{
     ENDPOINT_KEYS, FixtureConfig, FixtureTenant, RegistryEntry, Sandbox, SecretForm, Snapshot,

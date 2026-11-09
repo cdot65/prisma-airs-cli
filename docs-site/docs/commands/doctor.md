@@ -19,7 +19,7 @@ airs --tenant staging doctor
 | Check | What it verifies |
 |---|---|
 | Executable | warns when another `airs`, `airs-cli` or `airs-cli-rs` earlier on `PATH` resolves to a different file than the running program; never fails; runs first, before the tenant is read |
-| Tenant | a tenant is selected (or named by `--tenant`) in the store; when the store is empty but a TypeScript registry exists, the hint says to run `airs tenant import` |
+| Tenant | a tenant is selected (or named by `--tenant`) in the store |
 | Config file | the tenant file is private, valid TOML, holds only supported keys with valid values, and its `mgmtTsgId` matches the pinned TSG |
 | Environment | lists ignored configuration variables (`PANW_*` and the retired names) and the proxy variables in effect; never fails |
 | Scanner credentials | `airsApiKey` or `airsApiToken` is set (skip when not: scanning is unavailable) |

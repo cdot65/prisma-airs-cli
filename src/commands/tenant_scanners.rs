@@ -189,7 +189,6 @@ fn view(store: &Store) -> Result<StoreView, CliError> {
     Ok(StoreView {
         store: store.clone(),
         index: store.read_index()?,
-        ts_registry: None,
     })
 }
 fn selected(view: &StoreView, name: &str) -> Result<Selected, CliError> {

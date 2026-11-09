@@ -1120,7 +1120,6 @@ fn write(
         let current = crate::tenant::StoreView {
             store: store.clone(),
             index: store.read_index()?,
-            ts_registry: None,
         };
         let registration = crate::tenant::Selected {
             name: tenant.clone(),

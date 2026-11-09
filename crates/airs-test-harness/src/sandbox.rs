@@ -243,7 +243,7 @@ pub struct SecretForm {
 /// writes the Rust store itself ([`Sandbox::write_store_raw`],
 /// [`Sandbox::write_tenant_file_raw`], [`Sandbox::write_rust_tenant`],
 /// [`Sandbox::write_store_index`]) or calls [`Sandbox::detach_store`] /
-/// [`Sandbox::ts_only`] stops the mirroring, so Rust-only and TypeScript-only states
+/// [`Sandbox::clear_store`] stops the mirroring, so Rust-only and TypeScript-only states
 /// can be built.
 pub struct Sandbox {
     _dir: TempDir,
@@ -323,26 +323,6 @@ impl Sandbox {
         }
     }
 
-    /// Where the runner points the TypeScript SDK endpoint variables of a `runtime` run
-    /// (DESIGN §10 M4): `<fixture server>/ts-env-trap` once a fixture tenant was written
-    /// for a server, else a closed loopback port (nothing answers, nothing leaves the
-    /// host).
-    pub fn ts_env_trap_url(&self) -> String {
-        let base = self
-            .fixture_base
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .clone();
-        match base {
-            Some(base) => format!("{base}{}", paths::TS_ENV_TRAP),
-            None => format!(
-                "http://127.0.0.1:{}{}",
-                crate::ClosedPort::new().port(),
-                paths::TS_ENV_TRAP
-            ),
-        }
-    }
-
     /// Sandbox root.
     pub fn root(&self) -> &Path {
         &self.root
@@ -394,8 +374,8 @@ impl Sandbox {
         *self.mirror.lock().unwrap_or_else(PoisonError::into_inner) = false;
     }
 
-    /// A TypeScript-only state: empties `store/` (no `config.toml`) and stops mirroring.
-    pub fn ts_only(&self) {
+    /// Empties `store/` (no `config.toml`) and stops mirroring.
+    pub fn clear_store(&self) {
         self.detach_store();
         crate::store::clear(&self.store_dir());
     }
@@ -764,91 +744,6 @@ impl Sandbox {
         path
     }
 
-    /// Panics unless the TypeScript CLI may run here: no config was written through an
-    /// `*_allowing_external_endpoints` method, and every config the CLI could load (each
-    /// file under `configs/` and each `configPath` of the registry it would read, given
-    /// the run's environment `env`) passes [`endpoint_guard_violation`]. A registry or
-    /// config outside the sandbox root also panics (it is never read).
-    pub fn assert_safe_for_ts(&self, env: &BTreeMap<String, String>) {
-        self.assert_safe_for_ts_with(env, true);
-    }
-
-    /// [`Sandbox::assert_safe_for_ts`]; with `check_configs` false (a `tenant` command,
-    /// which builds no client: [`crate::is_tenant_command`]) the environment guard still
-    /// applies, and the registry and configs are only required to lie inside the
-    /// sandbox, not to name loopback endpoints (a CLI-created config has none).
-    pub fn assert_safe_for_ts_with(&self, env: &BTreeMap<String, String>, check_configs: bool) {
-        let opted_out = self.external_endpoint_configs();
-        assert!(
-            !check_configs || opted_out.is_empty(),
-            "refusing to run the TypeScript CLI: this sandbox holds configs written with \
-             write_config_allowing_external_endpoints ({opted_out:?}); such tests must be \
-             Rust-only"
-        );
-        if let Some(problem) = env_guard_violation(env) {
-            panic!("refusing to run the TypeScript CLI: {problem}");
-        }
-        if check_configs {
-            let mut configs = BTreeMap::new();
-            walk(&self.root, &self.configs_dir(), &mut configs);
-            for (relative, state) in &configs {
-                if let EntryState::File { bytes, .. } = state
-                    && let Some(problem) = endpoint_guard_violation(bytes)
-                {
-                    panic!(
-                        "refusing to run the TypeScript CLI: {} {problem}",
-                        relative.display()
-                    );
-                }
-            }
-        }
-        let Some(registry) = ts_registry_path(env, &self.cwd()) else {
-            return;
-        };
-        let Some(bytes) = self.read_inside(&registry, "registry") else {
-            return;
-        };
-        let Ok(Value::Object(document)) =
-            serde_json::from_str::<Value>(&String::from_utf8_lossy(&bytes))
-        else {
-            return;
-        };
-        let Some(Value::Array(tenants)) = document.get("tenants") else {
-            return;
-        };
-        for tenant in tenants {
-            let Some(config_path) = tenant.get("configPath").and_then(Value::as_str) else {
-                continue;
-            };
-            let path = self.cwd().join(expand_home(config_path, env));
-            // Every registered config must lie inside the sandbox (real tenant files are
-            // never read); only commands that can send requests need loopback endpoints.
-            if let Some(bytes) = self.read_inside(&path, "config")
-                && check_configs
-                && let Some(problem) = endpoint_guard_violation(&bytes)
-            {
-                panic!(
-                    "refusing to run the TypeScript CLI: registered config {} {problem}",
-                    path.display()
-                );
-            }
-        }
-    }
-
-    /// Bytes of the regular file at `path` when it exists; panics when it resolves
-    /// outside the sandbox root (real tenant files are never read).
-    fn read_inside(&self, path: &Path, what: &str) -> Option<Vec<u8>> {
-        let resolved = fs::canonicalize(path).ok()?;
-        assert!(
-            resolved.starts_with(&self.root),
-            "refusing to run the TypeScript CLI: its {what} path resolves outside the sandbox"
-        );
-        fs::metadata(&resolved)
-            .ok()
-            .filter(fs::Metadata::is_file)
-            .and_then(|_| fs::read(&resolved).ok())
-    }
-
     /// Writes the registry in the TS `writeTestRegistry` format (mode 0600).
     pub fn write_registry(&self, entries: &[RegistryEntry], active: Option<&str>) {
         self.write_registry_raw(registry_json(entries, active).as_bytes());
@@ -965,7 +860,7 @@ impl Sandbox {
     /// fixture configs) with `active` selected, the TypeScript registry is left alone,
     /// and mirroring stops.
     pub fn rust_only(&self, tenants: &[&FixtureTenant], active: Option<&str>) {
-        self.ts_only();
+        self.clear_store();
         for tenant in tenants {
             if self
                 .external_endpoint_configs()
@@ -1273,36 +1168,6 @@ pub(crate) fn replace_surrogate_escapes(text: &str) -> String {
     out
 }
 
-/// The registry path the TypeScript CLI resolves under `env` (`tenantStorePath`), or
-/// `None` when it would refuse (relative `XDG_STATE_HOME`) or `HOME` is unset (Node
-/// would use the password database). An empty `HOME` is `os.homedir() === ""`, so the
-/// default path is relative to `cwd`.
-pub(crate) fn ts_registry_path(env: &BTreeMap<String, String>, cwd: &Path) -> Option<PathBuf> {
-    let non_empty = |name: &str| env.get(name).filter(|value| !value.is_empty());
-    if let Some(explicit) = non_empty("PRISMA_AIRS_TENANTS_PATH") {
-        return Some(cwd.join(expand_home(explicit, env)));
-    }
-    match non_empty("XDG_STATE_HOME") {
-        Some(state) if !Path::new(state).is_absolute() => None,
-        Some(state) => Some(Path::new(state).join("prisma-airs/tenants.json")),
-        None => env
-            .get("HOME")
-            .map(|home| cwd.join(home).join(".local/state/prisma-airs/tenants.json")),
-    }
-}
-
-/// TS `expandConfigPath`: `~` and `~/…` against `HOME`.
-fn expand_home(path: &str, env: &BTreeMap<String, String>) -> PathBuf {
-    let home = env.get("HOME").map(String::as_str).unwrap_or_default();
-    if path == "~" {
-        PathBuf::from(home)
-    } else if let Some(rest) = path.strip_prefix("~/") {
-        Path::new(home).join(rest)
-    } else {
-        PathBuf::from(path)
-    }
-}
-
 /// `/(?:key|secret|token|password)$/i` on the key name (the TS secret-key rule).
 pub fn is_secret_key(key: &str) -> bool {
     let lower = key.to_ascii_lowercase();
@@ -1539,35 +1404,6 @@ mod tests {
             "{\n  \"b\": 2,\n  \"a\": {\n    \"x\": [\n      1\n    ]\n  }\n}\n"
         );
         assert_eq!(FixtureConfig::new().to_json(), "{}\n");
-    }
-
-    #[test]
-    fn ts_registry_path_models_an_empty_home() {
-        let env = |pairs: &[(&str, &str)]| -> BTreeMap<String, String> {
-            pairs
-                .iter()
-                .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
-                .collect()
-        };
-        let cwd = Path::new("/sandbox/cwd");
-        assert_eq!(
-            ts_registry_path(&env(&[("HOME", "")]), cwd),
-            Some(PathBuf::from(
-                "/sandbox/cwd/.local/state/prisma-airs/tenants.json"
-            ))
-        );
-        assert_eq!(
-            ts_registry_path(&env(&[("HOME", "/h")]), cwd),
-            Some(PathBuf::from("/h/.local/state/prisma-airs/tenants.json"))
-        );
-        assert_eq!(ts_registry_path(&env(&[]), cwd), None);
-        assert_eq!(
-            ts_registry_path(
-                &env(&[("HOME", ""), ("PRISMA_AIRS_TENANTS_PATH", "~/r.json")]),
-                cwd
-            ),
-            Some(PathBuf::from("/sandbox/cwd/r.json"))
-        );
     }
 
     #[test]

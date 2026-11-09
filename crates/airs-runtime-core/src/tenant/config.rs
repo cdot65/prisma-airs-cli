@@ -40,26 +40,6 @@ pub const KEYS: [&str; 27] = [
     "defaultOutput",
 ];
 
-/// The TypeScript names of the renamed keys (§3.3), old → new.
-pub const RENAMES: [(&str, &str); 8] = [
-    ("aiGwDataEndpoint", "gatewayDataEndpoint"),
-    ("aiGwAdminEndpoint", "gatewayAdminEndpoint"),
-    ("aiGwInferenceEndpoint", "gatewayInferenceEndpoint"),
-    ("aiGwInferenceApiKey", "gatewayInferenceApiKey"),
-    ("aiGwInferenceModel", "gatewayInferenceModel"),
-    ("aiGwEmbeddingModel", "gatewayEmbeddingModel"),
-    ("agentGuardDataEndpoint", "supplychainDataEndpoint"),
-    ("agentGuardMgmtEndpoint", "supplychainMgmtEndpoint"),
-];
-
-/// TypeScript keys airs dropped (§3.3).
-pub const DROPPED_KEYS: [&str; 4] = [
-    "dataDir",
-    "typesafeApiKey",
-    "typesafeBaseUrl",
-    "typesafeModel",
-];
-
 pub const DEFAULT_SCAN_CONCURRENCY: i64 = 5;
 
 /// Management credentials, in check order.
@@ -101,16 +81,6 @@ pub fn read_schema_key(name: &str) -> Option<&'static str> {
     } else {
         schema_key(name)
     }
-}
-
-/// Whether an unknown key is a TypeScript name (renamed, dropped or a retired
-/// `*TokenEndpoint` key), for doctor's hint (§9).
-pub fn is_typescript_name(key: &str) -> bool {
-    key.starts_with("aiGw")
-        || key.starts_with("agentGuard")
-        || key.starts_with("typesafe")
-        || key == "dataDir"
-        || key.ends_with("TokenEndpoint")
 }
 
 /// `/(?:key|secret|token|password)$/i` on the key name.
@@ -725,17 +695,6 @@ mod tests {
         assert_eq!(KEYS[18], "gatewayDataEndpoint");
         assert_eq!(KEYS[26], "defaultOutput");
         assert_eq!(KEYS.iter().filter(|key| is_endpoint_key(key)).count(), 16);
-        for (old, new) in RENAMES {
-            assert_eq!(schema_key(old), None, "{old}");
-            assert!(schema_key(new).is_some(), "{new}");
-            assert!(is_typescript_name(old));
-        }
-        for key in DROPPED_KEYS {
-            assert_eq!(schema_key(key), None);
-            assert!(is_typescript_name(key));
-        }
-        assert!(is_typescript_name("redTeamTokenEndpoint"));
-        assert!(!is_typescript_name("custom"));
         assert_eq!(schema_key("__proto__"), None);
     }
 

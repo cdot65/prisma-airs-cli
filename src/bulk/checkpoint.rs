@@ -103,9 +103,6 @@ pub fn load_error(path: &std::path::Path, error: LoadError) -> CliError {
     let path = shown(path);
     CliError::operational(match error {
         LoadError::Malformed => format!("Invalid bulk-scan state {path}: malformed JSON"),
-        LoadError::TypeScript => format!(
-            "{path} is a TypeScript airs-cli bulk-scan state; {PROGRAM} cannot resume it. Resume it with the TypeScript airs-cli, or start a new job with '{PROGRAM} runtime bulk-scan'."
-        ),
         LoadError::Newer => {
             format!(
                 "{path} was written by a newer version of {PROGRAM}; upgrade {PROGRAM} to resume it"
@@ -492,7 +489,7 @@ pub mod tests {
     }
 
     /// state-spec #6 (the load half): a saved state loads back under its job id with the
-    /// identity the next checkpoint expects; TypeScript, newer, malformed, invalid,
+    /// identity the next checkpoint expects; foreign, newer, malformed, invalid,
     /// renamed and unsafe files are refused with the §14.9 texts.
     #[test]
     fn loads_round_trip_and_refuse_foreign_files() {
@@ -520,12 +517,6 @@ pub mod tests {
         assert_eq!(
             refused(b"{"),
             format!("Invalid bulk-scan state {shown}: malformed JSON")
-        );
-        assert_eq!(
-            refused(br#"{"version":2,"profile":"p","items":[]}"#),
-            format!(
-                "{shown} is a TypeScript airs-cli bulk-scan state; airs cannot resume it. Resume it with the TypeScript airs-cli, or start a new job with 'airs runtime bulk-scan'."
-            )
         );
         assert_eq!(
             refused(br#"{"format":"airs-cli-rs.bulk-scan","version":9}"#),

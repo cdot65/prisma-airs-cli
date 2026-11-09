@@ -133,7 +133,7 @@ impl State {
             | Route::ProfileUpdate
             | Route::ProfileDelete
             | Route::ProfileForceDelete => self.write(request),
-            Route::TsEnvTrap => Planned::empty_json(404),
+            Route::EnvTrap => Planned::empty_json(404),
             Route::ScanSync => scanner_rejection(request).unwrap_or_else(|| self.scan(request)),
             Route::ScanResults => {
                 scanner_rejection(request).unwrap_or_else(|| self.async_results(request))
