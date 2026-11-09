@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "airs-cli"
-version = "8.2.0"
+version = "9.0.0"
 dependencies = [
  "airs-mcp",
  "airs-mcp-client",
@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "airs-history-store"
-version = "8.2.0"
+version = "9.0.0"
 dependencies = [
  "airs-runtime-core",
  "airs-test-harness",
@@ -67,7 +67,7 @@ dependencies = [
 
 [[package]]
 name = "airs-mcp"
-version = "8.2.0"
+version = "9.0.0"
 dependencies = [
  "airs-history-store",
  "airs-runtime-core",
@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "airs-mcp-client"
-version = "8.2.0"
+version = "9.0.0"
 dependencies = [
  "airs-runtime-core",
  "async-trait",
@@ -118,7 +118,7 @@ dependencies = [
 
 [[package]]
 name = "airs-runtime-core"
-version = "8.2.0"
+version = "9.0.0"
 dependencies = [
  "airs-test-harness",
  "futures-util",

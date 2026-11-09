@@ -62,17 +62,13 @@ was removed with the TypeScript parity tests (2026-11-08).
 
 ## Status
 
-**8.2.0 is the current release** ([release notes](docs/RELEASE-NOTES/8.2.0.md)). It
-carries the 8.1 work (the AIRS Signal Brief, scan-log discovery, application-bound scanner
-results and report lookups, private bundles and offline attributed review) and the optional
-`airs --mcp` client for the separately deployed runtime MCP service, which holds persistent
-history. The CLI itself keeps no history and contains no SQLite. The service's acceptance
-is tracked in [the phase record](docs/RUNTIME_MCP_PHASE_REVIEWS.md).
-The published stable version remains 8.0.0; these changes have not been published.
-See [test builds](docs/SIGNAL_BRIEF_TEST_BUILDS.md) and
-[release candidate notes](docs/RELEASE-NOTES/8.1.0-rc.4.md).
+**9.0.0 is the current release** ([release notes](docs/RELEASE-NOTES/9.0.0.md)). It removes
+`airs tenant import`, the last TypeScript compatibility code; everything else matches 8.2.0.
+The optional `airs --mcp` client talks to the separately deployed runtime MCP service, which
+holds persistent history. The CLI itself keeps no history and contains no SQLite. The service's
+acceptance is recorded in [the phase record](docs/RUNTIME_MCP_PHASE_REVIEWS.md).
 
-Version 8.2.0 covers milestones 1–3, the M3.5 foundations, M4t tenant writes, M4 runtime
+Version 9.0.0 covers milestones 1–3, the M3.5 foundations, M4t tenant writes, M4 runtime
 writes, M5 bulk scanning, M6a Red Team, M6b DLP, M6c Model Security, M6d Runtime extras, M6e
 Gateway and M6f Supplychain, renames the executable to `airs` (1.0, DESIGN §21;
 [docs/MILESTONES.md](docs/MILESTONES.md)), and replaces the TypeScript CLI (8.0).
@@ -203,7 +199,7 @@ it is a native arm64 executable. Copy it onto your `PATH`, or install it with
 `cargo install --path .`.
 
 ```sh
-airs --version     # prints the version, e.g. 8.2.0
+airs --version     # prints the version, e.g. 9.0.0
 airs --help
 ```
 
@@ -212,7 +208,7 @@ order. Homebrew's Node puts npm's global commands in `/opt/homebrew/bin`, where 
 Homebrew formula links `airs` and `airs-cli` too, so an npm install and a Homebrew install
 collide there; a 7.x TypeScript `airs-cli` or an unrelated npm package named `airs` may
 also come first. Check with `type -a airs airs-cli airs-cli-rs` and `airs --version`
-(this CLI prints a bare version such as `8.2.0`). `airs doctor` reports it: its first
+(this CLI prints a bare version such as `9.0.0`). `airs doctor` reports it: its first
 check, `Executable`, warns when another `airs`, `airs-cli` or `airs-cli-rs` earlier on
 `PATH` resolves to a different file than the running program (it never fails the run).
 Keep one channel and uninstall the others.
