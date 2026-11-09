@@ -27,6 +27,11 @@ It covers:
 | AI Gateway | [`airs gateway`](./commands/gateway.md): workspaces, scopes, telemetry, inventory, writes, inference and the report |
 | AI Supply Chain | [`airs supplychain`](./commands/supplychain.md): scans, findings, statistics, rules and the report |
 
+## Want history, schedules and reports?
+
+The optional [MCP server](./mcp-server/introduction.md) collects your scan activity on a schedule,
+keeps it in an encrypted archive and answers questions about it from the CLI or an AI agent.
+
 ## Names
 
 The command is `airs`. Two more names run the same program and print the same output:

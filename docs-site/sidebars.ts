@@ -22,6 +22,16 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'MCP Server',
+      collapsed: false,
+      items: [
+        'mcp-server/introduction',
+        'mcp-server/getting-started',
+        'mcp-server/deployment',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Commands',
       collapsed: false,
       items: [

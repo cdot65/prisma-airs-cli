@@ -5,6 +5,8 @@ sidebar_position: 10
 
 # `airs mcp` and the `--mcp` commands
 
+New to the service? Start with the [MCP Server introduction](../mcp-server/introduction.md).
+
 Persistent runtime history, collection jobs and schedules belong to the optional
 `airs-mcp` service, reached through your gateway. Nothing here is required: without
 `--mcp CONNECTION` the CLI makes no MCP call, keeps no MCP state and opens no database.
