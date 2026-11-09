@@ -213,7 +213,12 @@ mod tests {
         let other = File::open(&path).expect("open");
         assert!(rustix::fs::flock(&other, FlockOperation::NonBlockingLockExclusive).is_err());
         drop(lock);
-        rustix::fs::flock(&other, FlockOperation::NonBlockingLockExclusive).expect("released");
+        // A child forked by a concurrent test can hold the description until it execs.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while let Err(error) = rustix::fs::flock(&other, FlockOperation::NonBlockingLockExclusive) {
+            assert!(std::time::Instant::now() < deadline, "released: {error:?}");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
     }
 
     #[test]
