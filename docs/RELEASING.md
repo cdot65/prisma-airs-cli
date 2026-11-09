@@ -56,7 +56,7 @@ script under `set -x` or `bash -x`.
 ## 2. Cutting a release
 
 1. Bump `version` in `Cargo.toml`, run `cargo build` so `Cargo.lock` follows, and
-   update the version shown in `README.md`.
+   update the two version numbers in `README.md`.
 2. Write `docs/RELEASE-NOTES/<version>.md`. List the new DESIGN §12 rows and any
    change to the command surface. Without the file the release gets a short default
    body.
