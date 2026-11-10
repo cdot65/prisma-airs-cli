@@ -1115,3 +1115,129 @@ fn privacy_erased_application_name_cannot_promote_into_an_existing_full_bucket()
         assert!(!facts.contains("private@example.invalid"));
     }
 }
+
+/// Events archived while their application had no scanner binding must all become due
+/// once a binding appears: repeated syncs look every one of them up, a budget's worth at a
+/// time, and none is stranded. The events lie outside the later runs' window, so only the
+/// retained-work revisit can reach them (production, 2026-11-09: a long bulk session whose
+/// scanner key was bound afterwards).
+#[test]
+fn a_new_binding_eventually_revisits_every_event_archived_while_unbound() {
+    const APP: &str = "uuid-late";
+    const NAME: &str = "Late";
+    const SESSIONS: usize = 40;
+    const PER_SESSION: usize = 25;
+    let (server, s) = fixture();
+    let date = |args: &[&str]| {
+        let out = std::process::Command::new("date")
+            .args(args)
+            .output()
+            .unwrap();
+        std::str::from_utf8(&out.stdout).unwrap().trim().to_owned()
+    };
+    // The events happened three hours ago: inside the dashboard's rolling 24 hours, but
+    // outside the later runs' collection window, so only the retained-work revisit can
+    // reach them (as for a scheduled tick after a long bulk run).
+    let now = date(&["-u", "-d", "-3 hours", "+%Y-%m-%dT%H:%M:%SZ"]);
+    let since = date(&["-u", "-d", "-1 hour", "+%Y-%m-%dT%H:%M:%SZ"]);
+    let until = date(&["-u", "+%Y-%m-%dT%H:%M:%SZ"]);
+    let mut scan_ids = Vec::new();
+    server.clear_overrides(Route::Runtime(Rx::SessionsOverview));
+    server.clear_overrides(Route::Runtime(Rx::Session));
+    server.runtime(|data| {
+        data.sessions.clear();
+        data.session_records.clear();
+        for n in 0..SESSIONS {
+            let session = format!("late-session-{n:02}");
+            let mut item = fixtures::runtime::session_item(APP, NAME, &session);
+            item["last_session_activity"] = json!(now);
+            data.sessions.push(item);
+            let mut record = fixtures::runtime::session(&session);
+            record["application"] = json!({"id": APP, "name": NAME});
+            let mut actions = Vec::new();
+            for k in 0..PER_SESSION {
+                let scan = format!(
+                    "00000000-0000-4000-8000-{:012x}",
+                    0x1000 + n * PER_SESSION + k
+                );
+                scan_ids.push(scan.clone());
+                let mut action = record["session_actions"][0].clone();
+                action["application_id"] = json!(APP);
+                action["application_name"] = json!(NAME);
+                action["scan_id"] = json!(scan);
+                action["start_time"] = json!(now);
+                actions.push(action);
+            }
+            record["session_actions"] = json!(actions);
+            record["pagination"] = json!({"limit": 25, "skip": 0, "total_items": PER_SESSION});
+            data.session_records
+                .insert((APP.into(), NAME.into(), session), record);
+        }
+    });
+    server.set_default(Route::ScanResults, Planned::json(200, &json!([])));
+    // Collect while the application has no binding (the fixture binds only uuid-shared).
+    run(&cli(), &s, &["runtime", "sync"], &RunOptions::new()).assert_success();
+    let events: i64 = archive(&s)
+        .query_row("SELECT count(*) FROM events WHERE app_id=?1", [APP], |r| {
+            r.get(0)
+        })
+        .unwrap();
+    assert_eq!(
+        events as usize,
+        SESSIONS * PER_SESSION,
+        "every event archived"
+    );
+    assert!(
+        server.requests_for(Route::ScanResults).is_empty(),
+        "nothing looked up unbound"
+    );
+    // Bind the application, then sync repeatedly; each run has a bounded Results budget.
+    let input = format!(
+        "applicationId={}\nendpoint={}\napiKey={}\n",
+        json!(APP),
+        json!(server.url("/scan")),
+        json!("key")
+    );
+    rebind(&s, &input);
+    let mut requested = std::collections::BTreeSet::new();
+    for _ in 0..30 {
+        run(
+            &cli(),
+            &s,
+            &[
+                "runtime",
+                "sync",
+                "--since",
+                &since,
+                "--until",
+                &until,
+                "--backfill",
+            ],
+            &RunOptions::new(),
+        )
+        .assert_success();
+        for request in server.requests_for(Route::ScanResults) {
+            for id in request
+                .query_value("scan_ids")
+                .unwrap_or_default()
+                .split(',')
+            {
+                requested.insert(id.to_owned());
+            }
+        }
+        if requested.len() == scan_ids.len() {
+            break;
+        }
+    }
+    let missing: Vec<_> = scan_ids
+        .iter()
+        .filter(|id| !requested.contains(*id))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "{} of {} events were never looked up after the binding appeared (first: {:?})",
+        missing.len(),
+        scan_ids.len(),
+        missing.first()
+    );
+}
