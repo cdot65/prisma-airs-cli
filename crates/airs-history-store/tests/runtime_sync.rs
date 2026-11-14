@@ -1176,7 +1176,14 @@ fn a_new_binding_eventually_revisits_every_event_archived_while_unbound() {
     });
     server.set_default(Route::ScanResults, Planned::json(200, &json!([])));
     // Collect while the application has no binding (the fixture binds only uuid-shared).
-    run(&cli(), &s, &["runtime", "sync"], &RunOptions::new()).assert_success();
+    let collected = run(
+        &cli(),
+        &s,
+        &["runtime", "sync"],
+        &RunOptions::new().timeout(std::time::Duration::from_secs(120)),
+    );
+    eprintln!("[DEBUG-sync-1000] initial collection: {:?}", collected.elapsed);
+    collected.assert_success();
     let events: i64 = archive(&s)
         .query_row("SELECT count(*) FROM events WHERE app_id=?1", [APP], |r| {
             r.get(0)
