@@ -1,0 +1,164 @@
+   Compiling serde_core v1.0.229
+   Compiling syn v2.0.119
+   Compiling serde v1.0.229
+   Compiling indexmap v2.14.2
+   Compiling tracing-attributes v0.1.31
+   Compiling url v2.5.8
+   Compiling serde_json v1.0.154
+   Compiling tracing v0.1.44
+   Compiling h2 v0.4.20
+   Compiling tower v0.5.3
+   Compiling tokio-rustls v0.26.6
+   Compiling num-traits v0.2.19
+   Compiling tower-http v0.6.11
+   Compiling hyper v1.12.0
+   Compiling hyper-util v0.1.21
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling hyper-rustls v0.27.10
+   Compiling reqwest v0.13.5
+   Compiling serde_spanned v1.1.2
+   Compiling toml v1.1.2+spec-1.1.0
+   Compiling thiserror-impl v1.0.69
+   Compiling scm-sdk v0.2.6
+   Compiling chrono v0.4.45
+   Compiling thiserror v1.0.69
+   Compiling serde_path_to_error v0.1.20
+   Compiling rmcp v3.8.0
+   Compiling oauth2 v5.0.0
+   Compiling airs-test-harness v0.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-test-harness)
+   Compiling airs-runtime-core v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-runtime-core)
+   Compiling airs-history-store v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-history-store)
+   Compiling airs-mcp-client v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-mcp-client)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.84s
+     Running unittests src/lib.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/airs_history_store-d96f75560ef7fcaf)
+
+running 111 tests
+test database::tests::an_accepted_m4_archive_is_read_and_upgraded_in_place ... ok
+test database::tests::a_database_removed_after_admission_is_never_reinitialized ... ok
+test database::tests::incarnations_strictly_increase_and_never_wrap ... ok
+test database::tests::a_generation_never_repeats_across_compaction ... ok
+test database::tests::crash_v1_writer_child ... ok
+test database::tests::crash_writer_child ... ok
+test database::tests::a_hot_journal_on_an_m4_archive_recovers_to_version_2 ... ok
+test database::tests::disk_full_rolls_back_and_secure_delete_removes_live_canary ... ok
+test database::tests::compaction_verifies_copy_and_faults_never_publish_incomplete_data ... ok
+test database::tests::fifo_probe_child ... ok
+test identity::tests::explicit_parts_name_the_same_cloud_as_an_explicit_tenant ... ok
+test database::tests::fifos_at_gate_database_and_journal_never_block_admission ... ok
+test inspect::category_tests::application_telemetry_is_not_inventory_coverage ... ok
+test inspect::tests::a_missing_archive_is_none_and_nothing_is_created ... ok
+test database::tests::hot_journal_requires_explicit_copy_verified_recovery ... ok
+test database::tests::initialization_and_coherent_reads_are_private_and_nonwriting ... ok
+test database::tests::long_reader_bounds_retention_and_deadline_cancels_sql ... ok
+test database::tests::replaced_lock_is_refused_after_waiting_and_on_later_checks ... ok
+test database::tests::the_m4_upgrade_keeps_a_verified_pre_upgrade_copy_and_is_never_implicit_in_validation ... ok
+test inspect::tests::historical_and_delayed_traversals_never_skip_unobserved_hours ... ok
+test database::tests::unsupported_corrupt_and_journal_archives_are_refused_without_writes ... ok
+test inspect::tests::polling_progress_keeps_its_application_scope ... ok
+test inspect::tests::polling_progress_is_the_latest_complete_traversal_and_partials_never_advance ... ok
+test database::tests::unsupported_super_journal_and_wrong_cloud_leave_live_files_unchanged ... ok
+test identity::tests::aliases_and_rotations_share_only_the_exact_public_cloud ... ok
+test identity::tests::persisted_descriptors_reject_forged_identity_and_credential_paths ... ok
+test inspect::tests::a_scoped_traversal_never_becomes_tenant_wide_and_unknown_scope_is_never_complete ... ok
+test inspect::tests::an_offline_gap_marks_its_scope_falling_behind_without_inventing_a_gap ... ok
+test inspect::tests::coverage_is_decided_per_source_and_never_merged_into_completeness ... ok
+test inspect::tests::no_writer_commits_between_the_unfinished_check_and_the_coverage_read ... ok
+test paths::tests::rejects_symlinks_loose_files_and_replaced_identities ... ok
+test paths::tests::roots_and_nonwriting_missing_reads ... ok
+test receipts::tests::a_cancelled_run_finishes_interrupted_with_its_flushed_receipts ... ok
+test report::tests::a_receipt_promoted_only_after_the_cutoff_does_not_change_it ... ok
+test report::tests::an_earlier_cutoff_keeps_its_summary_and_detail_when_a_later_fact_arrives ... ok
+test receipts::tests::a_failed_batch_under_contention_counts_exactly_its_receipts ... ok
+test report::tests::late_data_enters_only_revisions_whose_cutoff_covers_it ... ok
+test receipts::tests::chunked_submissions_keep_every_receipt_through_resume ... ok
+test report::tests::qualify_30_and_90_day_reports_on_a_million_scans ... ignored, opt-in qualification: about a million archive writes
+test report::tests::qualify_restore_and_contention_at_scale ... ignored, opt-in M8.2 qualification: about a million archive writes
+test report::tests::review2_a_later_receipt_demotion_does_not_change_an_earlier_summary ... ok
+test report::tests::profiles_are_taken_as_of_the_period_end_by_observation_link ... ok
+test report::tests::review_later_facts_do_not_change_an_earlier_cutoff ... ok
+test report::tests::summary_dates_follow_chicago_across_dst ... ok
+test receipts::tests::completion_contention_preserves_received_data_and_warns_once_without_zero_loss_claim ... ok
+test receipts::tests::flag_derived_verdict_keeps_the_contradictory_api_category_explicit ... ok
+test report::tests::the_report_input_matches_its_golden_coverage_snapshot ... ok
+test repository::tests::a_promoted_receipt_never_brings_back_a_pruned_excerpt ... ok
+test report::tests::the_summary_budget_disables_filters_in_order_at_its_exact_boundaries ... ok
+test repository::tests::a_receipt_only_excerpt_is_tombstoned_and_never_resurrects ... ok
+test receipts::tests::job_scoped_receipts_deduplicate_across_resume_and_never_store_payload ... ok
+test receipts::tests::report_metadata_retains_monitoring_and_failure_without_snippets_or_invented_allow ... ok
+test receipts::tests::result_status_aliases_pending_and_nested_empty_scan_ids_preserve_supported_outcomes ... ok
+test receipts::tests::unflushed_receipts_are_abandoned_without_creating_an_archive ... ok
+test receipts::tests::unknown_item_receipts_do_not_coalesce_across_flushes_and_capture_is_bounded ... ok
+test report::tests::review2_later_small_facts_do_not_remove_earlier_detail ... ok
+test report::tests::full_cohort_summary_is_exact_beyond_the_detail_bound ... ok
+test repository::tests::ordinary_retention_never_resurrects_a_pruned_excerpt ... ok
+test report::tests::the_production_cell_budget_is_exact ... ok
+test repository::tests::service_fact_counts_do_not_depend_on_run_timestamps ... ok
+test repository::tests::a_prune_of_twenty_thousand_events_stays_within_sqlite_limits ... ok
+test repository::tests::admitted_root_ip_endpoint_preserves_intact_named_binding ... ok
+test repository::tests::deferred_batch_reconciliation_preserves_prior_supported_identity_when_new_fields_are_unknown ... ok
+test repository::tests::history_cached_detector_variants_remain_conflicting_and_preserve_raw_facts ... ok
+test repository::tests::history_cached_view_removes_promoted_receipt_facts_after_global_identity_ambiguity ... ok
+test repository::tests::history_private_report_constraint_invalidates_a_prior_missing_report_promotion ... ok
+test repository::tests::history_private_supplied_identity_constraints_never_promote_to_an_existing_public_bucket ... ok
+test repository::tests::named_receipts_require_known_endpoint_support_in_both_orders_and_invalidate_on_conflict ... ok
+test sync::dashboard_window_tests::spans_round_up_to_an_accepted_dashboard_window ... ok
+test transfer::codec::tests::logical_transfer_exact_bytes_round_trip_and_explicit_cloud_versions ... ok
+test transfer::codec::tests::logical_transfer_line_bound_and_scalar_types_do_not_allow_unbounded_or_executable_data ... ok
+test transfer::codec::tests::logical_transfer_rejects_digest_counts_duplicate_keys_kinds_and_trailing_content ... ok
+test transfer::codec::tests::logical_transfer_table_kinds_cover_every_trusted_schema_table_except_archive_meta ... ok
+test transfer::io::tests::a_replaced_staging_name_is_refused_by_its_identity ... ok
+test transfer::io::tests::logical_transfer_input_refuses_symlinks_and_detects_mutation ... ok
+test transfer::io::tests::logical_transfer_publication_is_private_atomic_and_refuses_replacement ... ok
+test repository::tests::rotation_keeps_revisions_and_batch_report_context_is_not_item_ownership ... ok
+test repository::tests::the_mutation_generation_binds_every_write_and_a_stale_prune_is_refused ... ok
+test sync::backlog::tests::history_backlog_due_filter_and_app_rotation_progress_beyond_the_first_two_hundred ... ok
+test sync::backlog::tests::history_cancelled_after_reservation_releases_proven_unsent_ordinal_before_snapshot ... ok
+test sync::backlog::tests::history_management_clock_admission_denial_retains_a_safe_explicit_diagnostic ... ok
+test sync::backlog::tests::history_oversized_first_cached_view_defers_at_rotated_revision_without_stranding_small_work ... ok
+test sync::backlog::tests::history_recent_session_head_cannot_complete_an_older_unfinished_tail ... ok
+test sync::backlog::tests::history_removed_and_rebound_bindings_become_durably_ineligible_without_probes ... ok
+test sync::backlog::tests::history_report_policy_exclusions_precede_due_limit_and_do_not_starve_eligible_examples ... ok
+test transfer::review_tests::a_concurrently_created_archive_refuses_the_first_batch ... ok
+test transfer::review_tests::a_forged_receipt_is_refused_whatever_its_id ... ok
+test transfer::review_tests::a_late_destination_conflict_refuses_before_any_change ... ok
+test transfer::review_tests::a_real_process_death_between_commit_and_checkpoint_is_reconciled ... ok
+test transfer::review_tests::large_transfer_import_stays_under_a_memory_ceiling ... ignored
+test transfer::review_tests::large_transfer_validation_stays_under_a_memory_ceiling ... ignored
+test transfer::review_tests::a_receipt_with_a_changed_origin_key_is_refused_by_its_identity ... ok
+test transfer::review_tests::a_replacement_import_of_the_same_transfer_retires_the_unfinished_one ... ok
+test transfer::rows::tests::logical_transfer_columns_reject_affinity_coercions_and_preserve_all_fixed_kinds ... ok
+test transfer::semantic::tests::keyset_paging_visits_every_key_including_the_empty_one ... ok
+test transfer::review_tests::an_import_into_an_m4_archive_refuses_unchanged_or_upgrades_then_imports ... ok
+test transfer::review_tests::an_import_never_restores_a_pruned_excerpt_in_any_fact_copy ... ok
+test transfer::review_tests::an_interrupted_merge_keeps_projections_consistent_and_reports_the_import_unfinished ... ok
+test transfer::review_tests::an_unrelated_write_between_batches_stops_the_import ... ok
+test transfer::review_tests::bounded_imports_checkpoint_resume_and_stop_on_a_concurrent_write ... ok
+test transfer::review_tests::committed_but_unchecked_batches_are_reconciled_from_the_archive_journal ... ok
+test transfer::review_tests::import_kill_child ... ok
+test transfer::review_tests::semantically_forged_transfers_are_refused_and_never_silently_rebuilt ... ok
+test transfer::review_tests::service_run_provenance_is_accepted_only_in_its_strict_shapes ... ok
+test transfer::tests::logical_transfer_export_is_coherent_allowlisted_private_and_has_no_missing_initialization ... ok
+test work::tests::authorization_is_app_revision_wide_rotation_is_scoped_and_reset_cannot_override ... ok
+test work::tests::conservative_reservations_spacing_exhaustion_and_explicit_epochs ... ok
+test work::tests::missing_credentials_leave_work_durable_and_session_attempts_are_forbidden ... ok
+test work::tests::proven_not_sent_releases_only_its_ordinal_and_finish_is_once ... ok
+test work::tests::service_cooldowns_cross_credentials_bound_duration_and_preserve_clock_uncertainty ... ok
+test work::tests::unsent_local_deferral_is_scoped_to_evaluated_revision_and_explicitly_resettable ... ok
+
+test result: ok. 107 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 50.21s
+
+     Running unittests src/lib.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/airs_mcp_client-b911b46a21756230)
+
+running 9 tests
+test tests::trust_requires_https_or_loopback_and_approved_origins ... ok
+test tests::an_unrelated_callback_is_ignored_and_the_matching_one_is_used ... ok
+test tests::refresh_lock_refuses_symlinks_and_loose_files ... ok
+test tests::the_complete_result_bound_counts_duplicated_content ... ok
+test previews::tests::preview_records_are_private_named_by_their_id_and_found_across_connections ... ok
+test tests::a_session_bound_elsewhere_is_never_reused ... ok
+test receipts::tests::receipts_are_private_atomic_bounded_and_listed ... ok
+test tests::session_cache_is_private_and_refuses_unsafe_files ... ok
+test tests::only_unrelated_callbacks_end_at_the_deadline ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+

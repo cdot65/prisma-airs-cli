@@ -3712,7 +3712,7 @@ pub struct GwKeyCreateArgs {
     pub scopes: Option<String>,
     #[command(flatten)]
     pub secret: GwSecretArgs,
-    /// Credential type
+    /// Required credential type (may also be supplied through --file or --set)
     #[arg(long = "type", value_name = "type", allow_hyphen_values = true)]
     pub kind: Option<String>,
     /// Workspace UUID
@@ -3725,6 +3725,9 @@ pub struct GwKeyCreateArgs {
 /// `api-keys service create` (§19.11).
 #[derive(Args, Clone)]
 pub struct GwServiceKeyCreateArgs {
+    /// Validate and preview locally without creating a key or contacting the service
+    #[arg(long)]
+    pub dry_run: bool,
     #[command(flatten)]
     pub key: GwKeyCreateArgs,
 }
@@ -3850,6 +3853,9 @@ pub struct GwDeploymentCreateArgs {
 pub struct GwDeploymentUpdateArgs {
     #[arg(value_name = "id")]
     pub id: String,
+    /// Validate and preview locally without changing the deployment or contacting the service
+    #[arg(long, conflicts_with = "force")]
+    pub dry_run: bool,
     /// Deployment authentication settings object
     #[arg(
         long = "auth-settings",

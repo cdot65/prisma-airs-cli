@@ -26,8 +26,6 @@ use serde_json::{Value, json};
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-/// The placeholder organisation of a body validated before the tenant is read.
-pub(super) const ORGANISATION_PLACEHOLDER: &str = "0";
 /// The placeholder provider UUID of a body whose `--ai-provider` slug is resolved later.
 pub(super) const PROVIDER_PLACEHOLDER: &str = "00000000-0000-4000-8000-000000000000";
 
@@ -56,6 +54,7 @@ pub struct WritePlan {
     pub org_body: bool,
     pub secret: Option<PathBuf>,
     pub force: bool,
+    pub dry_run: bool,
     /// The inline-credential warnings (D247), printed before anything is read.
     pub warnings: Vec<String>,
     /// A create's `--workspace` (its unknown-outcome hint).
@@ -74,6 +73,7 @@ impl WritePlan {
             org_body: false,
             secret: None,
             force: false,
+            dry_run: false,
             warnings: Vec::new(),
             workspace: None,
             format,
@@ -190,9 +190,11 @@ fn key_create(
     args: &GwKeyCreateArgs,
     user: Option<&String>,
     format: Option<Format>,
+    dry_run: bool,
 ) -> Result<WritePlan, CliError> {
     let mut plan = WritePlan::new(Write::KeyCreate(kind), format);
-    plan.secret = destination(&args.secret, true)?;
+    plan.dry_run = dry_run;
+    plan.secret = destination(&args.secret, !dry_run)?;
     let workspace = opt_uuid("workspaceId", args.workspace.as_ref())?;
     plan.workspace = args.workspace.clone();
     plan.organisation = organisation(&args.organisation)?;
@@ -474,7 +476,13 @@ fn plan_api_keys(
             KeyKind::Service,
             match group.command.as_ref()? {
                 GwServiceKeysCommand::Create(args) => {
-                    return Some(key_create(KeyKind::Service, &args.key, None, format));
+                    return Some(key_create(
+                        KeyKind::Service,
+                        &args.key,
+                        None,
+                        format,
+                        args.dry_run,
+                    ));
                 }
                 GwServiceKeysCommand::Update(args) => KeyLeaf::Update(args),
                 GwServiceKeysCommand::Rotate(args) => KeyLeaf::Rotate(args),
@@ -491,6 +499,7 @@ fn plan_api_keys(
                         &args.key,
                         args.user_id.as_ref(),
                         format,
+                        false,
                     ));
                 }
                 GwUserKeysCommand::Update(args) => KeyLeaf::Update(args),
@@ -581,8 +590,12 @@ fn plan_deployments(
             let id = uuid("deploymentId", &args.id)?;
             let mut plan = WritePlan::new(Write::DeploymentUpdate(id), format);
             plan.force = args.force;
+            plan.dry_run = args.dry_run;
             let rotate = bool_flag("--rotate-auth", args.rotate_auth.as_ref())?;
-            plan.secret = destination(&args.secret, rotate == Some(Value::Bool(true)))?;
+            plan.secret = destination(
+                &args.secret,
+                rotate == Some(Value::Bool(true)) && !plan.dry_run,
+            )?;
             let mut input = structured(&args.input)?;
             input.named(
                 "auth_settings",

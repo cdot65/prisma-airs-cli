@@ -1,0 +1,50 @@
+   Compiling serde_core v1.0.229
+   Compiling tokio v1.53.3
+   Compiling syn v2.0.119
+   Compiling serde v1.0.229
+   Compiling tokio-util v0.7.20
+   Compiling indexmap v2.14.2
+   Compiling tracing-attributes v0.1.31
+   Compiling url v2.5.8
+   Compiling tracing v0.1.44
+   Compiling h2 v0.4.20
+   Compiling num-traits v0.2.19
+   Compiling tower v0.5.3
+   Compiling serde_json v1.0.154
+   Compiling async-compression v0.4.50
+   Compiling hyper v1.12.0
+   Compiling hyper-util v0.1.21
+   Compiling tokio-rustls v0.26.6
+   Compiling tower-http v0.6.11
+   Compiling hyper-rustls v0.27.10
+   Compiling reqwest v0.13.5
+   Compiling thiserror-impl v1.0.69
+   Compiling rustix v1.1.5
+   Compiling chrono v0.4.45
+   Compiling thiserror v1.0.69
+   Compiling serde_path_to_error v0.1.20
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling serde_spanned v1.1.2
+   Compiling rmcp v3.8.0
+   Compiling scm-sdk v0.2.6
+   Compiling toml v1.1.2+spec-1.1.0
+   Compiling oauth2 v5.0.0
+   Compiling tokio-stream v0.1.19
+   Compiling airs-runtime-core v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-runtime-core)
+   Compiling airs-mcp-client v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-mcp-client)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 46.43s
+     Running unittests src/lib.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-target/debug/deps/airs_mcp_client-2043a105ec35fc98)
+
+running 9 tests
+test tests::trust_requires_https_or_loopback_and_approved_origins ... ok
+test tests::an_unrelated_callback_is_ignored_and_the_matching_one_is_used ... ok
+test tests::the_complete_result_bound_counts_duplicated_content ... ok
+test tests::refresh_lock_refuses_symlinks_and_loose_files ... ok
+test previews::tests::preview_records_are_private_named_by_their_id_and_found_across_connections ... ok
+test tests::a_session_bound_elsewhere_is_never_reused ... ok
+test tests::session_cache_is_private_and_refuses_unsafe_files ... ok
+test receipts::tests::receipts_are_private_atomic_bounded_and_listed ... ok
+test tests::only_unrelated_callbacks_end_at_the_deadline ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+

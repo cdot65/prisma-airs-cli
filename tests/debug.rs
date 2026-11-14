@@ -215,7 +215,7 @@ mod records {
         assert_eq!(page["request"]["headers"]["service-name"], "api");
         assert_eq!(
             page["request"]["headers"]["user-agent"],
-            "PAN-AIRS/0.2.4-rust-sdk"
+            "PAN-AIRS/0.2.6-rust-sdk"
         );
         assert_eq!(
             page["response"]["headers"]["content-type"],

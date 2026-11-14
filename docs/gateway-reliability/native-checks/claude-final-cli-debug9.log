@@ -1,0 +1,20 @@
+
+running 15 tests
+test debug::tests::named_raw_reads_take_the_scoped_operation ... ok
+test debug::tests::location_is_sanitised ... ok
+test debug::tests::timestamps_are_iso_utc_with_milliseconds ... ok
+test debug::tests::gateway_preparation_events_have_only_static_lifecycle_fields ... ok
+test debug::tests::cancelled_token_hold_withholds_headers ... ok
+test debug::tests::header_allow_list_and_masking ... ok
+test debug::tests::line_check_catches_a_case_folded_header_name ... ok
+test debug::tests::observed_results_are_returned_unchanged ... ok
+test debug::tests::gateway_preparation_event_uses_a_private_fallback_when_operation_matches_a_secret ... ok
+test debug::tests::record_schema_and_field_order ... ok
+test debug::tests::gateway_preparation_fallbacks_never_bypass_the_secret_guard ... ok
+test debug::tests::urls_lose_query_fragment_and_userinfo ... ok
+test debug::tests::token_records_wait_for_the_lease ... ok
+test debug::tests::line_check_falls_back_then_skips ... ok
+test debug::tests::write_failure_closes_the_log_and_warns_once ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 225 filtered out; finished in 0.01s
+

@@ -1,0 +1,7 @@
+
+> docs-site@0.0.0 build /Users/cdot/development/goshawks.io/prisma-airs-cli/docs-site
+> docusaurus build
+
+[INFO] [en] Creating an optimized production build...
+[SUCCESS] Generated static files in "build".
+[INFO] Use `npm run serve` command to test your build locally.

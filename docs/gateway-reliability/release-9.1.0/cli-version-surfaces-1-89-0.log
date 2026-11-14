@@ -1,0 +1,78 @@
+   Compiling airs-cli v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.38s
+     Running tests/ci_scripts.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/ci_scripts-fc3352a81c922298)
+
+running 10 tests
+test a_code_path_after_many_docs_paths_runs_the_rust_steps ... ok
+test a_docs_only_change_skips_the_rust_steps ... ok
+test an_empty_diff_runs_the_rust_steps ... ok
+test an_odd_path_name_is_still_classified_by_its_whole_name ... ok
+test an_unusable_base_runs_the_rust_steps ... ok
+test any_other_path_runs_the_rust_steps ... ok
+test moving_a_rust_file_into_docs_runs_the_rust_steps ... ok
+test release_sh_uses_the_strict_status_check ... ok
+test the_release_function_refuses_malformed_responses_and_other_trees ... ok
+test the_release_trusts_ci_only_when_every_required_job_passed ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.59s
+
+     Running tests/docs_consistency.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/docs_consistency-0acc26032879593c)
+
+running 6 tests
+test every_cited_test_exists_in_the_named_module ... ok
+test every_design_divergence_has_an_index_row_and_no_other_rows_exist ... ok
+test every_index_row_cites_a_test_or_says_why_not ... ok
+test no_section_21_rename_maps_a_name_to_itself ... ok
+test reference_parser_and_locator_behave ... ok
+test the_readme_version_example_matches_its_status_line ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.41s
+
+     Running tests/homebrew_formula.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/homebrew_formula-8eebd62cb9587d9e)
+
+running 7 tests
+test a_checksum_renders_the_fixture ... ok
+test a_metadata_file_renders_the_same_bytes ... ok
+test an_existing_formula_is_replaced ... ok
+test crates_io_answers_are_confirmed_by_the_downloaded_crate ... ok
+test output_dash_writes_standard_output ... ok
+test refusals_exit_with_their_code_and_write_nothing ... ok
+test the_template_and_the_fixture_are_the_designed_formula ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+     Running tests/npm_package.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/npm_package-150d805f7503a078)
+
+running 4 tests
+test npm_package_refuses_bad_input_and_writes_nothing ... ok
+test staging::an_install_from_the_staged_tarballs_runs_both_names ... ok
+test staging::the_staged_packages_hold_the_release_binaries ... ok
+test the_launcher_tests_pass ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 24.43s
+
+     Running tests/program_name.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/program_name-ef0d73670e5a2f3f)
+
+running 4 tests
+test current_docs_invoke_airs ... ok
+test every_help_text_names_airs ... ok
+test the_compatibility_binary_is_the_main_binary ... ok
+test the_source_names_only_the_kept_format_names ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.91s
+
+     Running tests/release_packaging.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/release_packaging-30bd57441a433e8c)
+
+running 9 tests
+test every_script_prints_its_whole_usage ... ok
+test package_release_refuses_empty_arguments ... ok
+test packaging::a_failed_check_removes_what_the_run_wrote ... ok
+test packaging::refusals_write_nothing ... ok
+test packaging::the_tarballs_hold_airs_and_the_compatibility_link ... ok
+test packaging::verify_signature_checks_the_packaged_binary ... ok
+test release_sh_builds_airs_and_packages_the_link ... ok
+test release_sh_refuses_bad_arguments_before_any_step ... ok
+test the_release_scripts_parse ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.35s
+

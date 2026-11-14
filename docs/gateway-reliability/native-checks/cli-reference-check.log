@@ -1,0 +1,10 @@
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.68s
+     Running tests/cli_reference.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-target/debug/deps/cli_reference-ae8aa9ee52e1aa18)
+
+running 2 tests
+test rendering_helpers_behave ... ok
+test the_command_reference_is_current ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.78s
+

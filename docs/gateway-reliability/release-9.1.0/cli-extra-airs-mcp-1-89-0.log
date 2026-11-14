@@ -1,0 +1,532 @@
+   Compiling url v2.5.8
+   Compiling chrono v0.4.45
+   Compiling tower-http v0.6.11
+   Compiling rmcp v3.8.0
+   Compiling reqwest v0.13.5
+   Compiling schemars v1.2.3
+   Compiling scm-sdk v0.2.6
+   Compiling axum v0.8.9
+   Compiling airs-test-harness v0.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-test-harness)
+   Compiling airs-runtime-core v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-runtime-core)
+   Compiling airs-history-store v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-history-store)
+   Compiling airs-mcp v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-mcp)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.63s
+     Running unittests src/lib.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/airs_mcp-7650d44a43c4e250)
+
+running 170 tests
+test auth::bounded_tests::diagnostic_identifier_values_are_bounded ... ok
+test auth::bounded_tests::diagnostic_values_never_carry_terminal_control_characters ... ok
+test auth::tests::non_loopback_http_and_url_parts_are_refused ... ok
+test airs_tenant::tests::a_fifo_secret_file_is_refused_without_blocking ... ok
+test auth::tests::initial_outage_is_throttled_and_fails_closed ... ok
+test auth::tests::expired_cache_keeps_serving_stale_keys_while_the_source_is_down ... ok
+test authority_store::tests::denials_map_to_the_fixed_wire_vocabulary ... ok
+test authority_store::tests::authority_transitions_are_bound_to_the_active_epoch ... ok
+test authority_store::tests::approval_path_binds_admin_proof_to_one_agent_prepared_preview ... ok
+test authority_store::tests::direct_proof_flow_is_single_use_and_retries_must_repeat_the_exact_binding ... ok
+test authority_store::tests::abort_or_expiry_after_preview_blocks_the_import ... ok
+test backup_set::tests::archive_discovery_propagates_errors ... ok
+test authority_store::tests::complete_upload_flow_begin_chunks_finalize_then_one_separately_authorized_import ... ok
+test backup_set::tests::hashing_streams_through_a_bounded_buffer ... ok
+test authority_store::tests::a_proof_is_never_reusable_for_another_preview_actor_or_path ... ok
+test backup_set::tests::retention_fails_closed_on_uncertain_sets_and_ignores_foreign_names ... ok
+test backup_set::tests::version_artifacts_are_strict ... ok
+test authority_store::tests::executed_jobs_carry_the_previewed_parameters_across_reopen ... ok
+test collection::tests::cumulative_traffic_includes_reports ... ok
+test backup_set::tests::the_latest_complete_set_is_found_and_absence_refuses ... ok
+test authority_store::tests::authority_jobs_respect_the_queue_bounds_and_leave_previews_unconsumed ... ok
+test config::tests::configured_diagnostic_strings_refuse_control_characters ... ok
+test catalogue::tests::the_catalogue_is_the_frozen_contract ... ok
+test config::tests::grants_follow_the_frozen_catalogue ... ok
+test config::tests::loopback_test_hooks_and_transport_bounds_are_refused_in_production ... ok
+test config::tests::the_example_parses_with_every_section_and_default ... ok
+test config::tests::service_airs_and_limits_are_validated ... ok
+test backup_set::tests::retention_keeps_the_newest_verified_sets_only ... ok
+test authority_store::tests::uploads_are_bound_to_their_declared_size ... ok
+test authority_store::tests::overlapping_import_previews_admit_exactly_one_import ... ok
+test control::tests::a_refused_database_and_its_sidecars_are_never_modified ... ok
+test authority_store::tests::consumption_and_job_insertion_commit_together_or_not_at_all ... ok
+test authority_store::tests::uploads_need_a_complete_declaration_and_finish_with_its_hash ... ok
+test auth::tests::spacing_elapsed_allows_exactly_one_more_fetch ... ok
+test control::tests::a_lost_database_never_reuses_the_seed_epoch ... ok
+test control::tests::a_recovered_store_preserves_the_original_and_publishes_a_verified_copy ... ok
+test control::tests::a_restored_grant_requeues_a_policy_blocked_job ... ok
+test control::tests::a_restore_never_resets_spent_allowances_or_reopens_schedules ... ok
+test control::tests::c1_a_process_dying_inside_a_submission_leaves_nothing ... ok
+test control::tests::c1_submission_is_idempotent_across_reopen_and_refuses_changed_or_stale_keys ... ok
+test control::tests::a_version_2_control_store_migrates_to_the_m6_schema ... ok
+test control::tests::c2_a_process_dying_after_a_reservation_leaves_it_consumed ... ok
+test control::tests::crash_child ... ok
+test control::tests::c2_reservations_survive_restart_as_consumed_uncertain_sends ... ok
+test control::tests::a_restore_validates_the_copy_itself_not_only_its_manifest ... ok
+test control::tests::cancellation_is_explicit_idempotent_and_checkpointed ... ok
+test control::tests::c11_a_restored_store_waits_for_activation_and_keeps_old_work_inactive ... ok
+test control::tests::deadline_failures_record_their_result_and_gap ... ok
+test control::tests::foreign_or_damaged_control_stores_are_refused_and_left_intact ... ok
+test control::tests::c9_backup_sets_are_complete_only_with_a_matching_manifest ... ok
+test control::tests::equivalent_live_collections_join_only_the_submitters_executable_job ... ok
+test control::tests::c1_dying_inside_submit_leaves_nothing_on_both_paths ... ok
+test control::tests::publication_refuses_a_version_without_a_job_of_this_tenant ... ok
+test control::tests::claims_are_fair_recheck_grants_and_respect_deadlines ... ok
+test control::tests::reports_allowances_are_durable_and_cannot_be_reopened_by_rollback ... ok
+test control::tests::recovery_refuses_a_manifest_naming_another_reports_job ... ok
+test control::tests::review2_recovery_refuses_a_manifest_naming_an_unknown_job ... ok
+test control::tests::recovery_repairs_a_missing_publication_event ... ok
+test control::tests::review2_recovery_restores_the_agent_summary ... ok
+test control::tests::queue_bounds_refuse_with_overloaded_and_terminal_jobs_free_capacity ... ok
+test control::tests::review_c6_must_validate_all_bundle_files ... ok
+test control::tests::review_c6_must_record_publication_completion ... ok
+test daily_store::tests::a_daily_slot_association_commits_with_its_job ... ok
+test control::tests::running_jobs_resume_from_their_checkpoint_after_restart ... ok
+test control::tests::review_queued_publisher_must_obey_report_tombstone ... ok
+test daily_store::tests::a_report_with_a_deleted_version_is_never_revised_again ... ok
+test daily_store::tests::daily_enrichment_runs_only_when_enabled_after_the_report ... ok
+test jobs::tests::cancellation_completes_only_at_a_checkpoint_and_never_from_terminal ... ok
+test jobs::tests::names_round_trip ... ok
+test jobs::tests::terminal_states_admit_no_edge ... ok
+test control::tests::stores_with_the_right_tables_but_wrong_structure_are_refused ... ok
+test metrics::tests::an_unanswered_control_store_reports_zero_and_not_ok ... ok
+test metrics::tests::every_series_is_fixed_and_jobs_cover_all_states ... ok
+test control::tests::an_accepted_m4_control_store_migrates_on_open_and_restore ... ok
+test daily_store::tests::review_missed_spring_forward_day_is_catch_up ... ok
+test metrics::tests::store_sizes_are_bounded_sums_of_regular_files ... ok
+test daily_store::tests::missed_fall_back_day_is_catch_up_and_today_is_daily ... ok
+test control::tests::claims_need_both_activation_and_reconciliation_in_either_order ... ok
+test daily_store::tests::missed_days_catch_up_serially ... ok
+test report_html::tests::a_disabled_filter_is_absent_and_stated ... ok
+test report_html::tests::injected_evidence_text_cannot_escape_any_context ... ok
+test report_html::tests::review_agent_summary_preserves_full_cohort_counts ... ok
+test report_html::tests::no_script_and_print_views_keep_the_base_scope ... ok
+test report_html::tests::the_filter_script_counts_prototype_named_applications ... ok
+test report_html::tests::the_filter_script_counts_the_full_cohort ... ok
+test report_html::tests::the_policy_admits_exactly_the_page_style_and_script ... ok
+test daily_store::tests::revisions_coalesce_to_the_latest_due_opportunity ... ok
+test run::tests::a_grant_revoked_during_a_job_blocks_the_next_claim ... FAILED
+test report_html::tests::the_report_page_matches_its_golden_snapshot ... ok
+test run::tests::activation_reads_key_sources_once_and_refusals_after_validation_change_nothing ... FAILED
+test run::tests::activation_publishes_and_loads_only_the_private_copy ... FAILED
+test run::tests::logged_methods_are_standard_names_or_other ... ok
+test run::tests::failures_after_publication_never_split_disk_and_memory ... FAILED
+test run::tests::reloads_install_what_they_publish_even_when_sync_and_logging_fail ... FAILED
+test run::tests::stopping_the_worker_joins_it_before_ownership_is_released ... FAILED
+test daily_store::tests::daily_reports_cover_the_previous_local_day_across_dst ... ok
+test metrics::tests::a_stalled_filesystem_sample_does_not_block_a_scrape ... ok
+test schedule_store::tests::a_quarantined_store_schedules_nothing ... ok
+test report_html::tests::the_byte_ceiling_drops_the_detail_then_refuses_at_its_exact_boundary ... ok
+test schedule_store::tests::a_failed_slot_association_commits_no_job_and_keeps_the_slot_in_history ... ok
+test schedule_store::tests::intervals_stay_on_hour_divisors_within_bounds ... ok
+test schedule_store::tests::a_job_stranded_without_its_slot_is_reassociated_after_the_slot_has_passed ... ok
+test schedule_store::tests::downtime_history_follows_each_versions_interval ... ok
+test migrate::tests::an_unrecognized_source_is_refused_without_changes ... ok
+test schedule_store::tests::a_retry_in_the_same_slot_after_a_failed_association_submits_and_associates ... ok
+test space::tests::the_reserve_and_its_two_thresholds ... ok
+test storage::tests::admission_refuses_loose_modes_and_symlinks ... FAILED
+test storage::tests::second_owner_is_refused_while_the_first_holds_the_lock ... FAILED
+test storage::tests::the_control_seed_is_created_once_and_never_regenerated ... FAILED
+test tools::tests::a_batch_key_is_bound_before_any_archive_effect ... FAILED
+test tools::tests::a_batch_key_reused_after_a_restore_is_its_own_batch_and_run ... FAILED
+test schedule_store::tests::one_job_per_slot_with_a_slot_derived_key ... ok
+test tools::tests::a_failed_chunk_write_never_advances_progress ... FAILED
+test tools::tests::a_failed_reserve_measurement_is_unknown_not_zero ... FAILED
+test schedule_store::tests::downtime_history_walks_every_version_chronologically ... ok
+test tools::tests::a_fresh_import_job_retires_a_canceled_one_through_the_tools ... FAILED
+test tools::tests::a_hot_journal_is_recovered_through_the_service ... FAILED
+test tools::tests::a_maximum_receipt_batch_fits_the_service_budget_and_replays_idempotently ... FAILED
+test tools::tests::a_pending_batch_from_an_earlier_build_recovers_into_its_run ... FAILED
+test tools::tests::a_preview_from_before_a_compaction_never_validates_again ... FAILED
+test tools::tests::a_prune_reports_its_recorded_tombstones_not_its_example_rows ... FAILED
+test schedule_store::tests::schedule_changes_take_effect_only_at_their_time ... ok
+test tools::tests::a_refusal_only_batch_needs_no_archive ... FAILED
+test tools::tests::a_stalled_reserve_measurement_is_shared_and_bounded ... FAILED
+test tools::tests::a_task_started_after_its_budget_never_runs ... FAILED
+test tools::tests::adversarial_transfers_are_refused_through_the_service_adapters ... FAILED
+test tools::tests::an_interrupted_artifact_deletion_is_completed_by_recovery ... FAILED
+test tools::tests::an_import_canceled_at_a_checkpoint_stops_and_reports_its_batches ... FAILED
+test tools::tests::an_invalid_or_misdeclared_upload_is_never_importable ... FAILED
+test tools::tests::an_older_unrecorded_run_is_refused_not_recounted ... FAILED
+test tools::tests::assessments_are_attributed_and_never_change_evidence ... FAILED
+test tools::tests::an_unbound_reservation_with_its_scoped_run_keeps_that_run ... FAILED
+test tools::tests::control_contention_never_blocks_the_runtime_or_escapes_the_budget ... FAILED
+test schedule_store::tests::slots_missed_during_downtime_are_recorded_as_skipped ... ok
+test tools::tests::coverage_refuses_while_an_import_is_unfinished ... FAILED
+test tools::tests::cursors_bind_their_scope_and_refuse_tampering ... ok
+test tools::tests::history_status_reports_the_latest_collection_and_falling_behind ... FAILED
+test tools::tests::lifecycle_prune_export_upload_and_import_through_the_tools ... FAILED
+test tools::tests::jobs_pages_fit_their_bound_and_bind_the_result_set ... FAILED
+test tools::tests::manual_report_ids_are_scoped_by_epoch ... FAILED
+test tools::tests::overloaded_refusals_keep_their_retry_hint ... FAILED
+test tools::tests::previews_bind_the_generation_at_execution_and_retries_keep_their_binding ... FAILED
+test tools::tests::manual_reports_are_quota_bound_and_enrichment_resolves_reports ... FAILED
+test tools::tests::receipt_batches_reserve_first_replay_stably_and_never_retain_service_secrets ... FAILED
+test tools::tests::receipts_are_ingested_idempotently_and_attributed_only_by_association ... FAILED
+test tools::tests::receipt_counts_do_not_depend_on_run_timestamps ... FAILED
+test tools::tests::receipts_fail_closed_without_the_complete_secret_registry ... FAILED
+test tools::tests::report_artifacts_are_deleted_through_the_lifecycle_tools ... FAILED
+test tools::tests::recorded_gaps_reach_the_job_view ... FAILED
+test tools::tests::reports_and_artifacts_are_retrievable_bounded_and_hash_bound ... FAILED
+test tools::tests::scope_digests_bind_epoch_tool_tenant_principal_and_parameters ... ok
+test tools::tests::schedule_tools_are_idempotent_and_keep_history ... FAILED
+test tools::tests::staging_is_quota_reserved_swept_and_abortable_after_expiry ... FAILED
+test tools::tests::the_summary_ceiling_counts_bytes_at_a_character_boundary ... ok
+test tools::tests::the_disk_reserve_pauses_receipts_and_upload_staging ... FAILED
+test worker::tests::a_cancellation_after_durable_effects_keeps_its_details ... FAILED
+test worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result ... FAILED
+test tools::tests::transfers_fail_closed_without_the_secret_registry ... FAILED
+test worker::tests::a_late_cancellation_keeps_the_committed_result_for_every_outcome ... FAILED
+test worker::tests::a_worker_death_mid_run_resumes_from_the_checkpoint_with_its_send_consumed ... FAILED
+test worker::tests::cancellation_is_observed_at_the_next_checkpoint_and_stops_sends ... FAILED
+test worker::tests::unexecutable_operations_stay_queued_and_revoked_grants_block ... FAILED
+test worker::tests::retries_wait_requeue_when_due_and_fail_at_the_deadline ... FAILED
+test tools::tests::a_consumed_upload_keeps_its_quota_until_its_staging_is_removed ... ok
+test schedule_store::tests::missed_ticks_coalesce_into_one_catch_up_job ... ok
+test migrate::tests::an_accepted_m4_archive_migrates ... ok
+test control::tests::restored_jobs_never_regain_their_budget ... ok
+test migrate::tests::a_development_archive_migrates_and_its_original_is_untouched ... ok
+test tools::tests::a_read_past_its_budget_is_refused_and_cancelled ... ok
+test report_html::tests::detail_is_capped_at_ten_thousand_rows ... ok
+
+failures:
+
+---- run::tests::a_grant_revoked_during_a_job_blocks_the_next_claim stdout ----
+
+thread 'run::tests::a_grant_revoked_during_a_job_blocks_the_next_claim' panicked at crates/airs-mcp/src/run.rs:1441:46:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- run::tests::activation_reads_key_sources_once_and_refusals_after_validation_change_nothing stdout ----
+
+thread 'run::tests::activation_reads_key_sources_once_and_refusals_after_validation_change_nothing' panicked at crates/airs-mcp/src/run.rs:1273:46:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- run::tests::activation_publishes_and_loads_only_the_private_copy stdout ----
+
+thread 'run::tests::activation_publishes_and_loads_only_the_private_copy' panicked at crates/airs-mcp/src/run.rs:1226:46:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- run::tests::failures_after_publication_never_split_disk_and_memory stdout ----
+
+thread 'run::tests::failures_after_publication_never_split_disk_and_memory' panicked at crates/airs-mcp/src/run.rs:1354:46:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- run::tests::reloads_install_what_they_publish_even_when_sync_and_logging_fail stdout ----
+
+thread 'run::tests::reloads_install_what_they_publish_even_when_sync_and_logging_fail' panicked at crates/airs-mcp/src/run.rs:1401:46:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- run::tests::stopping_the_worker_joins_it_before_ownership_is_released stdout ----
+
+thread 'run::tests::stopping_the_worker_joins_it_before_ownership_is_released' panicked at crates/airs-mcp/src/run.rs:1441:46:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- storage::tests::admission_refuses_loose_modes_and_symlinks stdout ----
+
+thread 'storage::tests::admission_refuses_loose_modes_and_symlinks' panicked at crates/airs-mcp/src/storage.rs:377:42:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- storage::tests::second_owner_is_refused_while_the_first_holds_the_lock stdout ----
+
+thread 'storage::tests::second_owner_is_refused_while_the_first_holds_the_lock' panicked at crates/airs-mcp/src/storage.rs:377:42:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- storage::tests::the_control_seed_is_created_once_and_never_regenerated stdout ----
+
+thread 'storage::tests::the_control_seed_is_created_once_and_never_regenerated' panicked at crates/airs-mcp/src/storage.rs:377:42:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_batch_key_is_bound_before_any_archive_effect stdout ----
+
+thread 'tools::tests::a_batch_key_is_bound_before_any_archive_effect' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_batch_key_reused_after_a_restore_is_its_own_batch_and_run stdout ----
+
+thread 'tools::tests::a_batch_key_reused_after_a_restore_is_its_own_batch_and_run' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_failed_chunk_write_never_advances_progress stdout ----
+
+thread 'tools::tests::a_failed_chunk_write_never_advances_progress' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_failed_reserve_measurement_is_unknown_not_zero stdout ----
+
+thread 'tools::tests::a_failed_reserve_measurement_is_unknown_not_zero' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_fresh_import_job_retires_a_canceled_one_through_the_tools stdout ----
+
+thread 'tools::tests::a_fresh_import_job_retires_a_canceled_one_through_the_tools' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_hot_journal_is_recovered_through_the_service stdout ----
+
+thread 'tools::tests::a_hot_journal_is_recovered_through_the_service' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_maximum_receipt_batch_fits_the_service_budget_and_replays_idempotently stdout ----
+
+thread 'tools::tests::a_maximum_receipt_batch_fits_the_service_budget_and_replays_idempotently' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_pending_batch_from_an_earlier_build_recovers_into_its_run stdout ----
+
+thread 'tools::tests::a_pending_batch_from_an_earlier_build_recovers_into_its_run' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_preview_from_before_a_compaction_never_validates_again stdout ----
+
+thread 'tools::tests::a_preview_from_before_a_compaction_never_validates_again' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_prune_reports_its_recorded_tombstones_not_its_example_rows stdout ----
+
+thread 'tools::tests::a_prune_reports_its_recorded_tombstones_not_its_example_rows' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_refusal_only_batch_needs_no_archive stdout ----
+
+thread 'tools::tests::a_refusal_only_batch_needs_no_archive' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_stalled_reserve_measurement_is_shared_and_bounded stdout ----
+
+thread 'tools::tests::a_stalled_reserve_measurement_is_shared_and_bounded' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::a_task_started_after_its_budget_never_runs stdout ----
+
+thread 'tools::tests::a_task_started_after_its_budget_never_runs' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::adversarial_transfers_are_refused_through_the_service_adapters stdout ----
+
+thread 'tools::tests::adversarial_transfers_are_refused_through_the_service_adapters' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::an_interrupted_artifact_deletion_is_completed_by_recovery stdout ----
+
+thread 'tools::tests::an_interrupted_artifact_deletion_is_completed_by_recovery' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::an_import_canceled_at_a_checkpoint_stops_and_reports_its_batches stdout ----
+
+thread 'tools::tests::an_import_canceled_at_a_checkpoint_stops_and_reports_its_batches' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::an_invalid_or_misdeclared_upload_is_never_importable stdout ----
+
+thread 'tools::tests::an_invalid_or_misdeclared_upload_is_never_importable' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::an_older_unrecorded_run_is_refused_not_recounted stdout ----
+
+thread 'tools::tests::an_older_unrecorded_run_is_refused_not_recounted' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::assessments_are_attributed_and_never_change_evidence stdout ----
+
+thread 'tools::tests::assessments_are_attributed_and_never_change_evidence' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::an_unbound_reservation_with_its_scoped_run_keeps_that_run stdout ----
+
+thread 'tools::tests::an_unbound_reservation_with_its_scoped_run_keeps_that_run' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::control_contention_never_blocks_the_runtime_or_escapes_the_budget stdout ----
+
+thread 'tools::tests::control_contention_never_blocks_the_runtime_or_escapes_the_budget' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::coverage_refuses_while_an_import_is_unfinished stdout ----
+
+thread 'tools::tests::coverage_refuses_while_an_import_is_unfinished' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::history_status_reports_the_latest_collection_and_falling_behind stdout ----
+
+thread 'tools::tests::history_status_reports_the_latest_collection_and_falling_behind' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::lifecycle_prune_export_upload_and_import_through_the_tools stdout ----
+
+thread 'tools::tests::lifecycle_prune_export_upload_and_import_through_the_tools' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::jobs_pages_fit_their_bound_and_bind_the_result_set stdout ----
+
+thread 'tools::tests::jobs_pages_fit_their_bound_and_bind_the_result_set' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::manual_report_ids_are_scoped_by_epoch stdout ----
+
+thread 'tools::tests::manual_report_ids_are_scoped_by_epoch' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::overloaded_refusals_keep_their_retry_hint stdout ----
+
+thread 'tools::tests::overloaded_refusals_keep_their_retry_hint' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::previews_bind_the_generation_at_execution_and_retries_keep_their_binding stdout ----
+
+thread 'tools::tests::previews_bind_the_generation_at_execution_and_retries_keep_their_binding' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::manual_reports_are_quota_bound_and_enrichment_resolves_reports stdout ----
+
+thread 'tools::tests::manual_reports_are_quota_bound_and_enrichment_resolves_reports' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::receipt_batches_reserve_first_replay_stably_and_never_retain_service_secrets stdout ----
+
+thread 'tools::tests::receipt_batches_reserve_first_replay_stably_and_never_retain_service_secrets' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::receipts_are_ingested_idempotently_and_attributed_only_by_association stdout ----
+
+thread 'tools::tests::receipts_are_ingested_idempotently_and_attributed_only_by_association' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::receipt_counts_do_not_depend_on_run_timestamps stdout ----
+
+thread 'tools::tests::receipt_counts_do_not_depend_on_run_timestamps' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::receipts_fail_closed_without_the_complete_secret_registry stdout ----
+
+thread 'tools::tests::receipts_fail_closed_without_the_complete_secret_registry' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::report_artifacts_are_deleted_through_the_lifecycle_tools stdout ----
+
+thread 'tools::tests::report_artifacts_are_deleted_through_the_lifecycle_tools' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::recorded_gaps_reach_the_job_view stdout ----
+
+thread 'tools::tests::recorded_gaps_reach_the_job_view' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::reports_and_artifacts_are_retrievable_bounded_and_hash_bound stdout ----
+
+thread 'tools::tests::reports_and_artifacts_are_retrievable_bounded_and_hash_bound' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::schedule_tools_are_idempotent_and_keep_history stdout ----
+
+thread 'tools::tests::schedule_tools_are_idempotent_and_keep_history' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::staging_is_quota_reserved_swept_and_abortable_after_expiry stdout ----
+
+thread 'tools::tests::staging_is_quota_reserved_swept_and_abortable_after_expiry' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::the_disk_reserve_pauses_receipts_and_upload_staging stdout ----
+
+thread 'tools::tests::the_disk_reserve_pauses_receipts_and_upload_staging' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::a_cancellation_after_durable_effects_keeps_its_details stdout ----
+
+thread 'worker::tests::a_cancellation_after_durable_effects_keeps_its_details' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result stdout ----
+
+thread 'worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- tools::tests::transfers_fail_closed_without_the_secret_registry stdout ----
+
+thread 'tools::tests::transfers_fail_closed_without_the_secret_registry' panicked at crates/airs-mcp/src/tools.rs:3227:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::a_late_cancellation_keeps_the_committed_result_for_every_outcome stdout ----
+
+thread 'worker::tests::a_late_cancellation_keeps_the_committed_result_for_every_outcome' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::a_worker_death_mid_run_resumes_from_the_checkpoint_with_its_send_consumed stdout ----
+
+thread 'worker::tests::a_worker_death_mid_run_resumes_from_the_checkpoint_with_its_send_consumed' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::cancellation_is_observed_at_the_next_checkpoint_and_stops_sends stdout ----
+
+thread 'worker::tests::cancellation_is_observed_at_the_next_checkpoint_and_stops_sends' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::unexecutable_operations_stay_queued_and_revoked_grants_block stdout ----
+
+thread 'worker::tests::unexecutable_operations_stay_queued_and_revoked_grants_block' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+---- worker::tests::retries_wait_requeue_when_due_and_fail_at_the_deadline stdout ----
+
+thread 'worker::tests::retries_wait_requeue_when_due_and_fail_at_the_deadline' panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+
+
+failures:
+    run::tests::a_grant_revoked_during_a_job_blocks_the_next_claim
+    run::tests::activation_publishes_and_loads_only_the_private_copy
+    run::tests::activation_reads_key_sources_once_and_refusals_after_validation_change_nothing
+    run::tests::failures_after_publication_never_split_disk_and_memory
+    run::tests::reloads_install_what_they_publish_even_when_sync_and_logging_fail
+    run::tests::stopping_the_worker_joins_it_before_ownership_is_released
+    storage::tests::admission_refuses_loose_modes_and_symlinks
+    storage::tests::second_owner_is_refused_while_the_first_holds_the_lock
+    storage::tests::the_control_seed_is_created_once_and_never_regenerated
+    tools::tests::a_batch_key_is_bound_before_any_archive_effect
+    tools::tests::a_batch_key_reused_after_a_restore_is_its_own_batch_and_run
+    tools::tests::a_failed_chunk_write_never_advances_progress
+    tools::tests::a_failed_reserve_measurement_is_unknown_not_zero
+    tools::tests::a_fresh_import_job_retires_a_canceled_one_through_the_tools
+    tools::tests::a_hot_journal_is_recovered_through_the_service
+    tools::tests::a_maximum_receipt_batch_fits_the_service_budget_and_replays_idempotently
+    tools::tests::a_pending_batch_from_an_earlier_build_recovers_into_its_run
+    tools::tests::a_preview_from_before_a_compaction_never_validates_again
+    tools::tests::a_prune_reports_its_recorded_tombstones_not_its_example_rows
+    tools::tests::a_refusal_only_batch_needs_no_archive
+    tools::tests::a_stalled_reserve_measurement_is_shared_and_bounded
+    tools::tests::a_task_started_after_its_budget_never_runs
+    tools::tests::adversarial_transfers_are_refused_through_the_service_adapters
+    tools::tests::an_import_canceled_at_a_checkpoint_stops_and_reports_its_batches
+    tools::tests::an_interrupted_artifact_deletion_is_completed_by_recovery
+    tools::tests::an_invalid_or_misdeclared_upload_is_never_importable
+    tools::tests::an_older_unrecorded_run_is_refused_not_recounted
+    tools::tests::an_unbound_reservation_with_its_scoped_run_keeps_that_run
+    tools::tests::assessments_are_attributed_and_never_change_evidence
+    tools::tests::control_contention_never_blocks_the_runtime_or_escapes_the_budget
+    tools::tests::coverage_refuses_while_an_import_is_unfinished
+    tools::tests::history_status_reports_the_latest_collection_and_falling_behind
+    tools::tests::jobs_pages_fit_their_bound_and_bind_the_result_set
+    tools::tests::lifecycle_prune_export_upload_and_import_through_the_tools
+    tools::tests::manual_report_ids_are_scoped_by_epoch
+    tools::tests::manual_reports_are_quota_bound_and_enrichment_resolves_reports
+    tools::tests::overloaded_refusals_keep_their_retry_hint
+    tools::tests::previews_bind_the_generation_at_execution_and_retries_keep_their_binding
+    tools::tests::receipt_batches_reserve_first_replay_stably_and_never_retain_service_secrets
+    tools::tests::receipt_counts_do_not_depend_on_run_timestamps
+    tools::tests::receipts_are_ingested_idempotently_and_attributed_only_by_association
+    tools::tests::receipts_fail_closed_without_the_complete_secret_registry
+    tools::tests::recorded_gaps_reach_the_job_view
+    tools::tests::report_artifacts_are_deleted_through_the_lifecycle_tools
+    tools::tests::reports_and_artifacts_are_retrievable_bounded_and_hash_bound
+    tools::tests::schedule_tools_are_idempotent_and_keep_history
+    tools::tests::staging_is_quota_reserved_swept_and_abortable_after_expiry
+    tools::tests::the_disk_reserve_pauses_receipts_and_upload_staging
+    tools::tests::transfers_fail_closed_without_the_secret_registry
+    worker::tests::a_cancellation_after_durable_effects_keeps_its_details
+    worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result
+    worker::tests::a_late_cancellation_keeps_the_committed_result_for_every_outcome
+    worker::tests::a_worker_death_mid_run_resumes_from_the_checkpoint_with_its_send_consumed
+    worker::tests::cancellation_is_observed_at_the_next_checkpoint_and_stops_sends
+    worker::tests::retries_wait_requeue_when_due_and_fail_at_the_deadline
+    worker::tests::unexecutable_operations_stay_queued_and_revoked_grants_block
+
+test result: FAILED. 114 passed; 56 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.39s
+
+error: test failed, to rerun pass `-p airs-mcp --lib`

@@ -58,6 +58,49 @@ pub enum Write {
     McpUpsert(String, String),
 }
 
+impl Write {
+    /// Static log identity. Resource IDs, routes and user input never enter it.
+    pub fn diagnostic_operation(&self) -> &'static str {
+        match self {
+            Self::ConfigCreate => "gateway.configs.create",
+            Self::ConfigUpdate(_) => "gateway.configs.update",
+            Self::ConfigDelete(_) => "gateway.configs.delete",
+            Self::GuardrailCreate => "gateway.guardrails.create",
+            Self::GuardrailUpdate(_) => "gateway.guardrails.update",
+            Self::GuardrailDelete(_) => "gateway.guardrails.delete",
+            Self::ProviderCreate => "gateway.virtual_keys.create",
+            Self::ProviderUpdate(_) => "gateway.virtual_keys.update",
+            Self::ProviderDelete(_) => "gateway.virtual_keys.delete",
+            Self::DeploymentCreate => "gateway.deployments.create",
+            Self::DeploymentUpdate(_) => "gateway.deployments.update",
+            Self::IntegrationCreate => "gateway.integrations.create",
+            Self::IntegrationUpdate(_) => "gateway.integrations.update",
+            Self::IntegrationDelete(_) => "gateway.integrations.delete",
+            Self::McpCreate => "gateway.mcp_servers.create",
+            Self::McpUpdate(_) => "gateway.mcp_servers.update",
+            Self::McpDelete(_) => "gateway.mcp_servers.delete",
+            Self::AdminGuardrailCreate => "gateway.admin_guardrails.create",
+            Self::AdminGuardrailUpdate(_) => "gateway.admin_guardrails.update",
+            Self::AdminGuardrailDelete(_) => "gateway.admin_guardrails.delete",
+            Self::DeploymentArchive(_) => "gateway.deployments.archive",
+            Self::KeyCreate(KeyKind::Service) => "gateway.api_keys.service.create",
+            Self::KeyCreate(KeyKind::User) => "gateway.api_keys.user.create",
+            Self::KeyUpdate(_, _) => "gateway.api_keys.update",
+            Self::KeyRotate(_, _) => "gateway.api_keys.rotate",
+            Self::KeyDelete(_, _) => "gateway.api_keys.delete",
+            Self::ModelsSet(_) => "gateway.integrations.models.set",
+            Self::IntegrationWorkspacesSet(_) => "gateway.integrations.workspaces.set",
+            Self::CapabilitiesSet(_) => "gateway.mcp_servers.capabilities.set",
+            Self::McpWorkspacesSet(_) => "gateway.mcp_servers.workspaces.set",
+            Self::OrganisationUpdate => "gateway.organisations.update",
+            Self::AuthSettingsUpdate => "gateway.organisations.auth_settings.update",
+            Self::PluginCreate => "gateway.plugins.create",
+            Self::McpSync(_) => "gateway.mcp_servers.sync",
+            Self::McpUpsert(_, _) => "gateway.mcp_servers.upsert",
+        }
+    }
+}
+
 /// What a write does, for its outcome lines and acknowledgement (§19.3).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Words {

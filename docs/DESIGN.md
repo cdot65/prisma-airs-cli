@@ -18422,3 +18422,46 @@ parity test and COMPATIBILITY entry in the phase that ships it:
   SQLite access, no server requirement. Explicit selection never falls back to live
   collection. Existing live `runtime report` and offline `--from-evidence` stay
   unchanged, and `--from-evidence` conflicts with `--mcp` before any tenant access.
+
+## Gateway reliability source amendment
+
+The CLI9.1.0 candidate pins the separately published scm-sdk0.2.6 registry
+artifact across the workspace's four SDK consumers. The core SDK version stamp
+and user-agent assertions follow that pin; no path override is retained. The
+optional SDK diagnostic getter is not yet presented through the CLI error bridge.
+
+The [gateway reliability plan](GATEWAY_RELIABILITY_IMPLEMENTATION_PLAN.md) adds a
+pure prepared-request module shared by normal execution and local preview.
+`gateway deployments update` and `gateway api-keys service create` expose
+`--dry-run`: local context and typed validation run, while confirmation, client
+construction, authentication, sending and credential-output reservation do not.
+Preview uses the normalized typed body and an operation-specific projection;
+arbitrary configuration, credentials, labels and dynamic keys are withheld.
+The projection shows numeric organisation IDs, workspace UUIDs, valid timestamps,
+well-formed `ws-` workspace slugs, booleans and known type/status/scope literals.
+Slugs can carry project/customer identity; the whole preview still passes through
+the registered-secret scrubber. Its versioned output describes execution requirements and leaves service
+acceptance explicitly unchecked. A service-key preview can omit its destination;
+normal execution still requires one. Deployment preview conflicts with `--force`.
+
+D64's HTTP-attempt contract remains body-free. Typed-schema validation and
+selected-tenant binding refusals through the gateway preparation adapter emit
+an application lifecycle record: `event: validation_failure`, version
+1, a static operation identifier, stage `request_validation` or `tenant_binding`,
+and checkpoint `preflight`, `tenant_binding` or `provider_resolution`.
+`requestSent: false` describes the refused mutation, even if provider resolution
+already made a read. All preparation checkpoints share one logging adapter.
+The event has no `request`/`response` traffic object and accepts no arbitrary input text.
+File, credential, confirmation, malformed-input and missing-configuration refusals
+remain stderr-only; this amendment does not claim complete preparation telemetry.
+Early argument errors still precede log initialization. D38/D116's generic CLI
+schema messages remain until the independently implemented SDK diagnostics are
+adopted through the shared error bridge; this source amendment does not relabel
+that pending integration as complete. See [current progress](gateway-reliability/IMPLEMENTATION_PROGRESS.md)
+for source checks and remaining native/service acceptance.
+
+Gateway lifecycle redaction follows the API log's fail-safe rule: a full static
+record may become a body-free lifecycle or generic redactionFallback marker.
+All variants pass the whole-line secret check; none fabricates HTTP traffic.
+Displayable preview literals are a privacy policy rather than a service vocabulary.
+Dry-run success certifies local preparation; execution_requirements remain mandatory.

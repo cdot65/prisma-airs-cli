@@ -1,0 +1,7 @@
+    Checking airs-mcp v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-mcp)
+    Checking airs-cli v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source)
+    Checking airs-history-store v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-history-store)
+    Checking airs-mcp-client v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-mcp-client)
+    Checking airs-runtime-core v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-runtime-core)
+    Checking airs-test-harness v0.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source/crates/airs-test-harness)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.70s

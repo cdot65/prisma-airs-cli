@@ -2458,13 +2458,13 @@ mod debug {
                 .filter(|operation| *operation != "oauth.token")
                 .collect();
             assert_eq!(found, [operation], "{args:?}");
-            // The pinned SDK's user agent (scm-sdk 0.2.3, §15.24, §19 "What 0.2.x changes").
+            // The published SDK's user agent follows the exact scm-sdk 0.2.6 pin.
             for record in records
                 .iter()
                 .filter(|record| record["operation"] != "oauth.token")
             {
                 assert_eq!(
-                    record["request"]["headers"]["user-agent"], "PAN-AIRS/0.2.4-rust-sdk",
+                    record["request"]["headers"]["user-agent"], "PAN-AIRS/0.2.6-rust-sdk",
                     "{args:?}"
                 );
             }

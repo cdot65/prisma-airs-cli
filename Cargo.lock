@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "airs-cli"
-version = "9.0.0"
+version = "9.1.0"
 dependencies = [
  "airs-mcp",
  "airs-mcp-client",
@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "airs-history-store"
-version = "9.0.0"
+version = "9.1.0"
 dependencies = [
  "airs-runtime-core",
  "airs-test-harness",
@@ -67,7 +67,7 @@ dependencies = [
 
 [[package]]
 name = "airs-mcp"
-version = "9.0.0"
+version = "9.1.0"
 dependencies = [
  "airs-history-store",
  "airs-runtime-core",
@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "airs-mcp-client"
-version = "9.0.0"
+version = "9.1.0"
 dependencies = [
  "airs-runtime-core",
  "async-trait",
@@ -118,7 +118,7 @@ dependencies = [
 
 [[package]]
 name = "airs-runtime-core"
-version = "9.0.0"
+version = "9.1.0"
 dependencies = [
  "airs-test-harness",
  "futures-util",
@@ -1951,9 +1951,9 @@ dependencies = [
 
 [[package]]
 name = "scm-sdk"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "533294fe977e26e251e01dd2de64a896aa22ce45e97ac6264a0df6af879edd55"
+checksum = "382715ffd429bf4c4b02364131c6bd183775d29e127cc2f3049c56043ee203e6"
 dependencies = [
  "base64 0.22.1",
  "bytes",

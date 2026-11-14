@@ -302,18 +302,19 @@ Create a service API key from structured flags
 Usage: airs gateway api-keys service create [OPTIONS]
 
 Options:
-      --alert-emails <emails>    Comma-separated alert email addresses
+      --dry-run                  Validate and preview locally without creating a key or contacting the service
       --output <format>          Output format: pretty, table, json
-      --description <text>       Credential description
+      --alert-emails <emails>    Comma-separated alert email addresses
       --quiet                    Suppress status and decorative output (data and errors still print)
       --debug                    Write redacted API diagnostics to a private JSONL file
+      --description <text>       Credential description
       --expires-at <iso>         Expiration as ISO-8601
-      --name <name>              Credential name
       --tenant <name>            Use this registered tenant for one invocation without changing the selection
+      --name <name>              Credential name
       --organisation-id <tsg>    Numeric TSG id (default: the selected tenant's mgmtTsgId; another value is refused)
       --scopes <scopes>          Comma-separated scopes (known: agents.invoke, completions.write, logs.write, mcp.invoke, prompts.render)
       --secret-output <path>     New private file (mode 0600) that receives the one-time credential; never overwritten (the credential is never printed)
-      --type <type>              Credential type
+      --type <type>              Required credential type (may also be supplied through --file or --set)
       --workspace <uuid>         Workspace UUID
       --file <path>              Advanced JSON request base; named flags override it
       --set <path=value>         Set a typed JSON value at a request path (repeatable)
@@ -466,7 +467,7 @@ Options:
       --organisation-id <tsg>    Numeric TSG id (default: the selected tenant's mgmtTsgId; another value is refused)
       --scopes <scopes>          Comma-separated scopes (known: agents.invoke, completions.write, logs.write, mcp.invoke, prompts.render)
       --secret-output <path>     New private file (mode 0600) that receives the one-time credential; never overwritten (the credential is never printed)
-      --type <type>              Credential type
+      --type <type>              Required credential type (may also be supplied through --file or --set)
       --workspace <uuid>         Workspace UUID
       --file <path>              Advanced JSON request base; named flags override it
       --set <path=value>         Set a typed JSON value at a request path (repeatable)
@@ -886,14 +887,15 @@ Arguments:
   <id>  
 
 Options:
-      --auth-settings <json>         Deployment authentication settings object
+      --dry-run                      Validate and preview locally without changing the deployment or contacting the service
       --output <format>              Output format: pretty, table, json
-      --deployment-config <json>     Deployment configuration object
+      --auth-settings <json>         Deployment authentication settings object
       --quiet                        Suppress status and decorative output (data and errors still print)
       --debug                        Write redacted API diagnostics to a private JSONL file
+      --deployment-config <json>     Deployment configuration object
       --force                        Skip the confirmation prompt
-      --is-default <boolean>         Make this the default deployment
       --tenant <name>                Use this registered tenant for one invocation without changing the selection
+      --is-default <boolean>         Make this the default deployment
       --name <name>                  Deployment name
       --override-existing <boolean>  Override an existing registration
       --rotate-auth <boolean>        Rotate deployment authentication
