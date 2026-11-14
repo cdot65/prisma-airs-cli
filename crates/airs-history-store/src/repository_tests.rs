@@ -753,10 +753,12 @@ fn a_prune_of_twenty_thousand_events_stays_within_sqlite_limits() {
     let c = cloud();
     let n = 20_000usize;
     {
+        // Give the 20,000-row fixture setup headroom during concurrent release builds.
+        // The prune operations below retain their separate operation budgets.
         let w = Writer::open(
             d.path(),
             &c,
-            Duration::from_secs(60),
+            Duration::from_secs(300),
             true,
             &scm::Session::new(),
         )
