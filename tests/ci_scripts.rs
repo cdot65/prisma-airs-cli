@@ -53,97 +53,150 @@ fn zig_downloads_verify_before_extracting_and_fail_over_safely() {
         .unwrap();
     let bytes = b"synthetic Zig archive";
     let digest = format!("{:x}", Sha256::digest(bytes));
-    let step = step.replace(pinned, &digest);
+    let arm_pin = step
+        .split_once("aarch64 | arm64) arch=aarch64; sum=")
+        .unwrap()
+        .1
+        .split_whitespace()
+        .next()
+        .unwrap();
+    let step = step.replace(pinned, &digest).replace(arm_pin, &digest);
+    // Resolve before the mock shadows PATH, avoiding recursive self-invocation.
+    let verifier = Command::new("sh")
+        .args(["-c", "command -v sha256sum || command -v shasum"])
+        .output()
+        .unwrap();
+    assert!(verifier.status.success(), "a real SHA-256 tool is required");
+    let verifier = String::from_utf8(verifier.stdout).unwrap();
     let executable = |path: &Path, body: &str| {
         fs::write(path, body).unwrap();
         fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
     };
-    for mode in [
-        "good",
-        "corrupt-first",
-        "failed-first",
-        "all-corrupt",
-        "all-failed",
-    ] {
-        let dir = repo(&format!("zig-{mode}"));
-        let bin = dir.join("bin");
-        let temp = dir.join("runner");
-        fs::create_dir_all(&bin).unwrap();
-        fs::create_dir_all(temp.join("zig-x86_64-linux-0.17.0")).unwrap();
-        fs::write(dir.join("good"), bytes).unwrap();
-        executable(&bin.join("uname"), "#!/bin/sh\nprintf 'x86_64\\n'\n");
-        executable(
-            &bin.join("sha256sum"),
-            "#!/bin/sh\nexec shasum -a 256 \"$@\"\n",
-        );
-        executable(
-            &bin.join("tar"),
-            "#!/bin/sh\nprintf 'extract\\n' >> \"$TEST_DIR/extractions\"\n",
-        );
-        executable(
-            &temp.join("zig-x86_64-linux-0.17.0/zig"),
-            "#!/bin/sh\nprintf '0.17.0\\n'\n",
-        );
-        executable(
-            &bin.join("curl"),
-            r#"#!/bin/sh
+    for arch in ["x86_64", "aarch64"] {
+        for mode in [
+            "good",
+            "corrupt-first",
+            "failed-first",
+            "all-corrupt",
+            "all-failed",
+        ] {
+            let dir = repo(&format!("zig-{arch}-{mode}"));
+            let name = format!("zig-{arch}-linux-0.17.0");
+            let archive = format!("{name}.tar.xz");
+            let bin = dir.join("bin");
+            let temp = dir.join("runner");
+            fs::create_dir_all(&bin).unwrap();
+            fs::create_dir_all(temp.join(&name)).unwrap();
+            fs::write(dir.join("good"), bytes).unwrap();
+            executable(
+                &bin.join("uname"),
+                "#!/bin/sh\nprintf '%s\\n' \"$TEST_ARCH\"\n",
+            );
+            executable(
+                &bin.join("sha256sum"),
+                r#"#!/bin/sh
+case "$REAL_SHA256" in
+  */sha256sum) exec "$REAL_SHA256" "$@" ;;
+  *) exec "$REAL_SHA256" -a 256 "$@" ;;
+esac
+"#,
+            );
+            executable(
+                &bin.join("tar"),
+                "#!/bin/sh\nprintf 'extract\\n' >> \"$TEST_DIR/extractions\"\n",
+            );
+            executable(
+                &temp.join(format!("{name}/zig")),
+                "#!/bin/sh\nprintf '0.17.0\\n'\n",
+            );
+            executable(
+                &bin.join("curl"),
+                r#"#!/bin/sh
 set -eu
 output=
 connect=
 limit=
+proto=
+redirect=
+tls=false
+quiet_config=false
+fail_http=false
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -o) output=$2; shift 2 ;;
+    --proto) proto=$2; shift 2 ;;
+    --proto-redir) redirect=$2; shift 2 ;;
+    --tlsv1.2) tls=true; shift ;;
+    -q) quiet_config=true; shift ;;
+    -sSfL) fail_http=true; shift ;;
     --connect-timeout) connect=$2; shift 2 ;;
     --max-time) limit=$2; shift 2 ;;
     *) url=$1; shift ;;
   esac
 done
-if [ "$connect" != 15 ] || [ "$limit" != 180 ]; then exit 99; fi
+if [ "$connect" != 15 ] || [ "$limit" != 180 ] \
+  || [ "$proto" != =https ] || [ "$redirect" != =https ] \
+  || [ "$tls" != true ] || [ "$quiet_config" != true ] || [ "$fail_http" != true ]; then
+  exit 99
+fi
+case "$url" in https://*) ;; *) exit 99 ;; esac
 printf '%s\n' "$url" >> "$TEST_DIR/requests"
 case "$TEST_MODE:$url" in
-  all-failed:*|failed-first:*zig.linus.dev*) exit 7 ;;
+  all-failed:*|failed-first:*zig.linus.dev*)
+    printf 'a truncated archive longer than the good fixture' > "$output"
+    exit 28 ;;
   all-corrupt:*|corrupt-first:*zig.linus.dev*) printf 'corrupt' > "$output" ;;
   *) cp "$TEST_DIR/good" "$output" ;;
 esac
 "#,
-        );
-        let out = Command::new("bash")
-            .arg("-c")
-            .arg(&step)
-            .env_clear()
-            .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
-            .env("RUNNER_TEMP", &temp)
-            .env("GITHUB_PATH", dir.join("paths"))
-            .env("ZIG_VERSION", "0.17.0")
-            .env("TEST_DIR", &dir)
-            .env("TEST_MODE", mode)
-            .output()
-            .unwrap();
-        let succeeds = !mode.starts_with("all-");
-        assert_eq!(
-            out.status.success(),
-            succeeds,
-            "{mode}: {}",
-            String::from_utf8_lossy(&out.stderr)
-        );
-        let requests = fs::read_to_string(dir.join("requests")).unwrap();
-        assert_eq!(requests.lines().count(), if mode == "good" { 1 } else { 2 });
-        assert!(!temp.join("zig-x86_64-linux-0.17.0.tar.xz.part").exists());
-        if succeeds {
-            assert_eq!(
-                fs::read(temp.join("zig-x86_64-linux-0.17.0.tar.xz")).unwrap(),
-                bytes
             );
+            let out = Command::new("bash")
+                .arg("-c")
+                .arg(&step)
+                .env_clear()
+                .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+                .env("RUNNER_TEMP", &temp)
+                .env("GITHUB_PATH", dir.join("paths"))
+                .env("ZIG_VERSION", "0.17.0")
+                .env("TEST_DIR", &dir)
+                .env("TEST_MODE", mode)
+                .env("TEST_ARCH", arch)
+                .env("REAL_SHA256", verifier.trim())
+                .output()
+                .unwrap();
+            let succeeds = !mode.starts_with("all-");
             assert_eq!(
-                fs::read_to_string(dir.join("extractions")).unwrap(),
-                "extract\n"
+                out.status.success(),
+                succeeds,
+                "{mode}: {}",
+                String::from_utf8_lossy(&out.stderr)
             );
-            assert!(dir.join("paths").exists());
-        } else {
-            assert!(!temp.join("zig-x86_64-linux-0.17.0.tar.xz").exists());
-            assert!(!dir.join("extractions").exists());
-            assert!(!dir.join("paths").exists());
+            let requests = fs::read_to_string(dir.join("requests")).unwrap();
+            let requests = requests.lines().collect::<Vec<_>>();
+            assert_eq!(requests.len(), if mode == "good" { 1 } else { 2 });
+            assert_eq!(
+                requests[0],
+                format!("https://zig.linus.dev/zig/{archive}?source=ci")
+            );
+            if requests.len() == 2 {
+                assert_eq!(
+                    requests[1],
+                    format!("https://ziglang.org/download/0.17.0/{archive}")
+                );
+            }
+            assert!(!temp.join(format!("{archive}.part")).exists());
+            if succeeds {
+                assert_eq!(fs::read(temp.join(&archive)).unwrap(), bytes);
+                assert_eq!(
+                    fs::read_to_string(dir.join("extractions")).unwrap(),
+                    "extract\n"
+                );
+                assert!(dir.join("paths").exists());
+            } else {
+                assert!(!temp.join(&archive).exists());
+                assert!(!dir.join("extractions").exists());
+                assert!(!dir.join("paths").exists());
+            }
         }
     }
 }

@@ -191,7 +191,7 @@ jobs:
           # The trusted digest stays pinned above, never fetched from a mirror.
           # Bound every candidate; a slow origin must not consume the whole job.
           for url in \
-            "https://zig.linus.dev/zig/$name.tar.xz?source=prisma-airs-cli" \
+            "https://zig.linus.dev/zig/$name.tar.xz?source=ci" \
             "https://ziglang.org/download/$ZIG_VERSION/$name.tar.xz"; do
             if curl -q --proto '=https' --proto-redir '=https' --tlsv1.2 \
               --connect-timeout 15 --max-time 180 -sSfL -o "$file.part" "$url" \
