@@ -24,6 +24,9 @@ use airs_test_harness::{
 };
 use serde_json::{Value, json};
 
+#[path = "gateway_writes/reliability.rs"]
+mod reliability;
+
 // ---------------------------------------------------------------------------
 // Local helpers
 // ---------------------------------------------------------------------------

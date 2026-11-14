@@ -1,0 +1,462 @@
+   Compiling airs-cli v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.31s
+     Running tests/cli_reference.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/cli_reference-ca40c341db4746f2)
+
+running 2 tests
+test rendering_helpers_behave ... ok
+test the_command_reference_is_current ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.91s
+
+     Running tests/debug.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/debug-40920c76eff6deb0)
+
+running 24 tests
+test files::default_location_is_under_home ... ok
+test files::directory_and_file_are_private ... ok
+test files::quiet_hides_the_notice_only ... ok
+test files::retention_keeps_the_newest_twenty ... ok
+test files::unsafe_directories_are_refused ... ok
+test files::unusable_state_locations_are_setup_failures ... ok
+test files::unwritable_directory_is_a_setup_failure ... ok
+test files::write_failure_keeps_the_outcome ... ok
+test hint::hint_only_without_debug ... ok
+test no_log::debug_is_global_and_may_repeat ... ok
+test no_log::tenant_commands_create_nothing ... ok
+test no_log::tenant_errors_leave_an_empty_log ... ok
+test no_log::usage_and_parse_errors_create_nothing ... ok
+test records::connection_failure_records_request_failed ... ok
+test records::doctor_records_every_probe ... ok
+test records::interrupted_request_is_recorded_as_cancelled ... ok
+test records::profiles_list_records_the_token_and_the_page ... ok
+test records::refresh_and_replay_records_every_attempt ... ok
+test records::retries_record_every_attempt ... ok
+test records::scan_masks_credentials_and_omits_content ... ok
+test records::secret_echoed_as_a_header_name_is_never_written ... ok
+test records::token_echoed_in_its_own_response_is_masked ... ok
+test records::token_failure_is_one_masked_record ... ok
+test records::walk_records_every_page ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.42s
+
+     Running tests/gateway_inference.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/gateway_inference-483579f4c2633c1b)
+
+running 26 tests
+test checks::argument_checks_send_nothing ... ok
+test checks::d240_the_environment_is_never_read ... ok
+test checks::missing_configuration_is_named ... ok
+test checks::request_files_are_checked_without_echoing_them ... ok
+test debug::the_log_records_no_key_prompt_or_output ... ok
+test failures::errors_are_sent_once_without_provider_text ... ok
+test failures::the_timeout_bounds_the_request ... ok
+test interrupt::a_signal_after_the_request_names_the_billing ... ok
+test requests::an_incomplete_answer_exits_1 ... ok
+test requests::chat_sends_the_runtime_key_only_and_prints_the_answer ... ok
+test requests::embeddings_use_the_embedding_model_and_numeric_dimensions ... ok
+test requests::file_input_takes_flag_overrides ... ok
+test requests::logprob_tokens_keep_the_answer ... ok
+test requests::model_text_is_terminal_safe_and_withholds_secrets ... ok
+test requests::pretty_prints_the_text_and_table_the_top_level ... ok
+test requests::responses_default_to_no_storage ... ok
+test requests::the_endpoint_flag_overrides_the_tenant ... ok
+test requests::the_tenant_default_output_is_honoured ... ok
+test streams::a_broken_stream_fails_after_its_text ... ok
+test streams::a_failed_lifecycle_exits_1_after_the_text ... ok
+test streams::a_secret_split_across_deltas_is_withheld ... ok
+test streams::a_secret_split_across_json_events_is_withheld ... ok
+test streams::a_table_default_cannot_stream ... ok
+test streams::chat_streams_text_and_jsonl ... ok
+test streams::responses_stream_until_the_terminal_event ... ok
+test tree::the_group_lists_its_three_leaves ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.41s
+
+     Running tests/gateway_inventory.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/gateway_inventory-f3187077cf234a72)
+
+running 43 tests
+test admin_guardrails::a_partial_page_prints_its_status_line ... ok
+test admin_guardrails::list_queries_and_get ... ok
+test admin_guardrails::malformed_integers_need_no_tenant ... ok
+test admin_guardrails::the_admin_endpoint_with_oauth_and_the_tsg ... ok
+test checks::a_foreign_tsg_is_refused ... ok
+test checks::argument_checks_send_nothing ... ok
+test checks::credentials_are_checked_first ... ok
+test debug::reads_record_their_operations_and_no_body_or_query ... ok
+test failures::errors_retries_and_decode_failures ... ok
+test failures::grant_hints_by_plane ... ok
+test incomplete::incomplete_lists_warn ... ok
+test interrupt::a_signal_during_a_read_writes_nothing ... ok
+test reads::audit_windows ... ok
+test reads::details_print_field_value_tables ... ok
+test reads::empty_lists ... ok
+test reads::every_read_sends_its_one_request ... ok
+test reads::integration_models_are_listed ... ok
+test reads::json_is_the_only_stdout ... ok
+test reads::lists_print_typescript_columns ... ok
+test reads::organisation_reads_default_to_the_tenant_tsg ... ok
+test tree::groups_list_their_read_leaves ... ok
+test tree::help_aliases_and_hidden_options ... ok
+test withholding::audit_request_fields ... ok
+test withholding::audited_secret_reference_bodies_never_show_the_auth_config ... ok
+test withholding::config_texts_withhold_service_accounts_at_any_depth ... ok
+test withholding::credentials_are_withheld_in_every_format ... ok
+test withholding::d238_a_secret_mapping_prints_and_withholds_nothing_ordinary ... ok
+test withholding::d238_a_short_configuration_header_does_not_withhold_other_data ... ok
+test withholding::d238_camel_case_and_worded_credential_names_are_withheld ... ok
+test withholding::d238_credential_objects_register_passwords_not_words ... ok
+test withholding::d238_credentials_named_inside_schemas_are_withheld ... ok
+test withholding::d238_d251_unreadable_config_texts_and_urls_in_prose_are_withheld ... ok
+test withholding::d238_guardrail_metadata_keys_and_empty_schema_defaults_print ... ok
+test withholding::d238_header_credentials_outside_the_sdk_paths_are_withheld ... ok
+test withholding::d238_model_prices_are_printed ... ok
+test withholding::d238_name_value_pairs_private_keys_and_numbers_are_withheld ... ok
+test withholding::d238_pass_keys_scheme_and_header_shapes_are_withheld ... ok
+test withholding::d238_plural_token_names_are_withheld ... ok
+test withholding::d238_the_guardrail_catalog_withholds_nothing_ordinary ... ok
+test withholding::d239_a_generic_name_in_an_audit_body_does_not_withhold_the_log ... ok
+test withholding::d239_audit_header_values_do_not_withhold_the_record ... ok
+test withholding::d239_revealed_fields_never_show_credentials ... ok
+test withholding::echoed_credentials_are_withheld ... ok
+
+test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 28.99s
+
+     Running tests/gateway_reads.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/gateway_reads-905dc7b3ca99c048)
+
+running 30 tests
+test checks::argument_errors_are_usage_errors_before_the_tenant ... ok
+test checks::parse_errors_exit_2 ... ok
+test debug::reads_record_their_operations_and_no_body_or_query ... ok
+test failures::a_display_name_under_a_data_plane_only_grant_hints_at_the_slug ... ok
+test failures::a_malformed_answer_is_a_decode_error ... ok
+test failures::configuration_and_token_errors_come_before_any_api_request ... ok
+test failures::reads_retry_and_print_no_server_text ... ok
+test failures::the_grant_hint_follows_the_code_and_the_plane ... ok
+test interrupt::a_signal_during_a_read_writes_nothing ... ok
+test scopes::get_in_every_format ... ok
+test scopes::list_in_every_format ... ok
+test telemetry::cost_in_every_format ... ok
+test telemetry::every_leaf_resolves_then_reads_its_route ... ok
+test telemetry::filters_reach_the_query_in_typescript_order ... ok
+test telemetry::logs_list_pages ... ok
+test telemetry::reads_print_the_envelope ... ok
+test telemetry::resolution_over_three_lists ... ok
+test telemetry::telemetry_documents_are_withheld ... ok
+test telemetry::windows ... ok
+test tree::groups_and_leaves_are_registered_in_typescript_order ... ok
+test tree::leaves_offer_three_formats_and_list_aliases ... ok
+test workspaces::an_empty_list_in_every_format ... ok
+test workspaces::an_incomplete_list_warns ... ok
+test workspaces::d238_workspace_api_key_settings_print_as_sent ... ok
+test workspaces::d254_get_resolves_no_name_on_an_incomplete_list ... ok
+test workspaces::get_normalises_status_and_limits ... ok
+test workspaces::get_prints_the_detail_in_every_format ... ok
+test workspaces::get_resolves_a_name_after_a_404 ... ok
+test workspaces::list_reads_the_data_plane_with_the_typescript_layout ... ok
+test workspaces::planes_statuses_and_all ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.71s
+
+     Running tests/gateway_report.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/gateway_report-cc9a8858a524965c)
+
+running 12 tests
+test a_5xx_is_read_once_and_a_403_twice ... ok
+test a_partial_report_and_strict ... ok
+test a_signal_during_collection_writes_no_report ... ok
+test an_unknown_workspace_reads_only_the_tenant_sources ... ok
+test invalid_options_exit_2_before_any_request ... ok
+test log_pages_follow_the_budget_and_the_window ... ok
+test no_telemetry_available_still_writes_the_report ... ok
+test stdout_delivery ... ok
+test the_default_name_and_the_alias ... ok
+test the_destination_is_checked_before_any_request ... ok
+test the_help_names_the_gateway_report ... ok
+test writes_html_with_the_typescript_reads ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.46s
+
+     Running tests/gateway_writes.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/gateway_writes-49a65b73247a8de0)
+
+running 80 tests
+test bodies::argument_checks_open_no_debug_log ... ok
+test bodies::configs_from_a_file_and_from_flags ... ok
+test bodies::every_resource_builds_its_named_flags ... ok
+test bodies::file_flags_and_assignments_take_precedence_in_order ... ok
+test bodies::refinements_use_the_typescript_texts ... ok
+test bodies::request_files_are_json_objects_only ... ok
+test bodies::structured_input_failures_are_usage_errors_before_any_request ... ok
+test bodies::values_are_never_echoed ... ok
+test confirmations::a_signal_at_a_prompt_cancels ... ok
+test confirmations::creates_and_upserts_do_not_confirm ... ok
+test confirmations::every_prompt_confirms_only_yes ... ok
+test confirmations::non_interactive_refusals ... ok
+test integrations::credential_sources ... ok
+test integrations::d243_authentication_replacing_updates_confirm ... ok
+test integrations::replacement_bodies ... ok
+test integrations::slugs_resolve_over_the_catalog_and_custom_hosts_map ... ok
+test integrations::the_hidden_key_prompt ... ok
+test integrations::updates_confirm_only_credential_replacements ... ok
+test interrupt::a_signal_after_the_credential_is_saved_names_the_file ... ok
+test interrupt::a_signal_before_the_write_changes_nothing ... ok
+test interrupt::a_signal_during_a_secret_write_removes_the_reservation ... ok
+test interrupt::a_signal_during_a_write_reports_an_unknown_outcome ... ok
+test interrupt::provisioning_names_the_step ... ok
+test organisations::organisation_ids_default_to_the_tenant_and_refuse_others ... ok
+test outcomes::a_401_is_replayed_once_and_a_403_never ... ok
+test outcomes::an_unreadable_2xx_says_it_was_applied ... ok
+test outcomes::removals_leave_stdout_empty_and_acknowledge ... ok
+test outcomes::write_answers_in_every_format ... ok
+test outcomes::writes_are_sent_once_with_an_outcome_unknown_line ... ok
+test reliability::a_full_deployment_get_document_is_not_a_write_request_file ... ok
+test reliability::deployment_blockers_are_independent_and_grouped_url_is_not_a_fix ... ok
+test reliability::deployment_dry_run_and_execution_share_the_effective_request ... ok
+test reliability::deployment_dry_run_conflicts_with_force_before_any_execution ... ok
+test reliability::deployment_preview_accepts_flags_files_and_assignments ... ok
+test reliability::dry_run_debug_records_only_rejections_with_the_correct_stage ... ok
+test reliability::dry_run_does_not_bypass_schema_or_tenant_validation ... ok
+test reliability::dry_run_uses_local_tenant_context_without_management_credentials ... ok
+test reliability::execution_and_preview_log_flag_and_body_tenant_refusals_once ... ok
+test reliability::execution_and_preview_share_the_selected_tenant_format_refusal ... ok
+test reliability::key_dry_run_checks_but_never_reserves_a_supplied_destination ... ok
+test reliability::key_dry_run_needs_no_secret_destination_and_redacts_its_preview ... ok
+test reliability::key_preview_accepts_type_from_flags_files_and_assignments ... ok
+test reliability::key_preview_withholds_arbitrary_name_and_type_values ... ok
+test reliability::key_type_can_come_from_any_input_source_with_either_timestamp_form ... ok
+test reliability::missing_key_type_is_rejected_without_a_tenant_or_secret_file ... ok
+test reliability::preview_and_execution_preserve_the_registered_tsg_pin_when_config_loses_it ... ok
+test reliability::provider_resolution_validation_is_logged_after_reads_without_sending_the_mutation ... ok
+test reliability::read_auth_settings_need_both_type_and_field_changes_for_the_write_schema ... ok
+test reliability::recorded_deployment_attempts_fail_before_loading_a_tenant ... ok
+test reliability::rotating_preview_reports_execution_requirements_without_reserving_a_file ... ok
+test reliability::semantic_schema_rejections_record_validation_events_without_traffic ... ok
+test reliability::service_key_type_obeys_file_flag_assignment_precedence ... ok
+test reliability::text_and_quiet_json_previews_withhold_urls_and_arbitrary_labels ... ok
+test reliability::write_shaped_deployment_settings_reach_the_fixture_once ... ok
+test scopes::bind_resolves_and_verifies ... ok
+test scopes::create_checks_the_name_and_prints_the_scope ... ok
+test scopes::delete_with_force_and_the_refusal ... ok
+test secrets::a_failed_write_removes_the_reservation ... ok
+test secrets::a_lost_race_keeps_the_temporary ... ok
+test secrets::a_schema_mismatched_2xx_still_saves_the_credential ... ok
+test secrets::credential_writes_follow_the_attempt_rules ... ok
+test secrets::deployments_create_and_rotate ... ok
+test secrets::destination_rules ... ok
+test secrets::key_creates_save_the_whole_answer_to_a_new_private_file ... ok
+test secrets::the_debug_log_records_operations_and_no_body ... ok
+test tree::structured_flags_and_hidden_refusals ... ok
+test tree::write_leaves_are_registered_in_typescript_order ... ok
+test withholding::an_unfamiliar_mcp_workspace_set_answer_is_printed ... ok
+test withholding::d238_header_credentials_in_a_body_join_the_secret_set ... ok
+test withholding::request_credentials_join_the_secret_set ... ok
+test withholding::write_answers_are_terminal_safe ... ok
+test withholding::write_answers_are_withheld ... ok
+test workspaces::a_generated_scope_name ... ok
+test workspaces::a_matched_workspace_without_a_slug_is_refused ... ok
+test workspaces::an_existing_scope_and_the_checks ... ok
+test workspaces::archive_and_the_hidden_delete ... ok
+test workspaces::create_provisions_scope_workspace_binding_and_read_back ... ok
+test workspaces::d254_an_incomplete_list_resolves_only_an_id_or_slug ... ok
+test workspaces::provisioning_outcomes ... ok
+test workspaces::update_resolves_confirms_blocks_and_reads_back ... ok
+
+test result: ok. 80 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.23s
+
+     Running tests/management.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/management-0cece8747b889b4e)
+
+running 127 tests
+test errors::alternate_request_id_headers_and_code_locations ... ok
+test errors::api_endpoint_unreachable_is_network_error ... ok
+test errors::bad_gateway_text_body_is_retried_and_never_echoed ... ok
+test errors::decode_error_mid_walk_writes_no_partial_data ... ok
+test errors::echoed_secret_or_token_is_never_printed ... ok
+test errors::forbidden_with_opa_decision_false_does_not_refresh ... ok
+test errors::forbidden_without_opa_header_refreshes_like_401 ... ok
+test errors::internal_server_error_is_attempted_once_d10 ... ok
+test errors::invalid_request_id_or_code_characters_are_dropped ... ok
+test errors::lookup_beyond_10000_rows_is_an_error_not_a_false_not_found_d15 ... ok
+test errors::non_json_success_body_is_decode_error_d38 ... ok
+test errors::not_found_404_on_topics_and_gets ... ok
+test errors::not_found_404_prints_api_error_and_http_line ... ok
+test errors::oversized_error_body_is_reported_as_its_http_status ... ok
+test errors::oversized_success_body_is_a_safety_limit_error ... ok
+test errors::problem_duplicate_title_and_detail_printed_once ... ok
+test errors::problem_json_400_prints_allowlisted_fields_only ... ok
+test errors::redirect_is_an_error_and_target_never_contacted_d30 ... ok
+test errors::redirect_on_token_endpoint_is_not_followed_d30 ... ok
+test errors::refresh_counts_against_retry_budget_d10 ... ok
+test errors::repeated_next_offset_in_topic_walk_is_pagination_error_d37 ... ok
+test errors::repeated_next_offset_is_pagination_error_d37 ... ok
+test errors::request_id_and_error_code_are_printed_when_safe ... ok
+test errors::schema_invalid_profile_rows_are_decode_errors_d38 ... ok
+test errors::schema_invalid_topic_rows_are_decode_errors_d38 ... ok
+test errors::service_unavailable_is_attempted_six_times ... ok
+test errors::sigint_during_hung_request_exits_130_without_data ... ok
+test errors::token_401_error_description_is_not_echoed_d11 ... ok
+test errors::token_401_is_oauth_error_with_zero_api_requests ... ok
+test errors::token_endpoint_unreachable_is_network_error ... ok
+test errors::token_schema_mismatch_is_oauth_schema_error ... ok
+test errors::too_many_requests_is_retried_d10 ... ok
+test errors::transient_503_then_success_recovers ... ok
+test errors::unauthorized_once_refreshes_token_and_replays_once ... ok
+test errors::unauthorized_twice_fails_after_one_refresh ... ok
+test local_failures::credential_environment_variables_never_change_requests ... ok
+test local_failures::missing_management_secret_fails_with_zero_requests ... ok
+test local_failures::non_loopback_http_management_endpoint_is_rejected_locally ... ok
+test local_failures::non_numeric_tsg_fails_locally_d28 ... ok
+test local_failures::tsg_pin_mismatch_fails_with_zero_requests ... ok
+test local_failures::whitespace_credentials_count_as_missing ... ok
+test profile_projection::integral_float_revision_prints_as_integer_and_fraction_is_kept ... ok
+test profile_projection::key_order_drops_csp_tsg_and_unknown_fields ... ok
+test profile_projection::policy_unknown_keys_are_preserved ... ok
+test profile_projection::unset_fields_are_omitted ... ok
+test profiles_all::empty_walk_shows_all_zero ... ok
+test profiles_all::max_equal_to_total_is_complete ... ok
+test profiles_all::max_stops_without_extra_fetch_and_says_first_d14 ... ok
+test profiles_all::max_without_all_is_validated_but_does_not_change_a_page ... ok
+test profiles_all::max_zero_is_uncapped ... ok
+test profiles_all::next_offset_zero_ends_the_walk ... ok
+test profiles_all::quiet_walk_has_empty_stderr ... ok
+test profiles_all::walk_follows_next_offset_with_one_token ... ok
+test profiles_all::walk_with_default_limit_spans_pages_of_100 ... ok
+test profiles_get::all_versions_by_uuid_and_not_found ... ok
+test profiles_get::all_versions_prints_matching_rows_in_api_order ... ok
+test profiles_get::all_versions_with_revision_filters_the_list ... ok
+test profiles_get::by_name_returns_highest_revision_without_latest_query ... ok
+test profiles_get::by_name_tie_keeps_first_seen ... ok
+test profiles_get::by_name_unset_revision_counts_as_zero ... ok
+test profiles_get::by_uuid_returns_first_exact_match ... ok
+test profiles_get::lookup_walks_every_page ... ok
+test profiles_get::missing_name_is_sdk_style_not_found ... ok
+test profiles_get::missing_uuid_is_sdk_style_not_found ... ok
+test profiles_get::revision_not_found_uses_cli_wording ... ok
+test profiles_get::revision_selects_exact_revision_with_latest_false ... ok
+test profiles_get::revision_zero_never_matches_unset_revision ... ok
+test profiles_get::uppercase_uuid_is_an_id_compared_exactly ... ok
+test profiles_list::all_versions_sends_latest_false_and_returns_every_revision ... ok
+test profiles_list::default_page_requests_latest_and_prints_exact_json ... ok
+test profiles_list::empty_list_prints_empty_array ... ok
+test profiles_list::limit_and_offset_select_one_page_in_query_order ... ok
+test profiles_list::ls_alias_behaves_like_list ... ok
+test profiles_list::management_reads_need_no_scanner_credentials ... ok
+test profiles_list::next_offset_zero_is_not_more_available_d12 ... ok
+test profiles_list::output_accepted_before_subcommand_and_with_equals ... ok
+test profiles_list::positive_next_offset_reports_more_available ... ok
+test profiles_list::quiet_removes_status_lines_but_keeps_data ... ok
+test profiles_list::tenant_default_output_json_is_honoured_silently ... ok
+test profiles_list::tenant_default_output_naming_a_dropped_format_is_an_invalid_config ... ok
+test profiles_list::tenant_default_output_table_applies_to_gets_and_an_explicit_output_wins ... ok
+test profiles_list::without_output_defaults_to_pretty ... ok
+test review_fixes::a_refreshed_token_echoed_after_a_401_replay_is_never_printed ... ok
+test review_fixes::an_empty_intermediate_page_fails_the_walk_d46 ... ok
+test review_fixes::basic_credentials_with_reserved_characters_are_form_encoded_d29 ... ok
+test review_fixes::plain_http_loopback_endpoints_bypass_proxy_variables ... ok
+test review_fixes::topic_pages_work_beyond_10000_rows ... ok
+test sdk_0_2_4_pages::get_walks_print_page_two_losslessly ... ok
+test sdk_0_2_4_pages::list_all_prints_every_page_losslessly ... ok
+test topic_projection::examples_default_to_empty_array_and_unset_fields_are_omitted ... ok
+test topic_projection::get_detail_uses_the_same_projection ... ok
+test topic_projection::key_order_drops_csp_tsg_and_unknown_fields ... ok
+test topics_get::all_versions_lists_matching_rows_in_api_order ... ok
+test topics_get::by_name_returns_highest_revision_with_limit_100_walk ... ok
+test topics_get::by_name_tie_keeps_first_seen ... ok
+test topics_get::by_uuid_returns_first_exact_match ... ok
+test topics_get::lookup_walks_every_page ... ok
+test topics_get::missing_name_is_quoted ... ok
+test topics_get::missing_uuid_is_unquoted ... ok
+test topics_get::revision_not_found_is_unquoted ... ok
+test topics_get::revision_selects_exact_revision ... ok
+test topics_get::uppercase_uuid_is_an_id_compared_exactly ... ok
+test topics_get::uuid_with_flags_not_found_is_unquoted ... ok
+test topics_list::all_max_reports_first_d14 ... ok
+test topics_list::all_max_zero_is_uncapped_d16 ... ok
+test topics_list::all_returns_every_latest_topic ... ok
+test topics_list::all_versions_all_honours_max_d39 ... ok
+test topics_list::all_versions_all_returns_everything ... ok
+test topics_list::all_versions_page_slices_locally_from_limit_100_walk ... ok
+test topics_list::all_versions_walks_more_than_100_rows ... ok
+test topics_list::empty_topics_print_empty_array ... ok
+test topics_list::latest_default_limit_truncation_reports_more_available_d13 ... ok
+test topics_list::latest_default_walks_limit_200_and_collapses_by_name ... ok
+test topics_list::latest_limit_and_offset_slice_locally_d13 ... ok
+test topics_list::latest_walk_over_200_rows_and_local_slice ... ok
+test topics_list::ls_alias_behaves_like_list ... ok
+test topics_list::quiet_removes_topic_status_lines ... ok
+test validation::all_cannot_be_combined_with_explicit_offset_even_zero ... ok
+test validation::help_prints_to_stdout_with_zero_requests ... ok
+test validation::invalid_and_dropped_output_formats ... ok
+test validation::limit_must_be_a_positive_decimal_integer_d17 ... ok
+test validation::max_is_validated_even_without_all ... ok
+test validation::offset_must_be_a_non_negative_integer ... ok
+test validation::parse_errors_exit_2_d1 ... ok
+test validation::revision_must_be_a_non_negative_integer_d17 ... ok
+test validation::usage_errors_win_without_any_tenant_d2 ... ok
+test validation::validation_order_is_limit_offset_max_then_all ... ok
+
+test result: ok. 127 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 24.20s
+
+     Running tests/runtime_writes.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-msrv-target/debug/deps/runtime_writes-3ca253137f9301b1)
+
+running 62 tests
+test debug::directional_writes_log_their_operation_names_and_no_body ... ok
+test debug::writes_are_logged_without_bodies ... ok
+test profiles_create::a_config_file_is_sent_as_is_and_names_the_profile ... ok
+test profiles_create::a_config_file_that_fails_the_schema_is_a_usage_error_d116 ... ok
+test profiles_create::a_conflict_is_an_error_without_a_lookup_d101 ... ok
+test profiles_create::a_direction_creates_one_directional_entry ... ok
+test profiles_create::a_server_error_is_an_unknown_outcome_d95 ... ok
+test profiles_create::flags_build_the_typescript_body ... ok
+test profiles_create::missing_credentials_are_reported_without_requests_d115 ... ok
+test profiles_create::pretty_and_table_render_the_response ... ok
+test profiles_create::the_tenant_default_output_applies_d50 ... ok
+test profiles_create::usage_errors_need_no_tenant_d102 ... ok
+test profiles_delete::a_missing_profile_is_not_found ... ok
+test profiles_delete::an_unknown_outcome_is_reported_d95 ... ok
+test profiles_delete::by_uuid_and_declined ... ok
+test profiles_delete::force_by_name_deletes_the_highest_revision ... ok
+test profiles_delete::the_prompt_names_the_resolved_profile_d105 ... ok
+test profiles_delete::usage_checks_come_before_the_tenant_d104 ... ok
+test profiles_update::a_config_file_must_name_the_resolved_profile_d103 ... ok
+test profiles_update::a_new_revision_under_a_new_id_is_reported ... ok
+test profiles_update::a_policy_flag_merges_into_the_highest_revision_and_keeps_active_d100 ... ok
+test profiles_update::an_unreadable_success_body_says_the_profile_was_updated ... ok
+test profiles_update::directional_updates_follow_the_layout_rules ... ok
+test profiles_update::dlp_action_keeps_the_dlp_profiles ... ok
+test profiles_update::not_found_and_missing_ids_write_nothing_d115 ... ok
+test profiles_update::rename_and_activation_flags ... ok
+test profiles_update::usage_errors_need_no_tenant_d100 ... ok
+test sdk_0_2_4::a_complete_create_sends_every_field_as_given ... ok
+test sdk_0_2_4::a_stored_null_stops_the_update_before_its_write ... ok
+test sdk_0_2_4::invalid_new_fields_are_refused_before_the_tenant ... ok
+test sdk_0_2_4::omitted_settings_stay_omitted_and_false_stays_false ... ok
+test topics_create::a_failed_lookup_writes_nothing ... ok
+test topics_create::a_forbidden_write_is_never_replayed_d95 ... ok
+test topics_create::a_new_name_is_posted_once_with_the_exact_body ... ok
+test topics_create::a_rejected_token_is_replayed_once_d95 ... ok
+test topics_create::a_response_without_topic_id_is_an_error_after_the_write ... ok
+test topics_create::a_server_error_is_one_post_with_an_unknown_outcome_d95 ... ok
+test topics_create::an_existing_match_without_topic_id_writes_nothing ... ok
+test topics_create::an_existing_name_updates_its_highest_revision_d96 ... ok
+test topics_create::an_interrupted_write_reports_an_unknown_outcome ... ok
+test topics_create::an_unreadable_success_body_says_the_topic_was_created ... ok
+test topics_create::colour_follows_each_stream ... ok
+test topics_create::constraint_failures_are_usage_errors_without_a_tenant_d104 ... ok
+test topics_create::control_characters_are_replaced_in_outcome_lines_and_data ... ok
+test topics_create::quiet_keeps_the_data_and_drops_the_outcome_line ... ok
+test topics_create::table_output_is_the_record ... ok
+test topics_create::the_deprecated_format_alias_d94 ... ok
+test topics_create::the_tenant_default_output_is_ignored ... ok
+test topics_delete::a_plain_delete_with_force_and_quiet ... ok
+test topics_delete::a_referenced_topic_is_refused_with_409 ... ok
+test topics_delete::a_server_error_is_one_delete_with_an_unknown_outcome_d95 ... ok
+test topics_delete::ctrl_c_at_the_prompt_changes_nothing_d105 ... ok
+test topics_delete::declining_or_eof_aborts_with_nothing_sent_d105 ... ok
+test topics_delete::force_uses_the_audit_endpoint_and_a_fixed_line_d107 ... ok
+test topics_delete::the_confirmation_accepts_y_and_yes_d105 ... ok
+test topics_delete::usage_checks_come_before_the_tenant_d104 ... ok
+test topics_update::a_body_that_fails_the_schema_is_not_sent_d116 ... ok
+test topics_update::a_missing_topic_is_the_servers_404 ... ok
+test topics_update::a_non_uuid_id_is_a_usage_error_d104 ... ok
+test topics_update::a_refused_connection_is_an_unknown_outcome ... ok
+test topics_update::file_errors_come_before_the_tenant_d103 ... ok
+test topics_update::the_file_is_the_body_and_the_response_is_rendered ... ok
+
+test result: ok. 62 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.02s
+

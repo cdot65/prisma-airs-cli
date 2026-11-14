@@ -1,0 +1,15 @@
+
+running 1 test
+
+thread 'worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result' (26528329) panicked at crates/airs-mcp/src/worker.rs:323:53:
+called `Result::unwrap()` on an `Err` value: UnknownFilesystem
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result ... FAILED
+
+failures:
+
+failures:
+    worker::tests::a_job_runs_once_with_reserved_sends_and_keeps_its_result
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 169 filtered out; finished in 0.00s
+

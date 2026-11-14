@@ -1,0 +1,35 @@
+{
+  "tenant": "vulture",
+  "operation": "deployment update with a synthetic UUID, --auth-settings {allow_all_workspaces:true}, --dry-run --output json",
+  "exit_code": 0,
+  "locally_validated": true,
+  "request_sent": false,
+  "service_acceptance_checked": false,
+  "stdout_sha256": "298cace35438334ac46381c1774202c4bdfa8122e46ffe1f19024bc1cf5fd7b3",
+  "stderr_bytes": 0,
+  "note": "Uses the owner-provided registered tenant context; no credential/configuration values or raw tenant data are included. This is a local preview, not service acceptance.",
+  "candidate_sha256": "9308a46cca746c9cf0cb572c59e7fa7fd81891ae0ca91e57e644ef22f1e1d064",
+  "preview": {
+    "execution_requirements": {
+      "confirmation_required": true,
+      "secret_output_required": false,
+      "secret_output_supplied": false
+    },
+    "locally_validated": true,
+    "mode": "dry-run",
+    "redacted": false,
+    "request": {
+      "body": {
+        "auth_settings": {
+          "allow_all_workspaces": true
+        }
+      },
+      "method": "PUT",
+      "plane": "admin",
+      "route": "/deployments/11111111-1111-4111-8111-000000000001"
+    },
+    "request_sent": false,
+    "schema_version": 1,
+    "service_acceptance_checked": false
+  }
+}

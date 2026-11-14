@@ -498,8 +498,7 @@ pub mod tests {
             error: None,
             scan_id: Some(SCAN_A.into()),
         });
-        for index in 0..2 {
-            let item = &mut state.items[index];
+        for item in &mut state.items[..2] {
             item.status = ItemStatus::Complete;
             item.attempt = Some(1);
             item.scan_id = Some(SCAN_A.into());

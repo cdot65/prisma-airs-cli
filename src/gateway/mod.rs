@@ -7,8 +7,10 @@
 pub mod body;
 pub mod inference;
 pub mod inventory;
+pub mod preview;
 pub mod provider;
 pub mod provision;
+pub mod request;
 pub mod resolve;
 pub mod secrets;
 pub mod views;

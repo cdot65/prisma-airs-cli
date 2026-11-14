@@ -6,7 +6,10 @@
 [![airs-mcp-client](https://img.shields.io/crates/v/airs-mcp-client.svg?label=airs-mcp-client)](https://crates.io/crates/airs-mcp-client)
 
 `airs` is one native command line to manage, scan and report on everything in Prisma AIRS.
-Version 9.0.0 covers runtime security, AI red teaming, model security, DLP, the AI gateway and supply chain, and an [optional MCP service](https://cdot65.github.io/prisma-airs-cli/mcp-server/introduction) adds retained history, scheduled collection and reports for you and your AI agents.
+Version 9.1.0 covers runtime security, AI red teaming, model security, DLP, the AI gateway and supply chain, and an [optional MCP service](https://cdot65.github.io/prisma-airs-cli/mcp-server/introduction) adds retained history, scheduled collection and reports for you and your AI agents.
+
+Release availability is recorded on [Forgejo](https://git.cdot.io/cdot/prisma-airs-cli/releases)
+and in the [release notes](docs/RELEASE-NOTES/9.1.0.md).
 
 ## Install
 
@@ -27,7 +30,7 @@ npm install -g @cdot65/prisma-airs-cli
 Then check it and register a tenant:
 
 ```sh
-airs --version     # prints the version, e.g. 9.0.0
+airs --version     # prints the version, e.g. 9.1.0
 airs tenant create <name>
 airs doctor
 ```

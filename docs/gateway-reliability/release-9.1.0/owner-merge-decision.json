@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "decision": "accept_cli_only_source_merge",
+  "owner_response": "got it, sure, proceed as you feel is best",
+  "context": "Owner response after the explicit choice between CLI-only source merge with MCP Linux qualification deferred and Linux MCP results before merge, followed by an explanation of the filesystem guard.",
+  "accepted_scope": "Merge CLI9.1.0 source with the exact published scm-sdk0.2.6 dependency.",
+  "mcp_linux_qualification_deferred": true,
+  "mcp_full_suite_passed": false,
+  "all_workspace_tests_passed": false,
+  "constraints": [
+    "No MCP service deployment or Linux service acceptance is granted.",
+    "No CLI distribution publication is granted by this source-merge decision.",
+    "Retain all 56 macOS MCP filesystem refusals per compiler as failed/unqualified evidence; do not bypass the guard.",
+    "Other platform, fleet, live-contract and historical acceptance scopes remain unchanged."
+  ]
+}

@@ -5,6 +5,11 @@ file records the changes to the repository itself.
 
 ## Unreleased
 
+- **Gateway reliability, 9.1.0 candidate.** Shared typed request preparation,
+  deployment-update and service-key-create dry runs, privacy-protected local
+  validation lifecycle logging, and updated Docusaurus guidance/reference.
+  Release notes: [9.1.0](docs/RELEASE-NOTES/9.1.0.md).
+
 - **Performance documentation.** docs/BENCHMARKS.md is re-measured for 8.0.0 against the
   TypeScript CLI 7.3.0 (2026-10-23), with the executables' sizes per platform, their growth
   from 0.1.0 and what that growth costs. README gains "Why Rust: performance", the docs site

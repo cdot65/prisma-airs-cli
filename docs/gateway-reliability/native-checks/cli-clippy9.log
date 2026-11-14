@@ -1,0 +1,7 @@
+    Blocking waiting for file lock on package cache
+    Checking airs-runtime-core v9.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/prisma-airs-cli/crates/airs-runtime-core)
+    Checking airs-mcp-client v9.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/prisma-airs-cli/crates/airs-mcp-client)
+    Checking airs-history-store v9.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/prisma-airs-cli/crates/airs-history-store)
+    Checking airs-cli v9.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/prisma-airs-cli)
+    Checking airs-mcp v9.0.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/prisma-airs-cli/crates/airs-mcp)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.51s

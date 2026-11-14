@@ -140,6 +140,81 @@ updates that replace a resource's authentication (a deployment's `--auth-setting
 integration's `--auth-type` or credentials) ask for confirmation (`--force` skips it; without a terminal they are refused); deletes print nothing on stdout and every write acknowledges on stderr. Provider credentials come from `--key-file`, piped `--key-stdin` or a hidden prompt;
 inline `--key`, `--scim-token`, `--credential` and `--header` values are accepted with a warning. An interrupted write says what may have changed.
 
+## Previewing deployment updates and service-key creation
+
+`gateway deployments update` and `gateway api-keys service create` support
+`--dry-run`. They validate the effective request locally, resolve the selected
+tenant's organisation and print a redacted preview. Management credentials are
+not required for preview. No authentication, service request, confirmation prompt
+or credential-file reservation occurs. Local tenant metadata and input files are
+still read, and `--debug` can write its private diagnostic log.
+
+```sh
+airs --tenant example gateway deployments update <id> --set auth_settings.allow_all_workspaces=true --dry-run --output json
+airs --tenant example gateway api-keys service create --name ci --workspace <uuid> --scopes completions.write --type <credential-type> --dry-run --output json
+```
+
+The preview reports execution requirements, including confirmation and a
+credential destination when applicable. A key preview can omit `--secret-output`;
+execution requires it. A supplied destination is checked without being reserved
+or overwritten. Deployment preview refuses `--force`. Exit 0 means local
+preparation succeeded; service acceptance and authorization remain unchecked.
+The redacted preview is descriptive output, not a request file for execution.
+
+Key creation requires `type` after file/flag/assignment merging. Supply the type
+through `--type`, `--file`, or `--set`; help does not make a flag mandatory when
+another input source supplies its value. The pinned local contract accepts a
+nonempty string; use the creation type documented for your service. Expiration
+timestamps support seconds with or without a fractional part, and alert emails
+are optional.
+
+Preview does not need management client credentials, but the selected tenant
+still needs a configured `mgmtTsgId` matching its registered organisation identity.
+Removing that value from a registered tenant causes the existing identity-pin
+refusal before request preparation.
+
+Preview shows known type, status and scope literals, numeric organisation IDs,
+workspace UUIDs, valid expiry timestamps and well-formed `ws-` workspace slugs.
+Workspace slugs may identify your project or customer. Other type/scope strings,
+arbitrary labels, configuration, credentials and dynamic keys are withheld;
+`redacted: true` indicates that the projection or shared policy withheld data.
+Registered secrets are scrubbed from the entire preview. Validate the actual
+service vocabulary against its documentation; preview does not establish service
+acceptance. Displayable type/scope tokens are a fixed privacy policy, not a
+service-support list. New vocabulary stays withheld until that display policy is
+reviewed; it does not change local schema acceptance.
+
+A zero dry-run exit status means local preparation succeeded. It does not mean
+normal execution is ready: consumers must inspect `execution_requirements`,
+supply any required secret-output destination and confirmation, and satisfy the
+normal credential/grant requirements before executing.
+
+Deployment authentication read and write representations differ. The pinned
+write contract requires a JSON boolean for `allow_all_workspaces`; it rejects
+`disable_portkey_gateway` and `grouped_gateway_base_url`. A complete GET record
+is not a PUT request body. `--set` constructs the outgoing body and does not
+fetch or merge the stored authentication settings. Establish the service's
+replacement/merge behavior before choosing which writable settings to omit.
+
+Typed-schema validation and selected-tenant binding refusals in gateway writes,
+after debug-log creation, record a `validation_failure` lifecycle event with a static operation name, failure stage (`request_validation`
+or `tenant_binding`) and preparation checkpoint. `requestSent: false` refers to
+the refused mutation; provider resolution may already have made a read. This is
+distinct from HTTP traffic and contains no request body. Argument-parser failures
+before debug-log creation remain stderr-only errors. File/destination, credential,
+confirmation, malformed input, config-load and missing management-client credential refusals
+are reported on stderr outside this lifecycle adapter. If static operation text
+matches a registered secret, the log uses a body-free `redactionFallback` record
+without operation/stage details, or a generic marker when needed. Every fallback
+passes the same privacy check. If every safe marker also matches a secret, the
+record is suppressed; confidentiality remains authoritative.
+
+In zsh, store repeated options in an array, for example
+`tenant_args=(--tenant example)`, and invoke `airs "${tenant_args[@]}" ...`.
+Use `airs doctor` to identify conflicting install channels. npm's launcher selects
+its bundled executable; an identically versioned Homebrew executable can have
+different bytes. Record the executable path and hash when comparing behavior.
+
 ## Inference and the report
 
 ```sh

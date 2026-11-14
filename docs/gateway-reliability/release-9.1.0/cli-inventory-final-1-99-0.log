@@ -1,0 +1,51 @@
+   Compiling airs-cli v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.93s
+     Running tests/gateway_inventory.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-target/debug/deps/gateway_inventory-d6db70f1bc76f9a0)
+
+running 43 tests
+test admin_guardrails::a_partial_page_prints_its_status_line ... ok
+test admin_guardrails::list_queries_and_get ... ok
+test admin_guardrails::malformed_integers_need_no_tenant ... ok
+test admin_guardrails::the_admin_endpoint_with_oauth_and_the_tsg ... ok
+test checks::a_foreign_tsg_is_refused ... ok
+test checks::argument_checks_send_nothing ... ok
+test checks::credentials_are_checked_first ... ok
+test debug::reads_record_their_operations_and_no_body_or_query ... ok
+test failures::errors_retries_and_decode_failures ... ok
+test failures::grant_hints_by_plane ... ok
+test incomplete::incomplete_lists_warn ... ok
+test interrupt::a_signal_during_a_read_writes_nothing ... ok
+test reads::audit_windows ... ok
+test reads::details_print_field_value_tables ... ok
+test reads::empty_lists ... ok
+test reads::every_read_sends_its_one_request ... ok
+test reads::integration_models_are_listed ... ok
+test reads::json_is_the_only_stdout ... ok
+test reads::lists_print_typescript_columns ... ok
+test reads::organisation_reads_default_to_the_tenant_tsg ... ok
+test tree::groups_list_their_read_leaves ... ok
+test tree::help_aliases_and_hidden_options ... ok
+test withholding::audit_request_fields ... ok
+test withholding::audited_secret_reference_bodies_never_show_the_auth_config ... ok
+test withholding::config_texts_withhold_service_accounts_at_any_depth ... ok
+test withholding::credentials_are_withheld_in_every_format ... ok
+test withholding::d238_a_secret_mapping_prints_and_withholds_nothing_ordinary ... ok
+test withholding::d238_a_short_configuration_header_does_not_withhold_other_data ... ok
+test withholding::d238_camel_case_and_worded_credential_names_are_withheld ... ok
+test withholding::d238_credential_objects_register_passwords_not_words ... ok
+test withholding::d238_credentials_named_inside_schemas_are_withheld ... ok
+test withholding::d238_d251_unreadable_config_texts_and_urls_in_prose_are_withheld ... ok
+test withholding::d238_guardrail_metadata_keys_and_empty_schema_defaults_print ... ok
+test withholding::d238_header_credentials_outside_the_sdk_paths_are_withheld ... ok
+test withholding::d238_model_prices_are_printed ... ok
+test withholding::d238_name_value_pairs_private_keys_and_numbers_are_withheld ... ok
+test withholding::d238_pass_keys_scheme_and_header_shapes_are_withheld ... ok
+test withholding::d238_plural_token_names_are_withheld ... ok
+test withholding::d238_the_guardrail_catalog_withholds_nothing_ordinary ... ok
+test withholding::d239_a_generic_name_in_an_audit_body_does_not_withhold_the_log ... ok
+test withholding::d239_audit_header_values_do_not_withhold_the_record ... ok
+test withholding::d239_revealed_fields_never_show_credentials ... ok
+test withholding::echoed_credentials_are_withheld ... ok
+
+test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.12s
+

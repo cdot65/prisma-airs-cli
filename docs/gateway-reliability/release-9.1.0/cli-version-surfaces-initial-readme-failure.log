@@ -1,0 +1,45 @@
+   Compiling airs-cli v9.1.0 (/private/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-release-402_1ljd/cli-source)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running tests/ci_scripts.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-target/debug/deps/ci_scripts-8bd193866fb6f86a)
+
+running 10 tests
+test a_code_path_after_many_docs_paths_runs_the_rust_steps ... ok
+test a_docs_only_change_skips_the_rust_steps ... ok
+test an_empty_diff_runs_the_rust_steps ... ok
+test an_odd_path_name_is_still_classified_by_its_whole_name ... ok
+test an_unusable_base_runs_the_rust_steps ... ok
+test any_other_path_runs_the_rust_steps ... ok
+test moving_a_rust_file_into_docs_runs_the_rust_steps ... ok
+test release_sh_uses_the_strict_status_check ... ok
+test the_release_function_refuses_malformed_responses_and_other_trees ... ok
+test the_release_trusts_ci_only_when_every_required_job_passed ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.67s
+
+     Running tests/docs_consistency.rs (/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/cli-target/debug/deps/docs_consistency-1717443506d121fd)
+
+running 6 tests
+test every_cited_test_exists_in_the_named_module ... ok
+test every_design_divergence_has_an_index_row_and_no_other_rows_exist ... ok
+test every_index_row_cites_a_test_or_says_why_not ... ok
+test no_section_21_rename_maps_a_name_to_itself ... ok
+test reference_parser_and_locator_behave ... ok
+test the_readme_version_example_matches_its_status_line ... FAILED
+
+failures:
+
+---- the_readme_version_example_matches_its_status_line stdout ----
+
+thread 'the_readme_version_example_matches_its_status_line' (26565066) panicked at tests/docs_consistency.rs:318:5:
+assertion `left == right` failed: README status must match Cargo.toml
+  left: "9.1.0 (release candidate)"
+ right: "9.1.0"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_readme_version_example_matches_its_status_line
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.18s
+
+error: test failed, to rerun pass `-p airs-cli --test docs_consistency`

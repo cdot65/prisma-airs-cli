@@ -1,0 +1,157 @@
+{
+  "repository": "prisma-airs-cli",
+  "base": "e235a4d0aa431eb0929c129f0ae0f6d008b07d7c",
+  "execution": "Owner-supplied test environment; isolated source copies, cleared inherited environment, fresh Cargo state, locked public dependency inputs, synthetic/loopback tests only. No live API mutation or release.",
+  "tested_source_sha256": {
+    "crates/airs-runtime-core/src/debug.rs": "2c17b4aa1486a62efd4842c6c6595c9fcc6b1a1baf8fddd808ea5762f12a7ac5",
+    "src/cli.rs": "4431de23f4e185caac493bf807ccf10dd1feda47b4ff62e5eaea226d09522f78",
+    "src/commands/gateway.rs": "6c2274c628dca727a4575f7ae00083126423aeaa13d13881da0c6ab8352eda2d",
+    "src/commands/gateway_write_plan.rs": "47f4c77e94655f83514730545f854c5ab57e602413e45e5a547de5c7abfb8513",
+    "src/commands/gateway_writes.rs": "37de3c60aca39973d7d951b92c699304edcfc109d17594cd3c894ab3529ea936",
+    "src/gateway/mod.rs": "14bc95a1175514468d0daaa641067e0a6ac32dd131c39f282da82db8a674284e",
+    "src/gateway/request.rs": "06483d9a163ecc098d3d77e082b9342ee59878d145c2ff991440f917d1dccd97",
+    "src/gateway/preview.rs": "641279de1bbbaa8a7291cc9597662023cd6b5b9d838b3535ab019a02a95e7f46",
+    "tests/gateway_writes.rs": "898ea1501c6975db8e22d74bfbf7132a657a4176362f597d3c3f22cfd90f20ee",
+    "tests/gateway_writes/reliability.rs": "3520c215ee375401e551a859ced5dfa3879687f8f784938c3438af5c5ea573a2",
+    "src/gateway/writes.rs": "67ec369eab9ae65a41a6d7ad1cc67ccadd6bb1796281e5a265d9bbd26a6be624",
+    "Cargo.toml": "cf43541ae8812ef3310520703820066c2cdade8e199b47f0d599fee081a57652",
+    "Cargo.lock": "969dc0d29bbac06e2c145a9a50b35adad5756ce5030344f8be7f2c235535455a",
+    "crates/airs-mcp/Cargo.toml": "693ffb49451da5fb1a7bdede04f51d6f504bef1a85bb21b35bf299c591db3e24",
+    "crates/airs-test-harness/Cargo.toml": "bac0a175c40cc4986940b7942cc17ef0b0b3339361a62bf5bbd56d41580fccf9",
+    "crates/airs-history-store/Cargo.toml": "7b248144c0d532354c5921dab509858e81797344ed37145bf2c73dbe42a2c0d3",
+    "crates/airs-runtime-core/Cargo.toml": "be5da72abcd379e5d34fad22d2b9cb9dc35e0fd0669328a576fcec52412de11e",
+    "crates/airs-mcp-client/Cargo.toml": "c13f395474aac729e7936bb36e34be9f826e8715082efa111519e767abe55242",
+    "prototypes/runtime-history/Cargo.toml": "94876efa5b38defad89c73a55b69edb4ee23c17ebe8dbcba683bd71662624931",
+    "prototypes/runtime-mcp/Cargo.toml": "3223d6a6769490b7976baeb3c8ee557ed026bef10c9b21678934eb1a138bb9b8",
+    "prototypes/runtime-mcp/crates/airs-mcp-spike/Cargo.toml": "f28f2fa88a816b0784a6b766f9d45006bc52598c476512f3de6a387d69d3355f",
+    "prototypes/runtime-mcp/crates/airs-mcp-spike-cli/Cargo.toml": "5f51f5bf8b573f418752d0a6b736eab05ff9a0117191f3428c24097c93455c4f",
+    "prototypes/runtime-mcp/crates/cli-link/Cargo.toml": "46b018707b9a0892b3b8840efb1a04bd23a259a1a401b9c58fdd0e8778886746",
+    "prototypes/runtime-mcp/crates/airs-mcp-client/Cargo.toml": "3b1adbadb15d72d519a233252eb150f36907772514bf28372309597622cda09d"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -p airs-cli --test gateway_writes -- --test-threads=1",
+      "toolchain": "1.99.0",
+      "exit_code": 0,
+      "tests_passed": 80,
+      "log": "cli-gateway9.log",
+      "sha256": "fe7bca6955212514e21b87e17d2e626864eb9bd69ffe9ffd89fa5096671fce3b",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-gateway9-7f94edc00014a92c",
+        "sha256": "7f94edc00014a92c4695afaf0e72598face1f6cbfcd9efc85ab0369b0574b70a"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-cli --test gateway_writes -- --test-threads=1",
+      "toolchain": "1.89.0",
+      "exit_code": 0,
+      "tests_passed": 80,
+      "log": "cli-msrv-gateway9.log",
+      "sha256": "0fa62ec6c68e583593b70fdb3e7f28ce2058ee568a52c9b6ef2dfaaa855f60ce",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-msrv-gateway9-634a60ada016b315",
+        "sha256": "634a60ada016b315f1d0a65a50218038fcf9fb8a37c9a7f87c6f9416b82fabc2"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-cli --lib gateway:: -- --test-threads=1",
+      "toolchain": "1.99.0",
+      "exit_code": 0,
+      "tests_passed": 87,
+      "log": "cli-unit9.log",
+      "sha256": "1260d961d3b387e5d0271dd00b5a659e3a269dff4ff02315cdb1b4e69a48ed4a",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-unit9-ff9bfe7289e877eb",
+        "sha256": "ff9bfe7289e877eb3aace749d2c333c54cbf872498703e834b59cbb215c0ca08"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-cli --lib gateway:: -- --test-threads=1",
+      "toolchain": "1.89.0",
+      "exit_code": 0,
+      "tests_passed": 87,
+      "log": "cli-msrv-unit9.log",
+      "sha256": "48e9e12b86a10520206b628670499275b3733b70387b834b9e22c2e6b67067e3",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-msrv-unit9-3494563814058b62",
+        "sha256": "3494563814058b62e2e9980d1a827d78b836cca6a94bd0deaf0f36dcd7992135"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-runtime-core --features test-support --lib debug::tests:: -- --test-threads=1",
+      "toolchain": "1.99.0",
+      "exit_code": 0,
+      "tests_passed": 15,
+      "log": "cli-debug9.log",
+      "sha256": "7ce516044771255230aff64d643f3799b7eae73f42a8453160be76fa17b2235a",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-debug9-ee1ab7b3153d2ff8",
+        "sha256": "ee1ab7b3153d2ff8899c5adcaa9386ea042093972c76be2a0322aea22944256b"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-runtime-core --features test-support --lib debug::tests:: -- --test-threads=1",
+      "toolchain": "1.89.0",
+      "exit_code": 0,
+      "tests_passed": 15,
+      "log": "cli-msrv-debug9.log",
+      "sha256": "a7a2feac5328ea0999753352ec4df7b5de5b3f1db8ebdc8e19e932eae0f638f3",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-msrv-debug9-28a5509a78f4732b",
+        "sha256": "28a5509a78f4732b486cfc59544f8055581ced570965c37698380cdb2bfa7003"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-cli --test cli_reference",
+      "toolchain": "1.99.0",
+      "exit_code": 0,
+      "tests_passed": 2,
+      "log": "cli-reference9.log",
+      "sha256": "ab1a67e09ff557c8ac7f475a8a0c532de6b0219f7f1b1383d9bf52f17c88de12",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-reference9-240d8ad7802df63e",
+        "sha256": "240d8ad7802df63e680dc04bf92ff16a2850d2ee26c6c9859f6094412238829f"
+      }
+    },
+    {
+      "command": "cargo test --locked --offline -p airs-cli --test cli_reference",
+      "toolchain": "1.89.0",
+      "exit_code": 0,
+      "tests_passed": 2,
+      "log": "cli-msrv-reference9.log",
+      "sha256": "b159bb95bff1684a89d2b2ce977a3f95ad37e63c85957e5d229eafc3de843f0c",
+      "test_executable": {
+        "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/prisma-airs-cli-cli-msrv-reference9-75b508f955f74d9f",
+        "sha256": "75b508f955f74d9fdb74e4dd176867cbe000e22519dcaed4eb185166132cf260"
+      }
+    },
+    {
+      "command": "cargo clippy --locked --offline -p airs-cli --lib --test gateway_writes -- -D warnings",
+      "toolchain": "1.99.0",
+      "exit_code": 0,
+      "tests_passed": null,
+      "log": "cli-clippy9.log",
+      "sha256": "13bba03bc735c96f25908050848bef2973c98077f78647157fd3822f9e63bf8c"
+    }
+  ],
+  "limits": [
+    "macOS ARM64 only; other platforms not exercised",
+    "SDK getter adoption in CLI and actual service contracts remain separate work",
+    "Not fleet qualification, publishing, deployment or release acceptance"
+  ],
+  "toolchains": {
+    "1.99.0": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: aarch64-apple-darwin\nrelease: 1.99.0\nLLVM version: 23.1.1\n",
+    "1.89.0": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: aarch64-apple-darwin\nrelease: 1.89.0\nLLVM version: 20.1.7\n"
+  },
+  "executables": {
+    "1.99.0": {
+      "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/airs-1.99.0-9308a46cca746c9c",
+      "sha256": "9308a46cca746c9cf0cb572c59e7fa7fd81891ae0ca91e57e644ef22f1e1d064"
+    },
+    "1.89.0": {
+      "path": "/var/folders/gb/80rbbhr936z3k_4n4m3fr0j00000gn/T/airs-gateway-native-checks-2vckw80y/qualified-artifacts/airs-1.89.0-a89537e0a4fbcc9a",
+      "sha256": "a89537e0a4fbcc9ab46fa0a1edde8c0377cf209a44ba06314a8af5443b873889"
+    }
+  },
+  "tooling_side_effect": "Installing the isolated Rust1.89 toolchain caused rustup to auto-update its shared launcher from 1.29.1 to 1.29.3; compiler installations were isolated, and CLI installs were not replaced."
+}

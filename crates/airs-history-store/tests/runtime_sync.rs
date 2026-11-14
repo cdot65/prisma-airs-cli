@@ -1176,7 +1176,15 @@ fn a_new_binding_eventually_revisits_every_event_archived_while_unbound() {
     });
     server.set_default(Route::ScanResults, Planned::json(200, &json!([])));
     // Collect while the application has no binding (the fixture binds only uuid-shared).
-    run(&cli(), &s, &["runtime", "sync"], &RunOptions::new()).assert_success();
+    // This 1,000-event collection can exceed the harness's 30-second default on
+    // the shared CI runner; retain a bounded watchdog for this collection only.
+    run(
+        &cli(),
+        &s,
+        &["runtime", "sync"],
+        &RunOptions::new().timeout(std::time::Duration::from_secs(120)),
+    )
+    .assert_success();
     let events: i64 = archive(&s)
         .query_row("SELECT count(*) FROM events WHERE app_id=?1", [APP], |r| {
             r.get(0)

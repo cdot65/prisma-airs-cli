@@ -1,7 +1,7 @@
 [package]
 name = "airs-mcp"
 description = "Optional protected runtime MCP service for Prisma AIRS history, collection and reports"
-version = "9.0.0"
+version = "9.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -15,8 +15,8 @@ name = "airs-mcp"
 path = "src/main.rs"
 
 [dependencies]
-airs-runtime-core = { path = "../airs-runtime-core", version = "=9.0.0" }
-airs-history-store = { path = "../airs-history-store", version = "=9.0.0" }
+airs-runtime-core = { path = "../airs-runtime-core", version = "=9.1.0" }
+airs-history-store = { path = "../airs-history-store", version = "=9.1.0" }
 # The frozen pins of contract §1 (qualified in M0 on MSRV 1.89).
 rmcp = { version = "=3.8.0", default-features = false, features = ["server", "transport-streamable-http-server"] }
 axum = { version = "=0.8.9", default-features = false, features = ["http1", "tokio", "json"] }
@@ -43,7 +43,7 @@ uuid = { version = "1", features = ["v4"] }
 jiff = { version = "=0.2.39", default-features = false, features = ["std", "tzdb-bundle-always"] }
 # The control store (contract §9.1): the same bundled SQLite pin as the history store.
 rusqlite = { version = "=0.41.1", default-features = false, features = ["bundled", "hooks", "limits", "serialize"] }
-scm = { package = "scm-sdk", version = "=0.2.4", default-features = false, features = ["reqwest-transport", "scan", "management", "red-team", "dlp", "model-security", "gateway", "agentguard"] }
+scm = { package = "scm-sdk", version = "=0.2.6", default-features = false, features = ["reqwest-transport", "scan", "management", "red-team", "dlp", "model-security", "gateway", "agentguard"] }
 
 [dev-dependencies]
 airs-test-harness = { path = "../airs-test-harness" }

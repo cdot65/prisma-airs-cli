@@ -186,9 +186,26 @@ jobs:
             *) echo "no zig build for $(uname -m)" >&2; exit 1 ;;
           esac
           name="zig-$arch-linux-$ZIG_VERSION"
-          curl --proto '=https' --tlsv1.2 -sSfL -o "$RUNNER_TEMP/$name.tar.xz" \
-            "https://ziglang.org/download/$ZIG_VERSION/$name.tar.xz"
-          echo "$sum  $RUNNER_TEMP/$name.tar.xz" | sha256sum -c -
+          file="$RUNNER_TEMP/$name.tar.xz"
+          downloaded=false
+          # The trusted digest stays pinned above, never fetched from a mirror.
+          # Bound every candidate; a slow origin must not consume the whole job.
+          for url in \
+            "https://zig.linus.dev/zig/$name.tar.xz?source=ci" \
+            "https://ziglang.org/download/$ZIG_VERSION/$name.tar.xz"; do
+            if curl -q --proto '=https' --proto-redir '=https' --tlsv1.2 \
+              --connect-timeout 15 --max-time 600 -sSfL -o "$file.part" "$url" \
+              && echo "$sum  $file.part" | sha256sum -c -; then
+              mv "$file.part" "$file"
+              downloaded=true
+              break
+            fi
+          done
+          if [ "$downloaded" != true ]; then
+            rm -f "$file.part"
+            echo "no checksum-verified Zig archive downloaded" >&2
+            exit 1
+          fi
           tar -xJf "$RUNNER_TEMP/$name.tar.xz" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/$name/zig" version

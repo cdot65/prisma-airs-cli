@@ -1,9 +1,10 @@
 //! The `--debug` API log's records and transport (DESIGN §2.9).
 //!
-//! One record per transport attempt, written to a caller-supplied sink (the CLI opens
-//! the per-run file and owns its directory, retention and stderr). A record holds
-//! status and headers only: never a request or response body, never a URL query or
-//! fragment. Header values are written only for an allow-list of names; every other
+//! One record per transport attempt, plus body-free lifecycle records for typed
+//! gateway validation and tenant-binding refusals. Records go to a caller-supplied
+//! sink (the CLI owns the per-run file, directory, retention and stderr). Transport
+//! records hold status and headers only: never a request or response body, URL
+//! query or fragment. Header values are written only for an allow-list of names; every other
 //! value is `***`. Before each write the whole line is checked against the
 //! invocation's [`SecretSet`] (defence in depth). A failed write never changes the
 //! command: logging stops and one warning goes to stderr.
@@ -56,6 +57,38 @@ const RESPONSE_HEADERS: &[&str] = &[
     "x-correlation-id",
     "x-request-id",
 ];
+
+/// A body-free local gateway preparation refusal.
+#[derive(Clone, Copy)]
+pub enum GatewayPreparationStage {
+    RequestValidation,
+    TenantBinding,
+}
+impl GatewayPreparationStage {
+    fn name(self) -> &'static str {
+        match self {
+            Self::RequestValidation => "request_validation",
+            Self::TenantBinding => "tenant_binding",
+        }
+    }
+}
+
+/// The point in preparation at which a mutation was refused.
+#[derive(Clone, Copy)]
+pub enum GatewayPreparationCheckpoint {
+    Preflight,
+    TenantBinding,
+    ProviderResolution,
+}
+impl GatewayPreparationCheckpoint {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Preflight => "preflight",
+            Self::TenantBinding => "tenant_binding",
+            Self::ProviderResolution => "provider_resolution",
+        }
+    }
+}
 
 /// The invocation's API log. Clones share one file.
 #[derive(Clone)]
@@ -116,6 +149,46 @@ impl DebugLog {
     /// The log file.
     pub fn path(&self) -> &Path {
         &self.inner.path
+    }
+
+    /// A local preparation rejection is an application lifecycle event, not an
+    /// HTTP attempt. Callers supply a static operation identifier, never input.
+    /// `requestSent` describes the rejected mutation; earlier reads may exist.
+    pub fn gateway_preparation_rejected(
+        &self,
+        operation: &'static str,
+        stage: GatewayPreparationStage,
+        checkpoint: GatewayPreparationCheckpoint,
+    ) {
+        let record = OValue::Object(vec![
+            ("event".into(), OValue::String("validation_failure".into())),
+            ("version".into(), OValue::Number(1.into())),
+            ("operation".into(), OValue::String(operation.into())),
+            ("stage".into(), OValue::String(stage.name().into())),
+            (
+                "checkpoint".into(),
+                OValue::String(checkpoint.name().into()),
+            ),
+            ("requestSent".into(), OValue::Bool(false)),
+        ]);
+        // Prefer full facts, then a body-free lifecycle fallback, then the
+        // generic marker already understood by API-log consumers. Every variant
+        // must independently pass the same whole-line privacy check.
+        let lifecycle_fallback = OValue::Object(vec![
+            ("event".into(), OValue::String("validation_failure".into())),
+            ("version".into(), OValue::Number(1.into())),
+            ("requestSent".into(), OValue::Bool(false)),
+            ("redactionFallback".into(), OValue::Bool(true)),
+        ]);
+        let generic_fallback =
+            OValue::Object(vec![("redactionFallback".into(), OValue::Bool(true))]);
+        for candidate in [record, lifecycle_fallback, generic_fallback] {
+            let record = line(&candidate);
+            if !self.inner.secrets.appears_in_ignoring_case(&record) {
+                self.write_line(&record);
+                return;
+            }
+        }
     }
 
     /// Start recording one attempt (at entry to `Transport::send`).
@@ -1132,5 +1205,122 @@ mod tests {
             )
         );
         assert_eq!(logged_operation(RAW_READ_OPERATION), RAW_READ_OPERATION);
+    }
+    #[test]
+    fn gateway_preparation_events_have_only_static_lifecycle_fields() {
+        use GatewayPreparationCheckpoint as Checkpoint;
+        use GatewayPreparationStage as Stage;
+        let (log, sink, warning) = memory_log(SecretSet::default());
+        let cases = [
+            (
+                Stage::RequestValidation,
+                Checkpoint::Preflight,
+                "request_validation",
+                "preflight",
+            ),
+            (
+                Stage::RequestValidation,
+                Checkpoint::TenantBinding,
+                "request_validation",
+                "tenant_binding",
+            ),
+            (
+                Stage::TenantBinding,
+                Checkpoint::TenantBinding,
+                "tenant_binding",
+                "tenant_binding",
+            ),
+            (
+                Stage::RequestValidation,
+                Checkpoint::ProviderResolution,
+                "request_validation",
+                "provider_resolution",
+            ),
+        ];
+        for (stage, checkpoint, _, _) in cases {
+            log.gateway_preparation_rejected("gateway.integrations.create", stage, checkpoint);
+        }
+        let records = records(&sink);
+        assert_eq!(records.len(), cases.len());
+        for (record, (_, _, stage, checkpoint)) in records.iter().zip(cases) {
+            assert_eq!(
+                *record,
+                serde_json::json!({
+                    "event": "validation_failure", "version": 1, "operation": "gateway.integrations.create",
+                    "stage": stage, "checkpoint": checkpoint, "requestSent": false,
+                })
+            );
+        }
+        assert!(warning.text().is_empty());
+    }
+
+    #[test]
+    fn gateway_preparation_event_uses_a_private_fallback_when_operation_matches_a_secret() {
+        let secrets = SecretSet::default();
+        secrets.add("GATEWAY.INTEGRATIONS.CREATE");
+        let (log, sink, warning) = memory_log(secrets);
+        log.gateway_preparation_rejected(
+            "gateway.integrations.create",
+            GatewayPreparationStage::RequestValidation,
+            GatewayPreparationCheckpoint::Preflight,
+        );
+        let fallback = records(&sink);
+        assert_eq!(fallback.len(), 1);
+        assert_eq!(
+            fallback[0]["event"],
+            serde_json::json!("validation_failure")
+        );
+        assert_eq!(fallback[0]["requestSent"], serde_json::json!(false));
+        assert_eq!(fallback[0]["redactionFallback"], serde_json::json!(true));
+        for field in [
+            "operation",
+            "stage",
+            "checkpoint",
+            "request",
+            "response",
+            "body",
+        ] {
+            assert!(fallback[0].get(field).is_none());
+        }
+        assert!(!sink.text().contains("gateway.integrations.create"));
+        assert!(warning.text().is_empty());
+        log.gateway_preparation_rejected(
+            "gateway.deployments.update",
+            GatewayPreparationStage::TenantBinding,
+            GatewayPreparationCheckpoint::TenantBinding,
+        );
+        assert_eq!(
+            records(&sink).len(),
+            2,
+            "a fallback does not disable the log"
+        );
+    }
+    #[test]
+    fn gateway_preparation_fallbacks_never_bypass_the_secret_guard() {
+        let secrets = SecretSet::default();
+        secrets.add("validation_failure");
+        let (log, sink, _) = memory_log(secrets.clone());
+        log.gateway_preparation_rejected(
+            "gateway.integrations.create",
+            GatewayPreparationStage::RequestValidation,
+            GatewayPreparationCheckpoint::Preflight,
+        );
+        assert_eq!(
+            records(&sink),
+            [serde_json::json!({"redactionFallback": true})]
+        );
+        assert!(!sink.text().contains("validation_failure"));
+
+        secrets.add("redactionFallback");
+        let (log, sink, _) = memory_log(secrets);
+        log.gateway_preparation_rejected(
+            "gateway.integrations.create",
+            GatewayPreparationStage::RequestValidation,
+            GatewayPreparationCheckpoint::Preflight,
+        );
+        assert!(
+            sink.text().is_empty(),
+            "when every safe marker collides, confidentiality wins"
+        );
     }
 }

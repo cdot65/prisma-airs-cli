@@ -656,14 +656,8 @@ impl Invocation {
         explicit: Option<Format>,
         tsg: Option<(&str, &str)>,
     ) -> Result<(GatewayClients, Format, String), CliError> {
-        let context = self.load_tenant()?;
-        let format = output::resolve_tenant_default(explicit, context.config.default_output());
+        let (context, format, tenant_tsg) = self.gateway_local_context(explicit)?;
         crate::tenant::config::require_management(&context.config, Some(context.name()))?;
-        let tenant_tsg = context
-            .config
-            .effective_str("mgmtTsgId")
-            .unwrap_or_default()
-            .to_owned();
         if let Some((flag, value)) = tsg
             && value != tenant_tsg
         {
@@ -676,6 +670,22 @@ impl Invocation {
             self.debug.as_ref(),
         )?;
         Ok((clients, format, tenant_tsg))
+    }
+
+    /// Resolve local selection and presentation without constructing clients or
+    /// requiring credentials. Both execution and offline preview use this path.
+    pub fn gateway_local_context(
+        &mut self,
+        explicit: Option<Format>,
+    ) -> Result<(crate::tenant::TenantContext, Format, String), CliError> {
+        let context = self.load_tenant()?;
+        let format = output::resolve_tenant_default(explicit, context.config.default_output());
+        let tsg = context
+            .config
+            .effective_str("mgmtTsgId")
+            .unwrap_or_default()
+            .to_owned();
+        Ok((context, format, tsg))
     }
 
     /// The failure of a gateway request on `plane`: the 403 grant hint on stderr first

@@ -12,16 +12,16 @@
 //!    G36 raw write whose answer goes to the reserved file.
 
 use super::Invocation;
-use super::gateway_write_plan::{
-    KeySource, ORGANISATION_PLACEHOLDER, PROVIDER_PLACEHOLDER, WritePlan,
-};
+use super::gateway_write_plan::{KeySource, PROVIDER_PLACEHOLDER, WritePlan};
 use super::write_common::{self as wc};
 use crate::clients::{GatewayClients, SINGLE_REQUEST_BUDGET};
+use crate::debug::{GatewayPreparationCheckpoint as Checkpoint, GatewayPreparationStage as Stage};
 use crate::error::{CliError, InterruptContext};
 use crate::files::Reservation;
 use crate::gateway::body::{self, Input};
+use crate::gateway::request::{Context as RequestContext, FailureKind, PreparedRequest};
 use crate::gateway::secrets::{self, CredentialRequest, SecretWrite};
-use crate::gateway::writes::{Confirm, Typed, Write};
+use crate::gateway::writes::{Confirm, Write};
 use crate::gateway::{self, GwPlane, views, withhold};
 use crate::json::OValue;
 use crate::output::{Format, terminal_safe};
@@ -78,31 +78,6 @@ fn not_sent() -> InterruptContext {
     InterruptContext::NothingChanged
 }
 
-/// Fill the default `organisation_id` of an organisation-bearing body and validate it
-/// (§19.3); `org` is the organisation to insert (a placeholder before the tenant).
-fn typed(
-    plan: &WritePlan,
-    body: &mut Value,
-    org: Option<&str>,
-    tsg: Option<&str>,
-) -> Result<Typed, CliError> {
-    if plan.org_body
-        && let (Some(org), Some(map)) = (org, body.as_object_mut())
-        && !map.contains_key("organisation_id")
-    {
-        map.insert("organisation_id".into(), Value::String(org.to_owned()));
-    }
-    Typed::parse(&plan.write, body, tsg)
-}
-
-/// The organisation id of the body, when it carries one that is not the tenant's (D245).
-fn foreign_body_org(body: &Value, tenant: &str) -> Option<String> {
-    match body.get("organisation_id") {
-        Some(Value::String(org)) if org != tenant => Some(org.clone()),
-        _ => None,
-    }
-}
-
 /// A write after phase 1 ([`prepare`]): everything checked that needs no tenant.
 struct Prepared {
     /// The built body (its `organisation_id` default not yet filled in).
@@ -121,14 +96,15 @@ struct Connected {
     format: Format,
     /// The explicit organisation, else the tenant's TSG.
     org: String,
-    /// The body with the organisation filled in.
-    body: Value,
-    typed: Typed,
+    request: PreparedRequest,
 }
 
 /// Run a planned write (§19.10–§19.13): the phases of the module documentation, in order.
 pub async fn run(invocation: &mut Invocation, plan: &WritePlan) -> Result<(), CliError> {
     let prepared = prepare(invocation, plan)?;
+    if plan.dry_run {
+        return preview(invocation, plan, prepared);
+    }
     let mut connected = connect(invocation, plan, prepared.body.clone())?;
     if !confirmed(invocation, plan, &prepared, &connected)? {
         return Ok(());
@@ -145,13 +121,34 @@ pub async fn run(invocation: &mut Invocation, plan: &WritePlan) -> Result<(), Cl
                 invocation,
                 &connected,
                 &write,
-                &CredentialRequest::new(&plan.write, &connected.typed)?,
+                &CredentialRequest::new(&plan.write, connected.request.typed())?,
                 (reservation, path),
             )
             .await
         }
         _ => send_typed(invocation, plan, &connected).await,
     }
+}
+
+/// All preparation checkpoints share this adapter so classification and log
+/// cardinality cannot drift between execution and preview.
+fn prepare_request(
+    invocation: &Invocation,
+    plan: &WritePlan,
+    body: Value,
+    context: RequestContext<'_>,
+    checkpoint: Checkpoint,
+) -> Result<PreparedRequest, CliError> {
+    PreparedRequest::prepare(&plan.write, body, plan.org_body, context).map_err(|error| {
+        if let Some(log) = &invocation.debug {
+            let stage = match error.kind() {
+                FailureKind::Validation => Stage::RequestValidation,
+                FailureKind::TenantBinding => Stage::TenantBinding,
+            };
+            log.gateway_preparation_rejected(plan.write.diagnostic_operation(), stage, checkpoint);
+        }
+        error.into_cli_error()
+    })
 }
 
 /// Phase 1, before the tenant (§19.3, choice 124): the inline-credential warnings, the
@@ -177,22 +174,29 @@ fn prepare(invocation: &mut Invocation, plan: &WritePlan) -> Result<Prepared, Cl
     let rotating = body.get("rotate_auth") == Some(&Value::Bool(true));
     if let Write::DeploymentUpdate(_) = plan.write {
         match (rotating, plan.secret.is_some()) {
-            (true, false) => return Err(CliError::usage(secrets::NEEDS_DESTINATION)),
+            (true, false) if !plan.dry_run => {
+                return Err(CliError::usage(secrets::NEEDS_DESTINATION));
+            }
             (false, true) => return Err(CliError::usage(secrets::ONLY_ROTATE)),
             _ => {}
         }
     }
-    typed(
+    prepare_request(
+        invocation,
         plan,
-        &mut body.clone(),
-        Some(ORGANISATION_PLACEHOLDER),
-        plan.organisation.as_deref(),
+        body.clone(),
+        RequestContext::Preflight {
+            explicit_organisation: plan.organisation.as_deref(),
+        },
+        Checkpoint::Preflight,
     )?;
     let secret_shown = plan.secret.as_deref().map(secrets::shown_path);
     let confirm = plan
         .write
         .confirm(&body, plan.organisation.as_deref(), secret_shown.as_deref());
-    if let Some(confirm) = &confirm {
+    if let Some(confirm) = &confirm
+        && !plan.dry_run
+    {
         wc::gate_on_terminals(plan.force, &confirm.action)?;
     }
     Ok(Prepared {
@@ -201,6 +205,34 @@ fn prepare(invocation: &mut Invocation, plan: &WritePlan) -> Result<Prepared, Cl
         confirm,
         secret_shown,
     })
+}
+
+fn preview(
+    invocation: &mut Invocation,
+    plan: &WritePlan,
+    prepared: Prepared,
+) -> Result<(), CliError> {
+    let (_context, format, tsg) = invocation.gateway_local_context(plan.format)?;
+    let request = prepare_request(
+        invocation,
+        plan,
+        prepared.body,
+        RequestContext::Tenant {
+            selected: &tsg,
+            explicit_organisation: plan.organisation.as_deref(),
+        },
+        Checkpoint::TenantBinding,
+    )?;
+    let view = crate::gateway::preview::document(
+        &plan.write,
+        &request,
+        &tsg,
+        prepared.confirm.is_some(),
+        plan.secret_write(prepared.rotating).is_some(),
+        plan.secret.is_some(),
+        &invocation.secrets,
+    )?;
+    views::render_detail(&mut invocation.output, &view, format)
 }
 
 /// The structured input with the provider credential of `--key-file`, `--key-stdin` or
@@ -268,33 +300,36 @@ fn integration_create_body(plan: &WritePlan, body: &mut Value) -> Result<(), Cli
 fn connect(
     invocation: &mut Invocation,
     plan: &WritePlan,
-    mut body: Value,
+    body: Value,
 ) -> Result<Connected, CliError> {
-    let flag = if plan.write == Write::AuthSettingsUpdate {
-        "--tsg-id"
-    } else {
-        "--organisation-id"
-    };
-    let explicit = plan.organisation.as_deref().map(|value| (flag, value));
-    let (clients, format, tenant_tsg) = invocation
-        .gateway_clients(plan.format, explicit)
+    let (context, format, tenant_tsg) = invocation
+        .gateway_local_context(plan.format)
         .map_err(super::nothing_changed)?;
-    if plan.org_body
-        && let Some(org) = foreign_body_org(&body, &tenant_tsg)
-    {
-        return Err(gateway::foreign_tsg(
-            "--organisation-id",
-            &gateway::shown(&org),
-        ));
-    }
+    crate::tenant::config::require_management(&context.config, Some(context.name()))
+        .map_err(super::nothing_changed)?;
+    let request = prepare_request(
+        invocation,
+        plan,
+        body,
+        RequestContext::Tenant {
+            selected: &tenant_tsg,
+            explicit_organisation: plan.organisation.as_deref(),
+        },
+        Checkpoint::TenantBinding,
+    )?;
+    let clients = GatewayClients::build(
+        &context.config,
+        &invocation.session,
+        &invocation.secrets,
+        invocation.debug.as_ref(),
+    )
+    .map_err(|error| super::nothing_changed(error.into()))?;
     let org = plan.organisation.clone().unwrap_or(tenant_tsg);
-    let typed = typed(plan, &mut body, Some(&org), Some(&org))?;
     Ok(Connected {
         clients,
         format,
         org,
-        body,
-        typed,
+        request,
     })
 }
 
@@ -315,7 +350,7 @@ fn confirmed(
     let message = plan
         .write
         .confirm(
-            &connected.body,
+            connected.request.body(),
             Some(&connected.org),
             prepared.secret_shown.as_deref(),
         )
@@ -339,13 +374,22 @@ async fn authorise(
         return Ok(());
     };
     let id = provider_id(invocation, &connected.clients, slug).await?;
-    let body = &mut connected.body;
+    let mut body = connected.request.body().clone();
     if body.get("ai_provider_id").and_then(Value::as_str) == Some(PROVIDER_PLACEHOLDER)
         && let Some(map) = body.as_object_mut()
     {
         map.insert("ai_provider_id".into(), Value::String(id));
     }
-    connected.typed = typed(plan, body, Some(&connected.org), Some(&connected.org))?;
+    connected.request = prepare_request(
+        invocation,
+        plan,
+        body,
+        RequestContext::Tenant {
+            selected: &connected.org,
+            explicit_organisation: plan.organisation.as_deref(),
+        },
+        Checkpoint::ProviderResolution,
+    )?;
     Ok(())
 }
 
@@ -385,7 +429,8 @@ async fn send_typed(
         async || {
             let options = gateway::sdk_options(SINGLE_REQUEST_BUDGET)?;
             connected
-                .typed
+                .request
+                .typed()
                 .send(gateway, &plan.write, &connected.org, &options)
                 .await
         },

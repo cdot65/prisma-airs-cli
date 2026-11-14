@@ -1,0 +1,80 @@
+{
+  "repository": "prisma-airs-cli",
+  "hashes_verified": true,
+  "checks": [
+    {
+      "name": "cli-gateway9",
+      "exit_code": 0,
+      "passed": 80,
+      "expected": 80,
+      "elapsed_seconds": 28.515,
+      "log": "claude-final-cli-gateway9.log",
+      "log_sha256": "b970a8d82ca03beb1fe44aa08f0f8a68956f8961981ed3aae52dcb80b908c43d"
+    },
+    {
+      "name": "cli-msrv-gateway9",
+      "exit_code": 0,
+      "passed": 80,
+      "expected": 80,
+      "elapsed_seconds": 32.517,
+      "log": "claude-final-cli-msrv-gateway9.log",
+      "log_sha256": "ed72e0d25cd561573eb3f63e1394d0eb5ab26b7f190ffbbf880fbb10ecabedd5"
+    },
+    {
+      "name": "cli-unit9",
+      "exit_code": 0,
+      "passed": 87,
+      "expected": 87,
+      "elapsed_seconds": 5.38,
+      "log": "claude-final-cli-unit9.log",
+      "log_sha256": "1dee374543adeb5367f3b0ede2c7afd49bfd57c2a8a60c6f5bfe9bbbd78e6aa5"
+    },
+    {
+      "name": "cli-msrv-unit9",
+      "exit_code": 0,
+      "passed": 87,
+      "expected": 87,
+      "elapsed_seconds": 5.876,
+      "log": "claude-final-cli-msrv-unit9.log",
+      "log_sha256": "06a7335962ea90132cbbc8930dc860ed64c04b981b2be0c90bc80e65aa8c5b6b"
+    },
+    {
+      "name": "cli-debug9",
+      "exit_code": 0,
+      "passed": 15,
+      "expected": 15,
+      "elapsed_seconds": 0.612,
+      "log": "claude-final-cli-debug9.log",
+      "log_sha256": "2029a0c0d1564b3f41ef9c3cf7bf07f36efa815a44536b699eb638da49293fc7"
+    },
+    {
+      "name": "cli-msrv-debug9",
+      "exit_code": 0,
+      "passed": 15,
+      "expected": 15,
+      "elapsed_seconds": 0.559,
+      "log": "claude-final-cli-msrv-debug9.log",
+      "log_sha256": "7cb144bf94cd7a834d478f8b968e603c19e93f619025ef526099fbdaa31c4617"
+    },
+    {
+      "name": "cli-reference9",
+      "exit_code": 0,
+      "passed": 2,
+      "expected": 2,
+      "elapsed_seconds": 6.539,
+      "log": "claude-final-cli-reference9.log",
+      "log_sha256": "b407c9aa2d53b406d67aed4fbb3e55db82b22841069eecad211e4001671c56b1"
+    },
+    {
+      "name": "cli-msrv-reference9",
+      "exit_code": 0,
+      "passed": 2,
+      "expected": 2,
+      "elapsed_seconds": 7.202,
+      "log": "claude-final-cli-msrv-reference9.log",
+      "log_sha256": "cc9b2d367fd51f60410a7dde8cea2df4c3e6d6c700cec107bfcba45438cd30e7"
+    }
+  ],
+  "all_passed": true,
+  "note": "Replays only retained synthetic/loopback test binaries with a cleared environment; no Cargo, source edits, config stores or live service access."
+}

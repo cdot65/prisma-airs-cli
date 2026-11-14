@@ -1776,3 +1776,24 @@ behavior is claimed:
 | Artifacts | ≤16 KiB agent pages, hash-verified chunked downloads, no-clobber publication, fences against stale renderers, unauthorized/guessed IDs |
 | Receipts | Client-asserted provenance, forged complete identities, both arrival orders, two-second CLI wait, bulk-state upload gaps |
 | Transfer/lifecycle | crates/airs-history-store/tests/support/history_transfer_adversarial.rs against the service adapters, all-copy prune previews, migration from read-only staging |
+
+## Gateway reliability source additions
+
+The CLI9.1.0 candidate adopts published scm-sdk0.2.6 with an exact registry pin.
+Its optional structured diagnostic accessor is available to SDK consumers; CLI
+stderr retains the existing schema messages until the shared error bridge adopts
+that accessor. Existing runtime/service deployments are not upgraded by this pin.
+
+Current source adds `--dry-run` to `gateway deployments update` and `gateway
+api-keys service create`. It prints a versioned, redacted local preview using the
+same typed request preparation as execution. It makes no authentication or API
+request and reserves no credential output. A key preview can omit the destination;
+deployment preview conflicts with `--force`. Normal execution keeps its existing
+confirmation, retry and one-time-credential behavior.
+
+With `--debug`, local semantic write-validation failures now emit a
+`validation_failure` lifecycle record instead of leaving an empty log. Existing
+HTTP attempt records retain their shape. Consumers must distinguish the event
+record from traffic. Key-type help now explains that the required value can come
+from any merged input source. Tests and remaining acceptance are recorded in
+[the implementation progress entry](gateway-reliability/IMPLEMENTATION_PROGRESS.md).

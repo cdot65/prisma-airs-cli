@@ -43,8 +43,8 @@ pub(crate) mod test_support;
 /// The version every collected evidence document records (lockstep with `airs-cli`).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// The SCM SDK version this core is compiled against (the exact `=0.2.4` pin).
-pub const SDK_VERSION: &str = "0.2.4";
+/// The SCM SDK version this core is compiled against (the exact `=0.2.6` pin).
+pub const SDK_VERSION: &str = "0.2.6";
 
 #[cfg(test)]
 mod package_tests {

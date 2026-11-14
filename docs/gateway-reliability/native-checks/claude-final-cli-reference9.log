@@ -1,0 +1,7 @@
+
+running 2 tests
+test rendering_helpers_behave ... ok
+test the_command_reference_is_current ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.43s
+
