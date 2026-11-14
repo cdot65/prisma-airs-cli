@@ -1182,7 +1182,10 @@ fn a_new_binding_eventually_revisits_every_event_archived_while_unbound() {
         &["runtime", "sync"],
         &RunOptions::new().timeout(std::time::Duration::from_secs(120)),
     );
-    eprintln!("[DEBUG-sync-1000] initial collection: {:?}", collected.elapsed);
+    eprintln!(
+        "[DEBUG-sync-1000] initial collection: {:?}",
+        collected.elapsed
+    );
     collected.assert_success();
     let events: i64 = archive(&s)
         .query_row("SELECT count(*) FROM events WHERE app_id=?1", [APP], |r| {
