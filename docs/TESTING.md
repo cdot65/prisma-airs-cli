@@ -1002,6 +1002,11 @@ live tier (§6) is only run by hand. Releases are cut separately
 
 Notes:
 
+- **Zig downloads are bounded and verified.** The musl job tries a community mirror,
+  then the origin, with a 15-second connection timeout and a 180-second total timeout
+  per candidate. Each candidate must match the SHA-256 pinned in the workflow before
+  it is promoted or extracted; failed or corrupt candidates never install a tool.
+  This avoids spending most of the job on a slow origin download.
 - **Tests run unprivileged.** The container runs as root, and root ignores file modes,
   so tests that make a file mode `0000` would fail. The test step creates a user `ci`,
   hands it the workspace and the cargo home, and runs `cargo test` as that user.

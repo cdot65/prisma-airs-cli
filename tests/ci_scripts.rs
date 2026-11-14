@@ -20,6 +20,134 @@ fn script(name: &str) -> PathBuf {
 
 static NEXT: AtomicUsize = AtomicUsize::new(0);
 
+/// Exercise the actual install step with synthetic downloads. Corrupt or failed
+/// candidates must never reach extraction or advertise a tool on GITHUB_PATH.
+#[cfg(unix)]
+#[test]
+fn zig_downloads_verify_before_extracting_and_fail_over_safely() {
+    use sha2::{Digest, Sha256};
+    use std::os::unix::fs::PermissionsExt;
+
+    let workflow = fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".forgejo/workflows/ci.yml"),
+    )
+    .unwrap();
+    let step = workflow
+        .split_once("- name: Install zig\n")
+        .unwrap()
+        .1
+        .split_once("run: |\n")
+        .unwrap()
+        .1
+        .lines()
+        .take_while(|line| line.is_empty() || line.starts_with("          "))
+        .map(|line| line.strip_prefix("          ").unwrap_or(line))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let pinned = step
+        .split_once("x86_64) arch=x86_64; sum=")
+        .unwrap()
+        .1
+        .split_whitespace()
+        .next()
+        .unwrap();
+    let bytes = b"synthetic Zig archive";
+    let digest = format!("{:x}", Sha256::digest(bytes));
+    let step = step.replace(pinned, &digest);
+    let executable = |path: &Path, body: &str| {
+        fs::write(path, body).unwrap();
+        fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
+    };
+    for mode in [
+        "good",
+        "corrupt-first",
+        "failed-first",
+        "all-corrupt",
+        "all-failed",
+    ] {
+        let dir = repo(&format!("zig-{mode}"));
+        let bin = dir.join("bin");
+        let temp = dir.join("runner");
+        fs::create_dir_all(&bin).unwrap();
+        fs::create_dir_all(temp.join("zig-x86_64-linux-0.17.0")).unwrap();
+        fs::write(dir.join("good"), bytes).unwrap();
+        executable(&bin.join("uname"), "#!/bin/sh\nprintf 'x86_64\\n'\n");
+        executable(
+            &bin.join("sha256sum"),
+            "#!/bin/sh\nexec shasum -a 256 \"$@\"\n",
+        );
+        executable(
+            &bin.join("tar"),
+            "#!/bin/sh\nprintf 'extract\\n' >> \"$TEST_DIR/extractions\"\n",
+        );
+        executable(
+            &temp.join("zig-x86_64-linux-0.17.0/zig"),
+            "#!/bin/sh\nprintf '0.17.0\\n'\n",
+        );
+        executable(
+            &bin.join("curl"),
+            r#"#!/bin/sh
+set -eu
+output=
+connect=
+limit=
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) output=$2; shift 2 ;;
+    --connect-timeout) connect=$2; shift 2 ;;
+    --max-time) limit=$2; shift 2 ;;
+    *) url=$1; shift ;;
+  esac
+done
+if [ "$connect" != 15 ] || [ "$limit" != 180 ]; then exit 99; fi
+printf '%s\n' "$url" >> "$TEST_DIR/requests"
+case "$TEST_MODE:$url" in
+  all-failed:*|failed-first:*zig.linus.dev*) exit 7 ;;
+  all-corrupt:*|corrupt-first:*zig.linus.dev*) printf 'corrupt' > "$output" ;;
+  *) cp "$TEST_DIR/good" "$output" ;;
+esac
+"#,
+        );
+        let out = Command::new("bash")
+            .arg("-c")
+            .arg(&step)
+            .env_clear()
+            .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
+            .env("RUNNER_TEMP", &temp)
+            .env("GITHUB_PATH", dir.join("paths"))
+            .env("ZIG_VERSION", "0.17.0")
+            .env("TEST_DIR", &dir)
+            .env("TEST_MODE", mode)
+            .output()
+            .unwrap();
+        let succeeds = !mode.starts_with("all-");
+        assert_eq!(
+            out.status.success(),
+            succeeds,
+            "{mode}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let requests = fs::read_to_string(dir.join("requests")).unwrap();
+        assert_eq!(requests.lines().count(), if mode == "good" { 1 } else { 2 });
+        assert!(!temp.join("zig-x86_64-linux-0.17.0.tar.xz.part").exists());
+        if succeeds {
+            assert_eq!(
+                fs::read(temp.join("zig-x86_64-linux-0.17.0.tar.xz")).unwrap(),
+                bytes
+            );
+            assert_eq!(
+                fs::read_to_string(dir.join("extractions")).unwrap(),
+                "extract\n"
+            );
+            assert!(dir.join("paths").exists());
+        } else {
+            assert!(!temp.join("zig-x86_64-linux-0.17.0.tar.xz").exists());
+            assert!(!dir.join("extractions").exists());
+            assert!(!dir.join("paths").exists());
+        }
+    }
+}
+
 /// A fresh git repository with one commit holding `src/lib.rs` and `README.md`.
 fn repo(tag: &str) -> PathBuf {
     let dir = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!(
