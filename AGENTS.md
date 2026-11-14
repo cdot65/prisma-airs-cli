@@ -4,7 +4,7 @@
 TypeScript `airs-cli`, which this repository held until 7.x; from 8.0 the repository holds
 only the Rust CLI, and nothing is compared against the TypeScript CLI any more (the
 TypeScript parity tests and reference build were removed on 2026-11-08). It is built on
-the `scm-sdk` crate, imported as `scm`, at the exact pin `=0.2.4` from crates.io
+the `scm-sdk` crate, imported as `scm`, at the exact pin `=0.2.6` from crates.io
 (DESIGN §15.25). The scope and the milestone order are recorded in
 [docs/MILESTONES.md](docs/MILESTONES.md).
 
