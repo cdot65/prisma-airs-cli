@@ -194,7 +194,7 @@ jobs:
             "https://zig.linus.dev/zig/$name.tar.xz?source=ci" \
             "https://ziglang.org/download/$ZIG_VERSION/$name.tar.xz"; do
             if curl -q --proto '=https' --proto-redir '=https' --tlsv1.2 \
-              --connect-timeout 15 --max-time 180 -sSfL -o "$file.part" "$url" \
+              --connect-timeout 15 --max-time 600 -sSfL -o "$file.part" "$url" \
               && echo "$sum  $file.part" | sha256sum -c -; then
               mv "$file.part" "$file"
               downloaded=true

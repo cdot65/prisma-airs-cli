@@ -103,7 +103,7 @@ esac
             );
             executable(
                 &bin.join("tar"),
-                "#!/bin/sh\nprintf 'extract\\n' >> \"$TEST_DIR/extractions\"\n",
+                "#!/bin/sh\nprintf 'extract\\n' >> \"$TEST_DIR/extractions\"\nprintf '%s\\n' \"$@\" > \"$TEST_DIR/tar-args\"\n",
             );
             executable(
                 &temp.join(format!("{name}/zig")),
@@ -116,6 +116,7 @@ set -eu
 output=
 connect=
 limit=
+[ "$1" = -q ] || exit 99
 proto=
 redirect=
 tls=false
@@ -134,12 +135,13 @@ while [ "$#" -gt 0 ]; do
     *) url=$1; shift ;;
   esac
 done
-if [ "$connect" != 15 ] || [ "$limit" != 180 ] \
+if [ "$connect" != 15 ] || [ "$limit" != 600 ] \
   || [ "$proto" != =https ] || [ "$redirect" != =https ] \
   || [ "$tls" != true ] || [ "$quiet_config" != true ] || [ "$fail_http" != true ]; then
   exit 99
 fi
 case "$url" in https://*) ;; *) exit 99 ;; esac
+case "$output" in "$RUNNER_TEMP/"*.part) ;; *) exit 99 ;; esac
 printf '%s\n' "$url" >> "$TEST_DIR/requests"
 case "$TEST_MODE:$url" in
   all-failed:*|failed-first:*zig.linus.dev*)
@@ -190,6 +192,16 @@ esac
                 assert_eq!(
                     fs::read_to_string(dir.join("extractions")).unwrap(),
                     "extract\n"
+                );
+                let tar_args = fs::read_to_string(dir.join("tar-args")).unwrap();
+                assert_eq!(
+                    tar_args.lines().collect::<Vec<_>>(),
+                    vec![
+                        "-xJf",
+                        temp.join(&archive).to_str().unwrap(),
+                        "-C",
+                        temp.to_str().unwrap()
+                    ]
                 );
                 assert!(dir.join("paths").exists());
             } else {
